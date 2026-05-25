@@ -332,6 +332,7 @@ function buildRaidCard(raid, elementPopups) {
 
   if (raid.id === 'raid10') {
     // RAID 10: architecture overview with drill-down into spans
+    animBtn.innerHTML = '▶ simulate write (striping)';
     const viewState = { mode: 'overview', pair: null };
     body.appendChild(buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState));
     animBtn.addEventListener('click', () => {
@@ -421,10 +422,7 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
     pair.forEach((label) => {
       const diskEl = document.createElement('div');
       diskEl.className = 'r10-disk-mini';
-      diskEl.innerHTML = `
-        <div class="disk-icon-visual"></div>
-        <span class="disk-label">${label}</span>
-      `;
+      diskEl.innerHTML = `<span class="disk-label">${label}</span>`;
       pairEl.appendChild(diskEl);
     });
     disksRow.appendChild(pairEl);
@@ -524,7 +522,7 @@ function transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, view
     requestAnimationFrame(() => requestAnimationFrame(() => { detail.style.opacity = '1'; }));
     viewState.mode = 'detail';
     viewState.pair = pairIdx;
-    animBtn.textContent = '▶ simulate write (mirror)';
+    animBtn.textContent = '▶ simulate write (mirroring)';
   }, 180);
 }
 
@@ -541,7 +539,7 @@ function transitionR10ToOverview(card, animBtn, raid, elementPopups, viewState) 
     requestAnimationFrame(() => requestAnimationFrame(() => { overview.style.opacity = '1'; }));
     viewState.mode = 'overview';
     viewState.pair = null;
-    animBtn.textContent = '▶ simulate write';
+    animBtn.textContent = '▶ simulate write (striping)';
   }, 180);
 }
 
@@ -550,9 +548,9 @@ function animateRaid10Overview(card) {
   const btn = card.querySelector('.btn-animate');
   btn.disabled = true;
 
-  const vdisk    = card.querySelector('.r10-vdisk');
-  const spans    = card.querySelectorAll('.r10-span');
-  const diskIcons = card.querySelectorAll('.r10-disk-mini .disk-icon-visual');
+  const vdisk     = card.querySelector('.r10-vdisk');
+  const spans     = card.querySelectorAll('.r10-span');
+  const diskMinis = card.querySelectorAll('.r10-disk-mini');
 
   const STEP = 380;
   const ANIM_DUR = 420;
@@ -564,8 +562,8 @@ function animateRaid10Overview(card) {
   }
 
   setTimeout(() => pulse(vdisk), 0);
-  setTimeout(() => { pulse(spans[0]); pulse(diskIcons[0]); pulse(diskIcons[1]); }, STEP);
-  setTimeout(() => { pulse(spans[1]); pulse(diskIcons[2]); pulse(diskIcons[3]); }, STEP * 2);
+  setTimeout(() => { pulse(spans[0]); pulse(diskMinis[0]); pulse(diskMinis[1]); }, STEP);
+  setTimeout(() => { pulse(spans[1]); pulse(diskMinis[2]); pulse(diskMinis[3]); }, STEP * 2);
 
   setTimeout(() => { btn.disabled = false; }, STEP * 2 + ANIM_DUR + 200);
 }

@@ -1037,14 +1037,23 @@
       display: flex;
       gap: 6px;    /* must match .r10-conn-pair gap */
     }
+    /* Disk minis are full boxes (same visual weight as span boxes) */
     .r10-disk-mini {
       flex: 1;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      background: var(--bg-secondary);
+      border: 1px solid #2a3540;
+      border-radius: var(--radius);
+      padding: 8px 4px;
+      min-height: 40px;
+      transition: border-color var(--transition);
     }
-    .r10-disk-mini .disk-label { font-size: 0.62rem; }
+    .r10-disk-mini .disk-label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
 
     @keyframes r10GlowBox {
       0%   { border-color: var(--accent-border); box-shadow: none; }
@@ -1061,9 +1070,9 @@
       45%  { border-color: var(--accent-cyan); box-shadow: 0 0 5px rgba(0,255,159,0.2); }
       100% { border-color: #3a4a55; box-shadow: none; }
     }
-    .r10-vdisk.r10-anim                        { animation: r10GlowBox  0.42s ease; }
-    .r10-span.r10-anim                          { animation: r10GlowSpan 0.42s ease; }
-    .r10-disk-mini .disk-icon-visual.r10-anim   { animation: r10GlowDisk 0.42s ease; }
+    .r10-vdisk.r10-anim     { animation: r10GlowBox  0.42s ease; }
+    .r10-span.r10-anim      { animation: r10GlowSpan 0.42s ease; }
+    .r10-disk-mini.r10-anim { animation: r10GlowSpan 0.42s ease; }
 
     .r10-detail { display: flex; flex-direction: column; }
     .r10-breadcrumb {
