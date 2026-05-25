@@ -299,17 +299,11 @@ function buildRaidCard(raid, elementPopups) {
   `;
   header.addEventListener('click', () => openPopup(raid.popup));
 
-  // Card body: disk columns (left) + stats column (right)
+  // Card body: disk area (left) + stats column (right)
   const body = document.createElement('div');
   body.className = 'raid-card-body';
 
-  // Disk columns
-  const diskCount = raid.diskCount.display;
-  const layoutFn  = RAID_LAYOUTS[raid.id];
-  const rows      = layoutFn ? layoutFn(diskCount) : [];
-  body.appendChild(buildDiskColumns(raid, diskCount, rows, elementPopups));
-
-  // Stats column — contextualPopups when available, elementPopups as fallback
+  // Stats column — same for all RAID types
   const stats = document.createElement('div');
   stats.className = 'raid-stats';
   [
@@ -330,18 +324,254 @@ function buildRaidCard(raid, elementPopups) {
     span.addEventListener('click', (e) => { e.stopPropagation(); openPopup(popupData); });
     stats.appendChild(span);
   });
-  body.appendChild(stats);
 
   // Animate button
   const animBtn = document.createElement('button');
   animBtn.className = 'btn-animate';
   animBtn.innerHTML = '▶ simulate write';
-  animBtn.addEventListener('click', () => animateWrite(card, rows));
 
+  if (raid.id === 'raid10') {
+    // RAID 10: architecture overview with drill-down into spans
+    const viewState = { mode: 'overview', pair: null };
+    body.appendChild(buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState));
+    animBtn.addEventListener('click', () => {
+      if (viewState.mode === 'overview') animateRaid10Overview(card);
+      else animateRaid10Detail(card);
+    });
+  } else {
+    const diskCount = raid.diskCount.display;
+    const layoutFn  = RAID_LAYOUTS[raid.id];
+    const rows      = layoutFn ? layoutFn(diskCount) : [];
+    body.appendChild(buildDiskColumns(raid, diskCount, rows, elementPopups));
+    animBtn.addEventListener('click', () => animateWrite(card, rows));
+  }
+
+  body.appendChild(stats);
   card.appendChild(header);
   card.appendChild(body);
   card.appendChild(animBtn);
   return card;
+}
+
+// ---------------------------------------------------------------------------
+// RAID 10 — TWO-LEVEL VIEW
+// ---------------------------------------------------------------------------
+
+function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) {
+  const overview = document.createElement('div');
+  overview.className = 'r10-overview';
+
+  // Level 1: virtual disk
+  const vdisk = document.createElement('div');
+  vdisk.className = 'r10-vdisk';
+  vdisk.innerHTML = `
+    <div class="r10-vdisk-name">Virtual Disk</div>
+    <div class="r10-vdisk-tech">Striping</div>
+  `;
+  overview.appendChild(vdisk);
+
+  // Connectors vdisk → spans
+  const connTop = document.createElement('div');
+  connTop.className = 'r10-conn-top';
+  connTop.innerHTML = `<div class="r10-conn-top-left"></div><div class="r10-conn-top-right"></div>`;
+  overview.appendChild(connTop);
+
+  // Level 2: span boxes
+  const spansRow = document.createElement('div');
+  spansRow.className = 'r10-spans';
+  ['A', 'B'].forEach((spanId, pairIdx) => {
+    const spanBox = document.createElement('div');
+    spanBox.className = 'r10-span';
+    spanBox.dataset.pairIdx = pairIdx;
+    spanBox.innerHTML = `
+      <div class="r10-span-name">SPAN ${spanId}</div>
+      <div class="r10-span-tech">Mirroring</div>
+    `;
+    const exploreBtn = document.createElement('span');
+    exploreBtn.className = 'r10-explore';
+    exploreBtn.textContent = 'explore →';
+    exploreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, viewState);
+    });
+    spanBox.appendChild(exploreBtn);
+    spansRow.appendChild(spanBox);
+  });
+  overview.appendChild(spansRow);
+
+  // Connectors spans → disks
+  const connBottom = document.createElement('div');
+  connBottom.className = 'r10-conn-bottom';
+  connBottom.innerHTML = `
+    <div class="r10-conn-pair">
+      <div class="r10-conn-pair-left"></div><div class="r10-conn-pair-right"></div>
+    </div>
+    <div class="r10-conn-pair">
+      <div class="r10-conn-pair-left"></div><div class="r10-conn-pair-right"></div>
+    </div>
+  `;
+  overview.appendChild(connBottom);
+
+  // Level 3: physical disks
+  const disksRow = document.createElement('div');
+  disksRow.className = 'r10-disks-row';
+  ['D0', 'D1', 'D2', 'D3'].forEach((label) => {
+    const diskEl = document.createElement('div');
+    diskEl.className = 'r10-disk-mini';
+    diskEl.innerHTML = `
+      <div class="disk-icon-visual"></div>
+      <span class="disk-label">${label}</span>
+    `;
+    disksRow.appendChild(diskEl);
+  });
+  overview.appendChild(disksRow);
+
+  return overview;
+}
+
+function buildRaid10DetailView(raid, pairIdx, elementPopups, card, animBtn, viewState) {
+  const spanId     = 'AB'[pairIdx];
+  const diskOffset = pairIdx * 2;
+
+  const detail = document.createElement('div');
+  detail.className = 'r10-detail';
+
+  // Breadcrumb back
+  const breadcrumb = document.createElement('div');
+  breadcrumb.className = 'r10-breadcrumb';
+  breadcrumb.innerHTML = '↑ RAID 10 overview';
+  breadcrumb.addEventListener('click', () =>
+    transitionR10ToOverview(card, animBtn, raid, elementPopups, viewState)
+  );
+  detail.appendChild(breadcrumb);
+
+  // Span header
+  const detailHeader = document.createElement('div');
+  detailHeader.className = 'r10-detail-header';
+  detailHeader.innerHTML = `
+    <span class="r10-detail-span-name">SPAN ${spanId}</span>
+    <span class="r10-detail-span-tech">Mirroring</span>
+  `;
+  detail.appendChild(detailHeader);
+
+  // Block grid — 2 disks, primary + mirror
+  const detailRows = ['A', 'B', 'C', 'D'].map((s) => [
+    { label: s, type: 'data',   stripeGroup: s, animOrder: 0 },
+    { label: s, type: 'mirror', stripeGroup: s, animOrder: 0 },
+  ]);
+
+  const colsWrapper = document.createElement('div');
+  colsWrapper.className = 'disk-columns-wrapper';
+
+  const popupKeyMap = { data: 'block-data-stripe', mirror: 'block-mirror' };
+  [`D${diskOffset}`, `D${diskOffset + 1}`].forEach((diskLabel, d) => {
+    const blocksDiv = document.createElement('div');
+    blocksDiv.className = 'disk-blocks';
+    detailRows.forEach((row, rowIdx) => {
+      const block = row[d];
+      const cell  = document.createElement('div');
+      cell.className           = `block block-${block.type}`;
+      cell.textContent         = block.label;
+      cell.dataset.row         = rowIdx;
+      cell.dataset.col         = d;
+      cell.dataset.animOrder   = block.animOrder;
+      cell.dataset.stripeGroup = block.stripeGroup;
+      cell.title = 'Click for explanation';
+      cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPopup(elementPopups[popupKeyMap[block.type]]);
+      });
+      blocksDiv.appendChild(cell);
+    });
+
+    const diskHeader = document.createElement('div');
+    diskHeader.className = 'disk-header-col';
+    diskHeader.innerHTML = `
+      <div class="disk-icon-visual"></div>
+      <span class="disk-label">${diskLabel}</span>
+    `;
+
+    const diskBody = document.createElement('div');
+    diskBody.className = 'disk-body';
+    diskBody.appendChild(diskHeader);
+    diskBody.appendChild(blocksDiv);
+
+    const col = document.createElement('div');
+    col.className       = 'disk-column';
+    col.dataset.diskIdx = d;
+    col.appendChild(diskBody);
+    colsWrapper.appendChild(col);
+  });
+
+  detail.appendChild(colsWrapper);
+  return detail;
+}
+
+// Fade current view out, replace with detail, fade in
+function transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, viewState) {
+  const current = card.querySelector('.r10-overview');
+  if (!current) return;
+  current.classList.add('r10-fade-out');
+  setTimeout(() => {
+    const detail = buildRaid10DetailView(raid, pairIdx, elementPopups, card, animBtn, viewState);
+    detail.style.opacity = '0';
+    current.replaceWith(detail);
+    requestAnimationFrame(() => requestAnimationFrame(() => { detail.style.opacity = '1'; }));
+    viewState.mode = 'detail';
+    viewState.pair = pairIdx;
+    animBtn.textContent = '▶ simulate write (mirror)';
+  }, 180);
+}
+
+// Fade detail out, replace with fresh overview, fade in
+function transitionR10ToOverview(card, animBtn, raid, elementPopups, viewState) {
+  const current = card.querySelector('.r10-detail');
+  if (!current) return;
+  current.style.transition = 'opacity 0.18s ease';
+  current.style.opacity    = '0';
+  setTimeout(() => {
+    const overview = buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState);
+    overview.style.opacity = '0';
+    current.replaceWith(overview);
+    requestAnimationFrame(() => requestAnimationFrame(() => { overview.style.opacity = '1'; }));
+    viewState.mode = 'overview';
+    viewState.pair = null;
+    animBtn.textContent = '▶ simulate write';
+  }, 180);
+}
+
+// Overview animation: vdisk → span A + D0+D1 → span B + D2+D3
+function animateRaid10Overview(card) {
+  const btn = card.querySelector('.btn-animate');
+  btn.disabled = true;
+
+  const vdisk    = card.querySelector('.r10-vdisk');
+  const spans    = card.querySelectorAll('.r10-span');
+  const diskIcons = card.querySelectorAll('.r10-disk-mini .disk-icon-visual');
+
+  const STEP = 380;
+  const ANIM_DUR = 420;
+
+  function pulse(el) {
+    el.classList.remove('r10-anim');
+    void el.offsetWidth;   // reflow to restart animation
+    el.classList.add('r10-anim');
+  }
+
+  setTimeout(() => pulse(vdisk), 0);
+  setTimeout(() => { pulse(spans[0]); pulse(diskIcons[0]); pulse(diskIcons[1]); }, STEP);
+  setTimeout(() => { pulse(spans[1]); pulse(diskIcons[2]); pulse(diskIcons[3]); }, STEP * 2);
+
+  setTimeout(() => { btn.disabled = false; }, STEP * 2 + ANIM_DUR + 200);
+}
+
+// Detail animation: delegates to existing animateWrite (mirror = both disks same animOrder)
+function animateRaid10Detail(card) {
+  const detailRows = ['A', 'B', 'C', 'D'].map((s) => [
+    { label: s, type: 'data',   stripeGroup: s, animOrder: 0 },
+    { label: s, type: 'mirror', stripeGroup: s, animOrder: 0 },
+  ]);
+  animateWrite(card, detailRows);
 }
 
 function buildDiskColumns(raid, diskCount, rows, elementPopups) {
