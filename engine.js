@@ -359,76 +359,124 @@ function buildRaidCard(raid, elementPopups) {
 // ---------------------------------------------------------------------------
 
 function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) {
+  // ── tree data ──────────────────────────────────────────────────────────────
+  const treeData = {
+    id: 'vdisk', label: 'Virtual Disk', tech: 'Striping', kind: 'vdisk',
+    children: [
+      { id: 'spanA', label: 'SPAN A', tech: 'Mirroring', kind: 'span', pairIdx: 0,
+        children: [
+          { id: 'D0', label: 'D0', kind: 'disk' },
+          { id: 'D1', label: 'D1', kind: 'disk' },
+        ] },
+      { id: 'spanB', label: 'SPAN B', tech: 'Mirroring', kind: 'span', pairIdx: 1,
+        children: [
+          { id: 'D2', label: 'D2', kind: 'disk' },
+          { id: 'D3', label: 'D3', kind: 'disk' },
+        ] },
+    ],
+  };
+
+  // ── D3 layout ──────────────────────────────────────────────────────────────
+  const BOX_W = 130, BOX_H = 38, GAP_X = 16, GAP_Y = 60;
+
+  const root = d3.hierarchy(treeData);
+  d3.tree().nodeSize([BOX_W + GAP_X, BOX_H + GAP_Y])(root);
+
+  // Compute bounding box
+  let minX = Infinity, maxX = -Infinity;
+  root.each((n) => { if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x; });
+
+  const svgW  = maxX - minX + BOX_W + 20;
+  const svgH  = root.height * (BOX_H + GAP_Y) + BOX_H + 20;
+  const offX  = -minX + BOX_W / 2 + 10;  // translate so leftmost node gets margin
+  const offY  = BOX_H / 2 + 10;
+
+  // ── SVG helpers ────────────────────────────────────────────────────────────
+  const NS = 'http://www.w3.org/2000/svg';
+  const el  = (tag, attrs = {}) => {
+    const e = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  };
+
+  // ── Build SVG ──────────────────────────────────────────────────────────────
+  const svg = el('svg', {
+    viewBox:  `0 0 ${svgW} ${svgH}`,
+    width:    '100%',
+    overflow: 'visible',
+  });
+
+  // Links (cubic bezier, parent-bottom → child-top)
+  root.links().forEach(({ source: s, target: t }) => {
+    const sx  = s.x + offX, sy = s.y + offY + BOX_H / 2;
+    const tx  = t.x + offX, ty = t.y + offY - BOX_H / 2;
+    const mid = (sy + ty) / 2;
+    svg.appendChild(el('path', {
+      class: 'r10-link',
+      d: `M ${sx},${sy} C ${sx},${mid} ${tx},${mid} ${tx},${ty}`,
+    }));
+  });
+
+  // Nodes
+  root.each((node) => {
+    const cx = node.x + offX;
+    const cy = node.y + offY;
+    const { id, label, tech, kind, pairIdx } = node.data;
+
+    // Background rect
+    const rect = el('rect', {
+      class:  `r10-node-rect node-${kind}`,
+      x:      cx - BOX_W / 2,
+      y:      cy - BOX_H / 2,
+      width:  BOX_W,
+      height: BOX_H,
+      rx:     4,
+      'data-node-id': id,
+    });
+    svg.appendChild(rect);
+
+    // Label
+    const hasSubtitle = !!tech;
+    const labelY = hasSubtitle ? cy - 7 : cy;
+    svg.appendChild(Object.assign(el('text', {
+      class:               `r10-node-label node-${kind}`,
+      x:                   cx,
+      y:                   labelY,
+      'text-anchor':       'middle',
+      'dominant-baseline': 'middle',
+    }), { textContent: label }));
+
+    // Tech subtitle
+    if (tech) {
+      svg.appendChild(Object.assign(el('text', {
+        class:               'r10-node-tech',
+        x:                   cx,
+        y:                   cy + 8,
+        'text-anchor':       'middle',
+        'dominant-baseline': 'middle',
+      }), { textContent: tech }));
+    }
+
+    // "explore →" for span nodes
+    if (kind === 'span') {
+      const exploreEl = el('text', {
+        class:         'r10-node-explore',
+        x:             cx + BOX_W / 2 - 5,
+        y:             cy + BOX_H / 2 - 5,
+        'text-anchor': 'end',
+      });
+      exploreEl.textContent = 'explore →';
+      exploreEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, viewState);
+      });
+      svg.appendChild(exploreEl);
+    }
+  });
+
   const overview = document.createElement('div');
   overview.className = 'r10-overview';
-
-  // Level 1: virtual disk
-  const vdisk = document.createElement('div');
-  vdisk.className = 'r10-vdisk';
-  vdisk.innerHTML = `
-    <div class="r10-vdisk-name">Virtual Disk</div>
-    <div class="r10-vdisk-tech">Striping</div>
-  `;
-  overview.appendChild(vdisk);
-
-  // Connectors vdisk → spans (one vertical line centred on each span)
-  const connTop = document.createElement('div');
-  connTop.className = 'r10-conn-top';
-  connTop.innerHTML = `<div class="r10-conn-v"></div><div class="r10-conn-v"></div>`;
-  overview.appendChild(connTop);
-
-  // Level 2: span boxes
-  const spansRow = document.createElement('div');
-  spansRow.className = 'r10-spans';
-  ['A', 'B'].forEach((spanId, pairIdx) => {
-    const spanBox = document.createElement('div');
-    spanBox.className = 'r10-span';
-    spanBox.dataset.pairIdx = pairIdx;
-    spanBox.innerHTML = `
-      <div class="r10-span-name">SPAN ${spanId}</div>
-      <div class="r10-span-tech">Mirroring</div>
-    `;
-    const exploreBtn = document.createElement('span');
-    exploreBtn.className = 'r10-explore';
-    exploreBtn.textContent = 'explore →';
-    exploreBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, viewState);
-    });
-    spanBox.appendChild(exploreBtn);
-    spansRow.appendChild(spanBox);
-  });
-  overview.appendChild(spansRow);
-
-  // Connectors spans → disks (bracket shape per span, gap matches disk pair)
-  const connBottom = document.createElement('div');
-  connBottom.className = 'r10-conn-bottom';
-  connBottom.innerHTML = `
-    <div class="r10-conn-pair">
-      <div class="r10-conn-branch-l"></div><div class="r10-conn-branch-r"></div>
-    </div>
-    <div class="r10-conn-pair">
-      <div class="r10-conn-branch-l"></div><div class="r10-conn-branch-r"></div>
-    </div>
-  `;
-  overview.appendChild(connBottom);
-
-  // Level 3: physical disks — grouped in pairs to align with spans
-  const disksRow = document.createElement('div');
-  disksRow.className = 'r10-disks-row';
-  [['D0', 'D1'], ['D2', 'D3']].forEach((pair) => {
-    const pairEl = document.createElement('div');
-    pairEl.className = 'r10-disk-pair';
-    pair.forEach((label) => {
-      const diskEl = document.createElement('div');
-      diskEl.className = 'r10-disk-mini';
-      diskEl.innerHTML = `<span class="disk-label">${label}</span>`;
-      pairEl.appendChild(diskEl);
-    });
-    disksRow.appendChild(pairEl);
-  });
-  overview.appendChild(disksRow);
-
+  overview.appendChild(svg);
   return overview;
 }
 
@@ -548,24 +596,24 @@ function animateRaid10Overview(card) {
   const btn = card.querySelector('.btn-animate');
   btn.disabled = true;
 
-  const vdisk     = card.querySelector('.r10-vdisk');
-  const spans     = card.querySelectorAll('.r10-span');
-  const diskMinis = card.querySelectorAll('.r10-disk-mini');
+  const vdiskRect = card.querySelector('.r10-node-rect.node-vdisk');
+  const spanRects = card.querySelectorAll('.r10-node-rect.node-span');
+  const diskRects = card.querySelectorAll('.r10-node-rect.node-disk');
 
   const STEP = 380;
-  const ANIM_DUR = 420;
 
   function pulse(el) {
+    if (!el) return;
     el.classList.remove('r10-anim');
-    void el.offsetWidth;   // reflow to restart animation
+    void el.getBoundingClientRect();   // reflow to restart CSS animation
     el.classList.add('r10-anim');
   }
 
-  setTimeout(() => pulse(vdisk), 0);
-  setTimeout(() => { pulse(spans[0]); pulse(diskMinis[0]); pulse(diskMinis[1]); }, STEP);
-  setTimeout(() => { pulse(spans[1]); pulse(diskMinis[2]); pulse(diskMinis[3]); }, STEP * 2);
+  setTimeout(() => pulse(vdiskRect), 0);
+  setTimeout(() => { pulse(spanRects[0]); pulse(diskRects[0]); pulse(diskRects[1]); }, STEP);
+  setTimeout(() => { pulse(spanRects[1]); pulse(diskRects[2]); pulse(diskRects[3]); }, STEP * 2);
 
-  setTimeout(() => { btn.disabled = false; }, STEP * 2 + ANIM_DUR + 200);
+  setTimeout(() => { btn.disabled = false; }, STEP * 2 + 420 + 200);
 }
 
 // Detail animation: delegates to existing animateWrite (mirror = both disks same animOrder)

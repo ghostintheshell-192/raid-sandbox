@@ -914,7 +914,7 @@
     .hidden { display: none !important; }
 
     /* ------------------------------------------------------------------ */
-    /* RAID 10 — Architecture overview + detail                            */
+    /* RAID 10 — Architecture overview (D3 SVG tree) + detail              */
     /* ------------------------------------------------------------------ */
 
     .r10-overview,
@@ -927,153 +927,66 @@
       pointer-events: none;
     }
 
-    .r10-vdisk {
-      background: rgba(0, 255, 159, 0.05);
-      border: 1px solid var(--accent-border);
-      border-radius: var(--radius);
-      padding: 6px 16px;
-      text-align: center;
-      width: 100%;
+    /* SVG tree — node boxes */
+    .r10-node-rect {
+      transition: stroke var(--transition);
     }
-    .r10-vdisk-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--accent-cyan);
+    .r10-node-rect.node-vdisk {
+      fill:   rgba(0, 255, 159, 0.05);
+      stroke: rgba(0, 255, 159, 0.25);
     }
-    .r10-vdisk-tech {
-      font-size: 0.65rem;
-      color: var(--text-secondary);
-      margin-top: 1px;
+    .r10-node-rect.node-span,
+    .r10-node-rect.node-disk {
+      fill:   var(--bg-secondary);
+      stroke: #2a3540;
     }
 
-    /* Top connector: one thin vertical line centred on each span */
-    .r10-conn-top {
-      display: flex;
-      gap: 10px;   /* must match .r10-spans gap */
-      width: 100%;
-      height: 16px;
-    }
-    .r10-conn-v {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-    }
-    .r10-conn-v::before {
-      content: '';
-      width: 1px;
-      height: 100%;
-      background: #2a3540;
-    }
-
-    .r10-spans {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-    .r10-span {
-      flex: 1;
-      background: var(--bg-secondary);
-      border: 1px solid #2a3540;
-      border-radius: var(--radius);
-      padding: 8px 10px 26px;
-      position: relative;
-      transition: border-color var(--transition);
-    }
-    .r10-span:hover { border-color: var(--accent-border); }
-    .r10-span-name {
-      font-size: 0.78rem;
+    /* SVG tree — text */
+    .r10-node-label {
+      fill: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text-primary);
     }
-    .r10-span-tech {
-      font-size: 0.65rem;
-      color: var(--text-secondary);
-      margin-top: 2px;
+    .r10-node-label.node-vdisk { fill: var(--accent-cyan); }
+    .r10-node-tech {
+      fill: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
     }
-    .r10-explore {
-      position: absolute;
-      bottom: 6px;
-      right: 8px;
-      font-size: 0.65rem;
-      color: var(--accent-cyan);
-      opacity: 0.5;
+    .r10-node-explore {
+      fill: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      opacity: 0.55;
       cursor: pointer;
       transition: opacity var(--transition);
-      user-select: none;
     }
-    .r10-explore:hover { opacity: 1; }
+    .r10-node-explore:hover { opacity: 1; }
 
-    /* Bottom connector: bracket per span, branching to two disks each */
-    .r10-conn-bottom {
-      display: flex;
-      gap: 10px;   /* must match .r10-spans gap */
-      width: 100%;
-      height: 16px;
-    }
-    .r10-conn-pair {
-      flex: 1;
-      display: flex;
-      gap: 6px;    /* must match .r10-disk-pair gap */
-    }
-    .r10-conn-branch-l {
-      flex: 1;
-      border-bottom: 1px solid #2a3540;
-      border-left:   1px solid #2a3540;
-    }
-    .r10-conn-branch-r {
-      flex: 1;
-      border-bottom: 1px solid #2a3540;
-      border-right:  1px solid #2a3540;
+    /* SVG tree — connectors */
+    .r10-link {
+      fill: none;
+      stroke: #2a3540;
+      stroke-width: 1;
     }
 
-    /* Disks: grouped in pairs — aligns 1:1 with spans */
-    .r10-disks-row {
-      display: flex;
-      gap: 10px;   /* must match .r10-spans gap */
-      width: 100%;
+    /* Pulse animations on SVG rects */
+    @keyframes r10PulseVdisk {
+      0%   { stroke: rgba(0,255,159,0.25); filter: none; }
+      45%  { stroke: var(--accent-cyan); filter: drop-shadow(0 0 5px rgba(0,255,159,0.45)); }
+      100% { stroke: rgba(0,255,159,0.25); filter: none; }
     }
-    .r10-disk-pair {
-      flex: 1;
-      display: flex;
-      gap: 6px;    /* must match .r10-conn-pair gap */
+    @keyframes r10PulseNode {
+      0%   { stroke: #2a3540; filter: none; }
+      45%  { stroke: var(--accent-cyan); filter: drop-shadow(0 0 4px rgba(0,255,159,0.35)); }
+      100% { stroke: #2a3540; filter: none; }
     }
-    /* Disk minis are full boxes (same visual weight as span boxes) */
-    .r10-disk-mini {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-secondary);
-      border: 1px solid #2a3540;
-      border-radius: var(--radius);
-      padding: 8px 4px;
-      min-height: 40px;
-      transition: border-color var(--transition);
-    }
-    .r10-disk-mini .disk-label {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-    }
+    .r10-node-rect.node-vdisk.r10-anim { animation: r10PulseVdisk 0.42s ease; }
+    .r10-node-rect.node-span.r10-anim,
+    .r10-node-rect.node-disk.r10-anim  { animation: r10PulseNode  0.42s ease; }
 
-    @keyframes r10GlowBox {
-      0%   { border-color: var(--accent-border); box-shadow: none; }
-      45%  { border-color: var(--accent-cyan);   box-shadow: 0 0 8px rgba(0,255,159,0.35); }
-      100% { border-color: var(--accent-border); box-shadow: none; }
-    }
-    @keyframes r10GlowSpan {
-      0%   { border-color: #2a3540; box-shadow: none; }
-      45%  { border-color: var(--accent-cyan); box-shadow: 0 0 6px rgba(0,255,159,0.25); }
-      100% { border-color: #2a3540; box-shadow: none; }
-    }
-    @keyframes r10GlowDisk {
-      0%   { border-color: #3a4a55; box-shadow: none; }
-      45%  { border-color: var(--accent-cyan); box-shadow: 0 0 5px rgba(0,255,159,0.2); }
-      100% { border-color: #3a4a55; box-shadow: none; }
-    }
-    .r10-vdisk.r10-anim     { animation: r10GlowBox  0.42s ease; }
-    .r10-span.r10-anim      { animation: r10GlowSpan 0.42s ease; }
-    .r10-disk-mini.r10-anim { animation: r10GlowSpan 0.42s ease; }
-
+    /* Detail view */
     .r10-detail { display: flex; flex-direction: column; }
     .r10-breadcrumb {
       display: inline-flex;
@@ -1155,6 +1068,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-hierarchy@3/dist/d3-hierarchy.min.js"></script>
 <script src="engine.js"></script>
 </body>
 </html>
