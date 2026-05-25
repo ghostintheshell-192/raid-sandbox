@@ -370,10 +370,10 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   `;
   overview.appendChild(vdisk);
 
-  // Connectors vdisk → spans
+  // Connectors vdisk → spans (one vertical line centred on each span)
   const connTop = document.createElement('div');
   connTop.className = 'r10-conn-top';
-  connTop.innerHTML = `<div class="r10-conn-top-left"></div><div class="r10-conn-top-right"></div>`;
+  connTop.innerHTML = `<div class="r10-conn-v"></div><div class="r10-conn-v"></div>`;
   overview.appendChild(connTop);
 
   // Level 2: span boxes
@@ -399,30 +399,35 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   });
   overview.appendChild(spansRow);
 
-  // Connectors spans → disks
+  // Connectors spans → disks (bracket shape per span, gap matches disk pair)
   const connBottom = document.createElement('div');
   connBottom.className = 'r10-conn-bottom';
   connBottom.innerHTML = `
     <div class="r10-conn-pair">
-      <div class="r10-conn-pair-left"></div><div class="r10-conn-pair-right"></div>
+      <div class="r10-conn-branch-l"></div><div class="r10-conn-branch-r"></div>
     </div>
     <div class="r10-conn-pair">
-      <div class="r10-conn-pair-left"></div><div class="r10-conn-pair-right"></div>
+      <div class="r10-conn-branch-l"></div><div class="r10-conn-branch-r"></div>
     </div>
   `;
   overview.appendChild(connBottom);
 
-  // Level 3: physical disks
+  // Level 3: physical disks — grouped in pairs to align with spans
   const disksRow = document.createElement('div');
   disksRow.className = 'r10-disks-row';
-  ['D0', 'D1', 'D2', 'D3'].forEach((label) => {
-    const diskEl = document.createElement('div');
-    diskEl.className = 'r10-disk-mini';
-    diskEl.innerHTML = `
-      <div class="disk-icon-visual"></div>
-      <span class="disk-label">${label}</span>
-    `;
-    disksRow.appendChild(diskEl);
+  [['D0', 'D1'], ['D2', 'D3']].forEach((pair) => {
+    const pairEl = document.createElement('div');
+    pairEl.className = 'r10-disk-pair';
+    pair.forEach((label) => {
+      const diskEl = document.createElement('div');
+      diskEl.className = 'r10-disk-mini';
+      diskEl.innerHTML = `
+        <div class="disk-icon-visual"></div>
+        <span class="disk-label">${label}</span>
+      `;
+      pairEl.appendChild(diskEl);
+    });
+    disksRow.appendChild(pairEl);
   });
   overview.appendChild(disksRow);
 

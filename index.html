@@ -946,20 +946,23 @@
       margin-top: 1px;
     }
 
+    /* Top connector: one thin vertical line centred on each span */
     .r10-conn-top {
       display: flex;
+      gap: 10px;   /* must match .r10-spans gap */
       width: 100%;
-      height: 18px;
+      height: 16px;
     }
-    .r10-conn-top-left {
+    .r10-conn-v {
       flex: 1;
-      border-bottom: 1px solid #2a3540;
-      border-left:   1px solid #2a3540;
+      display: flex;
+      justify-content: center;
     }
-    .r10-conn-top-right {
-      flex: 1;
-      border-bottom: 1px solid #2a3540;
-      border-right:  1px solid #2a3540;
+    .r10-conn-v::before {
+      content: '';
+      width: 1px;
+      height: 100%;
+      background: #2a3540;
     }
 
     .r10-spans {
@@ -1000,28 +1003,39 @@
     }
     .r10-explore:hover { opacity: 1; }
 
+    /* Bottom connector: bracket per span, branching to two disks each */
     .r10-conn-bottom {
       display: flex;
-      gap: 10px;
+      gap: 10px;   /* must match .r10-spans gap */
       width: 100%;
-      height: 18px;
+      height: 16px;
     }
-    .r10-conn-pair      { flex: 1; display: flex; }
-    .r10-conn-pair-left {
+    .r10-conn-pair {
+      flex: 1;
+      display: flex;
+      gap: 6px;    /* must match .r10-disk-pair gap */
+    }
+    .r10-conn-branch-l {
       flex: 1;
       border-bottom: 1px solid #2a3540;
       border-left:   1px solid #2a3540;
     }
-    .r10-conn-pair-right {
+    .r10-conn-branch-r {
       flex: 1;
       border-bottom: 1px solid #2a3540;
       border-right:  1px solid #2a3540;
     }
 
+    /* Disks: grouped in pairs — aligns 1:1 with spans */
     .r10-disks-row {
       display: flex;
-      gap: 10px;
+      gap: 10px;   /* must match .r10-spans gap */
       width: 100%;
+    }
+    .r10-disk-pair {
+      flex: 1;
+      display: flex;
+      gap: 6px;    /* must match .r10-conn-pair gap */
     }
     .r10-disk-mini {
       flex: 1;
