@@ -331,13 +331,13 @@ function buildRaidCard(raid, elementPopups) {
   animBtn.innerHTML = '▶ simulate write';
 
   if (raid.id === 'raid10') {
-    // RAID 10: architecture overview with drill-down into spans
-    animBtn.innerHTML = '▶ simulate write (striping)';
+    // RAID 10: overview button lives inside the fisica panel; animBtn is for detail only
+    animBtn.innerHTML = '▶ simulate write (mirroring)';
+    animBtn.classList.add('hidden');
     const viewState = { mode: 'overview', pair: null };
     body.appendChild(buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState));
     animBtn.addEventListener('click', () => {
-      if (viewState.mode === 'overview') animateRaid10Overview(card);
-      else animateRaid10Detail(card);
+      if (viewState.mode === 'detail') animateRaid10Detail(card);
     });
   } else {
     const diskCount = raid.diskCount.display;
@@ -421,6 +421,13 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   vdiskBox.appendChild(groupsRow);
   controllerBox.appendChild(vdiskBox);
   fisicaPanel.appendChild(controllerBox);
+
+  // Animate button — lives inside fisica, not the shared animBtn
+  const overviewAnimBtn = document.createElement('button');
+  overviewAnimBtn.className = 'btn-animate btn-animate-r10-overview';
+  overviewAnimBtn.textContent = '▶ simulate write (striping)';
+  overviewAnimBtn.addEventListener('click', () => animateRaid10Overview(card));
+  fisicaPanel.appendChild(overviewAnimBtn);
 
   // ── Logica panel ───────────────────────────────────────────────────
   const logicaPanel = document.createElement('div');
@@ -562,6 +569,7 @@ function transitionR10ToDetail(card, animBtn, raid, pairIdx, elementPopups, view
     viewState.mode = 'detail';
     viewState.pair = pairIdx;
     animBtn.textContent = '▶ simulate write (mirroring)';
+    animBtn.classList.remove('hidden');
   }, 180);
 }
 
@@ -578,19 +586,13 @@ function transitionR10ToOverview(card, animBtn, raid, elementPopups, viewState) 
     requestAnimationFrame(() => requestAnimationFrame(() => { overview.style.opacity = '1'; }));
     viewState.mode = 'overview';
     viewState.pair = null;
-    animBtn.textContent = '▶ simulate write (striping)';
+    animBtn.classList.add('hidden');
   }, 180);
 }
 
 // Overview animation: controller → drive group → span A + disks → span B + disks
 function animateRaid10Overview(card) {
-  // If logica tab is active, switch to fisica before animating
-  const fisicaPanel = card.querySelector('.r10-fisica-panel');
-  if (fisicaPanel?.classList.contains('hidden')) {
-    card.querySelector('.r10-view-tab-btn[data-view="fisica"]')?.click();
-  }
-
-  const btn = card.querySelector('.btn-animate');
+  const btn = card.querySelector('.btn-animate-r10-overview');
   btn.disabled = true;
 
   const controllerBox = card.querySelector('.r10-controller-box');
@@ -612,7 +614,11 @@ function animateRaid10Overview(card) {
   setTimeout(() => { pulse(groupBoxes[0]); pulse(diskBoxes[0]); pulse(diskBoxes[1]); }, STEP * 2);
   setTimeout(() => { pulse(groupBoxes[1]); pulse(diskBoxes[2]); pulse(diskBoxes[3]); }, STEP * 3);
 
-  setTimeout(() => { btn.disabled = false; }, STEP * 3 + 420 + 200);
+  // Re-enable button and clean up animation classes (prevent flash on tab switch)
+  setTimeout(() => {
+    btn.disabled = false;
+    card.querySelectorAll('.r10-anim').forEach(el => el.classList.remove('r10-anim'));
+  }, STEP * 3 + 420 + 200);
 }
 
 // Detail animation: delegates to existing animateWrite (mirror = both disks same animOrder)
