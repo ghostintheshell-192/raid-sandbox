@@ -1,0 +1,24 @@
+id: balanced
+title: File Server Balance
+prompt: >
+  You have 4 disks of 2 TB each. You need a file server: good performance,
+  fault tolerance for one disk failure, and more usable space than RAID 1
+  would give you.
+availableDisks: 4
+diskSizeGB: 2000
+targetRaid: raid5
+hint: Think about which RAID uses parity to protect data without mirroring everything.
+successMessage: >
+  RAID 5 gives you 6 TB usable (4 minus 1 disks × 2 TB), protects against
+  one failure, and distributes reads across all disks.
+failureMessages:
+  raid0: >
+    RAID 0 offers no fault tolerance. One failure and all data is gone.
+  raid1: >
+    RAID 1 would give you only 2 TB usable. You would waste 6 TB on mirrors.
+  raid6: >
+    RAID 6 would work, but it sacrifices 2 disks to parity — giving you only
+    4 TB. The prompt asks for maximum usable space with single-failure tolerance.
+  raid10: >
+    RAID 10 gives you only 4 TB and requires failures in different mirror pairs.
+    RAID 5 is more space-efficient here.

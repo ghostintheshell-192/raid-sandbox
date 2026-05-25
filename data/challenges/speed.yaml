@@ -1,0 +1,25 @@
+id: speed
+title: Maximum Speed
+prompt: >
+  You have 3 disks of 1 TB each. Your goal: the maximum possible read and
+  write throughput. Data loss is acceptable — this is a temporary rendering
+  cache.
+availableDisks: 3
+diskSizeGB: 1000
+targetRaid: raid0
+hint: You need no redundancy here. Put every disk to work for speed.
+successMessage: >
+  RAID 0 stripes data across all 3 disks, tripling throughput.
+  But remember — any single disk failure destroys everything.
+failureMessages:
+  raid1: >
+    RAID 1 would mirror just 2 disks. You lose two thirds of your capacity
+    and only get the write speed of one disk.
+  raid5: >
+    RAID 5 would work, but parity calculation adds write overhead.
+    For a pure temporary cache, it is overkill.
+  raid6: >
+    RAID 6 uses 2 disks for parity. With only 3 disks total, you would get
+    the usable capacity of just one.
+  raid10: >
+    RAID 10 requires at least 4 disks.

@@ -1,0 +1,130 @@
+# intro.yaml
+# Introductory content for the Visualize tab.
+#
+# Narrative order (mirrors how one reasons about RAID):
+#   1. Storage layers  — physical (spans) then logical (virtual disks)
+#   2. Data techniques — striping, redundancy
+#   3. Key parameters  — fault tolerance, capacity, throughput, rebuild time
+
+headline: "RAID — Redundant Array of Independent Disks"
+
+summary: >
+  RAID combines multiple physical drives into a single logical unit to improve
+  performance, reliability, or both. Originally described in a 1988 UC Berkeley
+  paper, it remains a core building block of storage systems — from workstations
+  to enterprise data centers.
+
+# ---------------------------------------------------------------------------
+# STORAGE LAYERS
+# Accordion — physical layer first, then logical layer.
+# ---------------------------------------------------------------------------
+
+storageLayers:
+  label: "Storage layers"
+
+  items:
+    - id: drive-spans
+      term: "Drive spans (physical layer)"
+      short: "Multiple physical disks joined into a single contiguous address space."
+      detail: >
+        A drive span — sometimes called JBOD (Just a Bunch Of Disks) — is the
+        simplest way to combine physical disks: they are joined end-to-end so
+        that Disk 0 occupies addresses 0–N, Disk 1 occupies N+1–2N, and so on.
+        No performance optimization, no redundancy — just raw pooled capacity.
+
+        RAID builds on top of spans. All member disks of a RAID array form a
+        span; the RAID controller then applies striping, mirroring, or parity
+        across that span. If a disk fails in a plain span, the data on that
+        disk is lost — but the rest of the span remains intact.
+
+    - id: virtual-disks
+      term: "Virtual disks (logical layer)"
+      short: "The logical device the OS sees — independent of the physical layout below."
+      detail: >
+        A virtual disk is the block device that the operating system, file
+        system, or application works with. It has a contiguous address space
+        and behaves exactly like a single physical disk — regardless of how
+        many drives, spans, or RAID levels are underneath.
+
+        Crucially, a virtual disk does not have to consume the entire span.
+        A 6 TB span could host a 2 TB virtual disk and leave 4 TB available
+        for another, as long as the total stays within span capacity. This
+        decoupling of physical layout from logical addressing is the same
+        abstraction that LVM (Linux) and Storage Spaces (Windows) build on —
+        and it is what makes RAID transparent to the software running above it.
+
+# ---------------------------------------------------------------------------
+# DATA TECHNIQUES
+# Shown as side-by-side concept cards.
+# ---------------------------------------------------------------------------
+
+concepts:
+  segmentation:
+    title: "Data segmentation (striping)"
+    body: >
+      Striping splits data into fixed-size blocks and distributes them across
+      multiple disks in round-robin order. Pieces of each file land on different
+      drives simultaneously, so reads and writes proceed in parallel —
+      throughput scales with the number of disks.
+      The tradeoff: every disk is load-bearing. Lose one, lose everything.
+
+  redundancy:
+    title: "Data redundancy"
+    body: >
+      Redundancy stores enough extra information that one or more disk failures
+      can be survived without data loss. Two main techniques:
+      <strong>mirroring</strong> (keeping identical copies on separate disks) and
+      <strong>parity</strong> (storing a mathematical summary that allows
+      reconstruction of any missing piece). Redundancy always costs capacity —
+      the question is how much.
+
+# ---------------------------------------------------------------------------
+# KEY PARAMETERS
+# Accordion — metrics that characterise any RAID configuration.
+# ---------------------------------------------------------------------------
+
+parameters:
+  label: "Key parameters"
+
+  items:
+    - id: fault-tolerance
+      term: "Fault tolerance"
+      short: "How many disks can fail simultaneously without data loss."
+      detail: >
+        A fault tolerance of 0 means any single failure is fatal.
+        A value of 1 means one disk can die and the array keeps working in a
+        degraded state until the failed disk is replaced and rebuilt.
+        Higher values (RAID 6) allow two simultaneous failures.
+        Note: fault tolerance says nothing about rebuild time — during a rebuild,
+        a degraded array is both slower and more vulnerable.
+
+    - id: usable-capacity
+      term: "Usable capacity"
+      short: "How much of the total raw disk space is available for data."
+      detail: >
+        Raw capacity is the sum of all disk sizes. Usable capacity subtracts
+        whatever is reserved for parity or mirroring. RAID 0 uses 100%.
+        RAID 1 and RAID 10 use 50% — half the space is mirrors.
+        RAID 5 loses the equivalent of one disk to distributed parity.
+        RAID 6 loses two. The right choice depends on your budget and risk tolerance.
+
+    - id: throughput
+      term: "Read / write throughput"
+      short: "How fast the array can read and write, relative to a single disk."
+      detail: >
+        Arrays that stripe data across N disks can read and write in parallel,
+        multiplying effective bandwidth roughly by N. Mirrored arrays can serve
+        reads from either copy, sometimes doubling read speed. Writes are more
+        nuanced: mirroring requires writing to all copies; parity requires a
+        read-modify-write cycle that adds overhead.
+
+    - id: rebuild-time
+      term: "Rebuild time"
+      short: "How long it takes to restore full redundancy after replacing a failed disk."
+      detail: >
+        When a disk fails and is replaced, the controller reconstructs its content
+        from the surviving disks. This process is I/O-intensive and can take hours
+        or days for large drives. During rebuild, the array is degraded: slower,
+        and in the case of RAID 5, one more failure causes total data loss.
+        This is why RAID 6 is recommended for arrays with many or large disks —
+        the probability of a second failure during a multi-hour rebuild is not negligible.

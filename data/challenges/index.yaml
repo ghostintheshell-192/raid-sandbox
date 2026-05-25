@@ -1,0 +1,23 @@
+# challenges/index.yaml
+# Ordered list of build challenges.
+# Only id and title are loaded upfront — full content is fetched lazily
+# when the player navigates to that challenge.
+#
+# To add a new challenge:
+#   1. Add an entry here (id + title)
+#   2. Create the matching <id>.yaml file in this directory
+
+- id: speed
+  title: Maximum Speed
+
+- id: mirror
+  title: Critical Data, Simple Setup
+
+- id: balanced
+  title: File Server Balance
+
+- id: resilient
+  title: Large Archive, High Risk
+
+- id: database
+  title: High-Traffic Database

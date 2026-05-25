@@ -1,0 +1,24 @@
+id: resilient
+title: Large Archive, High Risk
+prompt: >
+  You have 6 disks of 4 TB each. You are building a long-term archive.
+  With 6 drives, the probability of a second disk failing during a rebuild
+  is real — you need to survive two simultaneous failures.
+availableDisks: 6
+diskSizeGB: 4000
+targetRaid: raid6
+hint: You need two independent parity calculations per stripe.
+successMessage: >
+  RAID 6 uses 2 disks for double parity, giving you 16 TB usable and
+  protection against any two simultaneous disk failures.
+failureMessages:
+  raid0: >
+    RAID 0 has zero redundancy. A complete disaster for an archive.
+  raid1: >
+    RAID 1 with 6 disks gives only 4 TB usable and still only mirrors in pairs.
+  raid5: >
+    RAID 5 only tolerates one failure. With 6 disks, a second failure during
+    rebuild — which takes hours — would be catastrophic.
+  raid10: >
+    RAID 10 tolerates multiple failures but only if they are in different mirror
+    pairs. It uses 50% of space (12 TB), less efficient than RAID 6 here.

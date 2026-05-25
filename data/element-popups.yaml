@@ -1,0 +1,65 @@
+# element-popups.yaml
+# Contextual explanations for clickable elements in the Visualize view.
+# Each key matches a popupKey assigned to blocks/badges in engine.js.
+#
+# To add a new clickable explanation:
+#   1. Add an entry here
+#   2. Use the key as popupKey in the relevant block or badge in engine.js
+
+block-data-stripe:
+  title: Data Block (Stripe)
+  body: >
+    This block holds a chunk of actual data. In RAID 0/5/6/10, data is
+    split into stripes distributed across multiple disks — which is why
+    reads and writes can happen on several disks in parallel.
+
+block-mirror:
+  title: Mirror Block
+  body: >
+    This block is an exact byte-for-byte copy of its partner on the other
+    disk. If one disk fails, this copy takes over instantly. No data is
+    lost, no reconstruction needed.
+
+block-parity:
+  title: Parity Block (P)
+  body: >
+    Parity is computed by XOR-ing all data blocks in the stripe. If any
+    one disk fails, its content can be reconstructed by XOR-ing all
+    remaining blocks — including this one. The P parity rotates across
+    disks to avoid bottlenecks.
+
+block-parity2:
+  title: Second Parity Block (Q)
+  body: >
+    The Q parity uses a different algorithm (typically Galois Field
+    arithmetic) to provide a second, independent error-correction path.
+    Together with P, it allows reconstruction even when two disks fail
+    simultaneously.
+
+fault-tolerance:
+  title: Fault Tolerance
+  body: >
+    The number of disks that can fail simultaneously without data loss.
+    A value of 0 means any failure is fatal. A value of 1 means the system
+    survives one failure but is degraded until a replacement disk is rebuilt.
+
+capacity-formula:
+  title: Usable Capacity
+  body: >
+    Not all disk space is available for data — some is used for parity or
+    mirrors. RAID 0 uses 100%, RAID 1 and 10 use 50%, RAID 5 loses one
+    disk worth of space, RAID 6 loses two.
+
+read-perf:
+  title: Read Performance
+  body: >
+    RAID levels that stripe data across multiple disks can read several
+    blocks in parallel, multiplying effective throughput. Mirrored arrays
+    can also distribute reads between mirror partners.
+
+write-perf:
+  title: Write Performance
+  body: >
+    Writes are slower when parity must be calculated and written alongside
+    data (RAID 5/6). Mirroring (RAID 1/10) requires writing identical data
+    twice but avoids parity overhead.

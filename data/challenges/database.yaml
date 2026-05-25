@@ -1,0 +1,25 @@
+id: database
+title: High-Traffic Database
+prompt: >
+  You have 4 disks of 1 TB each. You are hosting a busy database: you need
+  maximum read/write performance AND fault tolerance. Cost is not a concern.
+availableDisks: 4
+diskSizeGB: 1000
+targetRaid: raid10
+hint: Think about combining two RAID concepts — one for speed, one for redundancy.
+successMessage: >
+  RAID 10 stripes across two mirrored pairs, giving you top performance and
+  the ability to survive one (or more) disk failures as long as a full mirror
+  pair is not lost simultaneously.
+failureMessages:
+  raid0: >
+    RAID 0 is fast but has no fault tolerance — unacceptable for a production
+    database.
+  raid1: >
+    RAID 1 only mirrors 2 disks. With 4 disks you would need to stripe them too.
+  raid5: >
+    RAID 5 adds parity overhead on writes, which hurts database performance.
+    For write-heavy workloads, RAID 10 wins.
+  raid6: >
+    RAID 6 is even slower on writes due to double parity. Not ideal for a
+    high-traffic database.

@@ -1,0 +1,379 @@
+# raid-types.yaml
+# All RAID level definitions: metadata, general popup, and contextual popups.
+#
+# contextualPopups: shown when clicking a specific stat badge on *this* RAID card.
+# They contain the formula applied to the display disk count, not a generic definition.
+#
+# Layout logic (how blocks are arranged visually) lives in RAID_LAYOUTS in engine.js.
+
+raid0:
+  id: raid0
+  name: RAID 0
+  tagline: "Striping — speed above all"
+  diskCount:
+    min: 2
+    display: 3
+  faultTolerance: 0
+  capacityFormula: "N × disk size"
+  readPerf: 3
+  writePerf: 3
+
+  popup:
+    title: "RAID 0 — Striping"
+    summary: >
+      Data is split into blocks (stripes) and distributed across all disks
+      in round-robin order. Every disk holds a piece of every file.
+    detail: >
+      Because reads and writes are parallelized across all disks, RAID 0
+      offers the best raw performance of any RAID level. The catch: there
+      is zero redundancy. Losing any single disk means losing all data —
+      the other disks become useless without their missing stripes.
+    useCases:
+      - Video editing scratch disks
+      - Temporary rendering caches
+      - Test environments where data loss is acceptable
+    notFor:
+      - Anything you cannot afford to lose
+      - Production databases
+      - Long-term storage
+
+  contextualPopups:
+    fault-tolerance:
+      title: "RAID 0 — Fault Tolerance"
+      body: |
+        RAID 0 has zero fault tolerance. Every disk is required to reconstruct
+        any piece of data. If disk 0 fails, blocks A1, B1, C1… are gone — and
+        without them, none of the stripes can be reassembled.
+
+        Result: one failure = complete, unrecoverable data loss.
+        Never use RAID 0 for anything you cannot afford to lose.
+    capacity:
+      title: "RAID 0 — Usable Capacity"
+      body: |
+        $$\text{Usable} = N \times \text{disk size}$$
+
+        With 3 disks of 1 TB each:
+        $$(3) \times 1\,\text{TB} = 3\,\text{TB} \quad (100\%)$$
+
+        RAID 0 is the only level that wastes nothing on redundancy.
+        All space goes to data — which is exactly why it has no fault tolerance.
+    read-perf:
+      title: "RAID 0 — Read Performance"
+      body: |
+        With $N$ disks, the controller issues $N$ simultaneous read operations.
+        Sequential read throughput scales roughly as $N \times$ a single disk.
+
+        Random reads also benefit because different blocks land on different disks,
+        reducing seek contention.
+    write-perf:
+      title: "RAID 0 — Write Performance"
+      body: |
+        Writes are striped across all disks in parallel — no parity to compute,
+        no mirrors to update. Write throughput approaches $N \times$ a single disk.
+
+        This is why RAID 0 is used for scratch disks and caches: pure speed.
+
+# ---------------------------------------------------------------------------
+
+raid1:
+  id: raid1
+  name: RAID 1
+  tagline: "Mirroring — exact copies"
+  diskCount:
+    min: 2
+    display: 2
+  faultTolerance: 1
+  capacityFormula: "disk size (50% efficiency)"
+  readPerf: 2
+  writePerf: 1
+
+  popup:
+    title: "RAID 1 — Mirroring"
+    summary: >
+      Every disk is an exact, real-time copy of its mirror. If one fails,
+      the other keeps everything running as if nothing happened.
+    detail: >
+      RAID 1 is the simplest form of redundancy. Writes go to both disks
+      simultaneously (slightly slower), but reads can be served from either
+      disk (sometimes faster). The cost: you only get the capacity of one
+      disk, no matter how many mirrors you have.
+    useCases:
+      - Operating system drives
+      - Small databases needing high availability
+      - Any data too critical to lose
+    notFor:
+      - Large storage pools (50% waste)
+      - High-throughput write workloads
+
+  contextualPopups:
+    fault-tolerance:
+      title: "RAID 1 — Fault Tolerance"
+      body: |
+        RAID 1 tolerates the loss of 1 disk — specifically, either disk in the
+        mirror pair. The surviving disk contains a complete, identical copy of
+        all data and takes over immediately with no reconstruction needed.
+
+        The array runs in degraded mode until the failed disk is replaced and
+        the mirror is rebuilt by copying every block from the surviving disk.
+        Rebuild time is proportional to disk size.
+    capacity:
+      title: "RAID 1 — Usable Capacity"
+      body: |
+        $$\text{Usable} = 1 \times \text{disk size} \quad \text{(regardless of disk count)}$$
+
+        With 2 disks of 500 GB each:
+        $$(1) \times 500\,\text{GB} = 500\,\text{GB} \quad (50\%)$$
+
+        The second disk is an exact copy — its space is entirely spent on
+        redundancy. This 50% efficiency is the main drawback of RAID 1,
+        and why larger arrays often prefer RAID 5 or 6.
+    read-perf:
+      title: "RAID 1 — Read Performance"
+      body: |
+        Reads can be served from either disk. A smart controller splits read
+        requests between the two mirrors, effectively doubling sequential
+        read throughput compared to a single disk.
+
+        In practice, gains depend on the controller — some serve all reads from
+        one disk and use the other only as a hot standby.
+    write-perf:
+      title: "RAID 1 — Write Performance"
+      body: |
+        Every write must be committed to both disks before it is acknowledged.
+        Write speed is therefore limited by the slower of the two disks.
+
+        No parity overhead, but the double-write means RAID 1 is the slowest
+        configuration for write-heavy workloads.
+
+# ---------------------------------------------------------------------------
+
+raid5:
+  id: raid5
+  name: RAID 5
+  tagline: "Striping + distributed parity"
+  diskCount:
+    min: 3
+    display: 4
+  faultTolerance: 1
+  capacityFormula: "(N − 1) × disk size"
+  readPerf: 3
+  writePerf: 2
+
+  popup:
+    title: "RAID 5 — Striping with Parity"
+    summary: >
+      Data is striped across all disks, with one parity block per stripe
+      distributed rotating across the disks. Any single disk can fail and
+      all data can be reconstructed.
+    detail: >
+      Parity is calculated by XOR-ing all data blocks in a stripe. The
+      result is stored on a different disk each stripe, avoiding any single
+      disk becoming a bottleneck. If a disk dies, the RAID controller
+      reconstructs its data from the surviving disks using reverse XOR.
+      During rebuild, performance degrades significantly.
+    useCases:
+      - File servers and NAS
+      - General-purpose storage
+      - The classic "balanced" RAID choice
+    notFor:
+      - Environments needing tolerance for 2+ simultaneous disk failures
+      - Very write-heavy workloads (parity calculation overhead)
+
+  contextualPopups:
+    fault-tolerance:
+      title: "RAID 5 — Fault Tolerance"
+      body: |
+        RAID 5 tolerates the loss of exactly 1 disk — any disk.
+
+        Each stripe stores one parity block computed as the XOR of all data
+        blocks in that stripe. If disk $D$ fails, the missing block for each
+        stripe is reconstructed as:
+        $$\text{block}_D = b_0 \oplus b_1 \oplus \cdots \oplus P$$
+
+        Critical caveat: during rebuild the array is fully degraded. A second
+        failure before rebuild completes means permanent data loss. With 4 TB+
+        drives, rebuild can take 12–24 hours.
+    capacity:
+      title: "RAID 5 — Usable Capacity"
+      body: |
+        $$\text{Usable} = (N - 1) \times \text{disk size}$$
+
+        With 4 disks of 2 TB each:
+        $$(4 - 1) \times 2\,\text{TB} = 6\,\text{TB} \quad (75\%)$$
+
+        One disk's worth of space is spent on parity — but distributed across
+        all drives, not wasted on a single dedicated parity disk.
+    read-perf:
+      title: "RAID 5 — Read Performance"
+      body: |
+        During normal operation, parity blocks are not read. With $N = 4$ disks,
+        up to $N - 1 = 3$ simultaneous reads are possible per stripe.
+
+        Under degraded mode (one disk failed), every read requires reading all
+        $N - 1$ surviving disks and XOR-ing them — a significant penalty.
+    write-perf:
+      title: "RAID 5 — Write Performance"
+      body: |
+        Every write triggers a read-modify-write cycle:
+        $$2\,\text{reads} + 2\,\text{writes per logical write}$$
+
+        The controller reads old data and old parity, computes new parity, then
+        writes both new data and new parity. This "RAID 5 write penalty" makes
+        it a poor choice for write-intensive workloads like databases.
+
+# ---------------------------------------------------------------------------
+
+raid6:
+  id: raid6
+  name: RAID 6
+  tagline: "Double parity — survives 2 failures"
+  diskCount:
+    min: 4
+    display: 5
+  faultTolerance: 2
+  capacityFormula: "(N − 2) × disk size"
+  readPerf: 2
+  writePerf: 1
+
+  popup:
+    title: "RAID 6 — Double Parity"
+    summary: >
+      Like RAID 5, but with two independent parity blocks per stripe.
+      The system survives the simultaneous loss of any two disks.
+    detail: >
+      RAID 6 uses two different parity algorithms — P (XOR, same as RAID 5)
+      and Q (based on Galois Field arithmetic, a form of error-correcting
+      polynomial math). Together they provide two independent equations per
+      stripe, so any two unknowns can be solved. Writes are slower, but the
+      extra protection is essential for large arrays where rebuild risk is real.
+    useCases:
+      - Large disk arrays (more disks = higher chance of failure during rebuild)
+      - Archival and backup storage
+      - Any environment where data loss is catastrophic
+    notFor:
+      - Small arrays (the 2-disk overhead hurts efficiency)
+      - High-frequency write workloads
+
+  contextualPopups:
+    fault-tolerance:
+      title: "RAID 6 — Fault Tolerance"
+      body: |
+        RAID 6 tolerates the simultaneous loss of any 2 disks.
+
+        Two independent parity blocks are stored per stripe. $P$ is XOR
+        (same as RAID 5). $Q$ uses a second algorithm (Galois Field arithmetic),
+        producing a different linear combination of the data blocks. Together
+        they form a system of two equations solvable for any two unknowns:
+        $$P = b_0 \oplus b_1 \oplus \cdots \oplus b_{n-1}$$
+        $$Q = g^0 b_0 \oplus g^1 b_1 \oplus \cdots \oplus g^{n-1} b_{n-1}$$
+
+        Practical implication: a disk failing during a rebuild — the most
+        dangerous window in RAID 5 — does not cause data loss in RAID 6.
+    capacity:
+      title: "RAID 6 — Usable Capacity"
+      body: |
+        $$\text{Usable} = (N - 2) \times \text{disk size}$$
+
+        With 5 disks of 4 TB each:
+        $$(5 - 2) \times 4\,\text{TB} = 12\,\text{TB} \quad (60\%)$$
+
+        Two disks' worth of space is reserved for P and Q parity blocks,
+        distributed across all disks. One extra disk of overhead compared
+        to RAID 5, in exchange for tolerating a second simultaneous failure.
+    read-perf:
+      title: "RAID 6 — Read Performance"
+      body: |
+        Only data blocks are read during normal operation. With $N = 5$ disks
+        and 2 parity blocks per stripe, $N - 2 = 3$ data blocks are read
+        in parallel per stripe.
+
+        Under degraded mode, reconstruction is more expensive than RAID 5
+        because $Q$ parity involves Galois Field arithmetic, not just XOR.
+    write-perf:
+      title: "RAID 6 — Write Performance"
+      body: |
+        RAID 6 extends the RAID 5 write penalty to both parity blocks:
+        $$3\,\text{reads} + 3\,\text{writes per logical write}$$
+
+        The controller reads old data, old $P$, and old $Q$, then computes
+        and writes new data, new $P$, and new $Q$. This is the heaviest write
+        overhead of any standard RAID level.
+
+# ---------------------------------------------------------------------------
+
+raid10:
+  id: raid10
+  name: RAID 10
+  tagline: "Mirror + Stripe — fast and resilient"
+  diskCount:
+    min: 4
+    display: 4
+  faultTolerance: 1
+  capacityFormula: "N/2 × disk size (50% efficiency)"
+  readPerf: 3
+  writePerf: 3
+
+  popup:
+    title: "RAID 10 — Mirror + Stripe"
+    summary: >
+      Disks are first paired into mirrors (RAID 1), then those mirrors are
+      striped together (RAID 0). You get both redundancy and speed.
+    detail: >
+      RAID 10 is RAID 1+0: mirroring layered under striping. Each stripe is
+      written to a mirrored pair, so reads can be parallelized across all
+      disks and writes are protected. The system guarantees survival of at
+      least one disk failure; it can survive more, as long as no mirror pair
+      loses both disks simultaneously.
+    useCases:
+      - High-traffic databases
+      - Virtualization hosts
+      - Any workload needing both performance and fault tolerance
+    notFor:
+      - Large storage on a budget (50% efficiency)
+      - Scenarios requiring tolerance for 2+ failures in the same mirror pair
+
+  contextualPopups:
+    fault-tolerance:
+      title: "RAID 10 — Fault Tolerance"
+      body: |
+        RAID 10 guarantees survival of at least 1 disk failure.
+        With 4 disks in 2 mirror pairs $(0 \leftrightarrow 1,\ 2 \leftrightarrow 3)$,
+        it can survive up to 2 failures — but only if they fall in
+        different mirror pairs.
+
+        If both disks in the same pair fail simultaneously, that pair's data
+        is lost. This is the key difference from RAID 6, which tolerates
+        any two failures unconditionally. In practice, both disks of a pair
+        failing together is rare.
+    capacity:
+      title: "RAID 10 — Usable Capacity"
+      body: |
+        $$\text{Usable} = \frac{N}{2} \times \text{disk size}$$
+
+        With 4 disks of 1 TB each:
+        $$\frac{4}{2} \times 1\,\text{TB} = 2\,\text{TB} \quad (50\%)$$
+
+        Every byte is written twice — once to the primary disk, once to its
+        mirror. The 50% efficiency is identical to RAID 1, but striping
+        across mirror pairs recovers the performance that RAID 1 alone
+        cannot provide.
+    read-perf:
+      title: "RAID 10 — Read Performance"
+      body: |
+        All $N$ disks serve reads simultaneously — each mirror pair serves
+        its stripe from either member, while both pairs serve different
+        stripes in parallel.
+
+        The result is full $N \times$ read throughput with RAID 1 redundancy
+        underneath: the best read performance of any redundant RAID level.
+    write-perf:
+      title: "RAID 10 — Write Performance"
+      body: |
+        Each write goes to both disks in a mirror pair — no parity computation,
+        no read-modify-write cycle. Different stripes are written to different
+        pairs in parallel:
+        $$2\,\text{writes per logical write} \quad \text{(mirror only, no read)}$$
+
+        Write throughput is limited only by the mirror requirement, not by
+        parity overhead — making RAID 10 the preferred choice for write-heavy
+        workloads where budget allows.
