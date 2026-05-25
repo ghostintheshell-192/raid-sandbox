@@ -362,15 +362,28 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   const overview = document.createElement('div');
   overview.className = 'r10-overview';
 
-  // Outer box: Virtual Disk (contains everything)
+  // ── Mini-tab bar ───────────────────────────────────────────────────
+  const tabBar = document.createElement('div');
+  tabBar.className = 'r10-view-tabs';
+
+  // ── Fisica panel ───────────────────────────────────────────────────
+  const fisicaPanel = document.createElement('div');
+  fisicaPanel.className = 'r10-fisica-panel';
+
+  // Controller (outermost)
+  const controllerBox = document.createElement('div');
+  controllerBox.className = 'r10-controller-box';
+  controllerBox.innerHTML = `<div class="r10-controller-label">Controller</div>`;
+
+  // Drive Group (was "Virtual Disk" — now correctly named for physical view)
   const vdiskBox = document.createElement('div');
   vdiskBox.className = 'r10-vdisk-box';
   vdiskBox.innerHTML = `
-    <div class="r10-vdisk-label">Virtual Disk</div>
-    <div class="r10-vdisk-tech">Striping</div>
+    <div class="r10-vdisk-label">Drive Group</div>
+    <div class="r10-vdisk-tech">Physical disk allocation</div>
   `;
 
-  // Middle row: one box per mirror group
+  // Span boxes
   const groupsRow = document.createElement('div');
   groupsRow.className = 'r10-groups-row';
 
@@ -379,10 +392,9 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
     groupBox.className = 'r10-group-box';
     groupBox.innerHTML = `
       <div class="r10-group-label">SPAN ${spanId}</div>
-      <div class="r10-group-tech">Mirroring</div>
+      <div class="r10-group-tech">RAID 1 · Mirroring</div>
     `;
 
-    // Inner disk boxes
     const disksInner = document.createElement('div');
     disksInner.className = 'r10-disks-inner';
     const offset = pairIdx * 2;
@@ -394,7 +406,6 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
     }
     groupBox.appendChild(disksInner);
 
-    // Explore link
     const exploreEl = document.createElement('span');
     exploreEl.className = 'r10-explore';
     exploreEl.textContent = 'explore →';
@@ -408,7 +419,55 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   });
 
   vdiskBox.appendChild(groupsRow);
-  overview.appendChild(vdiskBox);
+  controllerBox.appendChild(vdiskBox);
+  fisicaPanel.appendChild(controllerBox);
+
+  // ── Logica panel ───────────────────────────────────────────────────
+  const logicaPanel = document.createElement('div');
+  logicaPanel.className = 'r10-logica-panel hidden';
+
+  const logicalVdisk = document.createElement('div');
+  logicalVdisk.className = 'r10-logical-vdisk';
+  logicalVdisk.innerHTML = `
+    <div class="r10-logical-vdisk-label">Virtual Disk</div>
+    <div class="r10-logical-vdisk-tech">RAID 0 · Striping across spans</div>
+  `;
+
+  const logicalSpansRow = document.createElement('div');
+  logicalSpansRow.className = 'r10-logical-spans-row';
+
+  ['A', 'B'].forEach((spanId) => {
+    const spanUnit = document.createElement('div');
+    spanUnit.className = 'r10-logical-span-unit';
+    spanUnit.innerHTML = `
+      <div class="r10-logical-span-label">SPAN ${spanId}</div>
+      <div class="r10-logical-span-detail">2× RAID 1</div>
+      <div class="r10-logical-span-opaque">internal structure hidden</div>
+    `;
+    logicalSpansRow.appendChild(spanUnit);
+  });
+
+  logicalVdisk.appendChild(logicalSpansRow);
+  logicaPanel.appendChild(logicalVdisk);
+
+  // ── Tab wiring ─────────────────────────────────────────────────────
+  [{ id: 'fisica', label: 'Fisica' }, { id: 'logica', label: 'Logica' }].forEach(({ id, label }) => {
+    const btn = document.createElement('button');
+    btn.className = 'r10-view-tab-btn' + (id === 'fisica' ? ' active' : '');
+    btn.dataset.view = id;
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      tabBar.querySelectorAll('.r10-view-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fisicaPanel.classList.toggle('hidden', id !== 'fisica');
+      logicaPanel.classList.toggle('hidden', id !== 'logica');
+    });
+    tabBar.appendChild(btn);
+  });
+
+  overview.appendChild(tabBar);
+  overview.appendChild(fisicaPanel);
+  overview.appendChild(logicaPanel);
   return overview;
 }
 
@@ -523,14 +582,21 @@ function transitionR10ToOverview(card, animBtn, raid, elementPopups, viewState) 
   }, 180);
 }
 
-// Overview animation: outer vdisk → group A + disks → group B + disks
+// Overview animation: controller → drive group → span A + disks → span B + disks
 function animateRaid10Overview(card) {
+  // If logica tab is active, switch to fisica before animating
+  const fisicaPanel = card.querySelector('.r10-fisica-panel');
+  if (fisicaPanel?.classList.contains('hidden')) {
+    card.querySelector('.r10-view-tab-btn[data-view="fisica"]')?.click();
+  }
+
   const btn = card.querySelector('.btn-animate');
   btn.disabled = true;
 
-  const vdiskBox  = card.querySelector('.r10-vdisk-box');
-  const groupBoxes = card.querySelectorAll('.r10-group-box');
-  const diskBoxes  = card.querySelectorAll('.r10-disk-box');
+  const controllerBox = card.querySelector('.r10-controller-box');
+  const vdiskBox      = card.querySelector('.r10-vdisk-box');
+  const groupBoxes    = card.querySelectorAll('.r10-group-box');
+  const diskBoxes     = card.querySelectorAll('.r10-disk-box');
 
   const STEP = 380;
 
@@ -541,11 +607,12 @@ function animateRaid10Overview(card) {
     el.classList.add('r10-anim');
   }
 
-  setTimeout(() => pulse(vdiskBox), 0);
-  setTimeout(() => { pulse(groupBoxes[0]); pulse(diskBoxes[0]); pulse(diskBoxes[1]); }, STEP);
-  setTimeout(() => { pulse(groupBoxes[1]); pulse(diskBoxes[2]); pulse(diskBoxes[3]); }, STEP * 2);
+  setTimeout(() => pulse(controllerBox), 0);
+  setTimeout(() => pulse(vdiskBox), STEP);
+  setTimeout(() => { pulse(groupBoxes[0]); pulse(diskBoxes[0]); pulse(diskBoxes[1]); }, STEP * 2);
+  setTimeout(() => { pulse(groupBoxes[1]); pulse(diskBoxes[2]); pulse(diskBoxes[3]); }, STEP * 3);
 
-  setTimeout(() => { btn.disabled = false; }, STEP * 2 + 420 + 200);
+  setTimeout(() => { btn.disabled = false; }, STEP * 3 + 420 + 200);
 }
 
 // Detail animation: delegates to existing animateWrite (mirror = both disks same animOrder)
