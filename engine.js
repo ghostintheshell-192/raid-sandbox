@@ -377,7 +377,7 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
   };
 
   // ── D3 layout ──────────────────────────────────────────────────────────────
-  const BOX_W = 130, BOX_H = 38, GAP_X = 16, GAP_Y = 60;
+  const BOX_W = 130, BOX_H = 36, GAP_X = 12, GAP_Y = 32;
 
   const root = d3.hierarchy(treeData);
   d3.tree().nodeSize([BOX_W + GAP_X, BOX_H + GAP_Y])(root);
@@ -413,7 +413,7 @@ function buildRaid10OverviewView(raid, elementPopups, card, animBtn, viewState) 
     const mid = (sy + ty) / 2;
     svg.appendChild(el('path', {
       class: 'r10-link',
-      d: `M ${sx},${sy} C ${sx},${mid} ${tx},${mid} ${tx},${ty}`,
+      d: `M ${sx},${sy} V ${mid} H ${tx} V ${ty}`,
     }));
   });
 
