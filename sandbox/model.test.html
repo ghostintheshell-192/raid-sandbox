@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID Sandbox — model self-test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    /* Dev-tool styling only — not part of the game UI. */
+    body { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; }
+    .summary { font-size: 1.1rem; margin: 1rem 0; padding: .6rem 1rem; border-radius: 6px; }
+    .summary.ok   { background: rgba(40,180,99,.15);  border: 1px solid rgba(40,180,99,.5); }
+    .summary.bad  { background: rgba(231,76,60,.15);   border: 1px solid rgba(231,76,60,.5); }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid rgba(128,128,128,.25); }
+    th { font-weight: 600; opacity: .8; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .verdict { font-weight: 600; }
+    .pass { color: #2ecc71; }
+    .fail { color: #e74c3c; }
+    .tree { opacity: .7; }
+    .flag { font-size: .75rem; opacity: .7; }
+  </style>
+</head>
+<body>
+  <h1>RAID Sandbox — <span>model self-test</span></h1>
+  <p>Headless verification of <code>model.js</code> (Phase 1). Each row builds a tree, runs
+     <code>RaidModel.analyze()</code>, and compares against the expected level / capacity / fault tolerance.</p>
+  <div id="summary" class="summary"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>case</th><th>tree</th>
+        <th>level</th><th class="num">capacity</th><th class="num">FT</th>
+        <th>verdict</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script src="model.js"></script>
+  <script>
+    const { disk, array, analyze } = RaidModel;
+    const d = (id) => disk(id, 100, 'SATA');   // uniform 100 GB disks
+
+    // array(segmentation, redundancy, members)
+    // --- Test cases: [name, tree, expected{level, capacityGB, faultTolerance}] ---
+    const CASES = [
+      ['RAID 0',  array('striped', 'none', [d(0), d(1), d(2)]),
+        { level: 'RAID 0', capacityGB: 300, faultTolerance: 0 }],
+
+      ['RAID 1',  array('linear', 'mirror', [d(0), d(1)]),
+        { level: 'RAID 1', capacityGB: 100, faultTolerance: 1 }],
+
+      ['RAID 1 (3-way)', array('linear', 'mirror', [d(0), d(1), d(2)]),
+        { level: 'RAID 1', capacityGB: 100, faultTolerance: 2 }],
+
+      ['RAID 5',  array('striped', 'parity1', [d(0), d(1), d(2)]),
+        { level: 'RAID 5', capacityGB: 200, faultTolerance: 1 }],
+
+      ['RAID 6',  array('striped', 'parity2', [d(0), d(1), d(2), d(3)]),
+        { level: 'RAID 6', capacityGB: 200, faultTolerance: 2 }],
+
+      ['RAID 10', array('striped', 'none', [
+                    array('linear', 'mirror', [d(0), d(1)]),
+                    array('linear', 'mirror', [d(2), d(3)]),
+                  ]),
+        { level: 'RAID 10', capacityGB: 200, faultTolerance: 1 }],
+
+      ['RAID 50', array('striped', 'none', [
+                    array('striped', 'parity1', [d(0), d(1), d(2)]),
+                    array('striped', 'parity1', [d(3), d(4), d(5)]),
+                  ]),
+        { level: 'RAID 50', capacityGB: 400, faultTolerance: 1 }],
+
+      ['RAID 60', array('striped', 'none', [
+                    array('striped', 'parity2', [d(0), d(1), d(2), d(3)]),
+                    array('striped', 'parity2', [d(4), d(5), d(6), d(7)]),
+                  ]),
+        { level: 'RAID 60', capacityGB: 400, faultTolerance: 2 }],
+
+      ['JBOD / spanned', array('linear', 'none', [d(0), d(1)]),
+        { level: 'JBOD / spanned', capacityGB: 200, faultTolerance: 0 }],
+
+      ['non-standard: stripe over stripes', array('striped', 'none', [
+                    array('striped', 'none', [d(0), d(1)]),
+                    array('striped', 'none', [d(2), d(3)]),
+                  ]),
+        { level: null, capacityGB: 400, faultTolerance: 0 }],
+
+      ['non-standard: mixed spans', array('striped', 'none', [
+                    array('linear', 'mirror', [d(0), d(1)]),
+                    array('striped', 'parity1', [d(2), d(3), d(4)]),
+                  ]),
+        { level: null, capacityGB: 300, faultTolerance: 1 }],
+
+      ['non-standard: striped mirror (1E)', array('striped', 'mirror', [d(0), d(1), d(2)]),
+        { level: null, capacityGB: 100, faultTolerance: 2 }],
+    ];
+
+    // --- Render a compact one-line description of a tree ---
+    function describe(node) {
+      if (node.kind === 'disk') return 'D';
+      const seg = node.segmentation === 'striped' ? 'S' : 'L';
+      const red = node.redundancy === 'none' ? '' : '·' + node.redundancy;
+      return `${seg}${red}[${node.members.map(describe).join(',')}]`;
+    }
+
+    // --- Run ---
+    let passed = 0;
+    const rowsEl = document.getElementById('rows');
+
+    CASES.forEach(([name, tree, exp]) => {
+      const got = analyze(tree);
+      const ok =
+        got.level === exp.level &&
+        got.capacityGB === exp.capacityGB &&
+        got.faultTolerance === exp.faultTolerance;
+      if (ok) passed++;
+
+      const levelCell = got.level
+        ? got.level
+        : `<em>${got.flag || 'unrecognized'}</em><br><span class="flag">${got.reason}</span>`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${name}</td>
+        <td class="tree"><code>${describe(tree)}</code></td>
+        <td>${levelCell}</td>
+        <td class="num">${got.capacityGB} GB</td>
+        <td class="num">${got.faultTolerance}</td>
+        <td class="verdict ${ok ? 'pass' : 'fail'}">${ok ? '✓ PASS' : '✗ FAIL'}</td>
+      `;
+      if (!ok) {
+        tr.querySelector('td:nth-child(6)').innerHTML +=
+          `<br><span class="flag">expected ${exp.level ?? 'null'} · ${exp.capacityGB}GB · FT ${exp.faultTolerance}</span>`;
+      }
+      rowsEl.appendChild(tr);
+    });
+
+    const summary = document.getElementById('summary');
+    const all = CASES.length;
+    summary.textContent = `${passed} / ${all} passed`;
+    summary.className = 'summary ' + (passed === all ? 'ok' : 'bad');
+  </script>
+</body>
+</html>
