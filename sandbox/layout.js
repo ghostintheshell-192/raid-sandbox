@@ -10,21 +10,29 @@
  * `.personal/segment-allocation-rule-left-symmetric.md`. The DOM animator
  * (Phase 2b) plays this grid; it does not compute it.
  *
- * Graceful degradation (spec §5b): an unknown algorithm name falls back to the
- * layout's default and reports it via `degraded`; the build never breaks.
+ * Algorithm fallback (spec §5b): an unknown algorithm name falls back to the
+ * layout's default and reports it via `fallback`; the build never breaks. This is
+ * an internal safety net (e.g. a resource file naming a not-yet-implemented
+ * primitive) — NOT a user-facing choice, and NOT the runtime "degraded" disk state.
  *
  *   computePlacement(arrayNode, { stripes }) →
- *     { columns, stripes:[[cell,...],...], algorithm, degraded } | { unsupported, reason }
- *   cell = { role:'data'|'P'|'Q'|'mirror', seg:int|null }
+ *     { columns, stripes:[[cell,...],...], algorithm, fallback } | { unsupported, reason }
+ *   cell = { role:'data'|'P'|'Q'|'mirror', seg:int|null, seq:int }
+ *
+ * `seq` is the animation order: cells sharing a seq light up together; ascending
+ * seq = write order. Parity gets a LATER seq than the data in its stripe, because
+ * parity is computed from that data — the animation shows this causality.
  */
 
 (function (root) {
   'use strict';
 
-  // Known parity placement algorithms (descriptors). Others degrade to the default.
+  // Known parity placement algorithms. Only VERIFIED algorithms belong here —
+  // each must reproduce an authoritative golden table in the test suite before
+  // being added. Unknown names fall back to the default (see resolveParityAlgo).
+  // (right-symmetric etc. are intentionally absent until verified.)
   const PARITY_ALGORITHMS = {
-    'left-symmetric':  { rotate: 'left'  },
-    'right-symmetric': { rotate: 'right' },
+    'left-symmetric': { rotate: 'left' },
   };
   const DEFAULT_PARITY_ALGO = 'left-symmetric';
 
@@ -36,83 +44,109 @@
    */
   function computePlacement(node, opts = {}) {
     if (!node || node.kind !== 'array' || !node.members.every((m) => m && m.kind === 'disk')) {
-      return { unsupported: true, reason: 'placement is defined for leaf arrays only (v1)' };
+      return unsupported('placement is defined for leaf arrays only (v1)');
     }
     const n = node.members.length;
     const { segmentation, redundancy } = node;
 
+    // A topology can be valid-but-unnamed (model.js still gives it capacity / fault
+    // tolerance) yet have NO defined data placement. We refuse to invent one: only
+    // the combinations with a real, golden-verifiable layout are animated; the rest
+    // return `unsupported` so the UI says so honestly instead of faking a grid.
+
     if (redundancy === 'none')
-      return segmentation === 'striped'
-        ? placeStripe(n, opts.stripes ?? 4)
-        : placeLinear(n, opts.stripes ?? 4);
-    if (redundancy === 'mirror')  return placeMirror(n, opts.stripes ?? 4);
-    if (redundancy === 'parity1') return placeParity(n, 1, node.algorithm, opts.stripes ?? n);
-    if (redundancy === 'parity2') return placeParity(n, 2, node.algorithm, opts.stripes ?? n);
+      return segmentation === 'striped' ? placeStripe(n, opts.stripes ?? 4)
+                                        : placeLinear(n, opts.stripes ?? 4);
+
+    if (redundancy === 'mirror') {
+      // Defined only for linear (n-way copies). striped+mirror = RAID 1E
+      // interleaved — no verified placement yet.
+      if (segmentation !== 'linear')
+        return unsupported(`"${segmentation} + mirror" has no defined placement yet (RAID 1E family — not implemented)`);
+      return placeMirror(n, opts.stripes ?? 4);
+    }
+
+    if (redundancy === 'parity1' || redundancy === 'parity2') {
+      // Parity protects a stripe; without striping there is no stripe to compute it over.
+      if (segmentation !== 'striped')
+        return unsupported(`"${segmentation} + ${redundancy}" has no defined data placement (parity requires striping)`);
+      return placeParity(n, redundancy === 'parity1' ? 1 : 2, node.algorithm, opts.stripes ?? n);
+    }
   }
+
+  const unsupported = (reason) => ({ unsupported: true, reason });
 
   // --- striped + none → RAID 0: segments fill left→right, row by row ----------
   function placeStripe(n, rows) {
-    let seg = 0;
+    let seg = 0, t = 0;
     const stripes = Array.from({ length: rows }, () =>
-      Array.from({ length: n }, () => ({ role: 'data', seg: seg++ }))
+      Array.from({ length: n }, () => ({ role: 'data', seg: seg++, seq: t++ }))
     );
-    return { columns: n, stripes, algorithm: null, degraded: false };
+    return { columns: n, stripes, algorithm: null, fallback: null };
   }
 
   // --- linear + none → JBOD/concat: one segment per disk, filled in order -----
   function placeLinear(n, rows) {
     // Concatenation has no stripes; we show one row where disk d holds segment d.
-    const stripes = [Array.from({ length: n }, (_, d) => ({ role: 'data', seg: d }))];
-    return { columns: n, stripes, algorithm: null, degraded: false };
+    const stripes = [Array.from({ length: n }, (_, d) => ({ role: 'data', seg: d, seq: d }))];
+    return { columns: n, stripes, algorithm: null, fallback: null };
   }
 
   // --- mirror → RAID 1: each segment copied to every disk ---------------------
   function placeMirror(n, rows) {
+    // A segment and its copies are written together → same seq per stripe.
     const stripes = Array.from({ length: rows }, (_, s) =>
-      Array.from({ length: n }, (_, d) => ({ role: d === 0 ? 'data' : 'mirror', seg: s }))
+      Array.from({ length: n }, (_, d) => ({ role: d === 0 ? 'data' : 'mirror', seg: s, seq: s }))
     );
-    return { columns: n, stripes, algorithm: null, degraded: false };
+    return { columns: n, stripes, algorithm: null, fallback: null };
   }
 
   // --- parity1/parity2 → RAID 5/6, rotating parity (left-symmetric default) ----
   function placeParity(n, pCount, requested, rows) {
-    const { algoName, degraded } = resolveParityAlgo(requested);
+    const { algoName, fallback } = resolveParityAlgo(requested);
     const rotate = PARITY_ALGORITHMS[algoName].rotate;
 
-    let seg = 0;
+    let seg = 0, t = 0;
     const stripes = [];
     for (let s = 0; s < rows; s++) {
       // Parity anchor: left-symmetric starts rightmost and moves left each stripe.
       const anchor = rotate === 'left' ? mod(n - 1 - s, n) : mod(s, n);
       const row = Array.from({ length: n }, () => null);
 
-      // Place parity blocks: P at anchor, Q just "inward" (left) of P.
+      // Place parity blocks: P at anchor, Q just "inward" (left) of P. seq set later.
       const parityAt = {};
+      const parityCells = [];
       for (let k = 0; k < pCount; k++) {
         const pos = mod(anchor - k, n);
         parityAt[pos] = k === 0 ? 'P' : 'Q';
-        row[pos] = { role: parityAt[pos], seg: null };
+        row[pos] = { role: parityAt[pos], seg: null, seq: null };
+        parityCells.push(row[pos]);
       }
 
       // Data fills from immediately right of the anchor, wrapping, skipping parity.
       let disk = mod(anchor + 1, n);
       const dataNeeded = n - pCount;
       for (let placed = 0, steps = 0; placed < dataNeeded && steps < n * 2; steps++) {
-        if (!(disk in parityAt)) { row[disk] = { role: 'data', seg: seg++ }; placed++; }
+        if (!(disk in parityAt)) { row[disk] = { role: 'data', seg: seg++, seq: t++ }; placed++; }
         disk = mod(disk + 1, n);
       }
+
+      // Parity lights AFTER the stripe's data (it is computed from it).
+      parityCells.forEach((c) => { c.seq = t; });
+      t++;
+
       stripes.push(row);
     }
-    return { columns: n, stripes, algorithm: algoName, degraded };
+    return { columns: n, stripes, algorithm: algoName, fallback };
   }
 
   function resolveParityAlgo(requested) {
-    if (requested && PARITY_ALGORITHMS[requested]) return { algoName: requested, degraded: false };
+    if (requested && PARITY_ALGORITHMS[requested]) return { algoName: requested, fallback: null };
     if (requested) {
       return { algoName: DEFAULT_PARITY_ALGO,
-               degraded: `unknown algorithm "${requested}" → fell back to ${DEFAULT_PARITY_ALGO}` };
+               fallback: `unknown algorithm "${requested}" → using ${DEFAULT_PARITY_ALGO}` };
     }
-    return { algoName: DEFAULT_PARITY_ALGO, degraded: false };
+    return { algoName: DEFAULT_PARITY_ALGO, fallback: null };
   }
 
   const Layout = { computePlacement, PARITY_ALGORITHMS };

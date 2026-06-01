@@ -25,7 +25,7 @@
     .r-mirror { background: rgba(155,89,182,.75);  color: #fff; }
     .r-P      { background: rgba(46,204,113,.85);   color: #fff; }
     .r-Q      { background: rgba(241,196,15,.9);    color: #222; }
-    .degraded { color: #e67e22; font-size: .78rem; }
+    .fallback { color: #e67e22; font-size: .78rem; }
   </style>
 </head>
 <body>
@@ -48,7 +48,7 @@
       ['RAID 5 — left-symmetric (default)', arr('striped', 'parity1', 4), {}],
       ['RAID 6 — left-symmetric (P + Q)',   arr('striped', 'parity2', 4), {}],
       ['RAID 6 — 6 disks (full rotation + segment wrap)', arr('striped', 'parity2', 6), {}],
-      ['RAID 5 — unknown algo → degrades', arr('striped', 'parity1', 4, 'made-up'), {}],
+      ['RAID 5 — unknown algo → falls back (safety net)', arr('striped', 'parity1', 4, 'made-up'), {}],
     ];
 
     const container = document.getElementById('cases');
@@ -60,7 +60,7 @@
 
       const meta = `algorithm: ${p.algorithm ?? '—'} · ${p.columns} disks · ${p.stripes.length} stripes`;
       wrap.innerHTML = `<h3>${title}</h3><p class="meta">${meta}</p>` +
-        (p.degraded ? `<p class="degraded">⚠ ${p.degraded}</p>` : '');
+        (p.fallback ? `<p class="fallback">⚠ ${p.fallback}</p>` : '');
 
       const grid = document.createElement('div');
       grid.className = 'grid';

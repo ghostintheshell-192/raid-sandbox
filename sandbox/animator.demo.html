@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID Sandbox — engine demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    /* Demo-page styling. The .sb-* rules below are the candidate game styles
+       (will migrate into styles.css when the canvas lands). */
+    body { padding: 2rem; max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin: 1.2rem 0; }
+    .controls label { display: flex; flex-direction: column; font-size: .75rem; opacity: .75; gap: .25rem; }
+    .controls select, .controls input {
+      font-family: inherit; font-size: .9rem; padding: .35rem .5rem; border-radius: 6px;
+      background: rgba(128,128,128,.12); border: 1px solid rgba(128,128,128,.3); color: inherit;
+    }
+    .btn-go {
+      font-family: inherit; font-size: .9rem; font-weight: 600; cursor: pointer;
+      padding: .5rem .9rem; border-radius: 6px; border: 1px solid rgba(52,152,219,.6);
+      background: rgba(52,152,219,.2); color: inherit;
+    }
+    .btn-go:disabled { opacity: .5; cursor: default; }
+
+    .analysis { font-size: 1rem; margin: 1rem 0; padding: .7rem 1rem; border-radius: 8px;
+      background: rgba(128,128,128,.1); border: 1px solid rgba(128,128,128,.25); }
+    .analysis .level { font-size: 1.2rem; font-weight: 600; }
+    .analysis .nonstd { color: #e67e22; }
+    .analysis .stat { opacity: .8; margin-left: 1.2rem; }
+    .fallback { color: #e67e22; font-size: .82rem; margin-top: .4rem; }
+
+    /* --- candidate game styles for the placement grid --- */
+    .sb-grid { gap: 4px; max-width: 640px; margin-top: 1rem; }
+    .sb-head { text-align: center; font-size: .78rem; opacity: .6; padding-bottom: .2rem; }
+    .sb-cell {
+      height: 2.4rem; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; font-weight: 600; font-size: .85rem; color: #fff;
+      transition: opacity .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .role-data   { background: rgba(52,152,219,.85); }
+    .role-mirror { background: rgba(155,89,182,.78); }
+    .role-P      { background: rgba(46,204,113,.85); }
+    .role-Q      { background: rgba(241,196,15,.92); color: #222; }
+    .sb-cell.dim   { opacity: .1; }
+    .sb-cell.flash { transform: scale(1.12); box-shadow: 0 0 14px rgba(255,255,255,.5); }
+    .sb-cell.lit   { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>RAID Sandbox — <span>engine demo</span></h1>
+  <p>Three engines wired together: pick a configuration → <code>model.js</code> derives what it is,
+     <code>layout.js</code> computes the placement, <code>render.js</code> animates the write.</p>
+
+  <div class="controls">
+    <label>segmentation
+      <select id="seg"><option value="striped">striped</option><option value="linear">linear</option></select>
+    </label>
+    <label>redundancy
+      <select id="red">
+        <option value="none">none</option>
+        <option value="mirror">mirror</option>
+        <option value="parity1" selected>parity1</option>
+        <option value="parity2">parity2</option>
+      </select>
+    </label>
+    <label>disks
+      <input id="disks" type="number" min="2" max="8" value="4">
+    </label>
+    <label>algorithm (parity)
+      <select id="algo">
+        <option value="left-symmetric">left-symmetric</option>
+        <!-- only verified algorithms are offered; more added once golden-tested -->
+      </select>
+    </label>
+    <button class="btn-go" id="go">▶ simulate write</button>
+  </div>
+
+  <div class="analysis" id="analysis"></div>
+  <div id="viz"></div>
+
+  <script src="model.js"></script>
+  <script src="layout.js"></script>
+  <script src="render.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function buildNode() {
+      const seg   = $('seg').value;
+      const red   = $('red').value;
+      const disks = Math.max(2, Math.min(8, parseInt($('disks').value) || 2));
+      const algo  = (red === 'parity1' || red === 'parity2') ? $('algo').value : null;
+      const members = Array.from({ length: disks }, (_, i) => RaidModel.disk(i, 100, 'SATA'));
+      return RaidModel.array(seg, red, members, algo);
+    }
+
+    function refresh(animateIt) {
+      const node = buildNode();
+      const a = RaidModel.analyze(node);
+
+      const levelHtml = a.level
+        ? `<span class="level">${a.level}</span>`
+        : `<span class="level nonstd">non-standard config</span> <span class="stat">${a.reason}</span>`;
+      $('analysis').innerHTML =
+        `${levelHtml}` +
+        `<span class="stat">capacity: <strong>${a.capacityGB} GB</strong></span>` +
+        `<span class="stat">fault tolerance: <strong>${a.faultTolerance} disk(s)</strong></span>` +
+        `<span class="stat">disks: <strong>${a.diskCount}</strong></span>`;
+
+      const placement = RaidLayout.computePlacement(node, {});
+      if (placement.fallback) {
+        $('analysis').innerHTML += `<div class="fallback">⚠ ${placement.fallback}</div>`;
+      }
+
+      // No placement to play → grey out the animate button.
+      $('go').disabled = Boolean(placement.unsupported);
+
+      if (animateIt && !placement.unsupported) {
+        const btn = $('go'); btn.disabled = true;
+        RaidRender.animate($('viz'), placement, { stepMs: 320 }).then(() => { btn.disabled = false; });
+      } else {
+        RaidRender.renderGrid($('viz'), placement);
+      }
+    }
+
+    ['seg', 'red', 'disks', 'algo'].forEach((id) =>
+      $(id).addEventListener('change', () => refresh(false)));
+    $('go').addEventListener('click', () => refresh(true));
+
+    refresh(false);   // initial static render
+  </script>
+</body>
+</html>
