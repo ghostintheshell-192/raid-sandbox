@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID Sandbox — placement self-test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    /* Dev-tool styling only — not the game UI. */
+    body { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; }
+    .case { margin: 1.6rem 0; }
+    .case h3 { font-size: 1rem; margin: 0 0 .1rem; }
+    .case .meta { font-size: .8rem; opacity: .7; margin: 0 0 .5rem; }
+    .grid { display: inline-grid; gap: 3px; }
+    .gcell, .ghead {
+      width: 3.2rem; height: 2rem; display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; font-size: .8rem; font-weight: 600;
+    }
+    .ghead { background: transparent; opacity: .6; font-weight: 400; height: 1.4rem; }
+    .grow-label { display: flex; align-items: center; font-size: .75rem; opacity: .6; padding-right: .4rem; }
+    .r-data   { background: rgba(52,152,219,.85);  color: #fff; }
+    .r-mirror { background: rgba(155,89,182,.75);  color: #fff; }
+    .r-P      { background: rgba(46,204,113,.85);   color: #fff; }
+    .r-Q      { background: rgba(241,196,15,.9);    color: #222; }
+    .degraded { color: #e67e22; font-size: .78rem; }
+  </style>
+</head>
+<body>
+  <h1>RAID Sandbox — <span>placement self-test</span></h1>
+  <p>Visual output of <code>layout.js</code> (Phase 2a). The RAID 5 / 6 grids should show
+     left-symmetric parity rotating from the rightmost disk leftward, with data wrapping after it —
+     i.e. they reproduce the tables in <code>.personal/segment-allocation-rule-left-symmetric.md</code>.</p>
+  <div id="cases"></div>
+
+  <script src="layout.js"></script>
+  <script>
+    const disk = (i) => ({ kind: 'disk', id: i, sizeGB: 100 });
+    const arr  = (seg, red, n, algo = null) =>
+      ({ kind: 'array', segmentation: seg, redundancy: red,
+         members: Array.from({ length: n }, (_, i) => disk(i)), algorithm: algo });
+
+    const CASES = [
+      ['RAID 0 — striped, no redundancy', arr('striped', 'none', 4), { stripes: 3 }],
+      ['RAID 1 — mirror',                 arr('linear', 'mirror', 2), { stripes: 3 }],
+      ['RAID 5 — left-symmetric (default)', arr('striped', 'parity1', 4), {}],
+      ['RAID 6 — left-symmetric (P + Q)',   arr('striped', 'parity2', 4), {}],
+      ['RAID 6 — 6 disks (full rotation + segment wrap)', arr('striped', 'parity2', 6), {}],
+      ['RAID 5 — unknown algo → degrades', arr('striped', 'parity1', 4, 'made-up'), {}],
+    ];
+
+    const container = document.getElementById('cases');
+
+    CASES.forEach(([title, node, opts]) => {
+      const p = RaidLayout.computePlacement(node, opts);
+      const wrap = document.createElement('div');
+      wrap.className = 'case';
+
+      const meta = `algorithm: ${p.algorithm ?? '—'} · ${p.columns} disks · ${p.stripes.length} stripes`;
+      wrap.innerHTML = `<h3>${title}</h3><p class="meta">${meta}</p>` +
+        (p.degraded ? `<p class="degraded">⚠ ${p.degraded}</p>` : '');
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.style.gridTemplateColumns = `auto repeat(${p.columns}, auto)`;
+
+      // header row
+      grid.appendChild(cellEl('grow-label', ''));
+      for (let d = 0; d < p.columns; d++) grid.appendChild(cellEl('ghead', `D${d}`));
+
+      // stripe rows
+      p.stripes.forEach((row, s) => {
+        grid.appendChild(cellEl('grow-label', `stripe ${s}`));
+        row.forEach((c) => {
+          const label = c.role === 'data' ? c.seg
+                      : c.role === 'mirror' ? `c${c.seg}`
+                      : c.role; // P or Q
+          grid.appendChild(cellEl(`gcell r-${c.role}`, label));
+        });
+      });
+
+      wrap.appendChild(grid);
+      container.appendChild(wrap);
+    });
+
+    function cellEl(cls, text) {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    }
+  </script>
+</body>
+</html>
