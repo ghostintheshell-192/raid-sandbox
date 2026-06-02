@@ -315,21 +315,25 @@
       const engineId   = engineNode ? engineNode.id : null;
 
       // Engine must be connected on its output side to know its position.
-      const engineOutputEdge = engineId
-        ? Array.from(cpEdges.values()).find(e => e.fromNode === engineId)
-        : null;
+      // Check ALL outgoing edges from the engine (with 'any' ports the user
+      // could have made multiple connections; we look for the most specific one).
+      const engineOutEdges = engineId
+        ? Array.from(cpEdges.values()).filter(e => e.fromNode === engineId)
+        : [];
 
-      if (!engineOutputEdge)
+      if (engineOutEdges.length === 0)
         return { raidType: null, os: null, complete: false,
                  issue: 'Connect the RAID Engine output — its position determines the RAID type.' };
 
-      // Engine output → OS directly: engine runs as software in/after CPU → Software RAID.
-      // Engine output → CPU or PCIe: engine sits between hardware and OS → Fake RAID.
-      // Engine output → OS (via cpu node): also Software RAID.
-      const nextComp = cpNodes.get(engineOutputEdge.toNode)?.componentId;
-      const isAfterCpu = nextComp === 'os-linux' || nextComp === 'os-windows';
-      const raidType = isAfterCpu ? 'software' : 'fake';
-      return { raidType, os, complete: true, issue: null };
+      // Software RAID: engine output goes directly to an OS node.
+      const connectsToOS = engineOutEdges.some(e => {
+        const c = cpNodes.get(e.toNode)?.componentId;
+        return c === 'os-linux' || c === 'os-windows';
+      });
+      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null };
+
+      // Fake RAID: engine output goes to CPU or PCIe (engine sits before CPU).
+      return { raidType: 'fake', os, complete: true, issue: null };
     }
 
     if (!hasHBA && !components.has('controller-hw'))
