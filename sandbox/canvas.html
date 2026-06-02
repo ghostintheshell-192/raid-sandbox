@@ -17,8 +17,11 @@
       height: 100vh;
       overflow: hidden;
     }
-    .sbc-sidebar  { grid-row: 2 / 4; }
-    .sbc-results  { grid-row: 2 / 4; }
+    .sbc-header       { grid-column: 1 / -1; grid-row: 1; }
+    .sbc-sidebar      { grid-column: 1;      grid-row: 2 / 4; }
+    .sbc-canvas       { grid-column: 2;      grid-row: 2; }
+    .sbc-control-path { grid-column: 2;      grid-row: 3; }
+    .sbc-results      { grid-column: 3;      grid-row: 2 / 4; }
     .sbc-header {
       grid-column: 1 / -1;
       padding: .7rem 1.2rem;
@@ -138,10 +141,10 @@
 
     /* ---- control path panel ---- */
     .sbc-control-path {
-      grid-column: 2;
-      border-top: 1px solid rgba(128,128,128,.2);
-      padding: .7rem 1.2rem;
-      background: rgba(0,0,0,.06);
+      border-top: 2px solid rgba(128,128,128,.15);
+      padding: .9rem 1.2rem;
+      min-height: 80px;
+      background: rgba(0,0,0,.08);
       display: flex; align-items: center; gap: 0; overflow-x: auto;
     }
     .cp-label {
