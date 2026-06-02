@@ -1,0 +1,36 @@
+id: raid10-near
+name: RAID10 Near
+appliesTo: [mirror]          # top-level striped+none over mirror spans
+default: true                # default RAID10 layout in mdadm
+status: pending              # layout.js implementation pending (nested arrays)
+
+description: >
+  Each chunk is stored near_copies times on adjacent physical disks within the
+  same stripe. With near=2 and 4 disks: disk 0 and disk 1 hold the same data
+  (span 0), disk 2 and disk 3 hold the next chunk (span 1).
+
+pros:
+  - Simplest layout; predictable behaviour
+  - Single-disk failure always recoverable (mirror partner is adjacent)
+
+cons:
+  - Read performance limited: both copies are in the same stripe position,
+    so read parallelism across stripes is not exploited
+
+placement:
+  copies: near              # copies co-located in the same stripe
+  shift: 0                  # no inter-stripe shift for copies
+
+reference:
+  disks: 4
+  near: 2
+  table:
+    - stripe: 0
+      layout: [c0-orig, c0-copy, c1-orig, c1-copy]
+    - stripe: 1
+      layout: [c2-orig, c2-copy, c3-orig, c3-copy]
+
+source: >
+  Linux kernel drivers/md/raid10.c header comment (near_copies / far_copies
+  description). Cross-referenced with .personal/distribuzione-segmenti-algoritmi.md.
+verificationStatus: reference-only

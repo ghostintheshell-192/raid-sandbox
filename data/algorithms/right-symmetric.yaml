@@ -1,0 +1,42 @@
+id: right-symmetric
+name: Right Symmetric
+convention: Linux md
+linuxConstant: ALGORITHM_RIGHT_SYMMETRIC
+linuxValue: 3
+appliesTo: [parity1, parity2]
+default: false
+
+description: >
+  Parity rotates rightward (starts at disk 0, moves one position right each
+  stripe). Data fills from immediately right of parity, wrapping around.
+  Mirror image of left-symmetric: same sequential-read locality, opposite
+  parity rotation direction.
+
+pros:
+  - Good sequential-read locality (same as left-symmetric)
+  - Balanced parity load
+
+cons:
+  - Functionally equivalent to left-symmetric for most workloads;
+    no dominant use case over it
+
+placement:
+  parity:
+    start: leftmost       # stripe 0: P on disk 0
+    rotate: right
+  data:
+    start: right-of-parity
+    direction: right
+    wrap: true
+
+raid6:
+  Q: left-of-P
+
+note: >
+  Right-symmetric is the exact left-right mirror of left-symmetric:
+  for n disks, the parity column in stripe s is (n-1 - parity_col_of_LS_in_stripe_s).
+
+source: >
+  Linux kernel drivers/md/raid5.h (ALGORITHM_RIGHT_SYMMETRIC = 3,
+  comment: "Rotating Parity 0 with Data Continuation") and raid5_compute_sector().
+verificationStatus: verified

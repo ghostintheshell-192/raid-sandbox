@@ -1,0 +1,35 @@
+id: left-symmetric
+name: Left Symmetric
+convention: DDF
+linuxConstant: ALGORITHM_ROTATING_N_CONTINUE
+appliesTo: [parity1, parity2]
+default: true
+
+description: >
+  Parity rotates leftward (starts at the rightmost disk, moves one position left
+  each stripe). Data fills from immediately right of parity, wrapping around —
+  so consecutive data segments span all disks evenly.
+
+pros:
+  - Best sequential-read continuity (data segments rotate across all disks)
+  - Balanced parity load across all disks
+  - Default for hardware RAID controllers (SNIA DDF standard)
+
+cons: []
+
+placement:
+  parity:
+    start: rightmost      # stripe 0: P on disk n-1
+    rotate: left          # each stripe: P moves one position left (mod n)
+  data:
+    start: right-of-parity  # first data segment goes immediately right of P
+    direction: right
+    wrap: true              # wraps around at the right edge
+
+raid6:
+  Q: left-of-P            # Q placed immediately left of P (DDF convention)
+                           # Note: mdadm default (ALGORITHM_LEFT_SYMMETRIC) places
+                           # Q to the RIGHT of P. Both are valid; this file follows DDF.
+
+source: .personal/segment-allocation-rule-left-symmetric.md
+verificationStatus: verified

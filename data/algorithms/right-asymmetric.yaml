@@ -1,0 +1,36 @@
+id: right-asymmetric
+name: Right Asymmetric
+convention: Linux md
+linuxConstant: ALGORITHM_RIGHT_ASYMMETRIC
+linuxValue: 1
+appliesTo: [parity1, parity2]
+default: false
+
+description: >
+  Parity rotates rightward (starts at disk 0, moves one position right each
+  stripe). Data fills from disk 0 each stripe, going right and skipping the
+  parity position.
+
+pros:
+  - Balanced parity load
+
+cons:
+  - Worse sequential-read locality than right-symmetric
+  - Less commonly used
+
+placement:
+  parity:
+    start: leftmost       # stripe 0: P on disk 0
+    rotate: right         # each stripe: P moves one position right (mod n)
+  data:
+    start: disk-0
+    direction: right
+    wrap: false
+
+raid6:
+  Q: left-of-P
+
+source: >
+  Linux kernel drivers/md/raid5.h (ALGORITHM_RIGHT_ASYMMETRIC = 1,
+  comment: "Rotating Parity 0 with Data Restart") and raid5_compute_sector().
+verificationStatus: verified

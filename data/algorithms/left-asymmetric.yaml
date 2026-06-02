@@ -1,0 +1,37 @@
+id: left-asymmetric
+name: Left Asymmetric
+convention: Linux md
+linuxConstant: ALGORITHM_LEFT_ASYMMETRIC
+linuxValue: 0
+appliesTo: [parity1, parity2]
+default: false
+
+description: >
+  Parity rotates leftward (same direction as left-symmetric). Data fills from
+  disk 0 each stripe, going right and skipping the parity position — it does
+  NOT continue from where the previous stripe left off.
+
+pros:
+  - Balanced parity load (same parity rotation as left-symmetric)
+
+cons:
+  - Worse sequential-read locality than left-symmetric: data segments do not
+    rotate smoothly across all disks
+
+placement:
+  parity:
+    start: rightmost      # stripe 0: P on disk n-1
+    rotate: left
+  data:
+    start: disk-0         # always restarts from disk 0 each stripe
+    direction: right
+    wrap: false           # no wrap — fills left-to-right skipping parity
+
+raid6:
+  Q: left-of-P            # Q placed immediately left of P (DDF convention)
+
+source: >
+  Linux kernel drivers/md/raid5.h (ALGORITHM_LEFT_ASYMMETRIC = 0,
+  comment: "Rotating Parity N with Data Restart") and raid5_compute_sector()
+  in drivers/md/raid5.c.
+verificationStatus: verified

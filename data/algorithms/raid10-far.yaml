@@ -1,0 +1,47 @@
+id: raid10-far
+name: RAID10 Far
+appliesTo: [mirror]
+default: false
+status: pending
+
+description: >
+  The array is split into two equal sections on each disk. The first section
+  holds the original copies in pure RAID0 order. The second section (physically
+  far away on disk) holds the mirror copies, shifted right by near_copies
+  positions — so each chunk's copy lives on a different disk than the original.
+
+pros:
+  - Read throughput close to RAID0: the original copies are laid out as pure
+    striping, so a sequential read can use all disks simultaneously
+  - Each chunk and its copy are guaranteed to be on different disks
+
+cons:
+  - Write performance degraded: both sections must be written (larger seek)
+  - Rebuild is more complex
+  - Less commonly documented; limited adoption outside specific workloads
+
+placement:
+  copies: far
+  shift: 1                  # copy section starts shifted right by near_copies=1
+  sections: 2               # disk divided into 2 equal sections
+
+reference:
+  disks: 4
+  far: 2
+  kernel-example: "A B C D / D A B C"   # from raid10.c comment
+  table-originals:
+    - stripe: 0
+      layout: [c0-orig, c1-orig, c2-orig, c3-orig]
+    - stripe: 1
+      layout: [c4-orig, c5-orig, c6-orig, c7-orig]
+  table-copies:             # placed ~N/2 stripes later on disk
+    - stripe: N
+      layout: [c3-copy, c0-copy, c1-copy, c2-copy]
+    - stripe: N+1
+      layout: [c7-copy, c4-copy, c5-copy, c6-copy]
+
+source: >
+  Linux kernel drivers/md/raid10.c header comment (far_copies description +
+  example). Cross-referenced with .personal/distribuzione-segmenti-algoritmi.md
+  and linux-raid mailing list thread (narkive FbzmXfqy).
+verificationStatus: reference-only

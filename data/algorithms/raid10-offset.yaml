@@ -1,0 +1,45 @@
+id: raid10-offset
+name: RAID10 Offset
+appliesTo: [mirror]
+default: false
+status: pending
+
+description: >
+  A compromise between near and far. Copies are placed in immediately adjacent
+  stripes rather than a distant section. Consecutive stripe pairs form a unit:
+  the even stripe holds originals, the odd stripe holds copies shifted right
+  by near_copies=1. Each chunk and its copy are on different disks and in
+  adjacent stripe positions.
+
+pros:
+  - Better write performance than far (no large seek for copies)
+  - Copies on different disks (unlike near)
+  - Moderate read parallelism
+
+cons:
+  - Adjacent two-disk failures can cause data loss (e.g. D0+D1 in the example)
+  - No dominant use case; neither the simplicity of near nor the read throughput of far
+
+placement:
+  copies: offset            # far_offset=true in Linux md
+  shift: 1                  # copy stripe shifted right by near_copies=1
+  stripeUnit: 2             # even stripes = originals, odd stripes = copies
+
+reference:
+  disks: 4
+  offset: 2
+  table:
+    - stripe: 0
+      layout: [c0-orig, c1-orig, c2-orig, c3-orig]
+    - stripe: 1
+      layout: [c3-copy, c0-copy, c1-copy, c2-copy]   # shifted +1
+    - stripe: 2
+      layout: [c4-orig, c5-orig, c6-orig, c7-orig]
+    - stripe: 3
+      layout: [c7-copy, c4-copy, c5-copy, c6-copy]
+
+source: >
+  Linux kernel drivers/md/raid10.c (far_offset=true description). Cross-referenced
+  with linux-raid mailing list thread (narkive FbzmXfqy) and
+  .personal/distribuzione-segmenti-algoritmi.md.
+verificationStatus: reference-only
