@@ -39,13 +39,15 @@
                                { id:'out', dir:'out', type:'pcie-raid' }],
                        badge: 'Engine' },
     'os-linux':      { label: 'Linux',          icon: '🐧', color: 'rgba(46,204,113,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' }] },
+                       ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
     'os-windows':    { label: 'Windows',        icon: '🪟', color: 'rgba(46,204,113,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' }] },
+                       ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
+    'pcie':          { label: 'PCIe bus',       icon: '🔷', color: 'rgba(241,196,15,.5)',
+                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
+                               { id:'out', dir:'out', type:'pcie' }] },
     'cpu':           { label: 'CPU',            icon: '⚡', color: 'rgba(241,196,15,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'pcie' },
-                               { id:'out', dir:'out', type:'pcie' }],
-                       fixed: true },
+                               { id:'out', dir:'out', type:'cpu'  }] },
   };
 
   // Port compatibility: which output types can connect to which input types.
@@ -53,8 +55,9 @@
     'block-storage': ['block-storage'],
     'routing':       ['routing'],
     'pcie':          ['pcie', 'pcie-raid'],
-    'virtual-drive': ['pcie'],   // controller-hw output → cpu input
     'pcie-raid':     ['pcie'],
+    'virtual-drive': ['pcie'],   // controller-hw → pcie bus → cpu
+    'cpu':           ['cpu'],
   };
 
   function portsCompatible(outType, inType) {

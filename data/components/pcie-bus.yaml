@@ -1,0 +1,25 @@
+id: pcie
+name: PCIe Bus
+category: connectivity
+pathSlot: pcie
+
+description: >
+  PCI Express bus — the high-speed serial interface that connects storage controllers
+  (HBAs, RAID controllers) to the CPU/chipset. All data between the controller and the
+  CPU flows over this bus.
+
+  In the RAID context, the PCIe bus is the boundary where the RAID engine type is determined:
+  - Engine ON the PCIe card (before the bus) → Hardware RAID
+  - Engine between PCIe bus and CPU           → Fake RAID
+  - Engine in the OS (after CPU)              → Software RAID
+
+provides:
+  - pcie-connection
+
+requires:
+  - controller-or-hba on one side
+  - cpu on the other side
+
+note: >
+  NVMe disks bypass the backplane and HBA entirely, connecting directly to the PCIe bus.
+  This is why NVMe disks can reach PCIe without going through an HBA node.

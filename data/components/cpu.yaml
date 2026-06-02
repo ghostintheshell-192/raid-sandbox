@@ -1,0 +1,21 @@
+id: cpu
+name: CPU
+category: compute
+pathSlot: cpu
+
+description: >
+  The central processing unit. Receives commands from the storage controller via the PCIe bus
+  and executes OS-level instructions. In software RAID, the CPU computes all parity and
+  manages the RAID array directly (via mdadm, ZFS, Storage Spaces). In hardware RAID,
+  the CPU only sees the Virtual Drive exposed by the controller — the RAID processing is
+  transparent.
+
+provides:
+  - cpu-execution
+
+requires:
+  - pcie-connection
+
+raidEnginePosition:
+  - software: in-os        # engine runs as OS kernel code on the CPU
+  - fake:     near-cpu     # engine chip sits between PCIe and CPU execution context
