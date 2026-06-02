@@ -191,6 +191,18 @@
 
       if (value) {
         el.textContent = value;
+        const x = document.createElement('button');
+        x.className   = 'sbc-delete sbc-delete--inline';
+        x.textContent = '×';
+        x.title       = 'Clear';
+        x.addEventListener('dragstart', (e) => e.preventDefault());
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (axis === 'segmentation') CS.setSegmentation(state, arrayId, null);
+          else                         CS.setRedundancy(state, arrayId, null);
+          _evaluateAndRender();
+        });
+        el.appendChild(x);
       } else {
         const hint = document.createElement('span');
         hint.className   = 'sbc-slot-hint';

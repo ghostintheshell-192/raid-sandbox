@@ -103,6 +103,15 @@
     .sbc-disk:hover  > .sbc-delete,
     .sbc-array:hover > .sbc-delete { opacity: 1; }
 
+    /* Inline variant for slot clear buttons */
+    .sbc-delete--inline {
+      position: static; display: inline-block;
+      width: 14px; height: 14px; line-height: 14px; font-size: .65rem;
+      margin-left: .25rem; vertical-align: middle;
+      opacity: 0;
+    }
+    .sbc-slot--filled:hover .sbc-delete--inline { opacity: 1; }
+
     .sbc-slots { display: flex; gap: .4rem; }
     .sbc-slot {
       flex: 1; padding: .3rem .5rem; border-radius: 6px;
