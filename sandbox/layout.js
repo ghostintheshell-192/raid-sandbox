@@ -124,7 +124,10 @@
       const anchor = rotate === 'left' ? mod(n - 1 - s, n) : mod(s, n);
       const row = Array.from({ length: n }, () => null);
 
-      // Place parity blocks: P at anchor, Q just "inward" (left) of P. seq set later.
+      // Place parity blocks: P at anchor, Q to the LEFT of P (DDF convention,
+      // ALGORITHM_ROTATING_N_CONTINUE in Linux md). This is the hardware RAID /
+      // SNIA DDF standard — distinct from mdadm's ALGORITHM_LEFT_SYMMETRIC where
+      // Q is to the RIGHT of P. Both are valid; Phase 4 will surface the distinction.
       const parityAt = {};
       const parityCells = [];
       for (let k = 0; k < pCount; k++) {

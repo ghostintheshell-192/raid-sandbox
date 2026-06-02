@@ -7,6 +7,12 @@
  * left-symmetric: authoritative source = .personal/segment-allocation-rule-left-symmetric.md
  *   (Valentina's verified hand tables). Also the Linux md default (ALGORITHM_LEFT_SYMMETRIC=2).
  *
+ * RAID6 Q placement: our implementation puts Q to the LEFT of P — this is the DDF
+ * convention (ALGORITHM_ROTATING_N_CONTINUE in Linux md, ddf_layout=1), used by
+ * hardware RAID controllers following the SNIA DDF standard. mdadm's default
+ * ALGORITHM_LEFT_SYMMETRIC puts Q to the RIGHT of P. Both are valid and present
+ * in the Linux kernel. Ours matches the .personal notes (hardware RAID context).
+ *
  * left-asymmetric, right-asymmetric, right-symmetric: derived from the same rule pair:
  *   rotate  left  → anchor(s) = (n-1-s) mod n   (parity starts rightmost, moves left)
  *   rotate  right → anchor(s) = s mod n          (parity starts leftmost, moves right)
