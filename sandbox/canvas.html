@@ -225,34 +225,63 @@
 <script>
   const state      = CanvasState.createState();
   const canvasEl   = document.getElementById('canvas');
-  const resultsEl  = document.getElementById('results');
   const sidebarEl  = document.getElementById('sidebar');
   const statusBar  = document.getElementById('status-bar');
   const btnAnimate = document.getElementById('btn-animate');
 
-  const ctrl = CanvasController.createController({ canvasEl, resultsEl, state });
+  // Result panel elements.
+  const elLevel    = document.querySelector('[data-result="level"]');
+  const elCapacity = document.querySelector('[data-result="capacity"]');
+  const elFt       = document.querySelector('[data-result="ft"]');
+  const elIssue    = document.querySelector('[data-result="issue"]');
+  const elGrid     = document.querySelector('[data-result="grid"]');
+
+  function onEvaluate(r) {
+    if (r.analysis) {
+      const a = r.analysis;
+      elLevel.textContent = a.level ?? `non-standard (${a.reason})`;
+      elLevel.className   = `sbc-level${a.level ? '' : ' sbc-level--nonstd'}`;
+      elCapacity.textContent = `${a.capacityGB} TB usable`;
+      elFt.textContent       = `±${a.faultTolerance} disk failure${a.faultTolerance !== 1 ? 's' : ''}`;
+    } else {
+      elLevel.textContent    = '—';
+      elLevel.className      = 'sbc-level';
+      elCapacity.textContent = '—';
+      elFt.textContent       = '—';
+    }
+
+    if (r.firstIssue) {
+      elIssue.textContent = `⚠ ${r.firstIssue}`;
+      elIssue.hidden = false;
+    } else {
+      elIssue.hidden = true;
+    }
+
+    if (r.placement && !r.placement.unsupported) {
+      RaidRender.renderGrid(elGrid, r.placement);
+      btnAnimate.disabled = false;
+    } else if (r.placement && r.placement.unsupported) {
+      elGrid.textContent = `No placement defined: ${r.placement.reason}`;
+      btnAnimate.disabled = true;
+    } else {
+      elGrid.innerHTML    = '';
+      btnAnimate.disabled = true;
+    }
+
+    statusBar.textContent = r.firstIssue
+      ? `⚠ ${r.firstIssue}`
+      : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
+  }
+
+  const ctrl = CanvasController.createController({ canvasEl, state, onEvaluate });
   ctrl.setupSidebar(sidebarEl);
   ctrl.render();
 
   btnAnimate.addEventListener('click', () => {
     btnAnimate.disabled = true;
-    ctrl.playAnimation();
+    ctrl.playAnimation(elGrid);
     setTimeout(() => { btnAnimate.disabled = false; }, 4000);
   });
-
-  // Keep status bar + animate button in sync after each evaluate().
-  const observer = new MutationObserver(() => {
-    const issueEl   = resultsEl.querySelector('[data-result="issue"]');
-    const levelEl   = resultsEl.querySelector('[data-result="level"]');
-    const gridEl    = resultsEl.querySelector('[data-result="grid"]');
-    const hasResult = levelEl && levelEl.textContent !== '—';
-    const noGrid    = gridEl && gridEl.textContent.startsWith('No placement');
-    btnAnimate.disabled = !hasResult || noGrid;
-    statusBar.textContent = issueEl && !issueEl.hidden
-      ? issueEl.textContent
-      : (hasResult ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
-  });
-  observer.observe(resultsEl, { childList: true, subtree: true, characterData: true, attributes: true });
 </script>
 </body>
 </html>

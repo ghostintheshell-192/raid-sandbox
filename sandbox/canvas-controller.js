@@ -2,23 +2,28 @@
  * canvas-controller.js — RAID Sandbox: drag-and-drop controller (Phase 3).
  *
  * Translates DOM drag events into CanvasState mutations, then calls evaluate()
- * and refreshes the output panels. The only module that touches the DOM outside
- * of render.js.
+ * and invokes the onEvaluate callback so the host page can update its panels.
  *
- *   createController({ canvasEl, resultsEl, state }) → controller
- *   controller.render()   — rebuild canvas DOM from state (call after each mutation)
+ *   createController({ canvasEl, state, onEvaluate }) → controller
+ *
+ *   controller.setupSidebar(sidebarEl)  — call once: makes sidebar chips draggable
+ *   controller.render()                 — rebuild canvas DOM from state
+ *   controller.playAnimation(gridEl)    — animate the current placement into gridEl
+ *
+ * onEvaluate(result) is called after each mutation with the EvalResult from
+ * CanvasState.evaluate(). The host page owns all panels outside canvasEl.
+ *
+ * IMPORTANT: the canvas drop target is wired ONCE in createController.
+ * render() only wires per-node listeners (on freshly created elements).
+ * Never call _setDropTarget(canvasEl) from render() — it accumulates listeners.
  */
 
 (function (root) {
   'use strict';
 
-  // Drag payload keys stored in dataTransfer as JSON.
-  // source: 'sidebar' | 'canvas'
-  // type:   'disk' | 'segmentation' | 'redundancy'
-  // For sidebar disks: { source, type:'disk', protocol, sizeGB }
-  // For sidebar props: { source, type:'segmentation'|'redundancy', value }
-  // For canvas disks:  { source:'canvas', type:'disk', id }
-  const DT_KEY = 'application/raid-sandbox';
+  // Use text/plain for broad webview compatibility (custom MIME types are
+  // sometimes blocked in Electron / VSCode webview environments).
+  const DT_KEY = 'text/plain';
 
   function setDrag(e, payload) {
     e.dataTransfer.effectAllowed = 'move';
@@ -34,13 +39,16 @@
   // FACTORY
   // ---------------------------------------------------------------------------
 
-  function createController({ canvasEl, resultsEl, state }) {
+  function createController({ canvasEl, state, onEvaluate }) {
     const CS     = root.CanvasState;
     const Render = root.RaidRender;
 
     let _animating = false;
 
-    // ---- sidebar chip setup (called once on init) ---------------------------
+    // Wire the canvas drop target ONCE here — never inside render().
+    _setupCanvasDropTarget();
+
+    // ---- sidebar chip setup (call once on init) -----------------------------
 
     function setupSidebar(sidebarEl) {
       sidebarEl.querySelectorAll('[data-drag]').forEach((chip) => {
@@ -60,12 +68,29 @@
       });
     }
 
+    // ---- canvas drop target (wired once) ------------------------------------
+
+    function _setupCanvasDropTarget() {
+      canvasEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        canvasEl.classList.add('sbc--over');
+      });
+      canvasEl.addEventListener('dragleave', (e) => {
+        // Only remove highlight when leaving the canvas entirely, not its children.
+        if (!canvasEl.contains(e.relatedTarget)) canvasEl.classList.remove('sbc--over');
+      });
+      canvasEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        canvasEl.classList.remove('sbc--over');
+        _handleDrop(e, 'canvas', null);
+      });
+    }
+
     // ---- canvas render ------------------------------------------------------
 
     function render() {
       canvasEl.innerHTML = '';
-
-      // Render root nodes. In Phase 3 a root is either a loose disk or an array.
       for (const id of state.roots) {
         const node = state.nodes.get(id);
         if (!node) continue;
@@ -73,9 +98,6 @@
           node.kind === 'disk' ? _makeDiskEl(id, node) : _makeArrayEl(id, node)
         );
       }
-
-      // Canvas itself is a drop target for new disks and for disk→disk grouping.
-      _setDropTarget(canvasEl, 'canvas');
     }
 
     // ---- element builders ---------------------------------------------------
@@ -93,7 +115,22 @@
         setDrag(e, { source: 'canvas', type: 'disk', id });
       });
 
-      _setDropTarget(el, 'disk', id);
+      // Disk is a drop target so another disk can be dropped onto it to group them.
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('sbc--over');
+      });
+      el.addEventListener('dragleave', (e) => {
+        if (!el.contains(e.relatedTarget)) el.classList.remove('sbc--over');
+      });
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.remove('sbc--over');
+        _handleDrop(e, 'disk', id);
+      });
+
       return el;
     }
 
@@ -103,14 +140,8 @@
       el.dataset.id   = id;
       el.dataset.kind = 'array';
 
-      // Slot row — two drop slots (segmentation and redundancy).
-      const slots = document.createElement('div');
-      slots.className = 'sbc-slots';
-      slots.appendChild(_makeSlot('segmentation', id, node.segmentation));
-      slots.appendChild(_makeSlot('redundancy',   id, node.redundancy));
-      el.appendChild(slots);
+      el.appendChild(_makeSlots(id, node));
 
-      // Member disks inside the array.
       const members = document.createElement('div');
       members.className = 'sbc-members';
       for (const mid of node.members) {
@@ -119,28 +150,58 @@
       }
       el.appendChild(members);
 
-      // The array container accepts: canvas-disk drops + sidebar prop drops.
-      _setDropTarget(el, 'array', id);
+      // Array accepts canvas-disk drops (add to array) and sidebar prop drops
+      // that miss the slots (fall back to setting them here too).
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('sbc--over');
+      });
+      el.addEventListener('dragleave', (e) => {
+        if (!el.contains(e.relatedTarget)) el.classList.remove('sbc--over');
+      });
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.remove('sbc--over');
+        _handleDrop(e, 'array', id);
+      });
+
       return el;
+    }
+
+    function _makeSlots(arrayId, node) {
+      const row = document.createElement('div');
+      row.className = 'sbc-slots';
+      row.appendChild(_makeSlot('segmentation', arrayId, node.segmentation));
+      row.appendChild(_makeSlot('redundancy',   arrayId, node.redundancy));
+      return row;
     }
 
     function _makeSlot(axis, arrayId, value) {
       const el = document.createElement('div');
-      el.className = value ? `sbc-slot sbc-slot--filled` : 'sbc-slot sbc-slot--empty';
+      el.className = value ? 'sbc-slot sbc-slot--filled' : 'sbc-slot sbc-slot--empty';
       el.dataset.axis    = axis;
       el.dataset.arrayId = arrayId;
-
-      if (value) {
-        el.textContent = value;
-      } else {
-        el.innerHTML = `<span class="sbc-slot-hint">drop ${axis}</span>`;
+      el.textContent = value ?? '';
+      if (!value) {
+        const hint = document.createElement('span');
+        hint.className   = 'sbc-slot-hint';
+        hint.textContent = `drop ${axis}`;
+        el.appendChild(hint);
       }
 
-      // Slot is a drop target specifically for its axis.
-      el.addEventListener('dragover',  (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('sbc-slot--over'); });
-      el.addEventListener('dragleave', ()  => el.classList.remove('sbc-slot--over'));
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('sbc-slot--over');
+      });
+      el.addEventListener('dragleave', (e) => {
+        if (!el.contains(e.relatedTarget)) el.classList.remove('sbc-slot--over');
+      });
       el.addEventListener('drop', (e) => {
-        e.preventDefault(); e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
         el.classList.remove('sbc-slot--over');
         const payload = getDrag(e);
         if (!payload || payload.source !== 'sidebar') return;
@@ -156,23 +217,6 @@
       return el;
     }
 
-    // ---- drop target wiring -------------------------------------------------
-
-    function _setDropTarget(el, kind, id) {
-      el.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        el.classList.add('sbc--over');
-      });
-      el.addEventListener('dragleave', () => el.classList.remove('sbc--over'));
-      el.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        el.classList.remove('sbc--over');
-        _handleDrop(e, kind, id);
-      });
-    }
-
     // ---- drop dispatch ------------------------------------------------------
 
     function _handleDrop(e, targetKind, targetId) {
@@ -180,17 +224,9 @@
       if (!payload) return;
 
       if (payload.source === 'sidebar' && payload.type === 'disk') {
-        // Sidebar disk dropped onto canvas / disk / array.
         const newId = CS.addDisk(state, payload.sizeGB, payload.protocol);
-
-        if (targetKind === 'disk') {
-          // disk → disk: group both.
-          CS.group(state, [targetId, newId]);
-        } else if (targetKind === 'array') {
-          // disk → array: add to existing array.
-          CS.addToArray(state, targetId, newId);
-        }
-        // else: dropped on empty canvas → disk just sits loose.
+        if (targetKind === 'disk')  CS.group(state, [targetId, newId]);
+        if (targetKind === 'array') CS.addToArray(state, targetId, newId);
         _evaluateAndRender();
         return;
       }
@@ -210,77 +246,35 @@
       if (payload.source === 'canvas' && payload.type === 'disk') {
         const srcId = payload.id;
         if (targetKind === 'disk' && targetId !== srcId) {
-          // canvas disk → canvas disk: group.
           CS.group(state, [targetId, srcId]);
           _evaluateAndRender();
         } else if (targetKind === 'array') {
-          // canvas disk → array: add to array.
           CS.addToArray(state, targetId, srcId);
           _evaluateAndRender();
         }
-        // canvas → canvas (empty): no-op in Phase 3 (no free positioning yet).
       }
     }
 
-    // ---- evaluate + results -------------------------------------------------
+    // ---- evaluate -----------------------------------------------------------
 
     function _evaluateAndRender() {
       render();
       const result = CS.evaluate(state);
-      _updateResults(result);
+      if (typeof onEvaluate === 'function') onEvaluate(result);
     }
 
-    function _updateResults(r) {
-      if (!resultsEl) return;
+    // ---- animation ----------------------------------------------------------
 
-      const q = (sel) => resultsEl.querySelector(sel);
-
-      if (r.analysis) {
-        const a = r.analysis;
-        q('[data-result="level"]').textContent =
-          a.level ?? `non-standard (${a.reason})`;
-        q('[data-result="level"]').className =
-          `sbc-level ${a.level ? '' : 'sbc-level--nonstd'}`;
-        q('[data-result="capacity"]').textContent = `${a.capacityGB} TB usable`;
-        q('[data-result="ft"]').textContent       =
-          `±${a.faultTolerance} disk failure${a.faultTolerance !== 1 ? 's' : ''}`;
-      } else {
-        q('[data-result="level"]').textContent    = '—';
-        q('[data-result="capacity"]').textContent = '—';
-        q('[data-result="ft"]').textContent       = '—';
-      }
-
-      const issueEl = q('[data-result="issue"]');
-      if (r.firstIssue) {
-        issueEl.textContent = `⚠ ${r.firstIssue}`;
-        issueEl.hidden = false;
-      } else {
-        issueEl.hidden = true;
-      }
-
-      const gridEl = q('[data-result="grid"]');
-      if (r.placement && !_animating) {
-        if (r.placement.unsupported) {
-          gridEl.textContent = `No placement defined: ${r.placement.reason}`;
-        } else {
-          Render.renderGrid(gridEl, r.placement);
-        }
-      } else if (!r.placement) {
-        gridEl.innerHTML = '';
-      }
-    }
-
-    function playAnimation() {
-      if (_animating) return;
+    function playAnimation(gridEl) {
+      if (_animating || !gridEl) return;
       const result = CS.evaluate(state);
       if (!result.placement || result.placement.unsupported) return;
-      const gridEl = resultsEl.querySelector('[data-result="grid"]');
       _animating = true;
       Render.animate(gridEl, result.placement, { stepMs: 320 })
         .then(() => { _animating = false; });
     }
 
-    return { render, setupSidebar, playAnimation, _evaluateAndRender };
+    return { render, setupSidebar, playAnimation };
   }
 
   // ---------------------------------------------------------------------------
