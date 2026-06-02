@@ -201,7 +201,7 @@
    *   incomplete — true if any array is missing segmentation, redundancy, or members
    *   firstIssue — first actionable hint for the help message, or null if build is valid
    */
-  function evaluate(state) {
+  function evaluate(state, opts = {}) {
     const rootIds   = Array.from(state.roots);
     const rootCount = rootIds.length;
 
@@ -229,7 +229,7 @@
     }
 
     const analysis  = Model.analyze(tree);
-    const placement = Layout.computePlacement(tree);
+    const placement = Layout.computePlacement(tree, opts);
 
     return { tree, analysis, placement, rootCount, incomplete, firstIssue: null };
   }

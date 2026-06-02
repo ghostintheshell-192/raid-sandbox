@@ -72,7 +72,8 @@
 
     /* ---- canvas nodes ---- */
     .sbc-disk {
-      padding: .5rem .75rem; border-radius: 8px; font-size: .8rem; font-weight: 600;
+      position: relative;
+      padding: .5rem 1.6rem .5rem .75rem; border-radius: 8px; font-size: .8rem; font-weight: 600;
       cursor: grab; user-select: none;
       background: rgba(52,152,219,.18); border: 1px solid rgba(52,152,219,.45);
       transition: background .12s, box-shadow .12s;
@@ -82,12 +83,25 @@
     .sbc-disk.sbc--over { box-shadow: 0 0 0 2px rgba(52,152,219,.8); }
 
     .sbc-array {
+      position: relative;
       border: 2px solid rgba(155,89,182,.5); border-radius: 10px;
-      padding: .6rem; min-width: 140px;
+      padding: .6rem; padding-top: 1.4rem; min-width: 140px;
       background: rgba(155,89,182,.07);
       display: flex; flex-direction: column; gap: .5rem;
     }
     .sbc-array.sbc--over { border-color: rgba(155,89,182,.9); background: rgba(155,89,182,.14); }
+
+    /* Delete / dissolve button — visible on hover */
+    .sbc-delete {
+      position: absolute; top: 4px; right: 4px;
+      width: 18px; height: 18px; line-height: 18px;
+      font-size: .75rem; text-align: center;
+      border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(231,76,60,.7); color: #fff;
+      opacity: 0; transition: opacity .15s; padding: 0;
+    }
+    .sbc-disk:hover  > .sbc-delete,
+    .sbc-array:hover > .sbc-delete { opacity: 1; }
 
     .sbc-slots { display: flex; gap: .4rem; }
     .sbc-slot {
@@ -208,7 +222,16 @@
       <div class="sbc-stat" data-result="ft">—</div>
     </div>
     <div data-result="issue" class="sbc-issue" hidden></div>
-    <button class="sbc-animate-btn" id="btn-animate" disabled>▶ animate write</button>
+    <div style="display:flex; align-items:center; gap:.5rem;">
+      <button class="sbc-animate-btn" id="btn-animate" disabled>▶ animate write</button>
+      <label style="font-size:.75rem; opacity:.6; display:flex; align-items:center; gap:.3rem;">
+        stripes
+        <input id="inp-stripes" type="number" min="1" max="32" value="4"
+          style="width:3.2rem; font-family:inherit; font-size:.8rem; padding:.2rem .3rem;
+                 border-radius:5px; border:1px solid rgba(128,128,128,.3);
+                 background:rgba(128,128,128,.1); color:inherit;">
+      </label>
+    </div>
     <div>
       <h3>Placement grid</h3>
       <div data-result="grid"></div>
@@ -281,6 +304,10 @@
     btnAnimate.disabled = true;
     ctrl.playAnimation(elGrid);
     setTimeout(() => { btnAnimate.disabled = false; }, 4000);
+  });
+
+  document.getElementById('inp-stripes').addEventListener('change', (e) => {
+    ctrl.setStripes(parseInt(e.target.value) || 4);
   });
 </script>
 </body>
