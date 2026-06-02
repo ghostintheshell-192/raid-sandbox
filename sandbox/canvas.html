@@ -128,6 +128,10 @@
     .sbc-slot-hint { opacity: .5; font-style: italic; }
     .sbc-slot--filled[data-axis="segmentation"] { background: rgba(155,89,182,.25); border: 1.5px solid rgba(155,89,182,.5); }
     .sbc-slot--filled[data-axis="redundancy"]   { background: rgba(46,204,113,.2);  border: 1.5px solid rgba(46,204,113,.45); }
+    .sbc-slot--filled[data-axis="algorithm"]    { background: rgba(230,126,34,.18); border: 1.5px solid rgba(230,126,34,.5); }
+    .sbc-slot--empty[data-axis="algorithm"]     { border-color: rgba(230,126,34,.3); }
+
+    .sbc-chip[data-drag="algorithm"] { border-color: rgba(230,126,34,.5); background: rgba(230,126,34,.12); }
 
     .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
 
@@ -209,6 +213,15 @@
         <div class="sbc-chip" data-drag="redundancy" data-value="mirror">Mirror</div>
         <div class="sbc-chip" data-drag="redundancy" data-value="parity1">Parity P</div>
         <div class="sbc-chip" data-drag="redundancy" data-value="parity2">Parity P+Q</div>
+      </div>
+    </div>
+    <div>
+      <h3>Algoritmo (parity)</h3>
+      <div class="sbc-chips">
+        <div class="sbc-chip" data-drag="algorithm" data-value="left-symmetric">Left Sym</div>
+        <div class="sbc-chip" data-drag="algorithm" data-value="left-asymmetric">Left Asym</div>
+        <div class="sbc-chip" data-drag="algorithm" data-value="right-symmetric">Right Sym</div>
+        <div class="sbc-chip" data-drag="algorithm" data-value="right-asymmetric">Right Asym</div>
       </div>
     </div>
   </aside>

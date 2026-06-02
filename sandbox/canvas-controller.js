@@ -50,6 +50,8 @@
             setDrag(e, { source: 'sidebar', type: 'segmentation', value: chip.dataset.value });
           } else if (t === 'redundancy') {
             setDrag(e, { source: 'sidebar', type: 'redundancy', value: chip.dataset.value });
+          } else if (t === 'algorithm') {
+            setDrag(e, { source: 'sidebar', type: 'algorithm', value: chip.dataset.value });
           }
         });
       });
@@ -180,6 +182,11 @@
       row.className = 'sbc-slots';
       row.appendChild(_makeSlot('segmentation', arrayId, node.segmentation));
       row.appendChild(_makeSlot('redundancy',   arrayId, node.redundancy));
+      // Algorithm slot: only shown when parity is active (parity1 or parity2).
+      if (node.redundancy === 'parity1' || node.redundancy === 'parity2') {
+        const algoValue = node.algorithm ?? 'left-symmetric';
+        row.appendChild(_makeSlot('algorithm', arrayId, algoValue));
+      }
       return row;
     }
 
@@ -228,6 +235,9 @@
         } else if (payload.type === 'redundancy' && axis === 'redundancy') {
           CS.setRedundancy(state, arrayId, payload.value);
           _evaluateAndRender();
+        } else if (payload.type === 'algorithm' && axis === 'algorithm') {
+          CS.setAlgorithm(state, arrayId, payload.value);
+          _evaluateAndRender();
         }
       });
 
@@ -265,6 +275,12 @@
       }
       if (payload.source === 'sidebar' && payload.type === 'redundancy') {
         if (targetKind === 'array') CS.setRedundancy(state, targetId, payload.value);
+        _evaluateAndRender();
+        return;
+      }
+
+      if (payload.source === 'sidebar' && payload.type === 'algorithm') {
+        if (targetKind === 'array') CS.setAlgorithm(state, targetId, payload.value);
         _evaluateAndRender();
         return;
       }
