@@ -289,16 +289,28 @@ test('RAID 6 (striped + parity2, 4 disks) → analysis + placement', () => {
   eq(r.analysis.faultTolerance, 2);
 });
 
-test('unsupported combo (striped + mirror) → analysis ok, placement unsupported', () => {
+test('flat RAID 10 (striped + mirror, even) → RAID 10, placement near', () => {
   const s = CS.createState();
-  const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
-  const aid = CS.group(s, [d1, d2]);
+  const ids = [0, 1, 2, 3].map(() => CS.addDisk(s, 2));
+  const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
   CS.setRedundancy(s, aid, 'mirror');
   const r = CS.evaluate(s);
-  eq(r.firstIssue, null);           // build is valid, just non-standard
-  assert(r.analysis !== null);       // recognizer still runs
-  assert(r.placement.unsupported);  // layout honestly refuses
+  eq(r.analysis.level, 'RAID 10');
+  assert(!r.placement.unsupported);     // flat RAID 10 has a defined layout
+  eq(r.placement.algorithm, 'near');    // default mirror-class layout
+});
+
+test('valid but no placement (striped + mirror, odd = RAID 1E) → unsupported', () => {
+  const s = CS.createState();
+  const ids = [0, 1, 2].map(() => CS.addDisk(s, 2));
+  const aid = CS.group(s, ids);
+  CS.setSegmentation(s, aid, 'striped');
+  CS.setRedundancy(s, aid, 'mirror');
+  const r = CS.evaluate(s);
+  eq(r.firstIssue, null);            // build is valid, just non-standard (RAID 1E)
+  assert(r.analysis !== null);        // recognizer still runs (capacity/FT derived)
+  assert(r.placement.unsupported);   // odd striped mirror has no verified layout
   assert(r.placement.reason.length > 0);
 });
 
