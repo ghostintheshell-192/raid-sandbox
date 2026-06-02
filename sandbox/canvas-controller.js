@@ -206,9 +206,12 @@
       row.className = 'sbc-slots';
       row.appendChild(_makeSlot('segmentation', arrayId, node.segmentation));
       row.appendChild(_makeSlot('redundancy',   arrayId, node.redundancy));
-      // Algorithm slot: only shown when parity is active (parity1 or parity2).
-      if (node.redundancy === 'parity1' || node.redundancy === 'parity2') {
-        const algoValue = node.algorithm ?? 'left-symmetric';
+      // Placement-algorithm slot, shown with the default for the array's class:
+      // parity → left-symmetric; flat RAID 10 (striped+mirror) → near.
+      const isParity     = node.redundancy === 'parity1' || node.redundancy === 'parity2';
+      const isFlatMirror = node.segmentation === 'striped' && node.redundancy === 'mirror';
+      if (isParity || isFlatMirror) {
+        const algoValue = node.algorithm ?? (isParity ? 'left-symmetric' : 'near');
         row.appendChild(_makeSlot('algorithm', arrayId, algoValue));
       }
       return row;
