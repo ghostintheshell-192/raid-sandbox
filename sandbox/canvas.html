@@ -141,10 +141,11 @@
 
     /* ---- control path panel ---- */
     .sbc-control-path {
-      border-top: 2px solid rgba(128,128,128,.15);
-      padding: .9rem 1.2rem;
-      min-height: 80px;
-      background: rgba(0,0,0,.08);
+      margin: .6rem .8rem .6rem 0;
+      border: 2px dashed rgba(128,128,128,.3);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      background: rgba(0,0,0,.05);
       display: flex; align-items: center; gap: 0; overflow-x: auto;
     }
     .cp-label {
@@ -415,13 +416,15 @@
   function setupControlPath() {
     document.querySelectorAll('.cp-slot').forEach(slot => {
       const slotName = slot.dataset.slot;
+      // Note: dataTransfer.getData() is NOT available during dragover (browser security
+      // restriction). We always preventDefault to allow the drop, then validate in drop.
       slot.addEventListener('dragover', e => {
-        const payload = _getPayload(e);
-        if (payload && payload.type === 'component' && payload.slot === slotName) {
-          e.preventDefault(); slot.classList.add('cp--over');
-        }
+        e.preventDefault();
+        slot.classList.add('cp--over');
       });
-      slot.addEventListener('dragleave', () => slot.classList.remove('cp--over'));
+      slot.addEventListener('dragleave', e => {
+        if (!slot.contains(e.relatedTarget)) slot.classList.remove('cp--over');
+      });
       slot.addEventListener('drop', e => {
         e.preventDefault(); slot.classList.remove('cp--over');
         const payload = _getPayload(e);
