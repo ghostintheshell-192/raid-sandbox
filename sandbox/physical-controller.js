@@ -128,6 +128,22 @@
       // Remove old node elements (keep only SVG).
       Array.from(canvasEl.querySelectorAll('.pln')).forEach(el => el.remove());
 
+      // Bridge (Option 2): disks are the shared atom — render the SAME disks
+      // that live in the data view. Give any new disk a default position
+      // (stacked on the left), then auto-route them by protocol.
+      let i = 0;
+      for (const node of state.nodes.values()) {
+        if (node.kind !== 'disk') continue;
+        if (!state.cpDiskPositions.has(node.id)) {
+          CS.cpSetDiskPos(state, node.id, { x: 12, y: 12 + i * 46 });
+        }
+        i++;
+      }
+      CS.cpAutoRoute(state);
+
+      for (const node of state.nodes.values()) {
+        if (node.kind === 'disk') canvasEl.appendChild(_makeDiskNodeEl(node));
+      }
       for (const node of state.cpNodes.values()) {
         canvasEl.appendChild(_makeNodeEl(node));
       }
@@ -138,6 +154,40 @@
           _drawEdge(edge);
         }
       });
+    }
+
+    // ---- disk node (shared atom from the data view) -------------------------
+
+    function _makeDiskNodeEl(disk) {
+      const el = document.createElement('div');
+      el.className = 'pln pln-node pln-disk';
+      el.dataset.nodeId = disk.id;
+      const pos = state.cpDiskPositions.get(disk.id) || { x: 12, y: 12 };
+      el.style.left = pos.x + 'px';
+      el.style.top  = pos.y + 'px';
+      el.style.setProperty('--node-color', 'rgba(52,152,219,.7)');
+
+      el.innerHTML =
+        `<span class="pln-icon">💾</span>` +
+        `<span class="pln-label">${disk.protocol} ${disk.sizeGB}TB</span>`;
+
+      // Output-only port: a visual anchor for the auto-routed edge.
+      // v1 has no manual disk-wiring, so this port does not start connections.
+      const out = document.createElement('div');
+      out.className = 'pln-port pln-port--out';
+      out.dataset.nodeId = disk.id;
+      out.dataset.portId = 'out';
+      el.appendChild(out);
+
+      // Drag to reposition within the physical view.
+      el.setAttribute('draggable', 'true');
+      el.addEventListener('dragstart', e => {
+        e.stopPropagation();
+        setDrag(e, { source: 'canvas-phys', type: 'move-disk', diskId: disk.id,
+                     offX: e.offsetX, offY: e.offsetY });
+      });
+
+      return el;
     }
 
     // ---- node element -------------------------------------------------------
@@ -255,13 +305,15 @@
 
     canvasEl.addEventListener('drop', e => {
       const payload = getDrag(e);
-      if (!payload || payload.source !== 'canvas-phys' || payload.type !== 'move-node') return;
+      if (!payload || payload.source !== 'canvas-phys') return;
+      if (payload.type !== 'move-node' && payload.type !== 'move-disk') return;
       const rect = canvasEl.getBoundingClientRect();
       const pos  = {
         x: e.clientX - rect.left - (payload.offX || 0),
         y: e.clientY - rect.top  - (payload.offY || 0),
       };
-      CS.cpMoveNode(state, payload.nodeId, pos);
+      if (payload.type === 'move-disk') CS.cpSetDiskPos(state, payload.diskId, pos);
+      else                              CS.cpMoveNode(state, payload.nodeId, pos);
       render();
     });
 

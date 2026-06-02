@@ -181,6 +181,8 @@
       border-radius: 8px; font-size: .78rem; font-weight: 600;
       cursor: grab; user-select: none; white-space: nowrap;
     }
+    /* disk nodes (the shared atom, mirrored from the data view) */
+    .pln-disk { background: rgba(52,152,219,.22); }
     .pln-icon  { font-size: .95rem; line-height: 1; }
     .pln-badge {
       font-size: .6rem; padding: .1rem .3rem; border-radius: 4px;
@@ -373,6 +375,8 @@
   const sidebarEl  = document.getElementById('sidebar');
   const statusBar  = document.getElementById('status-bar');
   const btnAnimate = document.getElementById('btn-animate');
+  let   physCtrl;   // assigned below; onEvaluate refreshes it so disk changes in the
+                    // data view appear in the physical view (the shared-atom bridge).
 
   // Active-border on physical panel when hovering with a drag (same mechanic as data canvas).
   const physPanel = document.getElementById('physical-panel');
@@ -443,6 +447,9 @@
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
       : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
+
+    // Shared-atom bridge: reflect data-view disk changes in the physical view.
+    if (physCtrl) physCtrl.render();
   }
 
   // Data layer controller.
@@ -451,7 +458,7 @@
   ctrl.render();
 
   // Physical layer controller.
-  const physCtrl = PhysicalController.createPhysicalController({
+  physCtrl = PhysicalController.createPhysicalController({
     canvasEl: physEl, svgEl: physSvgEl, state, onEvaluate,
   });
   physCtrl.setupSidebar(sidebarEl);

@@ -61,6 +61,10 @@
       // Axis A — physical layer (graph of component nodes + edges)
       cpNodes: new Map(),   // id → { id, componentId, pos:{x,y} }
       cpEdges: new Map(),   // id → { id, fromNode, fromPort, toNode, toPort }
+      // Bridge (Option 2): the disk is the shared atom. Disks live in `nodes`
+      // (one identity); the physical view gives each its own position here and
+      // references it directly in cpEdges by its disk id.
+      cpDiskPositions: new Map(),  // diskId → {x,y}  (position in the physical view)
     };
   }
 
@@ -169,6 +173,11 @@
           if (idx !== -1) n.members.splice(idx, 1);
         }
       }
+      // The disk is the shared atom: drop its physical-view presence too.
+      state.cpDiskPositions.delete(id);
+      for (const [eid, e] of state.cpEdges) {
+        if (e.fromNode === id || e.toNode === id) state.cpEdges.delete(eid);
+      }
     }
     state.nodes.delete(id);
     state.positions.delete(id);
@@ -219,6 +228,50 @@
   /** Remove a connection edge. */
   function cpDisconnect(state, edgeId) {
     state.cpEdges.delete(edgeId);
+  }
+
+  /** Set a disk's position in the physical view (fast path, like move()). */
+  function cpSetDiskPos(state, diskId, pos) {
+    state.cpDiskPositions.set(diskId, pos);
+  }
+
+  /**
+   * The physical component a disk routes into, by protocol (spec §2, v1 rule):
+   *   SATA/SAS → backplane · NVMe → PCIe bus (bypasses the backplane).
+   */
+  function _diskTargetComponent(protocol) {
+    return protocol === 'NVMe' ? 'pcie' : 'backplane';
+  }
+
+  /**
+   * Auto-route every disk to its protocol-determined target node, idempotently.
+   * v1 has no manual disk-wiring: the disk's protocol decides where it connects
+   * (NVMe-bypass made visible). Re-asserts exactly one edge disk→target when the
+   * target exists, and clears stale disk edges when it does not. Components wire
+   * to each other manually as before — this only manages disk→target edges.
+   */
+  function cpAutoRoute(state) {
+    for (const node of state.nodes.values()) {
+      if (node.kind !== 'disk') continue;
+
+      const targetComp = _diskTargetComponent(node.protocol);
+      const targetNode = Array.from(state.cpNodes.values())
+        .find((n) => n.componentId === targetComp);
+
+      const diskEdges = Array.from(state.cpEdges.values())
+        .filter((e) => e.fromNode === node.id);
+
+      if (!targetNode) {
+        // No target on the canvas yet → the disk routes nowhere; drop stale edges.
+        diskEdges.forEach((e) => state.cpEdges.delete(e.id));
+        continue;
+      }
+
+      const correct = diskEdges.find((e) => e.toNode === targetNode.id);
+      // Remove any edge pointing at the wrong target (e.g. protocol changed).
+      diskEdges.forEach((e) => { if (e !== correct) state.cpEdges.delete(e.id); });
+      if (!correct) cpConnect(state, node.id, 'out', targetNode.id, 'in');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -400,6 +453,7 @@
     compile,
     // Axis A
     cpAddNode, cpMoveNode, cpRemoveNode, cpConnect, cpDisconnect,
+    cpSetDiskPos, cpAutoRoute,
     // pipeline
     evaluate,
   };
