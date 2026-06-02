@@ -97,6 +97,22 @@ test('addToArray moves disk from roots into array', () => {
   eq(s.nodes.get(aid).members.length, 3);
 });
 
+test('addToArray moves disk from one array to another — no duplicate membership', () => {
+  const s = CS.createState();
+  const d1 = CS.addDisk(s, 2);
+  const d2 = CS.addDisk(s, 2);
+  const d3 = CS.addDisk(s, 2);
+  const d4 = CS.addDisk(s, 2);
+  const a1 = CS.group(s, [d1, d2]);
+  const a2 = CS.group(s, [d3, d4]);
+  // Move d1 from a1 to a2
+  CS.addToArray(s, a2, d1);
+  assert(!s.nodes.get(a1).members.includes(d1), 'd1 still in a1 after move');
+  assert(s.nodes.get(a2).members.includes(d1), 'd1 not in a2 after move');
+  eq(s.nodes.get(a1).members.length, 1);
+  eq(s.nodes.get(a2).members.length, 3);
+});
+
 // ---------------------------------------------------------------------------
 console.log('\n[5] Mutations — setSegmentation / setRedundancy');
 

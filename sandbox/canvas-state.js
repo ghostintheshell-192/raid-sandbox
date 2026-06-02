@@ -100,12 +100,20 @@
   }
 
   /**
-   * Add a disk to an existing array (triggered by disk-onto-array drop).
-   * The disk is removed from roots.
+   * Add a disk to an existing array.
+   * The disk is detached from any current parent array first — a disk can
+   * only belong to one array at a time. Also removed from roots.
    */
   function addToArray(state, arrayId, diskId) {
     const arr = state.nodes.get(arrayId);
     if (!arr || arr.kind !== 'array') return;
+    // Detach from current parent to prevent duplicate membership.
+    for (const n of state.nodes.values()) {
+      if (n.kind === 'array' && n.id !== arrayId) {
+        const idx = n.members.indexOf(diskId);
+        if (idx !== -1) n.members.splice(idx, 1);
+      }
+    }
     if (!arr.members.includes(diskId)) arr.members.push(diskId);
     state.roots.delete(diskId);
   }
