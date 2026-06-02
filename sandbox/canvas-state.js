@@ -62,13 +62,9 @@
       roots:     new Set(),
       positions: new Map(),
       selected:  new Set(),
-      // Axis A — control path
-      controlPath: {
-        hasBackplane: false,
-        controller:   null,   // null | 'hba' | 'controller-hw'
-        fakeChip:     false,
-        os:           null,   // null | 'os-linux' | 'os-windows'
-      },
+      // Axis A — physical layer (graph of component nodes + edges)
+      cpNodes: new Map(),   // id → { id, componentId, pos:{x,y} }
+      cpEdges: new Map(),   // id → { id, fromNode, fromPort, toNode, toPort }
     };
   }
 
@@ -175,16 +171,40 @@
   }
 
   // ---------------------------------------------------------------------------
-  // AXIS A MUTATION — control path
+  // AXIS A MUTATIONS — physical layer graph
   // ---------------------------------------------------------------------------
 
-  /**
-   * Set a control path slot.
-   * slot: 'hasBackplane' (bool) | 'controller' (string|null) |
-   *       'fakeChip' (bool)     | 'os' (string|null)
-   */
-  function setControlSlot(state, slot, value) {
-    state.controlPath[slot] = value;
+  /** Add a physical component node. Returns the new node id. */
+  function cpAddNode(state, componentId, pos = { x: 0, y: 0 }) {
+    const id = nextId('cpn');
+    state.cpNodes.set(id, { id, componentId, pos });
+    return id;
+  }
+
+  /** Move a physical node (fast path). */
+  function cpMoveNode(state, nodeId, pos) {
+    const n = state.cpNodes.get(nodeId);
+    if (n) n.pos = pos;
+  }
+
+  /** Remove a physical node and all its edges. */
+  function cpRemoveNode(state, nodeId) {
+    state.cpNodes.delete(nodeId);
+    for (const [id, e] of state.cpEdges) {
+      if (e.fromNode === nodeId || e.toNode === nodeId) state.cpEdges.delete(id);
+    }
+  }
+
+  /** Connect two physical nodes via their ports. Returns edge id. */
+  function cpConnect(state, fromNode, fromPort, toNode, toPort) {
+    const id = nextId('cpe');
+    state.cpEdges.set(id, { id, fromNode, fromPort, toNode, toPort });
+    return id;
+  }
+
+  /** Remove a connection edge. */
+  function cpDisconnect(state, edgeId) {
+    state.cpEdges.delete(edgeId);
   }
 
   // ---------------------------------------------------------------------------
@@ -256,39 +276,67 @@
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
-    const cp        = _recognizeControlPath(state.controlPath);
+    const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges);
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,
       raidType:            cp.raidType,
       os:                  cp.os,
       controlPathComplete: cp.complete,
-      controlPathIssue:    _controlPathIssue(state.controlPath),
+      controlPathIssue:    cp.issue,
     };
   }
 
   /**
-   * Derive hardware/fake/software RAID type from the control path.
-   *   controller-hw present                  → Hardware RAID
-   *   hba + fakeChip + os                    → Fake RAID
-   *   hba + os (no fakeChip)                 → Software RAID
+   * Derive hardware/fake/software from the physical layer graph.
+   *
+   * Rules (from component YAML raidEnginePosition fields):
+   *   A node with componentId 'controller-hw'              → Hardware RAID
+   *   A node with componentId 'raid-engine' AND an OS node → engine position
+   *     determines fake (between hba and cpu) vs software (in/after os)
+   *
+   * For MVP: inspect the set of component types present in the graph.
+   * Full graph-traversal recognizer deferred to when constraint engine lands.
    */
-  function _recognizeControlPath(cp) {
-    const { controller, fakeChip, os } = cp;
-    if (!controller) return { raidType: null, os: null, complete: false };
-    if (controller === 'controller-hw')
-      return { raidType: 'hardware', os: null, complete: true };
-    if (controller === 'hba' && fakeChip && os)
-      return { raidType: 'fake',     os, complete: true };
-    if (controller === 'hba' && !fakeChip && os)
-      return { raidType: 'software', os, complete: true };
-    return { raidType: null, os: null, complete: false };
-  }
+  function _recognizePhysicalLayer(cpNodes, cpEdges) {
+    const components = new Set(Array.from(cpNodes.values()).map(n => n.componentId));
+    const osNode = Array.from(cpNodes.values()).find(n => n.componentId === 'os-linux' || n.componentId === 'os-windows');
+    const os = osNode ? osNode.componentId : null;
 
-  function _controlPathIssue(cp) {
-    if (!cp.controller) return 'Drop a controller (HBA or Controller HW) onto the path.';
-    if (cp.controller === 'hba' && !cp.os) return 'Drop an OS onto the path.';
-    return null;
+    if (components.has('controller-hw'))
+      return { raidType: 'hardware', os: null, complete: true, issue: null };
+
+    const hasEngine = components.has('raid-engine');
+    const hasHBA    = components.has('hba');
+    const hasOS     = !!os;
+
+    if (hasHBA && hasEngine && hasOS) {
+      // Engine position: if engine is connected before OS → fake; after/in OS → software.
+      // MVP: edge from engine's output goes to OS input → software; to cpu → fake.
+      const engineNode = Array.from(cpNodes.values()).find(n => n.componentId === 'raid-engine');
+      const engineId   = engineNode ? engineNode.id : null;
+      const engineOutputEdge = engineId
+        ? Array.from(cpEdges.values()).find(e => e.fromNode === engineId)
+        : null;
+      const nextComponent = engineOutputEdge
+        ? cpNodes.get(engineOutputEdge.toNode)?.componentId
+        : null;
+      const raidType = (nextComponent === 'os-linux' || nextComponent === 'os-windows')
+        ? 'software' : 'fake';
+      return { raidType, os, complete: true, issue: null };
+    }
+
+    if (!hasHBA && !components.has('controller-hw'))
+      return { raidType: null, os: null, complete: false,
+               issue: 'Add a controller (HBA or Controller HW) to the physical path.' };
+    if (!hasEngine && !components.has('controller-hw'))
+      return { raidType: null, os: null, complete: false,
+               issue: 'Add a RAID Engine to the path — its position determines the RAID type.' };
+    if (!hasOS)
+      return { raidType: null, os: null, complete: false,
+               issue: 'Add an OS node to complete the path.' };
+
+    return { raidType: null, os: null, complete: false, issue: 'Connect all nodes to complete the path.' };
   }
 
   // Derive the first actionable hint from the current state.
@@ -327,7 +375,7 @@
     dissolve, remove, move,
     compile,
     // Axis A
-    setControlSlot,
+    cpAddNode, cpMoveNode, cpRemoveNode, cpConnect, cpDisconnect,
     // pipeline
     evaluate,
   };
