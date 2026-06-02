@@ -1,13 +1,10 @@
 /**
  * layout-raid10-reference.js — Reference tables for RAID10 near/far/offset layouts.
  *
- * PENDING IMPLEMENTATION: these tables cannot be run as assertions yet because
- * computePlacement() in layout.js currently handles leaf arrays only. RAID10 is
- * a nested topology (striped+none over linear+mirror spans) and requires a
- * dedicated placeRaid10() code path.
- *
- * When that implementation lands, this file becomes the golden table test suite.
- * Run as a reference viewer: node layout-raid10-reference.js
+ * GOLDEN TABLE TEST SUITE for placeRaid10() in layout.js. RAID 10 is a FLAT level
+ * in our model (§3a): a single striped+mirror array, copies 2. These tables are the
+ * authoritative reference; `node layout-raid10-reference.js` both prints them and
+ * asserts that computePlacement() reproduces them cell-for-cell (exit 1 on mismatch).
  *
  * ─────────────────────────────────────────────────────────────
  * SOURCES
@@ -40,16 +37,13 @@
  * ─────────────────────────────────────────────────────────────
  * MODEL MAPPING
  * ─────────────────────────────────────────────────────────────
- * In our domain model RAID10 = nested array:
+ * In our domain model RAID 10 is a FLAT array (§3a):
  *
- *   Array { striped, none, algorithm: 'near'|'far'|'offset', members: [
- *     Array { linear, mirror, members: [D0, D1] },   // span 0
- *     Array { linear, mirror, members: [D2, D3] },   // span 1
- *   ]}
+ *   Array { striped, mirror, copies: 2, algorithm: 'near'|'far'|'offset',
+ *           members: [D0, D1, D2, D3] }
  *
- * The `algorithm` on the top-level array selects near/far/offset.
- * All three share the same recognizer result (RAID 10) and capacity/FT;
- * only the data placement (and thus the animation) differs.
+ * The `algorithm` selects near/far/offset. All three share the same recognizer
+ * result (RAID 10) and capacity/FT; only the data placement (the animation) differs.
  *
  * ─────────────────────────────────────────────────────────────
  * NOTATION
@@ -155,16 +149,44 @@ function printTable(label, rows) {
   });
 }
 
+// --- golden assertions: computePlacement() must reproduce these tables ---
+function verify() {
+  const Layout = require('./layout.js');
+  const place = (algo) => Layout.computePlacement({
+    kind: 'array', segmentation: 'striped', redundancy: 'mirror', algorithm: algo,
+    members: [0, 1, 2, 3].map((i) => ({ kind: 'disk', id: 'd' + i, sizeGB: 2, protocol: 'SATA' })),
+  }).stripes;
+
+  const cases = [
+    ['NEAR',   place('near'),   NEAR_4_2],
+    ['FAR',    place('far'),    [...FAR_4_2_ORIGINALS, ...FAR_4_2_COPIES]],
+    ['OFFSET', place('offset'), OFFSET_4_2],
+  ];
+  let failures = 0;
+  for (const [label, got, want] of cases) {
+    let okCase = got.length === want.length;
+    for (let s = 0; okCase && s < want.length; s++)
+      for (let d = 0; d < want[s].length; d++) {
+        const me = got[s][d], ref = want[s][d];
+        if (me.seg !== ref.c || (me.role === 'data') !== (ref.r === 'orig')) okCase = false;
+      }
+    console.log(`  ${okCase ? '✓' : '✗'} ${label} reproduces golden table`);
+    if (!okCase) failures++;
+  }
+  return failures;
+}
+
 if (require.main === module) {
-  console.log('RAID10 Reference Tables (pending implementation in layout.js)\n');
+  console.log('RAID 10 golden tables (flat model, §3a)\n');
   printTable('NEAR  — 4 disks, near=2, 4 stripes', NEAR_4_2);
   printTable('FAR   — 4 disks, far=2  (originals)', FAR_4_2_ORIGINALS);
-  printTable('FAR   — 4 disks, far=2  (copies, placed ~N/2 stripes later)', FAR_4_2_COPIES);
-  printTable('OFFSET — 4 disks, offset=2, 4 stripes (pairs: orig+copy)', OFFSET_4_2);
-  console.log('\nAll three invariants to verify when implementing:');
-  console.log('  1. Each chunk appears exactly twice (once orig, once copy)');
-  console.log('  2. Orig and copy of each chunk are on different physical disks');
-  console.log('  3. Capacity = total_disks / copies  (here: 4/2 = 2 effective disks)');
+  printTable('FAR   — 4 disks, far=2  (copies)', FAR_4_2_COPIES);
+  printTable('OFFSET — 4 disks, offset=2, 4 stripes', OFFSET_4_2);
+  console.log('\nInvariants: each chunk twice · orig+copy on different disks · capacity = disks/copies\n');
+  console.log('Verifying computePlacement() against the tables:');
+  const failures = verify();
+  console.log(failures ? `\n  ${failures} table(s) FAILED` : '\n  all golden tables reproduced ✓');
+  process.exit(failures ? 1 : 0);
 }
 
 module.exports = { NEAR_4_2, FAR_4_2_ORIGINALS, FAR_4_2_COPIES, OFFSET_4_2 };

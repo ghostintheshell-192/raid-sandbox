@@ -70,11 +70,12 @@
                                         : placeLinear(n, opts.stripes ?? 4);
 
     if (redundancy === 'mirror') {
-      // Defined only for linear (n-way copies). striped+mirror = RAID 1E
-      // interleaved — no verified placement yet.
-      if (segmentation !== 'linear')
-        return unsupported(`"${segmentation} + mirror" has no defined placement yet (RAID 1E family — not implemented)`);
-      return placeMirror(n, opts.stripes ?? 4);
+      if (segmentation === 'linear') return placeMirror(n, opts.stripes ?? 4);
+      // striped + mirror = flat RAID 10 (copies 2). Even disks only;
+      // an odd count is RAID 1E (niche) — no verified placement yet.
+      if (n % 2 !== 0)
+        return unsupported('striped mirror with odd disks (RAID 1E) has no verified placement yet');
+      return placeRaid10(n, node.algorithm, opts);
     }
 
     if (redundancy === 'parity1' || redundancy === 'parity2') {
@@ -110,6 +111,66 @@
       Array.from({ length: n }, (_, d) => ({ role: d === 0 ? 'data' : 'mirror', seg: s, seq: s }))
     );
     return { columns: n, stripes, algorithm: null, fallback: null };
+  }
+
+  // --- striped + mirror → flat RAID 10 (copies 2): near / far / offset --------
+  // The mirror-class placement algorithms (§5b / §3a). Each chunk is stored twice;
+  // the layout decides where the copy lands. Verified against the golden tables in
+  // layout-raid10-reference.js (Linux md/raid10.c). 'data' = original, 'mirror' =
+  // replica; orig and copy share `seg` (same chunk) and `seq` (written together).
+  const RAID10_LAYOUTS = {
+    // copies on adjacent disks within the same stripe row
+    near(n, chunks) {
+      const perRow = n / 2;
+      const rows = Math.ceil(chunks / perRow);
+      return Array.from({ length: rows }, (_, s) =>
+        Array.from({ length: n }, (_, d) => {
+          const chunk = s * perRow + Math.floor(d / 2);
+          return { role: d % 2 ? 'mirror' : 'data', seg: chunk, seq: chunk };
+        }));
+    },
+    // originals striped (RAID0), then copies in a second section shifted by 1 disk
+    far(n, chunks) {
+      const R = Math.ceil(chunks / n);
+      const origs = Array.from({ length: R }, (_, r) =>
+        Array.from({ length: n }, (_, d) => ({ role: 'data', seg: r * n + d, seq: r * n + d })));
+      const copies = Array.from({ length: R }, (_, r) =>
+        Array.from({ length: n }, (_, d) => {
+          const chunk = r * n + ((d - 1 + n) % n);
+          return { role: 'mirror', seg: chunk, seq: chunk };
+        }));
+      return [...origs, ...copies];
+    },
+    // like far, but each copy row sits immediately below its original row
+    offset(n, chunks) {
+      const R = Math.ceil(chunks / n);
+      const stripes = [];
+      for (let r = 0; r < R; r++) {
+        stripes.push(Array.from({ length: n }, (_, d) =>
+          ({ role: 'data', seg: r * n + d, seq: r * n + d })));
+        stripes.push(Array.from({ length: n }, (_, d) => {
+          const chunk = r * n + ((d - 1 + n) % n);
+          return { role: 'mirror', seg: chunk, seq: chunk };
+        }));
+      }
+      return stripes;
+    },
+  };
+  const DEFAULT_RAID10_LAYOUT = 'near';
+
+  function resolveRaid10Layout(requested) {
+    const name = requested ? requested.replace(/^raid10-/, '') : null;
+    if (name && RAID10_LAYOUTS[name]) return { algoName: name, fallback: null };
+    if (name) return { algoName: DEFAULT_RAID10_LAYOUT,
+                       fallback: `unknown RAID10 layout "${requested}" → using ${DEFAULT_RAID10_LAYOUT}` };
+    return { algoName: DEFAULT_RAID10_LAYOUT, fallback: null };
+  }
+
+  function placeRaid10(n, requested, opts = {}) {
+    const { algoName, fallback } = resolveRaid10Layout(requested);
+    const chunks = opts.chunks ?? 2 * n;   // 2n chunks → 4 rows at n=4 (matches golden tables)
+    const stripes = RAID10_LAYOUTS[algoName](n, chunks);
+    return { columns: n, stripes, algorithm: algoName, fallback };
   }
 
   // --- parity1/parity2 → RAID 5/6, rotating parity ----------------------------
@@ -164,7 +225,7 @@
     return { algoName: DEFAULT_PARITY_ALGO, fallback: null };
   }
 
-  const Layout = { computePlacement, PARITY_ALGORITHMS };
+  const Layout = { computePlacement, PARITY_ALGORITHMS, RAID10_LAYOUTS };
   if (typeof module !== 'undefined' && module.exports) module.exports = Layout;
   else root.RaidLayout = Layout;
 
