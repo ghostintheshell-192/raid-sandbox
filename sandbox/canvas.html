@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID Sandbox — canvas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    /* ---- layout ---- */
+    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    .sbc-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr 240px;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sbc-header {
+      grid-column: 1 / -1;
+      padding: .7rem 1.2rem;
+      border-bottom: 1px solid rgba(128,128,128,.2);
+      display: flex; align-items: center; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .sbc-header h1 { font-size: 1.1rem; margin: 0; }
+    .sbc-status {
+      margin-left: auto; font-size: .75rem; opacity: .55;
+      font-style: italic;
+    }
+
+    /* ---- sidebar ---- */
+    .sbc-sidebar {
+      border-right: 1px solid rgba(128,128,128,.2);
+      padding: .8rem;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 1.2rem;
+    }
+    .sbc-sidebar h3 {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+      opacity: .55; margin: 0 0 .4rem;
+    }
+    .sbc-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .sbc-chip {
+      padding: .35rem .6rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
+      cursor: grab; user-select: none;
+      border: 1px solid rgba(128,128,128,.35);
+      background: rgba(128,128,128,.1);
+      transition: background .15s;
+    }
+    .sbc-chip:hover { background: rgba(128,128,128,.22); }
+    .sbc-chip[data-drag="disk"]         { border-color: rgba(52,152,219,.5);  background: rgba(52,152,219,.12); }
+    .sbc-chip[data-drag="segmentation"] { border-color: rgba(155,89,182,.5);  background: rgba(155,89,182,.12); }
+    .sbc-chip[data-drag="redundancy"]   { border-color: rgba(46,204,113,.5);  background: rgba(46,204,113,.12); }
+
+    /* ---- canvas area ---- */
+    .sbc-canvas {
+      padding: 1.2rem;
+      overflow: auto;
+      display: flex; flex-wrap: wrap; gap: 1rem; align-content: flex-start;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 31px,
+        rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
+      ),
+      repeating-linear-gradient(
+        90deg, transparent, transparent 31px,
+        rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
+      );
+    }
+    .sbc-canvas.sbc--over { outline: 2px dashed rgba(52,152,219,.5); outline-offset: -6px; }
+
+    /* ---- canvas nodes ---- */
+    .sbc-disk {
+      padding: .5rem .75rem; border-radius: 8px; font-size: .8rem; font-weight: 600;
+      cursor: grab; user-select: none;
+      background: rgba(52,152,219,.18); border: 1px solid rgba(52,152,219,.45);
+      transition: background .12s, box-shadow .12s;
+      white-space: nowrap;
+    }
+    .sbc-disk:hover  { background: rgba(52,152,219,.28); }
+    .sbc-disk.sbc--over { box-shadow: 0 0 0 2px rgba(52,152,219,.8); }
+
+    .sbc-array {
+      border: 2px solid rgba(155,89,182,.5); border-radius: 10px;
+      padding: .6rem; min-width: 140px;
+      background: rgba(155,89,182,.07);
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .sbc-array.sbc--over { border-color: rgba(155,89,182,.9); background: rgba(155,89,182,.14); }
+
+    .sbc-slots { display: flex; gap: .4rem; }
+    .sbc-slot {
+      flex: 1; padding: .3rem .5rem; border-radius: 6px;
+      font-size: .72rem; font-weight: 600; text-align: center;
+      transition: background .12s;
+    }
+    .sbc-slot--empty {
+      border: 1.5px dashed rgba(128,128,128,.4);
+      background: rgba(128,128,128,.06);
+    }
+    .sbc-slot--empty.sbc-slot--over {
+      border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.08);
+    }
+    .sbc-slot-hint { opacity: .5; font-style: italic; }
+    .sbc-slot--filled[data-axis="segmentation"] { background: rgba(155,89,182,.25); border: 1.5px solid rgba(155,89,182,.5); }
+    .sbc-slot--filled[data-axis="redundancy"]   { background: rgba(46,204,113,.2);  border: 1.5px solid rgba(46,204,113,.45); }
+
+    .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+    /* ---- results panel ---- */
+    .sbc-results {
+      border-left: 1px solid rgba(128,128,128,.2);
+      padding: .8rem;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: .8rem;
+    }
+    .sbc-results h3 {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+      opacity: .55; margin: 0 0 .2rem;
+    }
+    .sbc-level { font-size: 1.2rem; font-weight: 600; }
+    .sbc-level--nonstd { color: #e67e22; font-size: .95rem; }
+    .sbc-stat  { font-size: .88rem; opacity: .8; }
+    .sbc-issue {
+      font-size: .8rem; padding: .5rem .7rem; border-radius: 6px;
+      background: rgba(241,196,15,.12); border: 1px solid rgba(241,196,15,.35); color: #f1c40f;
+    }
+    .sbc-animate-btn {
+      font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+      padding: .45rem .8rem; border-radius: 6px;
+      border: 1px solid rgba(52,152,219,.5); background: rgba(52,152,219,.15); color: inherit;
+    }
+    .sbc-animate-btn:disabled { opacity: .4; cursor: default; }
+
+    /* grid styles (reused from animator.demo.html) */
+    .sb-grid { gap: 3px; margin-top: .4rem; }
+    .sb-head { text-align: center; font-size: .72rem; opacity: .55; padding-bottom: .15rem; }
+    .sb-cell {
+      height: 2rem; display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; font-weight: 600; font-size: .78rem; color: #fff;
+      transition: opacity .18s ease, transform .15s ease, box-shadow .15s ease;
+    }
+    .role-data   { background: rgba(52,152,219,.85); }
+    .role-mirror { background: rgba(155,89,182,.78); }
+    .role-P      { background: rgba(46,204,113,.85); }
+    .role-Q      { background: rgba(241,196,15,.92); color: #222; }
+    .sb-cell.dim   { opacity: .1; }
+    .sb-cell.flash { transform: scale(1.1); box-shadow: 0 0 12px rgba(255,255,255,.45); }
+    .sb-cell.lit   { opacity: 1; }
+
+  </style>
+</head>
+<body>
+<div class="sbc-layout">
+
+  <!-- header -->
+  <header class="sbc-header">
+    <h1>RAID Sandbox</h1>
+    <span style="opacity:.45; font-size:.8rem">drag disks onto the canvas · group them · set segmentation + redundancy</span>
+    <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
+  </header>
+
+  <!-- sidebar -->
+  <aside class="sbc-sidebar" id="sidebar">
+    <div>
+      <h3>Dischi</h3>
+      <div class="sbc-chips">
+        <div class="sbc-chip" data-drag="disk" data-protocol="SATA" data-size="2">SATA 2 TB</div>
+        <div class="sbc-chip" data-drag="disk" data-protocol="SATA" data-size="4">SATA 4 TB</div>
+        <div class="sbc-chip" data-drag="disk" data-protocol="SAS"  data-size="2">SAS 2 TB</div>
+        <div class="sbc-chip" data-drag="disk" data-protocol="NVMe" data-size="1">NVMe 1 TB</div>
+      </div>
+    </div>
+    <div>
+      <h3>Segmentazione</h3>
+      <div class="sbc-chips">
+        <div class="sbc-chip" data-drag="segmentation" data-value="striped">Striped</div>
+        <div class="sbc-chip" data-drag="segmentation" data-value="linear">Linear</div>
+      </div>
+    </div>
+    <div>
+      <h3>Ridondanza</h3>
+      <div class="sbc-chips">
+        <div class="sbc-chip" data-drag="redundancy" data-value="none">None</div>
+        <div class="sbc-chip" data-drag="redundancy" data-value="mirror">Mirror</div>
+        <div class="sbc-chip" data-drag="redundancy" data-value="parity1">Parity P</div>
+        <div class="sbc-chip" data-drag="redundancy" data-value="parity2">Parity P+Q</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- canvas -->
+  <main class="sbc-canvas" id="canvas"></main>
+
+  <!-- results -->
+  <aside class="sbc-results" id="results">
+    <div>
+      <h3>Livello RAID</h3>
+      <div class="sbc-level" data-result="level">—</div>
+    </div>
+    <div>
+      <h3>Capacità</h3>
+      <div class="sbc-stat" data-result="capacity">—</div>
+    </div>
+    <div>
+      <h3>Fault tolerance</h3>
+      <div class="sbc-stat" data-result="ft">—</div>
+    </div>
+    <div data-result="issue" class="sbc-issue" hidden></div>
+    <button class="sbc-animate-btn" id="btn-animate" disabled>▶ animate write</button>
+    <div>
+      <h3>Placement grid</h3>
+      <div data-result="grid"></div>
+    </div>
+  </aside>
+
+</div>
+
+<script src="model.js"></script>
+<script src="layout.js"></script>
+<script src="render.js"></script>
+<script src="canvas-state.js"></script>
+<script src="canvas-controller.js"></script>
+<script>
+  const state      = CanvasState.createState();
+  const canvasEl   = document.getElementById('canvas');
+  const resultsEl  = document.getElementById('results');
+  const sidebarEl  = document.getElementById('sidebar');
+  const statusBar  = document.getElementById('status-bar');
+  const btnAnimate = document.getElementById('btn-animate');
+
+  const ctrl = CanvasController.createController({ canvasEl, resultsEl, state });
+  ctrl.setupSidebar(sidebarEl);
+  ctrl.render();
+
+  btnAnimate.addEventListener('click', () => {
+    btnAnimate.disabled = true;
+    ctrl.playAnimation();
+    setTimeout(() => { btnAnimate.disabled = false; }, 4000);
+  });
+
+  // Keep status bar + animate button in sync after each evaluate().
+  const observer = new MutationObserver(() => {
+    const issueEl   = resultsEl.querySelector('[data-result="issue"]');
+    const levelEl   = resultsEl.querySelector('[data-result="level"]');
+    const gridEl    = resultsEl.querySelector('[data-result="grid"]');
+    const hasResult = levelEl && levelEl.textContent !== '—';
+    const noGrid    = gridEl && gridEl.textContent.startsWith('No placement');
+    btnAnimate.disabled = !hasResult || noGrid;
+    statusBar.textContent = issueEl && !issueEl.hidden
+      ? issueEl.textContent
+      : (hasResult ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
+  });
+  observer.observe(resultsEl, { childList: true, subtree: true, characterData: true, attributes: true });
+</script>
+</body>
+</html>
