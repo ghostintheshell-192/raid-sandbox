@@ -13,7 +13,7 @@
     .sbc-layout {
       display: grid;
       grid-template-columns: 200px 1fr 240px;
-      grid-template-rows: auto 2fr 1fr;
+      grid-template-rows: auto 1fr 1fr;
       height: 100vh;
       overflow: hidden;
     }
@@ -60,12 +60,15 @@
     .sbc-chip[data-drag="redundancy"]   { border-color: rgba(46,204,113,.5);  background: rgba(46,204,113,.12); }
 
     /* ---- canvas area ---- */
-    .layer-label {
+    /* Layer labels via ::before so render() clearing innerHTML doesn't remove them */
+    .sbc-canvas, .sbc-physical { position: relative; }
+    .sbc-canvas::before, .sbc-physical::before {
       position: absolute; top: .5rem; right: .7rem;
       font-size: .62rem; text-transform: uppercase; letter-spacing: .09em;
       opacity: .35; pointer-events: none; z-index: 1;
     }
-    .sbc-canvas, .sbc-physical { position: relative; }
+    .sbc-canvas::before   { content: 'data layer'; }
+    .sbc-physical::before { content: 'physical layer'; }
 
     .sbc-canvas {
       margin: .6rem .6rem .3rem .6rem;
@@ -312,13 +315,10 @@
   </aside>
 
   <!-- canvas — data layer -->
-  <main class="sbc-canvas" id="canvas">
-    <span class="layer-label">data layer</span>
-  </main>
+  <main class="sbc-canvas" id="canvas"></main>
 
   <!-- physical layer canvas -->
   <div class="sbc-physical" id="physical-panel">
-    <span class="layer-label">physical layer</span>
     <div class="pln-canvas" id="physical-canvas">
       <svg class="pln-svg" id="physical-svg"></svg>
     </div>
@@ -374,10 +374,13 @@
   const statusBar  = document.getElementById('status-bar');
   const btnAnimate = document.getElementById('btn-animate');
 
-  // Active-border on physical panel during any drag.
+  // Active-border on physical panel when hovering with a drag (same mechanic as data canvas).
   const physPanel = document.getElementById('physical-panel');
-  document.addEventListener('dragstart', () => physPanel.classList.add('cp--active'));
-  document.addEventListener('dragend',   () => physPanel.classList.remove('cp--active'));
+  physPanel.addEventListener('dragover',  () => physPanel.classList.add('cp--active'));
+  physPanel.addEventListener('dragleave', e => {
+    if (!physPanel.contains(e.relatedTarget)) physPanel.classList.remove('cp--active');
+  });
+  physPanel.addEventListener('drop', () => physPanel.classList.remove('cp--active'));
 
   // Result panel elements.
   const elLevel    = document.querySelector('[data-result="level"]');
