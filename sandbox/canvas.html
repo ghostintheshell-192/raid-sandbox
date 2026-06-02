@@ -76,7 +76,8 @@
         rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
       );
     }
-    .sbc-canvas.sbc--over { border-color: rgba(52,152,219,.6); }
+    .sbc-canvas.sbc--over        { border-color: rgba(52,152,219,.6); }
+    .sbc-control-path.cp--active { border-color: rgba(52,152,219,.6); }
 
     /* ---- canvas nodes ---- */
     .sbc-disk {
@@ -204,9 +205,10 @@
     .cp-result--fake     { background: rgba(231,76,60,.18);   border: 1px solid rgba(231,76,60,.4);   }
     .cp-result--incomplete { opacity: .4; border: 1px solid rgba(128,128,128,.3); }
 
-    /* CSS tooltip on cp-slots */
-    .cp-slot { position: relative; }
-    .cp-slot[data-label]::after {
+    /* CSS tooltip on cp-slots and fixed cp-nodes */
+    .cp-slot, .cp-node[data-label] { position: relative; }
+    .cp-slot[data-label]::after,
+    .cp-node[data-label]::after {
       content: attr(data-label);
       position: absolute;
       bottom: calc(100% + 6px);
@@ -221,7 +223,8 @@
       opacity: 0;
       transition: opacity .15s;
     }
-    .cp-slot:hover[data-label]::after { opacity: 1; }
+    .cp-slot:hover[data-label]::after,
+    .cp-node:hover[data-label]::after { opacity: 1; }
 
     .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
 
@@ -354,7 +357,7 @@
     <span class="cp-arrow">→</span>
 
     <!-- fixed: PCIe / CPU -->
-    <div class="cp-node" title="PCIe bus · CPU">
+    <div class="cp-node" data-label="PCIe bus · CPU">
       <span class="cp-node-icon">⚡</span>
     </div>
     <span class="cp-arrow">→</span>
@@ -431,6 +434,10 @@
   };
 
   function setupControlPath() {
+    const cpPanel = document.getElementById('control-path');
+    document.addEventListener('dragstart', () => cpPanel.classList.add('cp--active'));
+    document.addEventListener('dragend',   () => cpPanel.classList.remove('cp--active'));
+
     document.querySelectorAll('.cp-slot').forEach(slot => {
       const slotName = slot.dataset.slot;
       // Note: dataTransfer.getData() is NOT available during dragover (browser security
