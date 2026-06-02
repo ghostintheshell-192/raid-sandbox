@@ -1,0 +1,29 @@
+id: os-linux
+name: OS — Linux
+category: os
+pathSlot: os
+
+description: >
+  Linux operating system managing the RAID array in software. Uses mdadm (for
+  traditional RAID 0/1/5/6/10) or ZFS (with integrated volume management and
+  checksums). The CPU computes all parity; no dedicated hardware required.
+
+provides:
+  - raid-engine          # the RAID engine is the OS kernel (md driver or ZFS)
+  - software-raid
+
+requires:
+  - hba                  # needs individual disks visible (not a Virtual Drive)
+
+raidEnginePosition: in-os   # → Software RAID
+derivedType: software
+
+tools:
+  - mdadm                # classical Linux MD RAID
+  - zfs                  # ZFS with native RAID-Z
+  - lvm                  # LVM with striping/mirroring
+
+note: >
+  Without a battery-backed write cache (BBU) or UPS, a power loss during a write
+  can leave the array in an inconsistent state. This is a soft constraint surfaced
+  as a warning in the game.

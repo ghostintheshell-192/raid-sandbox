@@ -1,0 +1,27 @@
+id: controller-hw
+name: Hardware RAID Controller
+category: controller
+pathSlot: controller
+
+description: >
+  A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a
+  RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and
+  exposes one or more Virtual Drives to the OS — the OS never sees the individual
+  physical disks.
+
+  Examples: Broadcom MegaRAID, Adaptec SmartRAID.
+
+provides:
+  - protocol-translation
+  - raid-engine
+  - virtual-drive        # the OS sees this, not the physical disks
+
+requires:
+  - pcie-slot
+
+raidEnginePosition: on-controller   # engine is on the PCIe card → Hardware RAID
+derivedType: hardware
+
+note: >
+  Because the OS sees only the Virtual Drive, software-level RAID tools (mdadm, ZFS)
+  cannot manage the individual disks — they are hidden by the controller firmware.

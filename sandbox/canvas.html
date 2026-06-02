@@ -13,10 +13,12 @@
     .sbc-layout {
       display: grid;
       grid-template-columns: 200px 1fr 240px;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto 1fr auto;
       height: 100vh;
       overflow: hidden;
     }
+    .sbc-sidebar  { grid-row: 2 / 4; }
+    .sbc-results  { grid-row: 2 / 4; }
     .sbc-header {
       grid-column: 1 / -1;
       padding: .7rem 1.2rem;
@@ -131,7 +133,69 @@
     .sbc-slot--filled[data-axis="algorithm"]    { background: rgba(230,126,34,.18); border: 1.5px solid rgba(230,126,34,.5); }
     .sbc-slot--empty[data-axis="algorithm"]     { border-color: rgba(230,126,34,.3); }
 
-    .sbc-chip[data-drag="algorithm"] { border-color: rgba(230,126,34,.5); background: rgba(230,126,34,.12); }
+    .sbc-chip[data-drag="algorithm"]  { border-color: rgba(230,126,34,.5);  background: rgba(230,126,34,.12); }
+    .sbc-chip[data-drag="component"] { border-color: rgba(149,165,166,.5); background: rgba(149,165,166,.12); }
+
+    /* ---- control path panel ---- */
+    .sbc-control-path {
+      grid-column: 2;
+      border-top: 1px solid rgba(128,128,128,.2);
+      padding: .7rem 1.2rem;
+      background: rgba(0,0,0,.06);
+      display: flex; align-items: center; gap: 0; overflow-x: auto;
+    }
+    .cp-label {
+      font-size: .65rem; text-transform: uppercase; letter-spacing: .07em;
+      opacity: .45; margin-right: .8rem; white-space: nowrap;
+    }
+    /* Fixed nodes (not droppable) */
+    .cp-node {
+      display: flex; flex-direction: column; align-items: center; gap: .2rem;
+      padding: .35rem .55rem; border-radius: 7px; white-space: nowrap;
+      font-size: .72rem; font-weight: 600;
+      background: rgba(128,128,128,.12); border: 1px solid rgba(128,128,128,.25);
+      min-width: 52px; text-align: center;
+    }
+    .cp-node-icon { font-size: 1rem; line-height: 1; }
+    .cp-node-text { font-size: .6rem; opacity: .7; }
+    /* Arrow between nodes */
+    .cp-arrow {
+      font-size: 1rem; opacity: .35; padding: 0 .3rem;
+      flex-shrink: 0;
+    }
+    /* Drop slots */
+    .cp-slot {
+      display: flex; flex-direction: column; align-items: center; gap: .2rem;
+      padding: .35rem .55rem; border-radius: 7px; white-space: nowrap;
+      font-size: .72rem; min-width: 64px; text-align: center;
+      border: 1.5px dashed rgba(128,128,128,.35);
+      background: rgba(128,128,128,.06); cursor: default;
+      transition: background .12s, border-color .12s;
+    }
+    .cp-slot-hint { font-size: .6rem; opacity: .45; font-style: italic; }
+    .cp-slot.cp--over { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.08); }
+    .cp-slot.cp--filled {
+      border-style: solid; border-color: rgba(149,165,166,.5);
+      background: rgba(149,165,166,.15);
+    }
+    .cp-slot.cp--filled[data-slot="controller"][data-value="controller-hw"] {
+      border-color: rgba(52,152,219,.55); background: rgba(52,152,219,.15);
+    }
+    .cp-slot.cp--filled[data-slot="os"] {
+      border-color: rgba(46,204,113,.5); background: rgba(46,204,113,.12);
+    }
+    .cp-slot.cp--filled[data-slot="fakeChip"] {
+      border-color: rgba(231,76,60,.5); background: rgba(231,76,60,.1);
+    }
+    /* Result badge */
+    .cp-result {
+      margin-left: auto; padding: .3rem .7rem; border-radius: 20px;
+      font-size: .75rem; font-weight: 600; white-space: nowrap;
+    }
+    .cp-result--hw       { background: rgba(52,152,219,.25);  border: 1px solid rgba(52,152,219,.5);  }
+    .cp-result--sw       { background: rgba(46,204,113,.2);   border: 1px solid rgba(46,204,113,.45); }
+    .cp-result--fake     { background: rgba(231,76,60,.18);   border: 1px solid rgba(231,76,60,.4);   }
+    .cp-result--incomplete { opacity: .4; border: 1px solid rgba(128,128,128,.3); }
 
     .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
 
@@ -224,10 +288,70 @@
         <div class="sbc-chip" data-drag="algorithm" data-value="right-asymmetric">Right Asym</div>
       </div>
     </div>
+    <div>
+      <h3>Componenti fisici</h3>
+      <div class="sbc-chips">
+        <div class="sbc-chip" data-drag="component" data-slot="hasBackplane" data-value="true">Backplane</div>
+        <div class="sbc-chip" data-drag="component" data-slot="controller"   data-value="hba">HBA</div>
+        <div class="sbc-chip" data-drag="component" data-slot="controller"   data-value="controller-hw">Controller HW</div>
+        <div class="sbc-chip" data-drag="component" data-slot="fakeChip"     data-value="true">Fake RAID chip</div>
+        <div class="sbc-chip" data-drag="component" data-slot="os"           data-value="os-linux">OS Linux</div>
+        <div class="sbc-chip" data-drag="component" data-slot="os"           data-value="os-windows">OS Windows</div>
+      </div>
+    </div>
   </aside>
 
   <!-- canvas -->
   <main class="sbc-canvas" id="canvas"></main>
+
+  <!-- control path panel -->
+  <div class="sbc-control-path" id="control-path">
+    <span class="cp-label">Control path</span>
+
+    <!-- disks: auto-derived from canvas state -->
+    <div class="cp-node" id="cp-disks">
+      <span class="cp-node-icon">💾</span>
+      <span class="cp-node-text" id="cp-disk-count">0 disks</span>
+    </div>
+    <span class="cp-arrow">→</span>
+
+    <!-- backplane: optional -->
+    <div class="cp-slot" id="cp-slot-backplane" data-slot="hasBackplane">
+      <span class="cp-node-icon">📋</span>
+      <span class="cp-slot-hint">backplane</span>
+    </div>
+    <span class="cp-arrow">→</span>
+
+    <!-- controller: HBA or Controller HW -->
+    <div class="cp-slot" id="cp-slot-controller" data-slot="controller">
+      <span class="cp-node-icon">🔌</span>
+      <span class="cp-slot-hint">HBA / Controller</span>
+    </div>
+    <span class="cp-arrow">→</span>
+
+    <!-- fixed: PCIe / CPU -->
+    <div class="cp-node">
+      <span class="cp-node-icon">⚡</span>
+      <span class="cp-node-text">PCIe · CPU</span>
+    </div>
+    <span class="cp-arrow">→</span>
+
+    <!-- fake RAID chip: optional, between HBA and OS -->
+    <div class="cp-slot" id="cp-slot-fakeChip" data-slot="fakeChip">
+      <span class="cp-node-icon">🔧</span>
+      <span class="cp-slot-hint">fake RAID chip</span>
+    </div>
+    <span class="cp-arrow">→</span>
+
+    <!-- OS -->
+    <div class="cp-slot" id="cp-slot-os" data-slot="os">
+      <span class="cp-node-icon">🖥</span>
+      <span class="cp-slot-hint">OS</span>
+    </div>
+
+    <!-- derived result -->
+    <div class="cp-result cp-result--incomplete" id="cp-result">—</div>
+  </div>
 
   <!-- results -->
   <aside class="sbc-results" id="results">
@@ -274,6 +398,97 @@
   const statusBar  = document.getElementById('status-bar');
   const btnAnimate = document.getElementById('btn-animate');
 
+  // ── Control path panel ───────────────────────────────────────────────────
+  const CP_LABELS = {
+    'hba':           'HBA',
+    'controller-hw': 'Controller HW',
+    'os-linux':      'Linux',
+    'os-windows':    'Windows',
+  };
+  const CP_ICONS = {
+    hasBackplane: '📋', controller: '🔌', fakeChip: '🔧', os: '🖥',
+  };
+
+  function setupControlPath() {
+    document.querySelectorAll('.cp-slot').forEach(slot => {
+      const slotName = slot.dataset.slot;
+      slot.addEventListener('dragover', e => {
+        const payload = _getPayload(e);
+        if (payload && payload.type === 'component' && payload.slot === slotName) {
+          e.preventDefault(); slot.classList.add('cp--over');
+        }
+      });
+      slot.addEventListener('dragleave', () => slot.classList.remove('cp--over'));
+      slot.addEventListener('drop', e => {
+        e.preventDefault(); slot.classList.remove('cp--over');
+        const payload = _getPayload(e);
+        if (!payload || payload.type !== 'component' || payload.slot !== slotName) return;
+        const val = payload.slot === 'hasBackplane' || payload.slot === 'fakeChip'
+          ? true : payload.value;
+        CanvasState.setControlSlot(state, payload.slot, val);
+        renderControlPath();
+        triggerEvaluate();
+      });
+      // Right-click or double-click to clear a filled slot
+      slot.addEventListener('dblclick', () => {
+        const isBoolean = slotName === 'hasBackplane' || slotName === 'fakeChip';
+        CanvasState.setControlSlot(state, slotName, isBoolean ? false : null);
+        renderControlPath();
+        triggerEvaluate();
+      });
+    });
+  }
+
+  function renderControlPath() {
+    const cp = state.controlPath;
+    // Disk count badge
+    const diskCount = Array.from(state.nodes.values()).filter(n => n.kind === 'disk').length;
+    document.getElementById('cp-disk-count').textContent = diskCount + (diskCount === 1 ? ' disk' : ' disks');
+
+    // Each slot
+    _renderCpSlot('cp-slot-backplane', 'hasBackplane', cp.hasBackplane ? 'Backplane' : null, '📋', 'backplane');
+    _renderCpSlot('cp-slot-controller', 'controller', cp.controller ? CP_LABELS[cp.controller] : null, '🔌', 'HBA / Controller');
+    _renderCpSlot('cp-slot-fakeChip', 'fakeChip', cp.fakeChip ? 'Fake RAID' : null, '🔧', 'fake RAID chip');
+    _renderCpSlot('cp-slot-os', 'os', cp.os ? CP_LABELS[cp.os] : null, '🖥', 'OS');
+
+    // Dim the fakeChip slot when controller-hw is chosen (not applicable)
+    const fakeSlot = document.getElementById('cp-slot-fakeChip');
+    fakeSlot.style.opacity = cp.controller === 'controller-hw' ? '0.3' : '1';
+    fakeSlot.style.pointerEvents = cp.controller === 'controller-hw' ? 'none' : '';
+  }
+
+  function _renderCpSlot(elId, slot, label, icon, hint) {
+    const el = document.getElementById(elId);
+    if (label) {
+      el.classList.add('cp--filled');
+      el.dataset.value = label;
+      el.innerHTML = '<span class="cp-node-icon">' + icon + '</span><span style="font-size:.65rem">' + label + '</span>';
+    } else {
+      el.classList.remove('cp--filled');
+      el.removeAttribute('data-value');
+      el.innerHTML = '<span class="cp-node-icon" style="opacity:.35">' + icon + '</span><span class="cp-slot-hint">' + hint + '</span>';
+    }
+  }
+
+  function updateCpResult(r) {
+    const el = document.getElementById('cp-result');
+    if (!r.raidType) {
+      el.textContent = r.controlPathIssue ? '⚠ incomplete' : '—';
+      el.className = 'cp-result cp-result--incomplete';
+    } else {
+      const labels = { hardware: 'Hardware RAID', software: 'Software RAID', fake: 'Fake RAID' };
+      const cls    = { hardware: 'cp-result--hw', software: 'cp-result--sw', fake: 'cp-result--fake' };
+      el.textContent = labels[r.raidType] + (r.os ? ' · ' + CP_LABELS[r.os] : '');
+      el.className = 'cp-result ' + cls[r.raidType];
+    }
+  }
+
+  function _getPayload(e) {
+    try { return JSON.parse(e.dataTransfer.getData('text/plain')); } catch { return null; }
+  }
+
+  setupControlPath();
+
   // Result panel elements.
   const elLevel    = document.querySelector('[data-result="level"]');
   const elCapacity = document.querySelector('[data-result="capacity"]');
@@ -313,14 +528,23 @@
       btnAnimate.disabled = true;
     }
 
+    updateCpResult(r);
+
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
       : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
   }
 
+  function triggerEvaluate() {
+    renderControlPath();
+    const result = CanvasState.evaluate(state);
+    onEvaluate(result);
+  }
+
   const ctrl = CanvasController.createController({ canvasEl, state, onEvaluate });
   ctrl.setupSidebar(sidebarEl);
   ctrl.render();
+  renderControlPath();
 
   btnAnimate.addEventListener('click', () => {
     btnAnimate.disabled = true;

@@ -1,10 +1,10 @@
 /**
- * canvas-state.js — RAID Sandbox: mutable canvas state + evaluation pipeline (Phase 3).
+ * canvas-state.js — RAID Sandbox: mutable canvas state + evaluation pipeline.
  *
- * Holds the user's in-progress build as a forest of canvas nodes (disks and arrays).
- * Exposes atomic mutations (called by the drag-and-drop controller) and evaluate() —
- * the single call that compiles the forest into a model.js tree and runs the pipeline:
- *   compile → RaidModel.analyze → RaidLayout.computePlacement
+ * Two orthogonal axes (spec §2):
+ *   Axis B (data layout) — disk/array tree; recognizer derives the RAID level.
+ *   Axis A (control path) — the physical path disks→backplane→controller→CPU→OS;
+ *                           engine position derives hardware/fake/software RAID.
  *
  * Positions are kept in a separate map so the drag fast-path (requestAnimationFrame)
  * can update pixel coordinates without touching domain state or triggering evaluate().
@@ -12,7 +12,7 @@
  *
  * Depends on: model.js (RaidModel), layout.js (RaidLayout)
  *
- *   CanvasState.createState()                             → state
+ * Axis B mutations:
  *   CanvasState.addDisk(state, sizeGB, protocol, pos)     → id
  *   CanvasState.group(state, memberIds)                   → id
  *   CanvasState.addToArray(state, arrayId, diskId)        → void
@@ -22,7 +22,12 @@
  *   CanvasState.dissolve(state, arrayId)                  → void
  *   CanvasState.remove(state, id)                         → void
  *   CanvasState.move(state, diskId, pos)                  → void  (fast path)
- *   CanvasState.evaluate(state)                           → EvalResult
+ *
+ * Axis A mutation:
+ *   CanvasState.setControlSlot(state, slot, value)        → void
+ *     slot ∈ { 'hasBackplane', 'controller', 'fakeChip', 'os' }
+ *
+ *   CanvasState.evaluate(state, opts)                     → EvalResult
  */
 
 (function (root) {
@@ -52,10 +57,18 @@
    */
   function createState() {
     return {
+      // Axis B — data layout
       nodes:     new Map(),
       roots:     new Set(),
       positions: new Map(),
       selected:  new Set(),
+      // Axis A — control path
+      controlPath: {
+        hasBackplane: false,
+        controller:   null,   // null | 'hba' | 'controller-hw'
+        fakeChip:     false,
+        os:           null,   // null | 'os-linux' | 'os-windows'
+      },
     };
   }
 
@@ -162,6 +175,19 @@
   }
 
   // ---------------------------------------------------------------------------
+  // AXIS A MUTATION — control path
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Set a control path slot.
+   * slot: 'hasBackplane' (bool) | 'controller' (string|null) |
+   *       'fakeChip' (bool)     | 'os' (string|null)
+   */
+  function setControlSlot(state, slot, value) {
+    state.controlPath[slot] = value;
+  }
+
+  // ---------------------------------------------------------------------------
   // COMPILATION  canvas node → RaidModel node (headless, no DOM)
   // ---------------------------------------------------------------------------
 
@@ -230,8 +256,39 @@
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
+    const cp        = _recognizeControlPath(state.controlPath);
 
-    return { tree, analysis, placement, rootCount, incomplete, firstIssue: null };
+    return {
+      tree, analysis, placement, rootCount, incomplete, firstIssue: null,
+      raidType:            cp.raidType,
+      os:                  cp.os,
+      controlPathComplete: cp.complete,
+      controlPathIssue:    _controlPathIssue(state.controlPath),
+    };
+  }
+
+  /**
+   * Derive hardware/fake/software RAID type from the control path.
+   *   controller-hw present                  → Hardware RAID
+   *   hba + fakeChip + os                    → Fake RAID
+   *   hba + os (no fakeChip)                 → Software RAID
+   */
+  function _recognizeControlPath(cp) {
+    const { controller, fakeChip, os } = cp;
+    if (!controller) return { raidType: null, os: null, complete: false };
+    if (controller === 'controller-hw')
+      return { raidType: 'hardware', os: null, complete: true };
+    if (controller === 'hba' && fakeChip && os)
+      return { raidType: 'fake',     os, complete: true };
+    if (controller === 'hba' && !fakeChip && os)
+      return { raidType: 'software', os, complete: true };
+    return { raidType: null, os: null, complete: false };
+  }
+
+  function _controlPathIssue(cp) {
+    if (!cp.controller) return 'Drop a controller (HBA or Controller HW) onto the path.';
+    if (cp.controller === 'hba' && !cp.os) return 'Drop an OS onto the path.';
+    return null;
   }
 
   // Derive the first actionable hint from the current state.
@@ -264,10 +321,15 @@
 
   const CanvasState = {
     createState,
+    // Axis B
     addDisk, group, addToArray,
     setSegmentation, setRedundancy, setAlgorithm,
     dissolve, remove, move,
-    compile, evaluate,
+    compile,
+    // Axis A
+    setControlSlot,
+    // pipeline
+    evaluate,
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = CanvasState;

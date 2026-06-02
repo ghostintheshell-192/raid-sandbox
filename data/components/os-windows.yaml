@@ -1,0 +1,24 @@
+id: os-windows
+name: OS — Windows
+category: os
+pathSlot: os
+
+description: >
+  Windows operating system managing RAID in software via Storage Spaces
+  (Windows 8+/Server 2012+) or legacy Disk Management (dynamic volumes).
+  Storage Spaces supports mirroring, striping, and parity spaces with
+  optional journaling for crash consistency.
+
+provides:
+  - raid-engine
+  - software-raid
+
+requires:
+  - hba
+
+raidEnginePosition: in-os
+derivedType: software
+
+tools:
+  - storage-spaces       # modern Windows software RAID (ReFS or NTFS)
+  - dynamic-volumes      # legacy: spanned/striped/mirrored/RAID-5 volumes

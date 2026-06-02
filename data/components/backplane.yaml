@@ -1,0 +1,26 @@
+id: backplane
+name: Backplane
+category: connectivity
+pathSlot: backplane
+required: false
+
+description: >
+  Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller.
+  Does not process data — purely a physical routing layer. Disks plug in on one side,
+  the controller cable on the other.
+
+provides:
+  - passive-routing
+
+requires:
+  - disks on one side
+  - HBA or controller on the other
+
+constraints:
+  - rule: no-raid-engine
+    message: A backplane has no processing capability — it cannot host the RAID engine.
+
+note: >
+  Best practice: members of one RAID span should be on different backplanes when
+  possible (soft constraint — improves physical fault isolation). This rule is
+  deferred to a later phase.

@@ -52,6 +52,9 @@
             setDrag(e, { source: 'sidebar', type: 'redundancy', value: chip.dataset.value });
           } else if (t === 'algorithm') {
             setDrag(e, { source: 'sidebar', type: 'algorithm', value: chip.dataset.value });
+          } else if (t === 'component') {
+            setDrag(e, { source: 'sidebar', type: 'component',
+                         slot: chip.dataset.slot, value: chip.dataset.value });
           }
         });
       });

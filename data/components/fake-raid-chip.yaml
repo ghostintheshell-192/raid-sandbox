@@ -1,0 +1,27 @@
+id: fake-raid-chip
+name: Fake RAID Chip
+category: controller
+pathSlot: fakeChip
+
+description: >
+  A dedicated chip placed between the HBA and the CPU (on the motherboard or near
+  it) that handles RAID metadata and some processing. The OS still sees individual
+  disks (unlike hardware RAID) but uses a driver to participate in RAID operations.
+
+  The canonical example is Intel RST (Rapid Storage Technology) on Intel chipsets.
+  Also known as "motherboard RAID" or "BIOS RAID".
+
+provides:
+  - raid-engine          # the RAID engine sits here, between HBA and OS
+
+requires:
+  - hba                  # needs a dumb HBA to pass raw disk signals through PCIe
+  - os-driver            # requires a matching OS driver (RST driver for Windows, etc.)
+
+raidEnginePosition: between-hba-and-cpu   # → Fake RAID
+derivedType: fake
+
+note: >
+  Fake RAID is considered a hybrid: the hardware chip speeds up metadata operations,
+  but the actual parity computation still involves the CPU. Without the OS driver the
+  array cannot be accessed — unlike hardware RAID which is driver-independent.
