@@ -35,8 +35,11 @@
                                { id:'out', dir:'out', type:'virtual-drive' }],
                        badge: 'RAID Engine' },
     'raid-engine':   { label: 'RAID Engine',    icon: '⚙', color: 'rgba(231,76,60,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
-                               { id:'out', dir:'out', type:'pcie-raid' }],
+                       // 'any' type: the engine connects anywhere in the chain.
+                       // Its position (before CPU = fake; after CPU = software)
+                       // is determined by the recognizer, not port validation.
+                       ports: [{ id:'in',  dir:'in',  type:'any' },
+                               { id:'out', dir:'out', type:'any' }],
                        badge: 'Engine' },
     'os-linux':      { label: 'Linux',          icon: '🐧', color: 'rgba(46,204,113,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
@@ -61,6 +64,7 @@
   };
 
   function portsCompatible(outType, inType) {
+    if (outType === 'any' || inType === 'any') return true;
     return (COMPATIBLE[outType] || []).includes(inType) ||
            (COMPATIBLE[inType]  || []).includes(outType);
   }

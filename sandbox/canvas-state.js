@@ -323,11 +323,12 @@
         return { raidType: null, os: null, complete: false,
                  issue: 'Connect the RAID Engine output — its position determines the RAID type.' };
 
-      // Engine output → OS directly: engine runs in OS → Software RAID.
-      // Engine output → anything else (CPU, PCIe, …): engine sits before OS → Fake RAID.
-      const nextComponent = cpNodes.get(engineOutputEdge.toNode)?.componentId;
-      const raidType = (nextComponent === 'os-linux' || nextComponent === 'os-windows')
-        ? 'software' : 'fake';
+      // Engine output → OS directly: engine runs as software in/after CPU → Software RAID.
+      // Engine output → CPU or PCIe: engine sits between hardware and OS → Fake RAID.
+      // Engine output → OS (via cpu node): also Software RAID.
+      const nextComp = cpNodes.get(engineOutputEdge.toNode)?.componentId;
+      const isAfterCpu = nextComp === 'os-linux' || nextComp === 'os-windows';
+      const raidType = isAfterCpu ? 'software' : 'fake';
       return { raidType, os, complete: true, issue: null };
     }
 
