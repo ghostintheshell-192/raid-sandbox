@@ -311,16 +311,21 @@
     const hasOS     = !!os;
 
     if (hasHBA && hasEngine && hasOS) {
-      // Engine position: if engine is connected before OS → fake; after/in OS → software.
-      // MVP: edge from engine's output goes to OS input → software; to cpu → fake.
       const engineNode = Array.from(cpNodes.values()).find(n => n.componentId === 'raid-engine');
       const engineId   = engineNode ? engineNode.id : null;
+
+      // Engine must be connected on its output side to know its position.
       const engineOutputEdge = engineId
         ? Array.from(cpEdges.values()).find(e => e.fromNode === engineId)
         : null;
-      const nextComponent = engineOutputEdge
-        ? cpNodes.get(engineOutputEdge.toNode)?.componentId
-        : null;
+
+      if (!engineOutputEdge)
+        return { raidType: null, os: null, complete: false,
+                 issue: 'Connect the RAID Engine output — its position determines the RAID type.' };
+
+      // Engine output → OS directly: engine runs in OS → Software RAID.
+      // Engine output → anything else (CPU, PCIe, …): engine sits before OS → Fake RAID.
+      const nextComponent = cpNodes.get(engineOutputEdge.toNode)?.componentId;
       const raidType = (nextComponent === 'os-linux' || nextComponent === 'os-windows')
         ? 'software' : 'fake';
       return { raidType, os, complete: true, issue: null };
