@@ -23,10 +23,6 @@
  *   CanvasState.remove(state, id)                         → void
  *   CanvasState.move(state, diskId, pos)                  → void  (fast path)
  *
- * Axis A mutation:
- *   CanvasState.setControlSlot(state, slot, value)        → void
- *     slot ∈ { 'hasBackplane', 'controller', 'fakeChip', 'os' }
- *
  *   CanvasState.evaluate(state, opts)                     → EvalResult
  */
 
@@ -155,7 +151,17 @@
   function remove(state, id) {
     const node = state.nodes.get(id);
     if (!node) return;
-    if (node.kind === 'array') node.members.forEach((mid) => state.roots.add(mid));
+    if (node.kind === 'array') {
+      node.members.forEach((mid) => state.roots.add(mid));
+    } else if (node.kind === 'disk') {
+      // Remove from any parent array's members list to avoid stale references.
+      for (const n of state.nodes.values()) {
+        if (n.kind === 'array') {
+          const idx = n.members.indexOf(id);
+          if (idx !== -1) n.members.splice(idx, 1);
+        }
+      }
+    }
     state.nodes.delete(id);
     state.positions.delete(id);
     state.roots.delete(id);

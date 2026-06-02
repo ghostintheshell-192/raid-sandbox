@@ -109,6 +109,7 @@
         e.preventDefault();
         const payload = getDrag(e);
         if (!payload || payload.source !== 'sidebar' || payload.type !== 'phys-component') return;
+        if (!COMPONENTS[payload.componentId]) return; // unknown component — ignore silently
         const rect = canvasEl.getBoundingClientRect();
         const pos  = { x: e.clientX - rect.left - 40, y: e.clientY - rect.top - 20 };
         CS.cpAddNode(state, payload.componentId, pos);
@@ -131,10 +132,12 @@
         canvasEl.appendChild(_makeNodeEl(node));
       }
 
-      // Draw edges.
-      for (const edge of state.cpEdges.values()) {
-        _drawEdge(edge);
-      }
+      // Draw edges after browser layout so getBoundingClientRect() is accurate.
+      requestAnimationFrame(() => {
+        for (const edge of state.cpEdges.values()) {
+          _drawEdge(edge);
+        }
+      });
     }
 
     // ---- node element -------------------------------------------------------
@@ -185,8 +188,6 @@
                      offX: e.offsetX, offY: e.offsetY });
       });
 
-      canvasEl.addEventListener('dragover', e => e.preventDefault());
-
       return el;
     }
 
@@ -213,6 +214,7 @@
         });
         dot.addEventListener('drag', e => {
           if (!_pendingLine || !_pendingFrom) return;
+          if (e.clientX === 0 && e.clientY === 0) return; // dragend fires 0,0 in some browsers
           const fromEl = canvasEl.querySelector(`[data-node-id="${_pendingFrom.nodeId}"] .pln-port--out`);
           if (!fromEl) return;
           const rect  = canvasEl.getBoundingClientRect();

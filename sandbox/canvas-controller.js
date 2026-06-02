@@ -52,9 +52,6 @@
             setDrag(e, { source: 'sidebar', type: 'redundancy', value: chip.dataset.value });
           } else if (t === 'algorithm') {
             setDrag(e, { source: 'sidebar', type: 'algorithm', value: chip.dataset.value });
-          } else if (t === 'component') {
-            setDrag(e, { source: 'sidebar', type: 'component',
-                         slot: chip.dataset.slot, value: chip.dataset.value });
           }
         });
       });
@@ -208,8 +205,9 @@
         x.addEventListener('dragstart', (e) => e.preventDefault());
         x.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (axis === 'segmentation') CS.setSegmentation(state, arrayId, null);
-          else                         CS.setRedundancy(state, arrayId, null);
+          if (axis === 'segmentation')    CS.setSegmentation(state, arrayId, null);
+          else if (axis === 'redundancy') CS.setRedundancy(state, arrayId, null);
+          else if (axis === 'algorithm')  CS.setAlgorithm(state, arrayId, null);
           _evaluateAndRender();
         });
         el.appendChild(x);
