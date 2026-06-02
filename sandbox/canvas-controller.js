@@ -85,6 +85,16 @@
       return null;
     }
 
+    /** True if nodeId is anywhere inside arrayId's subtree (cycle guard for nesting). */
+    function _subtreeContains(arrayId, nodeId) {
+      const node = state.nodes.get(arrayId);
+      if (!node || node.kind !== 'array') return false;
+      for (const mid of node.members) {
+        if (mid === nodeId || _subtreeContains(mid, nodeId)) return true;
+      }
+      return false;
+    }
+
     // ---- render -------------------------------------------------------------
 
     function render() {
@@ -148,13 +158,27 @@
       el.dataset.id   = id;
       el.dataset.kind = 'array';
 
+      // Only top-level arrays are draggable — to nest them under a new parent.
+      // (Nested member arrays stay put in v1; rebuild bottom-up.)
+      if (state.roots.has(id)) {
+        el.setAttribute('draggable', 'true');
+        el.addEventListener('dragstart', (e) => {
+          e.stopPropagation();
+          setDrag(e, { source: 'canvas', type: 'array', id });
+        });
+      }
+
       el.appendChild(_makeSlots(id, node));
 
       const members = document.createElement('div');
       members.className = 'sbc-members';
       for (const mid of node.members) {
         const mNode = state.nodes.get(mid);
-        if (mNode) members.appendChild(_makeDiskEl(mid, mNode));
+        if (!mNode) continue;
+        // Members may be disks (leaf array) or arrays (nesting) — render recursively.
+        members.appendChild(
+          mNode.kind === 'disk' ? _makeDiskEl(mid, mNode) : _makeArrayEl(mid, mNode)
+        );
       }
       el.appendChild(members);
 
@@ -308,6 +332,35 @@
           _evaluateAndRender();
         }
         // canvas → canvas (empty): no-op in Phase 3 (no free positioning)
+      }
+
+      // --- canvas array (nesting) ---
+      if (payload.source === 'canvas' && payload.type === 'array') {
+        const srcId = payload.id;
+        if (srcId === targetId) return;                 // dropped on itself
+        if (!state.roots.has(srcId)) return;            // only top-level arrays re-group (v1)
+        if (_subtreeContains(srcId, targetId)) return;  // never drop into own descendant
+
+        if (targetKind === 'array') {
+          if (!state.roots.has(targetId)) return;       // group/extend at top level only (v1)
+          const target = state.nodes.get(targetId);
+          const targetIsNesting = target.members.some(
+            (m) => state.nodes.get(m)?.kind === 'array'
+          );
+          // Two leaf spans → a new parent stripe (RAID 10/50/60);
+          // a span onto an existing nest → extend it (e.g. a 3rd span).
+          if (targetIsNesting) CS.addToArray(state, targetId, srcId);
+          else                 CS.group(state, [targetId, srcId]);
+          _evaluateAndRender();
+        } else if (targetKind === 'disk') {
+          // Onto a loose disk → group the two; onto a disk already in an array,
+          // ignore (nest by dropping on the array itself, not its member).
+          if (!_findParentArray(targetId)) {
+            CS.group(state, [targetId, srcId]);
+            _evaluateAndRender();
+          }
+        }
+        // canvas (empty): no-op
       }
     }
 
