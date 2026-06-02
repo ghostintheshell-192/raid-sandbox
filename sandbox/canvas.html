@@ -61,7 +61,7 @@
 
     /* ---- canvas area ---- */
     .sbc-canvas {
-      margin: .6rem 0 .3rem 0;
+      margin: .6rem .6rem .3rem .6rem;
       border: 2px dashed rgba(128,128,128,.3);
       border-radius: 10px;
       padding: 1.2rem;
@@ -144,7 +144,7 @@
 
     /* ---- control path panel ---- */
     .sbc-control-path {
-      margin: .6rem .8rem .6rem 0;
+      margin: .3rem .6rem .6rem .6rem;
       border: 2px dashed rgba(128,128,128,.3);
       border-radius: 10px;
       padding: .75rem 1rem;
@@ -203,6 +203,25 @@
     .cp-result--sw       { background: rgba(46,204,113,.2);   border: 1px solid rgba(46,204,113,.45); }
     .cp-result--fake     { background: rgba(231,76,60,.18);   border: 1px solid rgba(231,76,60,.4);   }
     .cp-result--incomplete { opacity: .4; border: 1px solid rgba(128,128,128,.3); }
+
+    /* CSS tooltip on cp-slots */
+    .cp-slot { position: relative; }
+    .cp-slot[data-label]::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%; transform: translateX(-50%);
+      background: rgba(20,20,20,.92);
+      color: #eee;
+      padding: .2rem .45rem;
+      border-radius: 5px;
+      font-size: .65rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .cp-slot:hover[data-label]::after { opacity: 1; }
 
     .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
 
@@ -466,12 +485,12 @@
     if (label) {
       el.classList.add('cp--filled');
       el.dataset.value = label;
-      el.title = label;
+      el.dataset.label = label;
       el.innerHTML = '<span class="cp-node-icon">' + icon + '</span>';
     } else {
       el.classList.remove('cp--filled');
       el.removeAttribute('data-value');
-      el.title = '?';
+      el.removeAttribute('data-label');
       el.innerHTML = '<span class="cp-node-icon" style="opacity:.4">?</span>';
     }
   }
