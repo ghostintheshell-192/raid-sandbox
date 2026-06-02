@@ -57,6 +57,13 @@
   const allDisks  = (arr) => arr.members.length > 0 && arr.members.every(isDisk);
   const allArrays = (arr) => arr.members.length > 0 && arr.members.every(isArray);
 
+  // Flat RAID 10 / RAID 1E (§3a): a striped mirror directly over disks, `copies`
+  // replicas (default 2). Distinct from linear+mirror (RAID 1, n-way) and from
+  // mirror-over-arrays (e.g. RAID 51) — those keep the n-way capacity/FT math.
+  const isStripedDiskMirror = (n) =>
+    isArray(n) && n.segmentation === 'striped' && n.redundancy === 'mirror' && allDisks(n);
+  const copiesOf = (n) => n.copies || 2;
+
   /** Total number of physical disks under a node (recursive). */
   function countDisks(node) {
     if (isDisk(node)) return 1;
@@ -83,11 +90,17 @@
       if (red === 'none')    return seg === 'striped'
         ? mk('RAID 0', true, 'striping, no redundancy')
         : mk('JBOD / spanned', true, 'concatenation of disks (no RAID)', true);
-      if (red === 'mirror')  return seg === 'linear'
-        ? mk('RAID 1', true, node.members.length > 2
+      if (red === 'mirror') {
+        if (seg === 'linear')
+          return mk('RAID 1', true, node.members.length > 2
             ? `${node.members.length}-way mirroring (RAID 1, ${node.members.length} copies)`
-            : 'mirroring')
-        : mk(null, false, 'striped mirror (RAID 1E family — niche)');
+            : 'mirroring');
+        // striped + mirror = flat RAID 10 (copies 2) for an even disk count;
+        // an odd count cannot pair into 2 copies → RAID 1E (niche, non-standard). §3a
+        return node.members.length % 2 === 0
+          ? mk('RAID 10', true, 'striped mirroring, 2 copies (flat RAID 10)')
+          : mk(null, false, 'striped mirror with odd disks (RAID 1E family — niche)');
+      }
       if (red === 'parity1') return seg === 'striped'
         ? mk('RAID 5', true, 'striping with single distributed parity')
         : mk(null, false, 'parity without striping (non-standard)');
@@ -123,7 +136,9 @@
 
   // ---------------------------------------------------------------------------
   // CAPACITY (§5c) — usable capacity in GB, derived recursively.
-  // Depends ONLY on the redundancy axis (segmentation does not change usable space).
+  // Depends on the redundancy axis + `copies`. One exception to "segmentation
+  // doesn't matter": striped+mirror over disks is flat RAID 10 (n/copies), unlike
+  // linear+mirror = RAID 1 (one copy's worth). See §3a.
   // Exact when all disks in an array are equal-sized (the common case); for mixed
   // sizes the parity terms approximate (real controllers coerce to the smallest disk).
   // ---------------------------------------------------------------------------
@@ -133,7 +148,9 @@
     const caps = node.members.map(capacityGB);
     switch (node.redundancy) {
       case 'none':    return sum(caps);
-      case 'mirror':  return Math.min(...caps);              // one surviving copy
+      case 'mirror':  return isStripedDiskMirror(node)
+        ? sum(caps) / copiesOf(node)                         // flat RAID 10/1E: n/copies disks (§3a)
+        : Math.min(...caps);                                 // RAID 1 / mirror-of-arrays: one copy
       case 'parity1': return sum(caps) - Math.max(...caps);  // lose one member's worth
       case 'parity2': {                                      // lose the two largest
         const [, , ...rest] = [...caps].sort((x, y) => y - x);
@@ -151,7 +168,8 @@
   //
   //   disk     → 1
   //   none     → min over children   (any one child gone kills the array)
-  //   mirror   → sum over ALL children (data survives while ≥1 member lives)
+  //   mirror   → striped-disk mirror (flat RAID 10/1E): `copies` (lose all copies of a chunk);
+  //              else sum over ALL children (RAID 1 / mirror-of-arrays: ≥1 member lives)
   //   parity1  → sum of the 2 smallest children (survives 1 failed member)
   //   parity2  → sum of the 3 smallest children (survives 2 failed members)
   //
@@ -164,7 +182,9 @@
     const costs = node.members.map(failuresToKill);
     switch (node.redundancy) {
       case 'none':    return Math.min(...costs);
-      case 'mirror':  return sum(costs);                 // must kill every member
+      case 'mirror':  return isStripedDiskMirror(node)
+        ? copiesOf(node)                                 // flat RAID 10/1E: lose all copies of a chunk
+        : sum(costs);                                    // RAID 1 / mirror-of-arrays: kill every member
       case 'parity1': return sumSmallest(costs, 2);      // must fail 2 members
       case 'parity2': return sumSmallest(costs, 3);      // must fail 3 members
     }
