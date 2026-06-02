@@ -27,12 +27,23 @@
 (function (root) {
   'use strict';
 
-  // Known parity placement algorithms. Only VERIFIED algorithms belong here —
-  // each must reproduce an authoritative golden table in the test suite before
-  // being added. Unknown names fall back to the default (see resolveParityAlgo).
-  // (right-symmetric etc. are intentionally absent until verified.)
+  // Known parity placement algorithms. Only algorithms with a golden table in
+  // the test suite belong here. Unknown names fall back to the default.
+  //
+  // rotate:    'left'  → parity starts rightmost (n-1), moves LEFT each stripe
+  //            'right' → parity starts leftmost  (0),   moves RIGHT each stripe
+  // symmetric: true    → data fills from (anchor+1) wrapping (better seq-read locality)
+  //            false   → data fills from disk 0, skipping parity (asymmetric)
+  //
+  // Golden tables derived from left-symmetric (verified vs .personal notes) plus
+  // the canonical left/right × symmetric/asymmetric rule pair. All four variants
+  // are present in Linux md/raid5 as ALGORITHM_LEFT_ASYMMETRIC(0),
+  // RIGHT_ASYMMETRIC(1), LEFT_SYMMETRIC(2), RIGHT_SYMMETRIC(3).
   const PARITY_ALGORITHMS = {
-    'left-symmetric': { rotate: 'left' },
+    'left-symmetric':   { rotate: 'left',  symmetric: true  },
+    'left-asymmetric':  { rotate: 'left',  symmetric: false },
+    'right-asymmetric': { rotate: 'right', symmetric: false },
+    'right-symmetric':  { rotate: 'right', symmetric: true  },
   };
   const DEFAULT_PARITY_ALGO = 'left-symmetric';
 
@@ -101,15 +112,15 @@
     return { columns: n, stripes, algorithm: null, fallback: null };
   }
 
-  // --- parity1/parity2 → RAID 5/6, rotating parity (left-symmetric default) ----
+  // --- parity1/parity2 → RAID 5/6, rotating parity ----------------------------
   function placeParity(n, pCount, requested, rows) {
     const { algoName, fallback } = resolveParityAlgo(requested);
-    const rotate = PARITY_ALGORITHMS[algoName].rotate;
+    const { rotate, symmetric } = PARITY_ALGORITHMS[algoName];
 
     let seg = 0, t = 0;
     const stripes = [];
     for (let s = 0; s < rows; s++) {
-      // Parity anchor: left-symmetric starts rightmost and moves left each stripe.
+      // Parity anchor: left starts rightmost and moves left; right starts leftmost.
       const anchor = rotate === 'left' ? mod(n - 1 - s, n) : mod(s, n);
       const row = Array.from({ length: n }, () => null);
 
@@ -123,8 +134,9 @@
         parityCells.push(row[pos]);
       }
 
-      // Data fills from immediately right of the anchor, wrapping, skipping parity.
-      let disk = mod(anchor + 1, n);
+      // Symmetric: data starts immediately right of parity anchor, wrapping.
+      // Asymmetric: data always starts at disk 0, fills left-to-right skipping parity.
+      let disk = symmetric ? mod(anchor + 1, n) : 0;
       const dataNeeded = n - pCount;
       for (let placed = 0, steps = 0; placed < dataNeeded && steps < n * 2; steps++) {
         if (!(disk in parityAt)) { row[disk] = { role: 'data', seg: seg++, seq: t++ }; placed++; }
