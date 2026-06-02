@@ -61,6 +61,9 @@
 
     /* ---- canvas area ---- */
     .sbc-canvas {
+      margin: .6rem 0 .3rem 0;
+      border: 2px dashed rgba(128,128,128,.3);
+      border-radius: 10px;
       padding: 1.2rem;
       overflow: auto;
       display: flex; flex-wrap: wrap; gap: 1rem; align-content: flex-start;
@@ -73,7 +76,7 @@
         rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
       );
     }
-    .sbc-canvas.sbc--over { outline: 2px dashed rgba(52,152,219,.5); outline-offset: -6px; }
+    .sbc-canvas.sbc--over { border-color: rgba(52,152,219,.6); }
 
     /* ---- canvas nodes ---- */
     .sbc-disk {
@@ -313,44 +316,39 @@
     <span class="cp-label">Control path</span>
 
     <!-- disks: auto-derived from canvas state -->
-    <div class="cp-node" id="cp-disks">
+    <div class="cp-node" id="cp-disks" title="Physical disks">
       <span class="cp-node-icon">💾</span>
-      <span class="cp-node-text" id="cp-disk-count">0 disks</span>
+      <span class="cp-node-text" id="cp-disk-count">0</span>
     </div>
     <span class="cp-arrow">→</span>
 
     <!-- backplane: optional -->
-    <div class="cp-slot" id="cp-slot-backplane" data-slot="hasBackplane">
-      <span class="cp-node-icon">📋</span>
-      <span class="cp-slot-hint">backplane</span>
+    <div class="cp-slot" id="cp-slot-backplane" data-slot="hasBackplane" title="?">
+      <span class="cp-node-icon">?</span>
     </div>
     <span class="cp-arrow">→</span>
 
     <!-- controller: HBA or Controller HW -->
-    <div class="cp-slot" id="cp-slot-controller" data-slot="controller">
-      <span class="cp-node-icon">🔌</span>
-      <span class="cp-slot-hint">HBA / Controller</span>
+    <div class="cp-slot" id="cp-slot-controller" data-slot="controller" title="?">
+      <span class="cp-node-icon">?</span>
     </div>
     <span class="cp-arrow">→</span>
 
     <!-- fixed: PCIe / CPU -->
-    <div class="cp-node">
+    <div class="cp-node" title="PCIe bus · CPU">
       <span class="cp-node-icon">⚡</span>
-      <span class="cp-node-text">PCIe · CPU</span>
     </div>
     <span class="cp-arrow">→</span>
 
-    <!-- fake RAID chip: optional, between HBA and OS -->
-    <div class="cp-slot" id="cp-slot-fakeChip" data-slot="fakeChip">
-      <span class="cp-node-icon">🔧</span>
-      <span class="cp-slot-hint">fake RAID chip</span>
+    <!-- fake RAID chip: optional -->
+    <div class="cp-slot" id="cp-slot-fakeChip" data-slot="fakeChip" title="?">
+      <span class="cp-node-icon">?</span>
     </div>
     <span class="cp-arrow">→</span>
 
     <!-- OS -->
-    <div class="cp-slot" id="cp-slot-os" data-slot="os">
-      <span class="cp-node-icon">🖥</span>
-      <span class="cp-slot-hint">OS</span>
+    <div class="cp-slot" id="cp-slot-os" data-slot="os" title="?">
+      <span class="cp-node-icon">?</span>
     </div>
 
     <!-- derived result -->
@@ -449,13 +447,13 @@
     const cp = state.controlPath;
     // Disk count badge
     const diskCount = Array.from(state.nodes.values()).filter(n => n.kind === 'disk').length;
-    document.getElementById('cp-disk-count').textContent = diskCount + (diskCount === 1 ? ' disk' : ' disks');
+    document.getElementById('cp-disk-count').textContent = diskCount;
 
     // Each slot
-    _renderCpSlot('cp-slot-backplane', 'hasBackplane', cp.hasBackplane ? 'Backplane' : null, '📋', 'backplane');
-    _renderCpSlot('cp-slot-controller', 'controller', cp.controller ? CP_LABELS[cp.controller] : null, '🔌', 'HBA / Controller');
-    _renderCpSlot('cp-slot-fakeChip', 'fakeChip', cp.fakeChip ? 'Fake RAID' : null, '🔧', 'fake RAID chip');
-    _renderCpSlot('cp-slot-os', 'os', cp.os ? CP_LABELS[cp.os] : null, '🖥', 'OS');
+    _renderCpSlot('cp-slot-backplane',  'hasBackplane', cp.hasBackplane          ? 'Backplane'           : null, '📋');
+    _renderCpSlot('cp-slot-controller', 'controller',  cp.controller             ? CP_LABELS[cp.controller] : null, '🔌');
+    _renderCpSlot('cp-slot-fakeChip',   'fakeChip',    cp.fakeChip               ? 'Fake RAID'           : null, '🔧');
+    _renderCpSlot('cp-slot-os',         'os',          cp.os                     ? CP_LABELS[cp.os]      : null, '🖥');
 
     // Dim the fakeChip slot when controller-hw is chosen (not applicable)
     const fakeSlot = document.getElementById('cp-slot-fakeChip');
@@ -463,16 +461,18 @@
     fakeSlot.style.pointerEvents = cp.controller === 'controller-hw' ? 'none' : '';
   }
 
-  function _renderCpSlot(elId, slot, label, icon, hint) {
+  function _renderCpSlot(elId, slot, label, icon) {
     const el = document.getElementById(elId);
     if (label) {
       el.classList.add('cp--filled');
       el.dataset.value = label;
-      el.innerHTML = '<span class="cp-node-icon">' + icon + '</span><span style="font-size:.65rem">' + label + '</span>';
+      el.title = label;
+      el.innerHTML = '<span class="cp-node-icon">' + icon + '</span>';
     } else {
       el.classList.remove('cp--filled');
       el.removeAttribute('data-value');
-      el.innerHTML = '<span class="cp-node-icon" style="opacity:.35">' + icon + '</span><span class="cp-slot-hint">' + hint + '</span>';
+      el.title = '?';
+      el.innerHTML = '<span class="cp-node-icon" style="opacity:.4">?</span>';
     }
   }
 
