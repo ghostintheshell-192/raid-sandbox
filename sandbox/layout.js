@@ -54,9 +54,19 @@
    * @param opts  { stripes?:number } number of stripe rows to render
    */
   function computePlacement(node, opts = {}) {
-    if (!node || node.kind !== 'array' || !node.members.every((m) => m && m.kind === 'disk')) {
-      return unsupported('placement is defined for leaf arrays only (v1)');
+    if (!node || node.kind !== 'array') return unsupported('placement needs an array');
+
+    // Nested: a stripe over sub-arrays (RAID 1+0 today; RAID 50/60 later).
+    const membersAreArrays = node.members.length > 0 && node.members.every((m) => m && m.kind === 'array');
+    if (membersAreArrays) {
+      if (node.segmentation === 'striped' && node.redundancy === 'none')
+        return placeNested(node, opts);
+      return unsupported('nested placement is defined only for a stripe (RAID 0) over spans');
     }
+
+    if (!node.members.every((m) => m && m.kind === 'disk'))
+      return unsupported('placement is defined for leaf arrays only (v1)');
+
     const n = node.members.length;
     const { segmentation, redundancy } = node;
 
@@ -171,6 +181,35 @@
     const chunks = opts.chunks ?? 2 * n;   // 2n chunks → 4 rows at n=4 (matches golden tables)
     const stripes = RAID10_LAYOUTS[algoName](n, chunks);
     return { columns: n, stripes, algorithm: algoName, fallback };
+  }
+
+  // --- striped(none) over sub-arrays → nested RAID (1+0 today) ----------------
+  // Compose each span's own grid side-by-side; the parent stripe distributes one
+  // chunk per span per row (RAID 0 round-robin), so 2-disk mirror spans reproduce
+  // `near`. v1: mirror spans only (RAID 1+0). Parity spans (RAID 50/60) deferred.
+  function placeNested(node, opts) {
+    const children = node.members;
+    if (!children.every((c) => c.redundancy === 'mirror'))
+      return unsupported('nested placement for parity spans (RAID 50/60) is not implemented yet');
+
+    const grids = children.map((c) => computePlacement(c, opts));
+    if (grids.some((g) => g.unsupported))
+      return unsupported('every span needs a defined layout to compose the nested grid');
+
+    const k = children.length;
+    const rows = Math.max(...grids.map((g) => g.stripes.length));
+    const stripes = [];
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let j = 0; j < k; j++) {
+        const seg = r * k + j;                 // RAID 0 interleave: one chunk per span per row
+        for (const cell of grids[j].stripes[r] || [])
+          row.push({ role: cell.role, seg, seq: seg });
+      }
+      stripes.push(row);
+    }
+    const columns = grids.reduce((s, g) => s + g.columns, 0);
+    return { columns, stripes, algorithm: 'nested 1+0', fallback: null };
   }
 
   // --- parity1/parity2 → RAID 5/6, rotating parity ----------------------------

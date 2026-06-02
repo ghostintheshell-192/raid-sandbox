@@ -64,11 +64,11 @@
       ['RAID 6',  array('striped', 'parity2', [d(0), d(1), d(2), d(3)]),
         { level: 'RAID 6', capacityGB: 200, faultTolerance: 2 }],
 
-      ['RAID 10', array('striped', 'none', [
+      ['RAID 1+0 (nested)', array('striped', 'none', [
                     array('linear', 'mirror', [d(0), d(1)]),
                     array('linear', 'mirror', [d(2), d(3)]),
                   ]),
-        { level: 'RAID 10', capacityGB: 200, faultTolerance: 1 }],
+        { level: 'RAID 1+0', capacityGB: 200, faultTolerance: 1 }],
 
       ['RAID 50', array('striped', 'none', [
                     array('striped', 'parity1', [d(0), d(1), d(2)]),

@@ -114,7 +114,7 @@
       const childReds = node.members.map((m) => (allDisks(m) ? m.redundancy : '∗'));
       const uniform = childReds.every((r) => r === childReds[0]) ? childReds[0] : null;
       switch (uniform) {
-        case 'mirror':  return mk('RAID 10', true, 'striping over mirror spans (1+0)');
+        case 'mirror':  return mk('RAID 1+0', true, 'striping over mirror spans (nested 1+0)');
         case 'parity1': return mk('RAID 50', true, 'striping over RAID-5 spans (5+0)');
         case 'parity2': return mk('RAID 60', true, 'striping over RAID-6 spans (6+0)');
       }
