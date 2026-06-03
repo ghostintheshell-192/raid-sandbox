@@ -144,6 +144,22 @@
   }
 
   /**
+   * Detach a node id from every array that lists it as a member.
+   * Prevents stale references: when a node is removed or dissolved, any parent
+   * array must drop it from `members`, otherwise compile() will later try to
+   * resolve a child id that no longer exists in `nodes` and silently return null
+   * — which makes the whole build unrecognizable and unrepairable from the UI.
+   */
+  function _detachFromParents(state, id) {
+    for (const n of state.nodes.values()) {
+      if (n.kind === 'array') {
+        const idx = n.members.indexOf(id);
+        if (idx !== -1) n.members.splice(idx, 1);
+      }
+    }
+  }
+
+  /**
    * Dissolve an array: return its members to roots, remove the array node.
    * Used when the user "ungroups" an array.
    */
@@ -151,6 +167,7 @@
     const arr = state.nodes.get(arrayId);
     if (!arr || arr.kind !== 'array') return;
     arr.members.forEach((mid) => state.roots.add(mid));
+    _detachFromParents(state, arrayId);   // drop this array from any parent's members
     state.nodes.delete(arrayId);
     state.roots.delete(arrayId);
     state.selected.delete(arrayId);
@@ -166,19 +183,14 @@
     if (node.kind === 'array') {
       node.members.forEach((mid) => state.roots.add(mid));
     } else if (node.kind === 'disk') {
-      // Remove from any parent array's members list to avoid stale references.
-      for (const n of state.nodes.values()) {
-        if (n.kind === 'array') {
-          const idx = n.members.indexOf(id);
-          if (idx !== -1) n.members.splice(idx, 1);
-        }
-      }
       // The disk is the shared atom: drop its physical-view presence too.
       state.cpDiskPositions.delete(id);
       for (const [eid, e] of state.cpEdges) {
         if (e.fromNode === id || e.toNode === id) state.cpEdges.delete(eid);
       }
     }
+    // Detach from any parent array — disk OR nested array — to avoid stale refs.
+    _detachFromParents(state, id);
     state.nodes.delete(id);
     state.positions.delete(id);
     state.roots.delete(id);

@@ -332,6 +332,69 @@ test('compile returns null for unknown id', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[12] Regression — no stale member references after remove/dissolve');
+
+// Invariant: every array member id must resolve to a node in `state.nodes`.
+// A dangling member makes compile() return null for the whole subtree, which
+// silently zeroes the build and leaves it unrepairable from the UI.
+function noStaleMembers(s) {
+  for (const n of s.nodes.values()) {
+    if (n.kind !== 'array') continue;
+    for (const mid of n.members) {
+      if (!s.nodes.has(mid)) return false;
+    }
+  }
+  return true;
+}
+
+// Nested RAID 1+0: a striped parent over two linear-mirror spans.
+function buildNestedRaid10(s) {
+  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, a, 'linear'); CS.setRedundancy(s, a, 'mirror');
+  const b = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, b, 'linear'); CS.setRedundancy(s, b, 'mirror');
+  const parent = CS.group(s, [a, b]);
+  CS.setSegmentation(s, parent, 'striped'); CS.setRedundancy(s, parent, 'none');
+  return { parent, a, b };
+}
+
+test('sanity: nested build is recognized as RAID 1+0', () => {
+  const s = CS.createState();
+  buildNestedRaid10(s);
+  eq(CS.evaluate(s).analysis.level, 'RAID 1+0');
+});
+
+test('dissolve nested span detaches it from its parent (no stale ref)', () => {
+  const s = CS.createState();
+  const { parent, a, b } = buildNestedRaid10(s);
+  CS.dissolve(s, a);
+  assert(!s.nodes.has(a), 'dissolved span still in nodes');
+  assert(!s.nodes.get(parent).members.includes(a), 'parent still references dissolved span');
+  assert(s.nodes.get(parent).members.includes(b), 'sibling span wrongly dropped');
+  assert(noStaleMembers(s), 'parent holds a member that no longer exists');
+});
+
+test('remove nested span detaches it from its parent (no stale ref)', () => {
+  const s = CS.createState();
+  const { parent, a } = buildNestedRaid10(s);
+  CS.remove(s, a);
+  assert(!s.nodes.has(a));
+  assert(!s.nodes.get(parent).members.includes(a), 'parent still references removed span');
+  assert(noStaleMembers(s));
+});
+
+test('build stays evaluable (not stuck at null) after dissolving a span', () => {
+  const s = CS.createState();
+  const { a } = buildNestedRaid10(s);
+  CS.dissolve(s, a);
+  const r = CS.evaluate(s);
+  // Parent is now incomplete, but state is consistent and repairable:
+  // no dangling refs, and an actionable hint instead of a silent dead end.
+  assert(noStaleMembers(s));
+  assert(r.firstIssue !== null, 'expected an actionable hint, got none');
+});
+
+// ---------------------------------------------------------------------------
 console.log(`\n${'─'.repeat(40)}`);
 console.log(`  ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
