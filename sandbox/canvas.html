@@ -86,7 +86,9 @@
         rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
       );
     }
-    .sbc-canvas.sbc--over        { border-color: rgba(52,152,219,.6); }
+    /* Honest drag feedback — green: this drop does something · red: it does nothing */
+    .sbc-canvas.sbc--drop-ok     { border-color: rgba(46,204,113,.7); }
+    .sbc-canvas.sbc--drop-bad    { border-color: rgba(231,76,60,.6); }
     .sbc-control-path.cp--active { border-color: rgba(52,152,219,.6); }
 
     /* ---- canvas nodes ---- */
@@ -99,7 +101,8 @@
       white-space: nowrap;
     }
     .sbc-disk:hover  { background: rgba(52,152,219,.28); }
-    .sbc-disk.sbc--over { box-shadow: 0 0 0 2px rgba(52,152,219,.8); }
+    .sbc-disk.sbc--drop-ok  { box-shadow: 0 0 0 2px rgba(46,204,113,.9); }
+    .sbc-disk.sbc--drop-bad { box-shadow: 0 0 0 2px rgba(231,76,60,.85); }
 
     .sbc-array {
       position: relative;
@@ -108,7 +111,8 @@
       background: rgba(155,89,182,.07);
       display: flex; flex-direction: column; gap: .5rem;
     }
-    .sbc-array.sbc--over { border-color: rgba(155,89,182,.9); background: rgba(155,89,182,.14); }
+    .sbc-array.sbc--drop-ok  { border-color: rgba(46,204,113,.9); background: rgba(46,204,113,.12); }
+    .sbc-array.sbc--drop-bad { border-color: rgba(231,76,60,.85); background: rgba(231,76,60,.10); }
 
     /* Delete / dissolve button — visible on hover */
     .sbc-delete {
@@ -387,6 +391,9 @@
   const btnAnimate = document.getElementById('btn-animate');
   let   physCtrl;   // assigned below; onEvaluate refreshes it so disk changes in the
                     // data view appear in the physical view (the shared-atom bridge).
+  let   _lastStatus = statusBar.textContent;   // last stable status line
+  // Transient drag hint: show while hovering a valid drop target, restore on clear.
+  function onHint(text) { statusBar.textContent = (text == null) ? _lastStatus : text; }
 
   // Active-border on physical panel when hovering with a drag (same mechanic as data canvas).
   const physPanel = document.getElementById('physical-panel');
@@ -454,16 +461,17 @@
       }
     }
 
-    statusBar.textContent = r.firstIssue
+    _lastStatus = r.firstIssue
       ? `⚠ ${r.firstIssue}`
       : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
+    statusBar.textContent = _lastStatus;
 
     // Shared-atom bridge: reflect data-view disk changes in the physical view.
     if (physCtrl) physCtrl.render();
   }
 
   // Data layer controller.
-  const ctrl = CanvasController.createController({ canvasEl, state, onEvaluate });
+  const ctrl = CanvasController.createController({ canvasEl, state, onEvaluate, onHint });
   ctrl.setupSidebar(sidebarEl);
   ctrl.render();
 

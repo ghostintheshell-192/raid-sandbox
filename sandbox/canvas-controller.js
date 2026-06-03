@@ -26,14 +26,18 @@
 
   // ---------------------------------------------------------------------------
 
-  function createController({ canvasEl, state, onEvaluate }) {
+  function createController({ canvasEl, state, onEvaluate, onHint }) {
     const CS     = root.CanvasState;
     const Render = root.RaidRender;
 
-    let _animating = false;
-    let _stripes   = 4;
+    let _animating   = false;
+    let _stripes     = 4;
+    let _dragPayload = null;   // set on dragstart, read during dragover, cleared on dragend
 
     _setupCanvasDropTarget();
+
+    // Cleanup for cancelled drags / drops outside any target (dragend always fires).
+    document.addEventListener('dragend', () => { _dragPayload = null; _clearHint(); });
 
     // ---- sidebar ------------------------------------------------------------
 
@@ -42,17 +46,17 @@
         chip.setAttribute('draggable', 'true');
         chip.addEventListener('dragstart', (e) => {
           const t = chip.dataset.drag;
+          let payload = null;
           if (t === 'disk') {
-            setDrag(e, { source: 'sidebar', type: 'disk',
-                         protocol: chip.dataset.protocol,
-                         sizeGB:   Number(chip.dataset.size) });
-          } else if (t === 'segmentation') {
-            setDrag(e, { source: 'sidebar', type: 'segmentation', value: chip.dataset.value });
-          } else if (t === 'redundancy') {
-            setDrag(e, { source: 'sidebar', type: 'redundancy', value: chip.dataset.value });
-          } else if (t === 'algorithm') {
-            setDrag(e, { source: 'sidebar', type: 'algorithm', value: chip.dataset.value });
+            payload = { source: 'sidebar', type: 'disk',
+                        protocol: chip.dataset.protocol,
+                        sizeGB:   Number(chip.dataset.size) };
+          } else if (t === 'segmentation' || t === 'redundancy' || t === 'algorithm') {
+            payload = { source: 'sidebar', type: t, value: chip.dataset.value };
           }
+          if (!payload) return;   // e.g. phys-component chips are owned by the physical controller
+          _dragPayload = payload;
+          setDrag(e, payload);
         });
       });
     }
@@ -63,14 +67,14 @@
       canvasEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        canvasEl.classList.add('sbc--over');
+        _previewDrop(canvasEl, 'canvas', null);
       });
       canvasEl.addEventListener('dragleave', (e) => {
-        if (!canvasEl.contains(e.relatedTarget)) canvasEl.classList.remove('sbc--over');
+        if (!canvasEl.contains(e.relatedTarget)) _clearPreview(canvasEl);
       });
       canvasEl.addEventListener('drop', (e) => {
         e.preventDefault();
-        canvasEl.classList.remove('sbc--over');
+        _clearPreview(canvasEl);
         _handleDrop(e, 'canvas', null);
       });
     }
@@ -94,6 +98,98 @@
       }
       return false;
     }
+
+    // ---- drop resolution (single source of truth) ---------------------------
+    // Resolve what dropping `payload` on (targetKind,targetId) WOULD do, without
+    // doing it. Returns { ok, label, run }: dragover reads ok/label to colour the
+    // target honestly; drop calls run(). Border preview and drop share this one
+    // function, so they can never disagree.
+
+    const _NO = { ok: false, label: null, run: null };
+
+    function _resolveDropAction(payload, targetKind, targetId) {
+      if (!payload) return _NO;
+
+      // --- sidebar: a brand-new disk ---
+      if (payload.source === 'sidebar' && payload.type === 'disk') {
+        const make = () => CS.addDisk(state, payload.sizeGB, payload.protocol);
+        if (targetKind === 'disk') {
+          const parent = _findParentArray(targetId);
+          return parent
+            ? { ok: true, label: '+ disk to array',       run: () => CS.addToArray(state, parent, make()) }
+            : { ok: true, label: 'group into a new array', run: () => CS.group(state, [targetId, make()]) };
+        }
+        if (targetKind === 'array')
+          return { ok: true, label: '+ disk to array', run: () => CS.addToArray(state, targetId, make()) };
+        return { ok: true, label: 'add a loose disk', run: () => { make(); } };   // empty canvas
+      }
+
+      // --- sidebar: segmentation / redundancy / algorithm onto an array body ---
+      if (payload.source === 'sidebar' &&
+          (payload.type === 'segmentation' || payload.type === 'redundancy' || payload.type === 'algorithm')) {
+        if (targetKind !== 'array') return _NO;
+        const setter = payload.type === 'segmentation' ? CS.setSegmentation
+                     : payload.type === 'redundancy'   ? CS.setRedundancy
+                     :                                    CS.setAlgorithm;
+        return { ok: true, label: `${payload.type}: ${payload.value}`,
+                 run: () => setter(state, targetId, payload.value) };
+      }
+
+      // --- canvas: an existing disk being re-homed ---
+      if (payload.source === 'canvas' && payload.type === 'disk') {
+        const srcId = payload.id;
+        if (srcId === targetId) return _NO;
+        if (targetKind === 'disk') {
+          const parent = _findParentArray(targetId);
+          if (parent)
+            return { ok: true, label: '+ disk to array', run: () => CS.addToArray(state, parent, srcId) };
+          if (_findParentArray(srcId)) return _NO;   // both must be loose to form a new array
+          return { ok: true, label: 'group into a new array', run: () => CS.group(state, [targetId, srcId]) };
+        }
+        if (targetKind === 'array')
+          return { ok: true, label: '+ disk to array', run: () => CS.addToArray(state, targetId, srcId) };
+        return _NO;   // empty canvas
+      }
+
+      // --- canvas: an existing array (span) being nested ---
+      if (payload.source === 'canvas' && payload.type === 'array') {
+        const srcId = payload.id;
+        if (srcId === targetId) return _NO;
+        if (!state.roots.has(srcId)) return _NO;            // only top-level spans re-group (v1)
+        if (_subtreeContains(srcId, targetId)) return _NO;  // never into its own descendant
+        if (targetKind === 'array') {
+          if (!state.roots.has(targetId)) return _NO;       // must land on a top-level array
+          const target  = state.nodes.get(targetId);
+          const nesting = target.members.some((m) => state.nodes.get(m)?.kind === 'array');
+          return nesting
+            ? { ok: true, label: '+ span',                      run: () => CS.addToArray(state, targetId, srcId) }
+            : { ok: true, label: 'stripe over spans (nested RAID)', run: () => CS.group(state, [targetId, srcId]) };
+        }
+        if (targetKind === 'disk') {
+          if (_findParentArray(targetId)) return _NO;       // its parent array is the real target
+          return { ok: true, label: 'group span + disk', run: () => CS.group(state, [targetId, srcId]) };
+        }
+        return _NO;
+      }
+
+      return _NO;
+    }
+
+    // ---- drag preview (border colour + status-bar label) --------------------
+
+    function _previewDrop(el, targetKind, targetId) {
+      const { ok, label } = _resolveDropAction(_dragPayload, targetKind, targetId);
+      el.classList.toggle('sbc--drop-ok', ok);
+      el.classList.toggle('sbc--drop-bad', !ok);
+      _showHint(ok && label ? `→ ${label}` : null);
+    }
+
+    function _clearPreview(el) {
+      el.classList.remove('sbc--drop-ok', 'sbc--drop-bad');
+    }
+
+    function _showHint(text) { if (typeof onHint === 'function') onHint(text); }
+    function _clearHint()    { if (typeof onHint === 'function') onHint(null); }
 
     // ---- render -------------------------------------------------------------
 
@@ -134,18 +230,19 @@
 
       el.addEventListener('dragstart', (e) => {
         e.stopPropagation();
-        setDrag(e, { source: 'canvas', type: 'disk', id });
+        _dragPayload = { source: 'canvas', type: 'disk', id };
+        setDrag(e, _dragPayload);
       });
       el.addEventListener('dragover', (e) => {
         e.preventDefault(); e.stopPropagation();
-        el.classList.add('sbc--over');
+        _previewDrop(el, 'disk', id);
       });
       el.addEventListener('dragleave', (e) => {
-        if (!el.contains(e.relatedTarget)) el.classList.remove('sbc--over');
+        if (!el.contains(e.relatedTarget)) _clearPreview(el);
       });
       el.addEventListener('drop', (e) => {
         e.preventDefault(); e.stopPropagation();
-        el.classList.remove('sbc--over');
+        _clearPreview(el);
         _handleDrop(e, 'disk', id);
       });
 
@@ -164,7 +261,8 @@
         el.setAttribute('draggable', 'true');
         el.addEventListener('dragstart', (e) => {
           e.stopPropagation();
-          setDrag(e, { source: 'canvas', type: 'array', id });
+          _dragPayload = { source: 'canvas', type: 'array', id };
+          setDrag(e, _dragPayload);
         });
       }
 
@@ -187,14 +285,14 @@
 
       el.addEventListener('dragover', (e) => {
         e.preventDefault(); e.stopPropagation();
-        el.classList.add('sbc--over');
+        _previewDrop(el, 'array', id);
       });
       el.addEventListener('dragleave', (e) => {
-        if (!el.contains(e.relatedTarget)) el.classList.remove('sbc--over');
+        if (!el.contains(e.relatedTarget)) _clearPreview(el);
       });
       el.addEventListener('drop', (e) => {
         e.preventDefault(); e.stopPropagation();
-        el.classList.remove('sbc--over');
+        _clearPreview(el);
         _handleDrop(e, 'array', id);
       });
 
@@ -276,94 +374,11 @@
 
     function _handleDrop(e, targetKind, targetId) {
       const payload = getDrag(e);
-      if (!payload) return;
-
-      // --- sidebar disk ---
-      if (payload.source === 'sidebar' && payload.type === 'disk') {
-        const newId = CS.addDisk(state, payload.sizeGB, payload.protocol);
-
-        if (targetKind === 'disk') {
-          // If target disk is already in an array, add there; else group the two.
-          const parent = _findParentArray(targetId);
-          if (parent) CS.addToArray(state, parent, newId);
-          else        CS.group(state, [targetId, newId]);
-        } else if (targetKind === 'array') {
-          CS.addToArray(state, targetId, newId);
-        }
-        // else: dropped on empty canvas — disk stays loose.
+      const { ok, run } = _resolveDropAction(payload, targetKind, targetId);
+      _dragPayload = null;
+      if (ok && typeof run === 'function') {
+        run();
         _evaluateAndRender();
-        return;
-      }
-
-      // --- sidebar segmentation / redundancy ---
-      if (payload.source === 'sidebar' && payload.type === 'segmentation') {
-        if (targetKind === 'array') CS.setSegmentation(state, targetId, payload.value);
-        _evaluateAndRender();
-        return;
-      }
-      if (payload.source === 'sidebar' && payload.type === 'redundancy') {
-        if (targetKind === 'array') CS.setRedundancy(state, targetId, payload.value);
-        _evaluateAndRender();
-        return;
-      }
-
-      if (payload.source === 'sidebar' && payload.type === 'algorithm') {
-        if (targetKind === 'array') CS.setAlgorithm(state, targetId, payload.value);
-        _evaluateAndRender();
-        return;
-      }
-
-      // --- canvas disk ---
-      if (payload.source === 'canvas' && payload.type === 'disk') {
-        const srcId = payload.id;
-        if (srcId === targetId) return; // dropped on itself
-
-        if (targetKind === 'disk') {
-          // Target disk already in an array → add source there.
-          // Target disk loose → group the two (source must be loose too).
-          const parent = _findParentArray(targetId);
-          if (parent) {
-            CS.addToArray(state, parent, srcId);
-          } else {
-            // Both must be loose for group(); if src is in an array, abort.
-            const srcParent = _findParentArray(srcId);
-            if (!srcParent) CS.group(state, [targetId, srcId]);
-          }
-          _evaluateAndRender();
-        } else if (targetKind === 'array') {
-          CS.addToArray(state, targetId, srcId);
-          _evaluateAndRender();
-        }
-        // canvas → canvas (empty): no-op in Phase 3 (no free positioning)
-      }
-
-      // --- canvas array (nesting) ---
-      if (payload.source === 'canvas' && payload.type === 'array') {
-        const srcId = payload.id;
-        if (srcId === targetId) return;                 // dropped on itself
-        if (!state.roots.has(srcId)) return;            // only top-level arrays re-group (v1)
-        if (_subtreeContains(srcId, targetId)) return;  // never drop into own descendant
-
-        if (targetKind === 'array') {
-          if (!state.roots.has(targetId)) return;       // group/extend at top level only (v1)
-          const target = state.nodes.get(targetId);
-          const targetIsNesting = target.members.some(
-            (m) => state.nodes.get(m)?.kind === 'array'
-          );
-          // Two leaf spans → a new parent stripe (RAID 10/50/60);
-          // a span onto an existing nest → extend it (e.g. a 3rd span).
-          if (targetIsNesting) CS.addToArray(state, targetId, srcId);
-          else                 CS.group(state, [targetId, srcId]);
-          _evaluateAndRender();
-        } else if (targetKind === 'disk') {
-          // Onto a loose disk → group the two; onto a disk already in an array,
-          // ignore (nest by dropping on the array itself, not its member).
-          if (!_findParentArray(targetId)) {
-            CS.group(state, [targetId, srcId]);
-            _evaluateAndRender();
-          }
-        }
-        // canvas (empty): no-op
       }
     }
 

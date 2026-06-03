@@ -441,7 +441,13 @@
       return 'Drag one disk onto another to create an array.';
 
     for (const arr of arrays) {
-      if (arr.members.length < 2)  return 'An array needs at least 2 disks.';
+      if (arr.members.length < 2) {
+        // An array of arrays is a nested level (RAID 10/50/60): it needs spans,
+        // not bare disks. Word the hint for what actually belongs here.
+        const wantsSpans = arr.members.some((mid) => state.nodes.get(mid)?.kind === 'array');
+        return wantsSpans ? 'A nested array needs at least 2 spans.'
+                          : 'An array needs at least 2 disks.';
+      }
       if (!arr.segmentation)       return 'Drop a segmentation type onto the array.';
       if (!arr.redundancy)         return 'Drop a redundancy type onto the array.';
     }
