@@ -12,6 +12,3 @@ requirements:
   readClass:      { op: in, value: [high] }
   writeClass:     { op: in, value: [high] }
 hint: You need no redundancy here — put every disk to work for raw speed.
-successMessage: >
-  Striping all three disks with no redundancy (RAID 0) gives full read and write
-  throughput. The cost — zero fault tolerance — is exactly the trade-off the brief accepts.

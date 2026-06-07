@@ -12,6 +12,3 @@ requirements:
   readClass:      any
   writeClass:     any
 hint: Parity protects against one failure while spending only one disk's worth of space.
-successMessage: >
-  RAID 5 over the four 2 TB disks gives 6 TB usable and survives one failure —
-  the 6 TB capacity bar is what rules out the mirror-based builds, which leave only 4 TB.

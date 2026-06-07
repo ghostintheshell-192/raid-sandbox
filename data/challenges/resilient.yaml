@@ -17,7 +17,3 @@ requirements:
   readClass:      any
   writeClass:     any
 hint: Six 4 TB disks, and you must survive two failures — you need two parity blocks per stripe.
-successMessage: >
-  Double parity (RAID 6) over the six 4 TB disks survives any two simultaneous
-  failures and still leaves 16 TB usable. Any topology using these disks that
-  tolerates two failures wins.
