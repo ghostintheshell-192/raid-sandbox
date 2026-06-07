@@ -132,8 +132,8 @@
       .then((res) => { if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`); return res.text(); })
       .then((txt) => root.jsyaml.load(txt));
   }
-  const loadIndex     = ()   => loadYaml('../../data/challenges/index.yaml');
-  const loadChallenge = (id) => loadYaml(`../../data/challenges/${id}.yaml`).then((ch) => {
+  const loadIndex     = ()   => loadYaml('data/challenges/index.yaml');
+  const loadChallenge = (id) => loadYaml(`data/challenges/${id}.yaml`).then((ch) => {
     const problems = validateChallenge(ch);
     if (problems.length) console.warn(`Challenge "${id}" is malformed:`, problems);
     return ch;
