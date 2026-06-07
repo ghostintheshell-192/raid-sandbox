@@ -12,17 +12,7 @@
 (function (root) {
   'use strict';
 
-  const DT_KEY = 'text/plain';
-
-  function setDrag(e, payload) {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(DT_KEY, JSON.stringify(payload));
-  }
-
-  function getDrag(e) {
-    try { return JSON.parse(e.dataTransfer.getData(DT_KEY)); }
-    catch { return null; }
-  }
+  const { setDrag, getDrag } = root.DragUtil;
 
   // ---------------------------------------------------------------------------
 
