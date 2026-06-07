@@ -69,6 +69,21 @@
     };
   }
 
+  /**
+   * Wipe the whole build IN PLACE (master clear). Mutates the existing state
+   * object — never reassigns it — so both controllers keep their reference.
+   * Clears both axes; mode/challenge selection lives in the UI and is untouched.
+   */
+  function reset(state) {
+    state.nodes.clear();
+    state.roots.clear();
+    state.positions.clear();
+    state.selected.clear();
+    state.cpNodes.clear();
+    state.cpEdges.clear();
+    state.cpDiskPositions.clear();
+  }
+
   // ---------------------------------------------------------------------------
   // MUTATIONS
   // Called by CanvasController in response to gestures. Fast + synchronous.
@@ -508,7 +523,7 @@
   // ---------------------------------------------------------------------------
 
   const CanvasState = {
-    createState,
+    createState, reset,
     // Axis B
     addDisk, group, addToArray,
     setSegmentation, setRedundancy, setAlgorithm,

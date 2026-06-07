@@ -373,6 +373,23 @@ test('a node that is both a root and a member counts only as a member', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[13] reset() — master clear');
+
+test('reset wipes both axes and leaves an empty, evaluable state', () => {
+  const s = CS.createState();
+  const a = CS.group(s, [CS.addDisk(s, 4), CS.addDisk(s, 4)]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'parity1');
+  CS.cpAddNode(s, 'hba');
+  CS.evaluate(s);
+  CS.reset(s);
+  eq(s.nodes.size, 0); eq(s.roots.size, 0); eq(s.positions.size, 0);
+  eq(s.cpNodes.size, 0); eq(s.cpEdges.size, 0); eq(s.cpDiskPositions.size, 0);
+  const r = CS.evaluate(s);
+  eq(r.rootCount, 0);
+  eq(r.analysis, null);
+});
+
+// ---------------------------------------------------------------------------
 console.log(`\n${'─'.repeat(40)}`);
 console.log(`  ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

@@ -245,6 +245,13 @@
       border-radius: 5px; border: 1px solid rgba(128,128,128,.35);
       background: rgba(128,128,128,.1); color: inherit;
     }
+    .sbc-clear-btn {
+      font-family: inherit; font-size: .78rem; font-weight: 600; cursor: pointer;
+      padding: .28rem .6rem; border-radius: 5px;
+      border: 1px solid rgba(231,76,60,.45); background: rgba(231,76,60,.12); color: inherit;
+      transition: background .12s;
+    }
+    .sbc-clear-btn:hover { background: rgba(231,76,60,.22); }
     .sbc-prompt {
       padding: .6rem .7rem; border-radius: 8px;
       background: rgba(52,152,219,.1); border: 1px solid rgba(52,152,219,.35);
@@ -323,6 +330,7 @@
         <option value="challenge">Challenge mode</option>
       </select>
     </label>
+    <button id="btn-clear" class="sbc-clear-btn" type="button" title="Clear the whole canvas">⟲ Clear</button>
     <span style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
     <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
   </header>
@@ -673,6 +681,9 @@
   document.getElementById('inp-stripes').addEventListener('change', (e) => {
     ctrl.setStripes(parseInt(e.target.value) || 4);
   });
+
+  // Master clear — wipes the build in both views; keeps the current mode/challenge.
+  document.getElementById('btn-clear').addEventListener('click', () => ctrl.clear());
 
   // ---- mode + challenge wiring ---------------------------------------------
   elHintBtn.addEventListener('click', () => {

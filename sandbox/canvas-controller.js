@@ -382,6 +382,13 @@
       _evaluateAndRender();
     }
 
+    // Master clear: wipe the build, repaint both views (onEvaluate re-renders the
+    // physical view too) and re-evaluate. Mode/challenge selection is untouched.
+    function clear() {
+      CS.reset(state);
+      _evaluateAndRender();
+    }
+
     // ---- animation ----------------------------------------------------------
 
     function playAnimation(gridEl) {
@@ -393,7 +400,7 @@
         .then(() => { _animating = false; });
     }
 
-    return { render, setupSidebar, setStripes, playAnimation };
+    return { render, setupSidebar, setStripes, playAnimation, clear };
   }
 
   // ---------------------------------------------------------------------------
