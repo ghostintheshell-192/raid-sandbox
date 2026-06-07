@@ -129,20 +129,34 @@
       Array.from(canvasEl.querySelectorAll('.pln')).forEach(el => el.remove());
 
       // Bridge (Option 2): disks are the shared atom — render the SAME disks
-      // that live in the data view. Give any new disk a default position
-      // (stacked on the left), then auto-route them by protocol.
-      let i = 0;
+      // that live in the data view, then auto-route them by protocol.
+      //
+      // Positions: a disk the user dragged keeps its manual position (stored in
+      // cpDiskPositions); every other disk is auto-flowed into a clean grid FRESH
+      // each render. The old approach STORED auto positions, so after add/remove
+      // churn stale coordinates lingered and a new disk could land on top of an
+      // existing one — that was the misalignment. Reflowing every render keeps
+      // the auto column tidy and wraps into columns so many disks don't overflow.
+      for (const id of [...state.cpDiskPositions.keys()]) {
+        if (!state.nodes.has(id)) state.cpDiskPositions.delete(id);   // prune removed disks
+      }
+      const PER_COL = 4;
+      const diskPos = new Map();
+      let auto = 0;
       for (const node of state.nodes.values()) {
         if (node.kind !== 'disk') continue;
-        if (!state.cpDiskPositions.has(node.id)) {
-          CS.cpSetDiskPos(state, node.id, { x: 12, y: 12 + i * 46 });
+        if (state.cpDiskPositions.has(node.id)) {
+          diskPos.set(node.id, state.cpDiskPositions.get(node.id));   // manual (dragged)
+        } else {
+          diskPos.set(node.id, { x: 12 + Math.floor(auto / PER_COL) * 120,
+                                 y: 12 + (auto % PER_COL) * 46 });    // auto-flow grid
+          auto++;
         }
-        i++;
       }
       CS.cpAutoRoute(state);
 
       for (const node of state.nodes.values()) {
-        if (node.kind === 'disk') canvasEl.appendChild(_makeDiskNodeEl(node));
+        if (node.kind === 'disk') canvasEl.appendChild(_makeDiskNodeEl(node, diskPos.get(node.id)));
       }
       for (const node of state.cpNodes.values()) {
         canvasEl.appendChild(_makeNodeEl(node));
@@ -158,13 +172,13 @@
 
     // ---- disk node (shared atom from the data view) -------------------------
 
-    function _makeDiskNodeEl(disk) {
+    function _makeDiskNodeEl(disk, pos) {
       const el = document.createElement('div');
       el.className = 'pln pln-node pln-disk';
       el.dataset.nodeId = disk.id;
-      const pos = state.cpDiskPositions.get(disk.id) || { x: 12, y: 12 };
-      el.style.left = pos.x + 'px';
-      el.style.top  = pos.y + 'px';
+      const p = pos || state.cpDiskPositions.get(disk.id) || { x: 12, y: 12 };
+      el.style.left = p.x + 'px';
+      el.style.top  = p.y + 'px';
       el.style.setProperty('--node-color', 'rgba(52,152,219,.7)');
 
       el.innerHTML =
