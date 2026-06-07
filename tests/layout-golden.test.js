@@ -27,8 +27,8 @@
  * RAID 0, RAID 1, JBOD: trivially correct by inspection (no parity, no rotation).
  */
 
-const M = require('./model.js');
-const L = require('./layout.js');
+const M = require('../src/engine/model.js');
+const L = require('../src/engine/layout.js');
 const { test, assert, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------

@@ -3,14 +3,14 @@
  * Run with: node canvas-state.test.js
  */
 
-const RaidModel  = require('./model.js');
-const RaidLayout = require('./layout.js');
+const RaidModel  = require('../src/engine/model.js');
+const RaidLayout = require('../src/engine/layout.js');
 
 // Inject globals so canvas-state.js can find them (browser-style)
 global.RaidModel  = RaidModel;
 global.RaidLayout = RaidLayout;
 
-const CS = require('./canvas-state.js');
+const CS = require('../src/sandbox/canvas-state.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------

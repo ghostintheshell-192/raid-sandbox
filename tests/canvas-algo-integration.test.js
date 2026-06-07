@@ -4,9 +4,9 @@
  * Run: node canvas-algo-integration.test.js
  */
 
-global.RaidModel  = require('./model.js');
-global.RaidLayout = require('./layout.js');
-global.CanvasState = require('./canvas-state.js');
+global.RaidModel  = require('../src/engine/model.js');
+global.RaidLayout = require('../src/engine/layout.js');
+global.CanvasState = require('../src/sandbox/canvas-state.js');
 const CS = global.CanvasState;
 const { test, assert, finish } = require('./test-helpers.js');
 

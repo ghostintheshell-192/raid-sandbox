@@ -9,7 +9,7 @@
  * amortizes parity (W→1) but keeps mirror at W=2 — §4b's "one nuance".
  */
 
-const M = require('./model.js');
+const M = require('../src/engine/model.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
 // ---- tree builders (4 equal disks unless stated) --------------------------

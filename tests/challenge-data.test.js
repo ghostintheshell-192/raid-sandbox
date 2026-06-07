@@ -11,7 +11,7 @@
 
 const path = require('path');
 const { execFileSync } = require('child_process');
-const C = require('./challenge.js');
+const C = require('../src/challenge/challenge.js');
 const { test, assert, finish } = require('./test-helpers.js');
 
 // Read every challenge YAML through pyyaml → JSON (the repo's available parser).

@@ -7,8 +7,8 @@
  * The canonical solution trees below use the inventories from those YAMLs.
  */
 
-const M = require('./model.js');
-const C = require('./challenge.js');
+const M = require('../src/engine/model.js');
+const C = require('../src/challenge/challenge.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
 const d = (n = 2) => M.disk(`d${Math.random()}`, n);

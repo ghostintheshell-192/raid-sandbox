@@ -29,9 +29,9 @@
 (function (root) {
   'use strict';
 
-  const Model     = (typeof require !== 'undefined') ? require('./model.js')     : root.RaidModel;
-  const Layout    = (typeof require !== 'undefined') ? require('./layout.js')    : root.RaidLayout;
-  const Validator = (typeof require !== 'undefined') ? require('./validator.js') : root.RaidValidator;
+  const Model     = (typeof require !== 'undefined') ? require('../engine/model.js')     : root.RaidModel;
+  const Layout    = (typeof require !== 'undefined') ? require('../engine/layout.js')    : root.RaidLayout;
+  const Validator = (typeof require !== 'undefined') ? require('../engine/validator.js') : root.RaidValidator;
 
   // ---------------------------------------------------------------------------
   // ID GENERATION

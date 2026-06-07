@@ -3,8 +3,8 @@
  * Run with: node validator.test.js
  */
 
-const M = require('./model.js');
-const V = require('./validator.js');
+const M = require('../src/engine/model.js');
+const V = require('../src/engine/validator.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 const hasCode = (list, code) => list.some((v) => v.code === code);
 

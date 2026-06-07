@@ -16,12 +16,12 @@
  *   I7  a single, complete, acyclic tree always yields a non-null analysis
  */
 
-const RaidModel  = require('./model.js');
-const RaidLayout = require('./layout.js');
+const RaidModel  = require('../src/engine/model.js');
+const RaidLayout = require('../src/engine/layout.js');
 global.RaidModel  = RaidModel;
 global.RaidLayout = RaidLayout;
-global.RaidValidator = require('./validator.js');
-const CS = require('./canvas-state.js');
+global.RaidValidator = require('../src/engine/validator.js');
+const CS = require('../src/sandbox/canvas-state.js');
 const { test, assert, finish } = require('./test-helpers.js');
 
 // Deterministic PRNG (mulberry32) so failures are reproducible.
