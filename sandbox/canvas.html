@@ -7,313 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css">
-  <style>
-    /* The [hidden] attribute must win over class display rules (e.g. .sbc-prompt's
-       display:flex), otherwise hidden-by-default panels stay visible. */
-    [hidden] { display: none !important; }
-
-    /* ---- layout ---- */
-    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-    .sbc-layout {
-      display: grid;
-      grid-template-columns: 200px 1fr 240px;
-      grid-template-rows: auto 1fr 1fr;
-      height: 100vh;
-      overflow: hidden;
-    }
-    .sbc-header       { grid-column: 1 / -1; grid-row: 1; }
-    .sbc-sidebar      { grid-column: 1;      grid-row: 2 / 4; }
-    .sbc-canvas       { grid-column: 2;      grid-row: 2; }
-    .sbc-control-path { grid-column: 2;      grid-row: 3; }
-    .sbc-results      { grid-column: 3;      grid-row: 2 / 4; }
-    .sbc-header {
-      grid-column: 1 / -1;
-      padding: .7rem 1.2rem;
-      border-bottom: 1px solid rgba(128,128,128,.2);
-      display: flex; align-items: center; gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .sbc-header h1 { font-size: 1.1rem; margin: 0; }
-    .sbc-status {
-      margin-left: auto; font-size: .75rem; opacity: .55;
-      font-style: italic;
-    }
-
-    /* ---- sidebar ---- */
-    .sbc-sidebar {
-      border-right: 1px solid rgba(128,128,128,.2);
-      padding: .8rem;
-      overflow-y: auto;
-      display: flex; flex-direction: column; gap: 1.2rem;
-    }
-    .sbc-sidebar h3 {
-      font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-      opacity: .55; margin: 0 0 .4rem;
-    }
-    .sbc-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-    .sbc-chip {
-      padding: .35rem .6rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
-      cursor: grab; user-select: none;
-      border: 1px solid rgba(128,128,128,.35);
-      background: rgba(128,128,128,.1);
-      transition: background .15s;
-    }
-    .sbc-chip:hover { background: rgba(128,128,128,.22); }
-    .sbc-chip[data-drag="disk"]         { border-color: rgba(52,152,219,.5);  background: rgba(52,152,219,.12); }
-    .sbc-chip[data-drag="segmentation"] { border-color: rgba(155,89,182,.5);  background: rgba(155,89,182,.12); }
-    .sbc-chip[data-drag="redundancy"]   { border-color: rgba(46,204,113,.5);  background: rgba(46,204,113,.12); }
-
-    /* ---- canvas area ---- */
-    /* Layer labels via ::before so render() clearing innerHTML doesn't remove them */
-    .sbc-canvas, .sbc-physical { position: relative; }
-    .sbc-canvas::before, .sbc-physical::before {
-      position: absolute; top: .5rem; right: .7rem;
-      font-size: .62rem; text-transform: uppercase; letter-spacing: .09em;
-      opacity: .35; pointer-events: none; z-index: 1;
-    }
-    .sbc-canvas::before   { content: 'data layer'; }
-    .sbc-physical::before { content: 'physical layer'; }
-
-    .sbc-canvas {
-      margin: .6rem .6rem .3rem .6rem;
-      border: 2px dashed rgba(128,128,128,.3);
-      border-radius: 10px;
-      padding: 1.2rem;
-      overflow: auto;
-      display: flex; flex-wrap: wrap; gap: 1rem; align-content: flex-start;
-      background: repeating-linear-gradient(
-        0deg, transparent, transparent 31px,
-        rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
-      ),
-      repeating-linear-gradient(
-        90deg, transparent, transparent 31px,
-        rgba(128,128,128,.06) 31px, rgba(128,128,128,.06) 32px
-      );
-    }
-    .sbc-canvas.sbc--over        { border-color: rgba(52,152,219,.6); }
-    .sbc-control-path.cp--active { border-color: rgba(52,152,219,.6); }
-
-    /* ---- canvas nodes ---- */
-    .sbc-disk {
-      position: relative;
-      padding: .5rem 1.6rem .5rem .75rem; border-radius: 8px; font-size: .8rem; font-weight: 600;
-      cursor: grab; user-select: none;
-      background: rgba(52,152,219,.18); border: 1px solid rgba(52,152,219,.45);
-      transition: background .12s, box-shadow .12s;
-      white-space: nowrap;
-    }
-    .sbc-disk:hover  { background: rgba(52,152,219,.28); }
-    .sbc-disk.sbc--over { box-shadow: 0 0 0 2px rgba(52,152,219,.8); }
-
-    .sbc-array {
-      position: relative;
-      border: 2px solid rgba(155,89,182,.5); border-radius: 10px;
-      padding: .6rem; padding-top: 1.4rem; min-width: 140px;
-      background: rgba(155,89,182,.07);
-      display: flex; flex-direction: column; gap: .5rem;
-    }
-    .sbc-array.sbc--over { border-color: rgba(155,89,182,.9); background: rgba(155,89,182,.14); }
-
-    /* Delete / dissolve button — visible on hover */
-    .sbc-delete {
-      position: absolute; top: 4px; right: 4px;
-      width: 18px; height: 18px; line-height: 18px;
-      font-size: .75rem; text-align: center;
-      border-radius: 50%; border: none; cursor: pointer;
-      background: rgba(231,76,60,.7); color: #fff;
-      opacity: 0; transition: opacity .15s; padding: 0;
-    }
-    .sbc-disk:hover  > .sbc-delete,
-    .sbc-array:hover > .sbc-delete { opacity: 1; }
-
-    /* Inline variant for slot clear buttons */
-    .sbc-delete--inline {
-      position: static; display: inline-block;
-      width: 14px; height: 14px; line-height: 14px; font-size: .65rem;
-      margin-left: .25rem; vertical-align: middle;
-      opacity: 0;
-    }
-    .sbc-slot--filled:hover .sbc-delete--inline { opacity: 1; }
-
-    .sbc-slots { display: flex; gap: .4rem; }
-    .sbc-slot {
-      flex: 1; padding: .3rem .5rem; border-radius: 6px;
-      font-size: .72rem; font-weight: 600; text-align: center;
-      transition: background .12s;
-    }
-    .sbc-slot--empty {
-      border: 1.5px dashed rgba(128,128,128,.4);
-      background: rgba(128,128,128,.06);
-    }
-    .sbc-slot--empty.sbc-slot--over {
-      border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.08);
-    }
-    .sbc-slot-hint { opacity: .5; font-style: italic; }
-    .sbc-slot--filled[data-axis="segmentation"] { background: rgba(155,89,182,.25); border: 1.5px solid rgba(155,89,182,.5); }
-    .sbc-slot--filled[data-axis="redundancy"]   { background: rgba(46,204,113,.2);  border: 1.5px solid rgba(46,204,113,.45); }
-    .sbc-slot--filled[data-axis="algorithm"]    { background: rgba(230,126,34,.18); border: 1.5px solid rgba(230,126,34,.5); }
-    .sbc-slot--empty[data-axis="algorithm"]     { border-color: rgba(230,126,34,.3); }
-
-    .sbc-chip[data-drag="algorithm"]  { border-color: rgba(230,126,34,.5);  background: rgba(230,126,34,.12); }
-    .sbc-chip[data-drag="component"] { border-color: rgba(149,165,166,.5); background: rgba(149,165,166,.12); }
-
-    /* ---- physical layer canvas ---- */
-    .sbc-physical {
-      grid-column: 2; grid-row: 3;
-      margin: .3rem .6rem .6rem .6rem;
-      border: 2px dashed rgba(128,128,128,.3);
-      border-radius: 10px;
-      background: rgba(0,0,0,.05);
-      overflow: hidden;
-    }
-    .sbc-physical.cp--active { border-color: rgba(52,152,219,.6); }
-    /* inner canvas + SVG overlay */
-    .pln-canvas {
-      position: relative; width: 100%; height: 100%;
-      min-height: 160px;
-    }
-    .pln-svg {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; overflow: visible;
-    }
-    /* component nodes */
-    .pln-node {
-      position: absolute; display: inline-flex; align-items: center; gap: .35rem;
-      padding: .4rem .65rem;
-      background: rgba(30,30,30,.85);
-      border: 1.5px solid var(--node-color, rgba(128,128,128,.5));
-      border-radius: 8px; font-size: .78rem; font-weight: 600;
-      cursor: grab; user-select: none; white-space: nowrap;
-    }
-    /* disk nodes (the shared atom, mirrored from the data view) */
-    .pln-disk { background: rgba(52,152,219,.22); }
-    .pln-icon  { font-size: .95rem; line-height: 1; }
-    .pln-badge {
-      font-size: .6rem; padding: .1rem .3rem; border-radius: 4px;
-      background: rgba(231,76,60,.3); border: 1px solid rgba(231,76,60,.5);
-      color: #e74; font-weight: 700;
-    }
-    .pln-delete {
-      position: absolute; top: -6px; right: -6px;
-      width: 16px; height: 16px; line-height: 16px; text-align: center;
-      border-radius: 50%; border: none; cursor: pointer; font-size: .7rem;
-      background: rgba(231,76,60,.75); color: #fff;
-      opacity: 0; transition: opacity .15s; padding: 0;
-    }
-    .pln-node:hover .pln-delete { opacity: 1; }
-    /* port dots */
-    .pln-port {
-      position: absolute; width: 10px; height: 10px; border-radius: 50%;
-      background: rgba(255,255,255,.25); border: 1.5px solid rgba(255,255,255,.4);
-      cursor: crosshair; top: 50%; transform: translateY(-50%);
-      transition: background .12s, transform .12s;
-    }
-    .pln-port--in  { left:  -7px; }
-    .pln-port--out { right: -7px; cursor: grab; }
-    .pln-port:hover, .pln-port--over {
-      background: rgba(52,152,219,.8); transform: translateY(-50%) scale(1.4);
-    }
-
-    .sbc-members { display: flex; flex-wrap: wrap; gap: .4rem; }
-
-    /* ---- results panel ---- */
-    .sbc-results {
-      border-left: 1px solid rgba(128,128,128,.2);
-      padding: .8rem;
-      overflow-y: auto;
-      display: flex; flex-direction: column; gap: .8rem;
-    }
-    .sbc-results h3 {
-      font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-      opacity: .55; margin: 0 0 .2rem;
-    }
-    .sbc-level { font-size: 1.2rem; font-weight: 600; }
-    .sbc-level--nonstd { color: #e67e22; font-size: .95rem; }
-    .sbc-stat  { font-size: .88rem; opacity: .8; }
-    .sbc-issue {
-      font-size: .8rem; padding: .5rem .7rem; border-radius: 6px;
-      background: rgba(241,196,15,.12); border: 1px solid rgba(241,196,15,.35); color: #f1c40f;
-    }
-    .sbc-issue--hard {
-      background: rgba(231,76,60,.12); border-color: rgba(231,76,60,.45); color: #e74c3c;
-    }
-    .sbc-violations { display: flex; flex-direction: column; gap: .4rem; }
-
-    /* ---- prompt mode ---- */
-    .sbc-mode-select {
-      font-family: inherit; font-size: .78rem; padding: .25rem .4rem;
-      border-radius: 5px; border: 1px solid rgba(128,128,128,.35);
-      background: rgba(128,128,128,.1); color: inherit;
-    }
-    .sbc-clear-btn {
-      font-family: inherit; font-size: .78rem; font-weight: 600; cursor: pointer;
-      padding: .28rem .6rem; border-radius: 5px;
-      border: 1px solid rgba(231,76,60,.45); background: rgba(231,76,60,.12); color: inherit;
-      transition: background .12s;
-    }
-    .sbc-clear-btn:hover { background: rgba(231,76,60,.22); }
-    .sbc-prompt {
-      padding: .6rem .7rem; border-radius: 8px;
-      background: rgba(52,152,219,.1); border: 1px solid rgba(52,152,219,.35);
-      display: flex; flex-direction: column; gap: .4rem;
-    }
-    .sbc-prompt-client {
-      font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
-      opacity: .6; font-weight: 600;
-    }
-    .sbc-prompt-text { font-size: .82rem; line-height: 1.4; }
-    .sbc-hint-btn {
-      align-self: flex-start; font-family: inherit; font-size: .72rem; cursor: pointer;
-      padding: .25rem .5rem; border-radius: 5px;
-      border: 1px solid rgba(128,128,128,.35); background: rgba(128,128,128,.1); color: inherit;
-    }
-    .sbc-prompt-hint { font-size: .78rem; font-style: italic; opacity: .8; }
-    .sbc-reqs { display: flex; flex-direction: column; gap: .3rem; }
-    .sbc-req {
-      font-size: .78rem; padding: .3rem .5rem; border-radius: 5px;
-      border: 1px solid transparent;
-    }
-    .sbc-req--met   { background: rgba(46,204,113,.14); border-color: rgba(46,204,113,.4); color: #2ecc71; }
-    .sbc-req--unmet { background: rgba(128,128,128,.08); border-color: rgba(128,128,128,.25); opacity: .8; }
-    .sbc-win {
-      padding: .6rem .7rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
-      background: rgba(46,204,113,.2); border: 1px solid rgba(46,204,113,.55); color: #2ecc71;
-    }
-    .sbc-challenge-list { display: flex; flex-direction: column; gap: .3rem; }
-    .sbc-challenge-item {
-      font-family: inherit; text-align: left; cursor: pointer; font-size: .8rem;
-      padding: .4rem .55rem; border-radius: 6px; color: inherit;
-      border: 1px solid rgba(128,128,128,.3); background: rgba(128,128,128,.07);
-      transition: background .12s, border-color .12s;
-    }
-    .sbc-challenge-item:hover { background: rgba(128,128,128,.16); }
-    .sbc-challenge-item--active {
-      background: rgba(52,152,219,.18); border-color: rgba(52,152,219,.55); font-weight: 600;
-    }
-    .sbc-animate-btn {
-      font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
-      padding: .45rem .8rem; border-radius: 6px;
-      border: 1px solid rgba(52,152,219,.5); background: rgba(52,152,219,.15); color: inherit;
-    }
-    .sbc-animate-btn:disabled { opacity: .4; cursor: default; }
-
-    /* grid styles (reused from animator.demo.html) */
-    .sb-grid { gap: 3px; margin-top: .4rem; }
-    .sb-head { text-align: center; font-size: .72rem; opacity: .55; padding-bottom: .15rem; }
-    .sb-cell {
-      height: 2rem; display: flex; align-items: center; justify-content: center;
-      border-radius: 5px; font-weight: 600; font-size: .78rem; color: #fff;
-      transition: opacity .18s ease, transform .15s ease, box-shadow .15s ease;
-    }
-    .role-data   { background: rgba(52,152,219,.85); }
-    .role-mirror { background: rgba(155,89,182,.78); }
-    .role-P      { background: rgba(46,204,113,.85); }
-    .role-Q      { background: rgba(241,196,15,.92); color: #222; }
-    .sb-cell.dim   { opacity: .1; }
-    .sb-cell.flash { transform: scale(1.1); box-shadow: 0 0 12px rgba(255,255,255,.45); }
-    .sb-cell.lit   { opacity: 1; }
-
-  </style>
+  <link rel="stylesheet" href="sandbox.css">
 </head>
 <body>
 <div class="sbc-layout">
@@ -470,9 +164,11 @@
 <script src="render.js"></script>
 <script src="validator.js"></script>
 <script src="canvas-state.js"></script>
+<script src="drag-util.js"></script>
 <script src="canvas-controller.js"></script>
 <script src="physical-controller.js"></script>
 <script src="challenge.js"></script>
+<script src="challenge-ui.js"></script>
 <script>
   const state      = CanvasState.createState();
   const canvasEl   = document.getElementById('canvas');
@@ -514,84 +210,6 @@
       div.textContent = `${x.severity === 'hard' ? '✕' : '⚠'} ${x.message}`;
       elViolations.appendChild(div);
     }
-  }
-
-  // ---- two modes: sandbox (free) vs challenge -----------------------------
-  const elModeSelect       = document.getElementById('mode-select');
-  const elChallengeListWrap = document.querySelector('[data-challenge-list-wrap]');
-  const elChallengeList     = document.querySelector('[data-challenge-list]');
-  const elWin          = document.querySelector('[data-win]');
-  const elPrompt       = document.querySelector('[data-prompt]');
-  const elPromptClient = document.querySelector('[data-prompt-client]');
-  const elPromptText   = document.querySelector('[data-prompt-text]');
-  const elHintBtn      = document.querySelector('[data-hint-btn]');
-  const elPromptHint   = document.querySelector('[data-prompt-hint]');
-  const elReqWrap      = document.querySelector('[data-requirements-wrap]');
-  const elReqs         = document.querySelector('[data-result="requirements"]');
-
-  let challengeIndex   = [];     // [{id, title}] from index.yaml
-  let currentChallenge = null;   // the loaded challenge object, or null
-  let lastResult = null;         // last evaluate() result, so the challenge UI can refresh on its own
-
-  // The client brief (always visible in challenge mode) vs the optional hint
-  // (revealed only on demand) — kept visually distinct so they don't read alike.
-  function renderPrompt(ch) {
-    elPromptClient.textContent = `🗣 ${ch.client || 'Client'}`;
-    elPromptText.textContent   = ch.prompt || '';
-    elPromptHint.textContent   = ch.hint || '';
-    elPromptHint.hidden = true;
-    elHintBtn.hidden    = !ch.hint;
-    elHintBtn.textContent = '💡 Need a hint?';
-    elPrompt.hidden     = false;
-    elReqWrap.hidden    = false;
-  }
-
-  // Hide every challenge-only element (used by sandbox mode).
-  function hideChallengeUI() {
-    elChallengeListWrap.hidden = true;
-    elPrompt.hidden  = true;
-    elReqWrap.hidden = true;
-    elWin.hidden     = true;
-    elReqs.innerHTML = '';
-  }
-
-  function renderChallengeList() {
-    elChallengeList.innerHTML = '';
-    for (const c of challengeIndex) {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'sbc-challenge-item'
-        + (currentChallenge && currentChallenge.id === c.id ? ' sbc-challenge-item--active' : '');
-      item.textContent = c.title;
-      item.addEventListener('click', () => selectChallenge(c.id));
-      elChallengeList.appendChild(item);
-    }
-  }
-
-  function selectChallenge(id) {
-    RaidChallenge.loadChallenge(id)
-      .then((ch) => {
-        currentChallenge = ch;
-        renderChallengeList();      // re-highlight the active item
-        renderPrompt(ch);
-        updateChallengeUI(lastResult);
-      })
-      .catch(() => { /* keep current selection on a load error */ });
-  }
-
-  // Win-check sits on top of evaluate(): reads analysis (perf) + violations (Stage C).
-  function updateChallengeUI(r) {
-    if (!currentChallenge) { elWin.hidden = true; return; }
-    const res = RaidChallenge.checkChallenge(currentChallenge, r || {});
-    elReqs.innerHTML = '';
-    for (const req of res.requirements.filter((x) => !x.isAny)) {   // hide 'any' rows
-      const row = document.createElement('div');
-      row.className = 'sbc-req ' + (req.met ? 'sbc-req--met' : 'sbc-req--unmet');
-      const actual = (req.actual === undefined || req.actual === null) ? '—' : req.actual;
-      row.textContent = `${req.met ? '✓' : '○'} ${req.label}  ·  now: ${actual}`;
-      elReqs.appendChild(row);
-    }
-    elWin.hidden = !res.satisfied;
   }
 
   function onEvaluate(r) {
@@ -649,8 +267,7 @@
     }
 
     renderViolations(r);
-    lastResult = r;
-    updateChallengeUI(r);
+    challengeUI.update(r);
 
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
@@ -659,6 +276,8 @@
     // Shared-atom bridge: reflect data-view disk changes in the physical view.
     if (physCtrl) physCtrl.render();
   }
+
+  const challengeUI = ChallengeUI.createChallengeUI();
 
   // Data layer controller.
   const ctrl = CanvasController.createController({ canvasEl, state, onEvaluate });
@@ -684,43 +303,6 @@
 
   // Master clear — wipes the build in both views; keeps the current mode/challenge.
   document.getElementById('btn-clear').addEventListener('click', () => ctrl.clear());
-
-  // ---- mode + challenge wiring ---------------------------------------------
-  elHintBtn.addEventListener('click', () => {
-    elPromptHint.hidden = !elPromptHint.hidden;
-    elHintBtn.textContent = elPromptHint.hidden ? '💡 Need a hint?' : '💡 Hide hint';
-  });
-
-  let _indexLoaded = false;
-  function ensureIndex() {
-    if (_indexLoaded) return Promise.resolve(challengeIndex);
-    return RaidChallenge.loadIndex()
-      .then((list) => { challengeIndex = list || []; _indexLoaded = true; return challengeIndex; })
-      .catch(() => { challengeIndex = []; _indexLoaded = true; return challengeIndex; });
-  }
-
-  // Challenge mode shows the list + auto-opens one; sandbox hides everything game-related.
-  function setMode(mode, wantedChallengeId) {
-    if (mode === 'challenge') {
-      ensureIndex().then((list) => {
-        if (!list.length) return;                 // challenges unavailable → effectively sandbox
-        elChallengeListWrap.hidden = false;
-        renderChallengeList();
-        const start = list.some((c) => c.id === wantedChallengeId) ? wantedChallengeId : list[0].id;
-        selectChallenge(start);
-      });
-    } else {
-      currentChallenge = null;
-      hideChallengeUI();
-    }
-  }
-
-  elModeSelect.addEventListener('change', (e) => setMode(e.target.value));
-
-  // Deep-link: ?challenge=<id> opens challenge mode on that challenge.
-  const _wanted = new URLSearchParams(location.search).get('challenge');
-  if (_wanted) { elModeSelect.value = 'challenge'; setMode('challenge', _wanted); }
-  else         { setMode('sandbox'); }
 </script>
 </body>
 </html>
