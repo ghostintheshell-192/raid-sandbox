@@ -268,6 +268,17 @@
       padding: .6rem .7rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
       background: rgba(46,204,113,.2); border: 1px solid rgba(46,204,113,.55); color: #2ecc71;
     }
+    .sbc-challenge-list { display: flex; flex-direction: column; gap: .3rem; }
+    .sbc-challenge-item {
+      font-family: inherit; text-align: left; cursor: pointer; font-size: .8rem;
+      padding: .4rem .55rem; border-radius: 6px; color: inherit;
+      border: 1px solid rgba(128,128,128,.3); background: rgba(128,128,128,.07);
+      transition: background .12s, border-color .12s;
+    }
+    .sbc-challenge-item:hover { background: rgba(128,128,128,.16); }
+    .sbc-challenge-item--active {
+      background: rgba(52,152,219,.18); border-color: rgba(52,152,219,.55); font-weight: 600;
+    }
     .sbc-animate-btn {
       font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
       padding: .45rem .8rem; border-radius: 6px;
@@ -303,8 +314,9 @@
     <a href="../index.html" style="font-size:.8rem; opacity:.7; color:inherit;">Knowledge Base</a>
     <label style="font-size:.78rem; opacity:.8; display:flex; align-items:center; gap:.35rem;">
       mode
-      <select id="challenge-select" class="sbc-mode-select">
-        <option value="">Sandbox (free play)</option>
+      <select id="mode-select" class="sbc-mode-select">
+        <option value="sandbox">Sandbox mode</option>
+        <option value="challenge">Challenge mode</option>
       </select>
     </label>
     <span style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
@@ -382,12 +394,17 @@
 
   <!-- results -->
   <aside class="sbc-results" id="results">
-    <!-- Prompt mode: client brief + live requirement checklist (hidden in sandbox) -->
+    <!-- Challenge mode only: pick a challenge, then read the brief + live checklist.
+         The whole block stays hidden in sandbox mode. -->
+    <div data-challenge-list-wrap hidden>
+      <h3>Challenges</h3>
+      <div class="sbc-challenge-list" data-challenge-list></div>
+    </div>
     <div class="sbc-win" data-win hidden>✓ Challenge solved — the build meets every requirement.</div>
     <div class="sbc-prompt" data-prompt hidden>
       <div class="sbc-prompt-client" data-prompt-client></div>
       <div class="sbc-prompt-text" data-prompt-text></div>
-      <button class="sbc-hint-btn" data-hint-btn type="button">Show hint</button>
+      <button class="sbc-hint-btn" data-hint-btn type="button">💡 Need a hint?</button>
       <div class="sbc-prompt-hint" data-prompt-hint hidden></div>
     </div>
     <div data-requirements-wrap hidden>
@@ -487,8 +504,10 @@
     }
   }
 
-  // ---- prompt mode (challenges) -------------------------------------------
-  const elChallengeSelect = document.getElementById('challenge-select');
+  // ---- two modes: sandbox (free) vs challenge -----------------------------
+  const elModeSelect       = document.getElementById('mode-select');
+  const elChallengeListWrap = document.querySelector('[data-challenge-list-wrap]');
+  const elChallengeList     = document.querySelector('[data-challenge-list]');
   const elWin          = document.querySelector('[data-win]');
   const elPrompt       = document.querySelector('[data-prompt]');
   const elPromptClient = document.querySelector('[data-prompt-client]');
@@ -498,24 +517,54 @@
   const elReqWrap      = document.querySelector('[data-requirements-wrap]');
   const elReqs         = document.querySelector('[data-result="requirements"]');
 
-  let currentChallenge = null;   // null = sandbox (free) mode
+  let challengeIndex   = [];     // [{id, title}] from index.yaml
+  let currentChallenge = null;   // the loaded challenge object, or null
   let lastResult = null;         // last evaluate() result, so the challenge UI can refresh on its own
 
+  // The client brief (always visible in challenge mode) vs the optional hint
+  // (revealed only on demand) — kept visually distinct so they don't read alike.
   function renderPrompt(ch) {
-    elPromptClient.textContent = ch.client || 'Client request';
+    elPromptClient.textContent = `🗣 ${ch.client || 'Client'}`;
     elPromptText.textContent   = ch.prompt || '';
     elPromptHint.textContent   = ch.hint || '';
     elPromptHint.hidden = true;
     elHintBtn.hidden    = !ch.hint;
+    elHintBtn.textContent = '💡 Need a hint?';
     elPrompt.hidden     = false;
     elReqWrap.hidden    = false;
   }
 
-  function clearPrompt() {
+  // Hide every challenge-only element (used by sandbox mode).
+  function hideChallengeUI() {
+    elChallengeListWrap.hidden = true;
     elPrompt.hidden  = true;
     elReqWrap.hidden = true;
     elWin.hidden     = true;
     elReqs.innerHTML = '';
+  }
+
+  function renderChallengeList() {
+    elChallengeList.innerHTML = '';
+    for (const c of challengeIndex) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'sbc-challenge-item'
+        + (currentChallenge && currentChallenge.id === c.id ? ' sbc-challenge-item--active' : '');
+      item.textContent = c.title;
+      item.addEventListener('click', () => selectChallenge(c.id));
+      elChallengeList.appendChild(item);
+    }
+  }
+
+  function selectChallenge(id) {
+    RaidChallenge.loadChallenge(id)
+      .then((ch) => {
+        currentChallenge = ch;
+        renderChallengeList();      // re-highlight the active item
+        renderPrompt(ch);
+        updateChallengeUI(lastResult);
+      })
+      .catch(() => { /* keep current selection on a load error */ });
   }
 
   // Win-check sits on top of evaluate(): reads analysis (perf) + violations (Stage C).
@@ -621,33 +670,42 @@
     ctrl.setStripes(parseInt(e.target.value) || 4);
   });
 
-  // ---- challenge wiring ----------------------------------------------------
-  elHintBtn.addEventListener('click', () => { elPromptHint.hidden = !elPromptHint.hidden; });
+  // ---- mode + challenge wiring ---------------------------------------------
+  elHintBtn.addEventListener('click', () => {
+    elPromptHint.hidden = !elPromptHint.hidden;
+    elHintBtn.textContent = elPromptHint.hidden ? '💡 Need a hint?' : '💡 Hide hint';
+  });
 
-  function enterChallenge(id) {
-    if (!id) { currentChallenge = null; clearPrompt(); return; }
-    RaidChallenge.loadChallenge(id)
-      .then((ch) => { currentChallenge = ch; renderPrompt(ch); updateChallengeUI(lastResult); })
-      .catch(() => { currentChallenge = null; clearPrompt(); });
+  let _indexLoaded = false;
+  function ensureIndex() {
+    if (_indexLoaded) return Promise.resolve(challengeIndex);
+    return RaidChallenge.loadIndex()
+      .then((list) => { challengeIndex = list || []; _indexLoaded = true; return challengeIndex; })
+      .catch(() => { challengeIndex = []; _indexLoaded = true; return challengeIndex; });
   }
 
-  elChallengeSelect.addEventListener('change', (e) => enterChallenge(e.target.value));
-
-  // Populate the mode dropdown from the challenge index; deep-link via ?challenge=<id>.
-  RaidChallenge.loadIndex()
-    .then((list) => {
-      (list || []).forEach((c) => {
-        const opt = document.createElement('option');
-        opt.value = c.id; opt.textContent = c.title;
-        elChallengeSelect.appendChild(opt);
+  // Challenge mode shows the list + auto-opens one; sandbox hides everything game-related.
+  function setMode(mode, wantedChallengeId) {
+    if (mode === 'challenge') {
+      ensureIndex().then((list) => {
+        if (!list.length) return;                 // challenges unavailable → effectively sandbox
+        elChallengeListWrap.hidden = false;
+        renderChallengeList();
+        const start = list.some((c) => c.id === wantedChallengeId) ? wantedChallengeId : list[0].id;
+        selectChallenge(start);
       });
-      const wanted = new URLSearchParams(location.search).get('challenge');
-      if (wanted && (list || []).some((c) => c.id === wanted)) {
-        elChallengeSelect.value = wanted;
-        enterChallenge(wanted);
-      }
-    })
-    .catch(() => { /* challenges unavailable (e.g. file:// without a server) — sandbox still works */ });
+    } else {
+      currentChallenge = null;
+      hideChallengeUI();
+    }
+  }
+
+  elModeSelect.addEventListener('change', (e) => setMode(e.target.value));
+
+  // Deep-link: ?challenge=<id> opens challenge mode on that challenge.
+  const _wanted = new URLSearchParams(location.search).get('challenge');
+  if (_wanted) { elModeSelect.value = 'challenge'; setMode('challenge', _wanted); }
+  else         { setMode('sandbox'); }
 </script>
 </body>
 </html>
