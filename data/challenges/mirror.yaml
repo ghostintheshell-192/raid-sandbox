@@ -2,14 +2,13 @@ id: mirror
 title: Critical Data, Simple Setup
 client: "Solo dev, single workstation"
 prompt: >
-  I have just two disks and I need to keep my operating system running.
+  I have just two 2 TB disks and I need to keep my operating system running.
   A single disk failure must not cause any downtime.
-inventory:
-  disks: [ { count: 2, sizeGB: 2, protocol: SATA } ]
 requirements:
+  - { metric: diskCount,      op: '==', value: 2 }
+  - { metric: rawCapacityGB,  op: '==', value: 4 }    # 2 × 2 TB
   - { metric: faultTolerance, op: '>=', value: 1 }
 hint: With only two disks, you need a full copy of everything on both.
 successMessage: >
   Mirroring (RAID 1) writes every block to both disks, so either one can fail
-  and the system keeps running. Any topology that survives a disk loss satisfies
-  the brief — with two disks, the mirror is the natural fit.
+  and the system keeps running.

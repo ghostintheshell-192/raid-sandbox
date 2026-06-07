@@ -4,14 +4,12 @@ client: "DBA, SaaS company"
 prompt: >
   I'm hosting a busy database on four disks. I need top read AND write
   performance, and it must survive a disk failure. Cost is not a concern.
-inventory:
-  disks: [ { count: 4, sizeGB: 2, protocol: SATA } ]
 requirements:
+  - { metric: diskCount,      op: '==', value: 4 }
   - { metric: faultTolerance, op: '>=', value: 1 }
-  - { metric: readClass,      op: in, value: [high] }
-  - { metric: writeClass,     op: in, value: [high] }
+  - { metric: readClass,      op: in,   value: [high] }
+  - { metric: writeClass,     op: in,   value: [high] }
 hint: Combine two ideas — striping for speed, mirroring for the failure you must survive.
 successMessage: >
   RAID 10 stripes for speed and mirrors for safety, keeping writes cheap (no
   parity penalty) — which is why it beats RAID 5/6 for write-heavy databases.
-  The write-performance bar is what excludes the parity levels here.

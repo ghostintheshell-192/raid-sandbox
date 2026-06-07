@@ -2,17 +2,13 @@ id: speed
 title: Maximum Speed
 client: "VFX artist, render farm"
 prompt: >
-  I need the maximum possible read and write throughput for a temporary
-  rendering cache. Data loss is acceptable — nothing here is permanent.
-inventory:
-  disks: [ { count: 3, sizeGB: 2, protocol: SATA } ]
-# Requirements are checked over DERIVED outcomes (analyze()), not a target level.
-# ANY topology meeting them wins — there may be more than one valid answer.
+  I have three disks and I need the maximum possible read and write throughput
+  for a temporary rendering cache. Data loss is acceptable — nothing here is permanent.
 requirements:
-  - { metric: readClass,  op: in, value: [high] }
-  - { metric: writeClass, op: in, value: [high] }
+  - { metric: diskCount,  op: '==', value: 3 }
+  - { metric: readClass,  op: in,   value: [high] }
+  - { metric: writeClass, op: in,   value: [high] }
 hint: You need no redundancy here — put every disk to work for raw speed.
 successMessage: >
-  Striping every disk with no redundancy (RAID 0) gives you full read and write
-  throughput across all three. The cost — zero fault tolerance — is exactly the
-  trade-off the brief accepts.
+  Striping all three disks with no redundancy (RAID 0) gives full read and write
+  throughput. The cost — zero fault tolerance — is exactly the trade-off the brief accepts.

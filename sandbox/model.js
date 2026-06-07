@@ -289,6 +289,14 @@
     };
   }
 
+  // Raw (physical) capacity = sum of every leaf disk's size, independent of the
+  // topology. With diskCount it pins the DISK SUPPLY a challenge hands you (e.g.
+  // "6 × 4 TB" → diskCount 6, rawCapacityGB 24), separate from usable capacity.
+  function rawCapacityGB(node) {
+    if (isDisk(node)) return node.sizeGB;
+    return sum(node.members.map(rawCapacityGB));
+  }
+
   // ---------------------------------------------------------------------------
   // ANALYZE — one call that returns the full picture for a build.
   // ---------------------------------------------------------------------------
@@ -299,6 +307,7 @@
       ...recognize(node),
       diskCount:      countDisks(node),
       capacityGB:     capacityGB(node),
+      rawCapacityGB:  rawCapacityGB(node),
       faultTolerance: faultTolerance(node),
       readClass:      perf.random.readClass,    // flat convenience keys, 1:1 with challenge metrics
       writeClass:     perf.random.writeClass,   // conservative (random) — challenges opt into seq
@@ -319,7 +328,7 @@
 
   const RaidModel = {
     SEGMENTATIONS, REDUNDANCIES, disk, array, isDisk, isArray, countDisks,
-    recognize, capacityGB, faultTolerance, performance, analyze,
+    recognize, capacityGB, rawCapacityGB, faultTolerance, performance, analyze,
   };
 
   if (typeof module !== 'undefined' && module.exports) {
