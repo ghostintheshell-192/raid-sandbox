@@ -317,15 +317,23 @@
    *   2. a node is a ROOT iff it exists and is not a member of any array.
    */
   function _reconcile(state) {
+    // One pass over arrays, claiming each member for the FIRST array that holds it.
+    // This simultaneously: drops dangling refs (member not in nodes), enforces
+    // single membership (a node can't be a member of two arrays), and breaks any
+    // cycle (a back-edge to an already-claimed node is dropped) — so the forest
+    // that compile() later walks is always a finite, well-formed tree.
+    const claimed = new Set();
     for (const n of state.nodes.values()) {
-      if (n.kind === 'array') n.members = n.members.filter((mid) => state.nodes.has(mid));
+      if (n.kind !== 'array') continue;
+      n.members = n.members.filter((mid) => {
+        if (!state.nodes.has(mid) || claimed.has(mid)) return false;
+        claimed.add(mid);
+        return true;
+      });
     }
-    const members = new Set();
-    for (const n of state.nodes.values()) {
-      if (n.kind === 'array') n.members.forEach((mid) => members.add(mid));
-    }
+    // A node is a ROOT iff it exists and is not claimed as anyone's member.
     state.roots = new Set(
-      Array.from(state.nodes.keys()).filter((id) => !members.has(id))
+      Array.from(state.nodes.keys()).filter((id) => !claimed.has(id))
     );
   }
 
