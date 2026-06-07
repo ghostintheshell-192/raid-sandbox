@@ -8,13 +8,7 @@ global.RaidModel  = require('./model.js');
 global.RaidLayout = require('./layout.js');
 global.CanvasState = require('./canvas-state.js');
 const CS = global.CanvasState;
-
-let passed = 0, failed = 0;
-function test(label, fn) {
-  try   { fn(); console.log('  ✓ ' + label); passed++; }
-  catch (e) { console.error('  ✗ ' + label + '\n    ' + e.message); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
+const { test, assert, finish } = require('./test-helpers.js');
 
 // Build a 4-disk RAID5 in canvas state and evaluate with a given algorithm.
 function buildAndEval(algo) {
@@ -110,6 +104,4 @@ test('setAlgorithm on RAID6 (parity2) also works', () => {
   assert(roles.includes('P') && roles.includes('Q'), 'P or Q missing from RAID6 grid');
 });
 
-console.log('\n' + '─'.repeat(40));
-console.log('  ' + passed + ' passed, ' + failed + ' failed');
-if (failed > 0) process.exit(1);
+finish();

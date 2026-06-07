@@ -11,28 +11,7 @@ global.RaidModel  = RaidModel;
 global.RaidLayout = RaidLayout;
 
 const CS = require('./canvas-state.js');
-
-let passed = 0, failed = 0;
-
-function test(label, fn) {
-  try {
-    fn();
-    console.log(`  ✓ ${label}`);
-    passed++;
-  } catch (e) {
-    console.error(`  ✗ ${label}`);
-    console.error(`    ${e.message}`);
-    failed++;
-  }
-}
-
-function assert(cond, msg) {
-  if (!cond) throw new Error(msg || 'assertion failed');
-}
-
-function eq(a, b) {
-  assert(a === b, `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
-}
+const { test, assert, eq, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] State factory');
@@ -390,6 +369,4 @@ test('reset wipes both axes and leaves an empty, evaluable state', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();

@@ -12,13 +12,7 @@
 const path = require('path');
 const { execFileSync } = require('child_process');
 const C = require('./challenge.js');
-
-let passed = 0, failed = 0;
-function test(label, fn) {
-  try { fn(); console.log(`  ✓ ${label}`); passed++; }
-  catch (e) { console.error(`  ✗ ${label}`); console.error(`    ${e.message}`); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
+const { test, assert, finish } = require('./test-helpers.js');
 
 // Read every challenge YAML through pyyaml → JSON (the repo's available parser).
 const dir = path.join(__dirname, '..', 'data', 'challenges');
@@ -77,6 +71,4 @@ test('index titles match the challenge files', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();

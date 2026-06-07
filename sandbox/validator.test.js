@@ -5,15 +5,7 @@
 
 const M = require('./model.js');
 const V = require('./validator.js');
-
-let passed = 0, failed = 0;
-
-function test(label, fn) {
-  try { fn(); console.log(`  ✓ ${label}`); passed++; }
-  catch (e) { console.error(`  ✗ ${label}`); console.error(`    ${e.message}`); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
-function eq(a, b) { assert(a === b, `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); }
+const { test, assert, eq, finish } = require('./test-helpers.js');
 const hasCode = (list, code) => list.some((v) => v.code === code);
 
 const d = (n = 2, p = 'SATA') => M.disk(`d${Math.random()}`, n, p);
@@ -109,6 +101,4 @@ test('validate always returns hard + soft arrays (even with null tree)', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();

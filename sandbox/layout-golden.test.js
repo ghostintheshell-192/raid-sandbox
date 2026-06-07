@@ -29,15 +29,7 @@
 
 const M = require('./model.js');
 const L = require('./layout.js');
-
-let passed = 0, failed = 0;
-
-function test(label, fn) {
-  try   { fn(); console.log(`  ✓ ${label}`); passed++; }
-  catch (e) { console.error(`  ✗ ${label}\n    ${e.message}`); failed++; }
-}
-
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
+const { test, assert, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------
 // Helper: run computePlacement and return a simplified grid for comparison.
@@ -303,6 +295,4 @@ test('all four algorithms produce the same total segment count', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();

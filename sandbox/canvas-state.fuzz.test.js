@@ -22,13 +22,7 @@ global.RaidModel  = RaidModel;
 global.RaidLayout = RaidLayout;
 global.RaidValidator = require('./validator.js');
 const CS = require('./canvas-state.js');
-
-let passed = 0, failed = 0;
-function test(label, fn) {
-  try { fn(); console.log(`  ✓ ${label}`); passed++; }
-  catch (e) { console.error(`  ✗ ${label}`); console.error(`    ${e.stack || e.message}`); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
+const { test, assert, finish } = require('./test-helpers.js');
 
 // Deterministic PRNG (mulberry32) so failures are reproducible.
 function rng(seed) {
@@ -149,6 +143,4 @@ test('after merging, deleting and re-adding, a valid RAID 6 is recognized again'
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();

@@ -9,14 +9,7 @@
 
 const M = require('./model.js');
 const C = require('./challenge.js');
-
-let passed = 0, failed = 0;
-function test(label, fn) {
-  try { fn(); console.log(`  ✓ ${label}`); passed++; }
-  catch (e) { console.error(`  ✗ ${label}`); console.error(`    ${e.message}`); failed++; }
-}
-function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
-function eq(a, b) { assert(a === b, `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); }
+const { test, assert, eq, finish } = require('./test-helpers.js');
 
 const d = (n = 2) => M.disk(`d${Math.random()}`, n);
 const disks = (k, n = 2) => Array.from({ length: k }, () => d(n));
@@ -161,6 +154,4 @@ test('all five fixtures are complete and valid', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+finish();
