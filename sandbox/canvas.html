@@ -350,6 +350,12 @@
       <h3>Fault tolerance</h3>
       <div class="sbc-stat" data-result="ft">—</div>
     </div>
+    <div>
+      <h3>Performance</h3>
+      <div class="sbc-stat">
+        <span data-result="read">—</span> &nbsp;·&nbsp; <span data-result="write">—</span>
+      </div>
+    </div>
     <div data-result="issue" class="sbc-issue" hidden></div>
     <div data-result="raid-type" class="sbc-issue" hidden
          style="border-radius:6px; padding:.4rem .6rem; font-size:.78rem; font-weight:600; border: 1px solid;"></div>
@@ -400,6 +406,8 @@
   const elLevel    = document.querySelector('[data-result="level"]');
   const elCapacity = document.querySelector('[data-result="capacity"]');
   const elFt       = document.querySelector('[data-result="ft"]');
+  const elRead     = document.querySelector('[data-result="read"]');
+  const elWrite    = document.querySelector('[data-result="write"]');
   const elIssue    = document.querySelector('[data-result="issue"]');
   const elRaidType = document.querySelector('[data-result="raid-type"]');
   const elGrid     = document.querySelector('[data-result="grid"]');
@@ -412,11 +420,15 @@
       elLevel.className      = `sbc-level${a.level ? '' : ' sbc-level--nonstd'}`;
       elCapacity.textContent = `${a.capacityGB} TB usable`;
       elFt.textContent       = `±${a.faultTolerance} disk failure${a.faultTolerance !== 1 ? 's' : ''}`;
+      if (elRead)  elRead.textContent  = `read: ${a.readClass}`;
+      if (elWrite) elWrite.textContent = `write: ${a.writeClass}`;
     } else {
       elLevel.textContent    = '—';
       elLevel.className      = 'sbc-level';
       elCapacity.textContent = '—';
       elFt.textContent       = '—';
+      if (elRead)  elRead.textContent  = '—';
+      if (elWrite) elWrite.textContent = '—';
     }
 
     if (r.firstIssue) {
