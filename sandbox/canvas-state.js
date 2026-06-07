@@ -29,8 +29,9 @@
 (function (root) {
   'use strict';
 
-  const Model  = (typeof require !== 'undefined') ? require('./model.js')  : root.RaidModel;
-  const Layout = (typeof require !== 'undefined') ? require('./layout.js') : root.RaidLayout;
+  const Model     = (typeof require !== 'undefined') ? require('./model.js')     : root.RaidModel;
+  const Layout    = (typeof require !== 'undefined') ? require('./layout.js')    : root.RaidLayout;
+  const Validator = (typeof require !== 'undefined') ? require('./validator.js') : root.RaidValidator;
 
   // ---------------------------------------------------------------------------
   // ID GENERATION
@@ -323,9 +324,11 @@
     );
 
     const firstIssue = _firstIssue(state, rootCount);
+    const noViolations = { hard: [], soft: [] };   // §6 checks run only on a complete tree
 
     if (rootCount !== 1) {
-      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue };
+      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue,
+               violations: noViolations };
     }
 
     const rootId   = rootIds[0];
@@ -333,17 +336,23 @@
 
     if (rootNode.kind === 'disk') {
       return { tree: null, analysis: null, placement: null, rootCount, incomplete,
-               firstIssue: firstIssue ?? 'Group disks into an array to build a RAID.' };
+               firstIssue: firstIssue ?? 'Group disks into an array to build a RAID.',
+               violations: noViolations };
     }
 
     const tree = compile(state, rootId);
     if (!tree) {
-      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue };
+      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue,
+               violations: noViolations };
     }
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
     const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges);
+
+    // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
+    // its output here (same loose bolt-on pattern as _recognizePhysicalLayer).
+    const violations = Validator.validate(tree, _buildPhysicalAdapter(state, cp));
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,
@@ -351,7 +360,27 @@
       os:                  cp.os,
       controlPathComplete: cp.complete,
       controlPathIssue:    cp.issue,
+      violations,
     };
+  }
+
+  /**
+   * Build the derived physical view the validator consumes (never the raw cp* Maps).
+   *   engineCount — RAID-engine-bearing nodes (controller-hw or raid-engine); >1 is illegal
+   *   diskRoutes  — each disk's protocol + the component it actually wires into
+   */
+  function _buildPhysicalAdapter(state, cp) {
+    const engineCount = Array.from(state.cpNodes.values())
+      .filter((n) => n.componentId === 'controller-hw' || n.componentId === 'raid-engine').length;
+
+    const diskRoutes = [];
+    for (const node of state.nodes.values()) {
+      if (node.kind !== 'disk') continue;
+      const edge   = Array.from(state.cpEdges.values()).find((e) => e.fromNode === node.id);
+      const target = edge ? (state.cpNodes.get(edge.toNode)?.componentId ?? null) : null;
+      diskRoutes.push({ id: node.id, protocol: node.protocol, target });
+    }
+    return { raidType: cp.raidType, os: cp.os, engineCount, diskRoutes };
   }
 
   /**

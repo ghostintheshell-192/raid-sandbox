@@ -230,6 +230,10 @@
       font-size: .8rem; padding: .5rem .7rem; border-radius: 6px;
       background: rgba(241,196,15,.12); border: 1px solid rgba(241,196,15,.35); color: #f1c40f;
     }
+    .sbc-issue--hard {
+      background: rgba(231,76,60,.12); border-color: rgba(231,76,60,.45); color: #e74c3c;
+    }
+    .sbc-violations { display: flex; flex-direction: column; gap: .4rem; }
     .sbc-animate-btn {
       font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
       padding: .45rem .8rem; border-radius: 6px;
@@ -359,6 +363,7 @@
     <div data-result="issue" class="sbc-issue" hidden></div>
     <div data-result="raid-type" class="sbc-issue" hidden
          style="border-radius:6px; padding:.4rem .6rem; font-size:.78rem; font-weight:600; border: 1px solid;"></div>
+    <div data-result="violations" class="sbc-violations"></div>
     <div style="display:flex; align-items:center; gap:.5rem;">
       <button class="sbc-animate-btn" id="btn-animate" disabled>▶ animate write</button>
       <label style="font-size:.75rem; opacity:.6; display:flex; align-items:center; gap:.3rem;">
@@ -410,7 +415,21 @@
   const elWrite    = document.querySelector('[data-result="write"]');
   const elIssue    = document.querySelector('[data-result="issue"]');
   const elRaidType = document.querySelector('[data-result="raid-type"]');
+  const elViolations = document.querySelector('[data-result="violations"]');
   const elGrid     = document.querySelector('[data-result="grid"]');
+
+  // Sandbox = allow + explain (§6): violations are shown live, never block the build.
+  function renderViolations(r) {
+    if (!elViolations) return;
+    elViolations.innerHTML = '';
+    const v = r.violations || { hard: [], soft: [] };
+    for (const x of [...v.hard, ...v.soft]) {
+      const div = document.createElement('div');
+      div.className = 'sbc-issue' + (x.severity === 'hard' ? ' sbc-issue--hard' : '');
+      div.textContent = `${x.severity === 'hard' ? '✕' : '⚠'} ${x.message}`;
+      elViolations.appendChild(div);
+    }
+  }
 
   function onEvaluate(r) {
     // Data layer results
@@ -465,6 +484,8 @@
         elRaidType.hidden = !r.controlPathIssue;
       }
     }
+
+    renderViolations(r);
 
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
