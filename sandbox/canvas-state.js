@@ -305,6 +305,31 @@
   // ---------------------------------------------------------------------------
 
   /**
+   * Reconcile roots + members with ground truth before evaluating.
+   *
+   * Long sessions of group / dissolve / remove / re-add can leave the bookkeeping
+   * inconsistent — a deleted node's id lingering in `roots`, a member reference to
+   * a node that no longer exists, or a node that is both a root and a member. Any
+   * of these inflates `roots.size`, so the recognizer reports "connect all elements"
+   * even when the canvas visibly holds a single array. Rather than trust the
+   * incremental bookkeeping after an arbitrary history, derive the truth here:
+   *   1. drop member references to nodes that no longer exist;
+   *   2. a node is a ROOT iff it exists and is not a member of any array.
+   */
+  function _reconcile(state) {
+    for (const n of state.nodes.values()) {
+      if (n.kind === 'array') n.members = n.members.filter((mid) => state.nodes.has(mid));
+    }
+    const members = new Set();
+    for (const n of state.nodes.values()) {
+      if (n.kind === 'array') n.members.forEach((mid) => members.add(mid));
+    }
+    state.roots = new Set(
+      Array.from(state.nodes.keys()).filter((id) => !members.has(id))
+    );
+  }
+
+  /**
    * Compile the canvas state and run the full analysis + placement pipeline.
    *
    * Returns:
@@ -316,6 +341,7 @@
    *   firstIssue — first actionable hint for the help message, or null if build is valid
    */
   function evaluate(state, opts = {}) {
+    _reconcile(state);   // tolerate any group/dissolve/remove/re-add history
     const rootIds   = Array.from(state.roots);
     const rootCount = rootIds.length;
 

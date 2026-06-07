@@ -370,8 +370,10 @@
     // ---- evaluate -----------------------------------------------------------
 
     function _evaluateAndRender() {
-      render();
+      // evaluate() reconciles state (roots/members) first, so render() draws the
+      // cleaned-up tree — no phantom roots or duplicate nodes from a long history.
       const result = CS.evaluate(state, { stripes: _stripes });
+      render();
       if (typeof onEvaluate === 'function') onEvaluate(result);
     }
 

@@ -332,6 +332,47 @@ test('compile returns null for unknown id', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[12] evaluate() reconciles a corrupted root/member history');
+
+function raid6of6() {
+  const s  = CS.createState();
+  const ds = Array.from({ length: 6 }, () => CS.addDisk(s, 4));
+  const a  = CS.group(s, ds);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity2');
+  return { s, a };
+}
+
+test('a phantom root id (leftover from a deleted node) does not block recognition', () => {
+  const { s } = raid6of6();
+  eq(CS.evaluate(s).analysis.level, 'RAID 6');   // sanity
+  s.roots.add('disk-deleted-999');               // corrupt: stale id lingering in roots
+  const r = CS.evaluate(s);
+  eq(r.rootCount, 1);
+  eq(r.analysis.level, 'RAID 6');
+});
+
+test('a dangling member reference is pruned so the array still compiles', () => {
+  const s  = CS.createState();
+  const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
+  const a  = CS.group(s, [d1, d2]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
+  s.nodes.get(a).members.push('disk-ghost');     // corrupt: member that no longer exists
+  eq(CS.evaluate(s).analysis.level, 'RAID 0');
+});
+
+test('a node that is both a root and a member counts only as a member', () => {
+  const s  = CS.createState();
+  const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
+  const a  = CS.group(s, [d1, d2]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
+  s.roots.add(d1);                               // corrupt: member re-added to roots
+  const r = CS.evaluate(s);
+  eq(r.rootCount, 1);
+  eq(r.analysis.level, 'RAID 0');
+});
+
+// ---------------------------------------------------------------------------
 console.log(`\n${'─'.repeat(40)}`);
 console.log(`  ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
