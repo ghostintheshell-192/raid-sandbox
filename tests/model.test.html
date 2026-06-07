@@ -6,7 +6,7 @@
   <title>RAID Sandbox — model self-test</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../styles/styles.css">
   <style>
     /* Dev-tool styling only — not part of the game UI. */
     body { padding: 2rem; max-width: 1100px; margin: 0 auto; }
@@ -41,7 +41,7 @@
     <tbody id="rows"></tbody>
   </table>
 
-  <script src="model.js"></script>
+  <script src="../src/engine/model.js"></script>
   <script>
     const { disk, array, analyze } = RaidModel;
     const d = (id) => disk(id, 100, 'SATA');   // uniform 100 GB disks

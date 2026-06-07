@@ -193,15 +193,125 @@
   const faultTolerance = (node) => failuresToKill(node) - 1;
 
   // ---------------------------------------------------------------------------
+  // PERFORMANCE (§4b) — derived, measurable, from the same two axes.
+  //
+  // Like capacity and fault-tolerance, performance is DERIVED, never eyeballed,
+  // so prompt-mode requirements ("optimized for sequential reads") become
+  // checkable the same way as `faultTolerance >= 2`.
+  //
+  // Two canon quantities (storage-design write-penalty table; the parity small-
+  // write cost is the Patterson/Gibson/Katz "small-write problem"):
+  //   W (write penalty), from redundancy:  none=1 · mirror=2 · parity1=4 · parity2=6
+  //   N (parallelism),   from segmentation: striped → stripe width · linear → 1
+  //
+  // We report MULTIPLIERS vs a single disk — read ≈ N×, write ≈ N/W× — not
+  // absolute IOPS: IOPS_disk is never a player input, and buckets + "optimize
+  // for X" checks need only the ratio. (IOPS_array = (N×IOPS_disk)/(rf + W·wf).)
+  //
+  // The one nuance (§4b): on large SEQUENTIAL full-stripe writes, parity is
+  // computed once per stripe instead of read-modify-write, so the parity penalty
+  // nearly vanishes (W→1). Mirror still writes every copy, so its W stays 2.
+  // We therefore expose both a `random` and a `sequential` characterization.
+  // ---------------------------------------------------------------------------
+
+  const topIsStriped = (n) => isArray(n) && n.segmentation === 'striped';
+
+  // Write penalty W. For a nested stripe-over-spans the physical writes land in
+  // the child spans, so the effective W is the span's, not the top stripe's
+  // (RAID 50/60 inherit the parity penalty). Spans are uniform by the recognizer.
+  function writePenalty(node, mode = 'random') {
+    if (isDisk(node)) return 1;
+    const table = mode === 'sequential'
+      ? { none: 1, mirror: 2, parity1: 1, parity2: 1 }   // parity amortized on full-stripe
+      : { none: 1, mirror: 2, parity1: 4, parity2: 6 };  // random read-modify-write
+    if (node.redundancy === 'none' && allArrays(node))
+      return Math.max(...node.members.map((m) => writePenalty(m, mode)));
+    return table[node.redundancy];
+  }
+
+  // Stripe width feeding parallel WRITES (linear → 1, the single active member).
+  function writeParallelism(node) {
+    if (isDisk(node)) return 1;
+    if (node.segmentation === 'striped')
+      return allArrays(node)
+        ? sum(node.members.map(writeParallelism))   // nested: sum child widths
+        : node.members.length;                       // leaf stripe (incl. flat RAID 10)
+    return 1;                                         // linear
+  }
+
+  // Disks serving parallel READS — striping spreads data; mirroring fans copies.
+  function readParallelism(node) {
+    if (isDisk(node)) return 1;
+    if (node.segmentation === 'striped')
+      return allArrays(node)
+        ? sum(node.members.map(readParallelism))
+        : node.members.length;
+    if (node.redundancy === 'mirror') return node.members.length;  // RAID 1: read from any copy
+    return 1;                                                       // JBOD: one disk
+  }
+
+  // Buckets quantize the formula (the formula is authoritative, the bucket is
+  // presentation). writeClass keys on striping first (parallelism), then penalty.
+  function readClass(node) {
+    if (isDisk(node)) return 'high';
+    if (topIsStriped(node)) return 'high';                          // RAID 0/5/6/10/50/60
+    if (node.redundancy === 'mirror') return 'medium';             // RAID 1: fan across copies
+    return 'low';                                                  // JBOD
+  }
+
+  function writeClass(node, mode = 'random') {
+    if (isDisk(node)) return 'high';
+    if (!topIsStriped(node))                                       // linear: single-disk write path
+      return node.redundancy === 'mirror' ? 'medium' : 'low';
+    const w = writePenalty(node, mode);
+    if (w <= 2) return 'high';                                     // RAID 0 (1), RAID 10 (2)
+    if (w === 4) return 'medium';                                  // RAID 5/50 (random RMW)
+    return 'low';                                                  // RAID 6/60
+  }
+
+  const round2 = (x) => Math.round(x * 100) / 100;
+
+  function characterize(node, mode) {
+    return {
+      readMult:   readParallelism(node),
+      writeMult:  round2(writeParallelism(node) / writePenalty(node, mode)),
+      readClass:  readClass(node),
+      writeClass: writeClass(node, mode),
+    };
+  }
+
+  function performance(node) {
+    return {
+      writePenalty: writePenalty(node, 'random'),
+      parallelism:  writeParallelism(node),
+      random:       characterize(node, 'random'),
+      sequential:   characterize(node, 'sequential'),
+    };
+  }
+
+  // Raw (physical) capacity = sum of every leaf disk's size, independent of the
+  // topology. With diskCount it pins the DISK SUPPLY a challenge hands you (e.g.
+  // "6 × 4 TB" → diskCount 6, rawCapacityGB 24), separate from usable capacity.
+  function rawCapacityGB(node) {
+    if (isDisk(node)) return node.sizeGB;
+    return sum(node.members.map(rawCapacityGB));
+  }
+
+  // ---------------------------------------------------------------------------
   // ANALYZE — one call that returns the full picture for a build.
   // ---------------------------------------------------------------------------
 
   function analyze(node) {
+    const perf = performance(node);
     return {
       ...recognize(node),
       diskCount:      countDisks(node),
       capacityGB:     capacityGB(node),
+      rawCapacityGB:  rawCapacityGB(node),
       faultTolerance: faultTolerance(node),
+      readClass:      perf.random.readClass,    // flat convenience keys, 1:1 with challenge metrics
+      writeClass:     perf.random.writeClass,   // conservative (random) — challenges opt into seq
+      performance:    perf,
     };
   }
 
@@ -218,7 +328,7 @@
 
   const RaidModel = {
     SEGMENTATIONS, REDUNDANCIES, disk, array, isDisk, isArray, countDisks,
-    recognize, capacityGB, faultTolerance, analyze,
+    recognize, capacityGB, rawCapacityGB, faultTolerance, performance, analyze,
   };
 
   if (typeof module !== 'undefined' && module.exports) {

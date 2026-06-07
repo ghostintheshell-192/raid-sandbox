@@ -6,7 +6,7 @@
   <title>RAID Sandbox — placement self-test</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../styles/styles.css">
   <style>
     /* Dev-tool styling only — not the game UI. */
     body { padding: 2rem; max-width: 1100px; margin: 0 auto; }
@@ -35,7 +35,7 @@
      i.e. they reproduce the tables in <code>.personal/segment-allocation-rule-left-symmetric.md</code>.</p>
   <div id="cases"></div>
 
-  <script src="layout.js"></script>
+  <script src="../src/engine/layout.js"></script>
   <script>
     const disk = (i) => ({ kind: 'disk', id: i, sizeGB: 100 });
     const arr  = (seg, red, n, algo = null) =>

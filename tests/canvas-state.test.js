@@ -3,36 +3,15 @@
  * Run with: node canvas-state.test.js
  */
 
-const RaidModel  = require('./model.js');
-const RaidLayout = require('./layout.js');
+const RaidModel  = require('../src/engine/model.js');
+const RaidLayout = require('../src/engine/layout.js');
 
 // Inject globals so canvas-state.js can find them (browser-style)
 global.RaidModel  = RaidModel;
 global.RaidLayout = RaidLayout;
 
-const CS = require('./canvas-state.js');
-
-let passed = 0, failed = 0;
-
-function test(label, fn) {
-  try {
-    fn();
-    console.log(`  ✓ ${label}`);
-    passed++;
-  } catch (e) {
-    console.error(`  ✗ ${label}`);
-    console.error(`    ${e.message}`);
-    failed++;
-  }
-}
-
-function assert(cond, msg) {
-  if (!cond) throw new Error(msg || 'assertion failed');
-}
-
-function eq(a, b) {
-  assert(a === b, `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
-}
+const CS = require('../src/sandbox/canvas-state.js');
+const { test, assert, eq, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] State factory');
@@ -332,69 +311,62 @@ test('compile returns null for unknown id', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log('\n[12] Regression — no stale member references after remove/dissolve');
+console.log('\n[12] evaluate() reconciles a corrupted root/member history');
 
-// Invariant: every array member id must resolve to a node in `state.nodes`.
-// A dangling member makes compile() return null for the whole subtree, which
-// silently zeroes the build and leaves it unrepairable from the UI.
-function noStaleMembers(s) {
-  for (const n of s.nodes.values()) {
-    if (n.kind !== 'array') continue;
-    for (const mid of n.members) {
-      if (!s.nodes.has(mid)) return false;
-    }
-  }
-  return true;
+function raid6of6() {
+  const s  = CS.createState();
+  const ds = Array.from({ length: 6 }, () => CS.addDisk(s, 4));
+  const a  = CS.group(s, ds);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity2');
+  return { s, a };
 }
 
-// Nested RAID 1+0: a striped parent over two linear-mirror spans.
-function buildNestedRaid10(s) {
-  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2)]);
-  CS.setSegmentation(s, a, 'linear'); CS.setRedundancy(s, a, 'mirror');
-  const b = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2)]);
-  CS.setSegmentation(s, b, 'linear'); CS.setRedundancy(s, b, 'mirror');
-  const parent = CS.group(s, [a, b]);
-  CS.setSegmentation(s, parent, 'striped'); CS.setRedundancy(s, parent, 'none');
-  return { parent, a, b };
-}
-
-test('sanity: nested build is recognized as RAID 1+0', () => {
-  const s = CS.createState();
-  buildNestedRaid10(s);
-  eq(CS.evaluate(s).analysis.level, 'RAID 1+0');
-});
-
-test('dissolve nested span detaches it from its parent (no stale ref)', () => {
-  const s = CS.createState();
-  const { parent, a, b } = buildNestedRaid10(s);
-  CS.dissolve(s, a);
-  assert(!s.nodes.has(a), 'dissolved span still in nodes');
-  assert(!s.nodes.get(parent).members.includes(a), 'parent still references dissolved span');
-  assert(s.nodes.get(parent).members.includes(b), 'sibling span wrongly dropped');
-  assert(noStaleMembers(s), 'parent holds a member that no longer exists');
-});
-
-test('remove nested span detaches it from its parent (no stale ref)', () => {
-  const s = CS.createState();
-  const { parent, a } = buildNestedRaid10(s);
-  CS.remove(s, a);
-  assert(!s.nodes.has(a));
-  assert(!s.nodes.get(parent).members.includes(a), 'parent still references removed span');
-  assert(noStaleMembers(s));
-});
-
-test('build stays evaluable (not stuck at null) after dissolving a span', () => {
-  const s = CS.createState();
-  const { a } = buildNestedRaid10(s);
-  CS.dissolve(s, a);
+test('a phantom root id (leftover from a deleted node) does not block recognition', () => {
+  const { s } = raid6of6();
+  eq(CS.evaluate(s).analysis.level, 'RAID 6');   // sanity
+  s.roots.add('disk-deleted-999');               // corrupt: stale id lingering in roots
   const r = CS.evaluate(s);
-  // Parent is now incomplete, but state is consistent and repairable:
-  // no dangling refs, and an actionable hint instead of a silent dead end.
-  assert(noStaleMembers(s));
-  assert(r.firstIssue !== null, 'expected an actionable hint, got none');
+  eq(r.rootCount, 1);
+  eq(r.analysis.level, 'RAID 6');
+});
+
+test('a dangling member reference is pruned so the array still compiles', () => {
+  const s  = CS.createState();
+  const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
+  const a  = CS.group(s, [d1, d2]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
+  s.nodes.get(a).members.push('disk-ghost');     // corrupt: member that no longer exists
+  eq(CS.evaluate(s).analysis.level, 'RAID 0');
+});
+
+test('a node that is both a root and a member counts only as a member', () => {
+  const s  = CS.createState();
+  const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
+  const a  = CS.group(s, [d1, d2]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
+  s.roots.add(d1);                               // corrupt: member re-added to roots
+  const r = CS.evaluate(s);
+  eq(r.rootCount, 1);
+  eq(r.analysis.level, 'RAID 0');
 });
 
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`  ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+console.log('\n[13] reset() — master clear');
+
+test('reset wipes both axes and leaves an empty, evaluable state', () => {
+  const s = CS.createState();
+  const a = CS.group(s, [CS.addDisk(s, 4), CS.addDisk(s, 4)]);
+  CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'parity1');
+  CS.cpAddNode(s, 'hba');
+  CS.evaluate(s);
+  CS.reset(s);
+  eq(s.nodes.size, 0); eq(s.roots.size, 0); eq(s.positions.size, 0);
+  eq(s.cpNodes.size, 0); eq(s.cpEdges.size, 0); eq(s.cpDiskPositions.size, 0);
+  const r = CS.evaluate(s);
+  eq(r.rootCount, 0);
+  eq(r.analysis, null);
+});
+
+// ---------------------------------------------------------------------------
+finish();

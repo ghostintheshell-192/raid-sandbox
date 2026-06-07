@@ -29,8 +29,9 @@
 (function (root) {
   'use strict';
 
-  const Model  = (typeof require !== 'undefined') ? require('./model.js')  : root.RaidModel;
-  const Layout = (typeof require !== 'undefined') ? require('./layout.js') : root.RaidLayout;
+  const Model     = (typeof require !== 'undefined') ? require('../engine/model.js')     : root.RaidModel;
+  const Layout    = (typeof require !== 'undefined') ? require('../engine/layout.js')    : root.RaidLayout;
+  const Validator = (typeof require !== 'undefined') ? require('../engine/validator.js') : root.RaidValidator;
 
   // ---------------------------------------------------------------------------
   // ID GENERATION
@@ -66,6 +67,21 @@
       // references it directly in cpEdges by its disk id.
       cpDiskPositions: new Map(),  // diskId → {x,y}  (position in the physical view)
     };
+  }
+
+  /**
+   * Wipe the whole build IN PLACE (master clear). Mutates the existing state
+   * object — never reassigns it — so both controllers keep their reference.
+   * Clears both axes; mode/challenge selection lives in the UI and is untouched.
+   */
+  function reset(state) {
+    state.nodes.clear();
+    state.roots.clear();
+    state.positions.clear();
+    state.selected.clear();
+    state.cpNodes.clear();
+    state.cpEdges.clear();
+    state.cpDiskPositions.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -316,6 +332,39 @@
   // ---------------------------------------------------------------------------
 
   /**
+   * Reconcile roots + members with ground truth before evaluating.
+   *
+   * Long sessions of group / dissolve / remove / re-add can leave the bookkeeping
+   * inconsistent — a deleted node's id lingering in `roots`, a member reference to
+   * a node that no longer exists, or a node that is both a root and a member. Any
+   * of these inflates `roots.size`, so the recognizer reports "connect all elements"
+   * even when the canvas visibly holds a single array. Rather than trust the
+   * incremental bookkeeping after an arbitrary history, derive the truth here:
+   *   1. drop member references to nodes that no longer exist;
+   *   2. a node is a ROOT iff it exists and is not a member of any array.
+   */
+  function _reconcile(state) {
+    // One pass over arrays, claiming each member for the FIRST array that holds it.
+    // This simultaneously: drops dangling refs (member not in nodes), enforces
+    // single membership (a node can't be a member of two arrays), and breaks any
+    // cycle (a back-edge to an already-claimed node is dropped) — so the forest
+    // that compile() later walks is always a finite, well-formed tree.
+    const claimed = new Set();
+    for (const n of state.nodes.values()) {
+      if (n.kind !== 'array') continue;
+      n.members = n.members.filter((mid) => {
+        if (!state.nodes.has(mid) || claimed.has(mid)) return false;
+        claimed.add(mid);
+        return true;
+      });
+    }
+    // A node is a ROOT iff it exists and is not claimed as anyone's member.
+    state.roots = new Set(
+      Array.from(state.nodes.keys()).filter((id) => !claimed.has(id))
+    );
+  }
+
+  /**
    * Compile the canvas state and run the full analysis + placement pipeline.
    *
    * Returns:
@@ -327,6 +376,7 @@
    *   firstIssue — first actionable hint for the help message, or null if build is valid
    */
   function evaluate(state, opts = {}) {
+    _reconcile(state);   // tolerate any group/dissolve/remove/re-add history
     const rootIds   = Array.from(state.roots);
     const rootCount = rootIds.length;
 
@@ -335,9 +385,11 @@
     );
 
     const firstIssue = _firstIssue(state, rootCount);
+    const noViolations = { hard: [], soft: [] };   // §6 checks run only on a complete tree
 
     if (rootCount !== 1) {
-      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue };
+      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue,
+               violations: noViolations };
     }
 
     const rootId   = rootIds[0];
@@ -345,17 +397,23 @@
 
     if (rootNode.kind === 'disk') {
       return { tree: null, analysis: null, placement: null, rootCount, incomplete,
-               firstIssue: firstIssue ?? 'Group disks into an array to build a RAID.' };
+               firstIssue: firstIssue ?? 'Group disks into an array to build a RAID.',
+               violations: noViolations };
     }
 
     const tree = compile(state, rootId);
     if (!tree) {
-      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue };
+      return { tree: null, analysis: null, placement: null, rootCount, incomplete, firstIssue,
+               violations: noViolations };
     }
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
     const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges);
+
+    // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
+    // its output here (same loose bolt-on pattern as _recognizePhysicalLayer).
+    const violations = Validator.validate(tree, _buildPhysicalAdapter(state, cp));
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,
@@ -363,7 +421,27 @@
       os:                  cp.os,
       controlPathComplete: cp.complete,
       controlPathIssue:    cp.issue,
+      violations,
     };
+  }
+
+  /**
+   * Build the derived physical view the validator consumes (never the raw cp* Maps).
+   *   engineCount — RAID-engine-bearing nodes (controller-hw or raid-engine); >1 is illegal
+   *   diskRoutes  — each disk's protocol + the component it actually wires into
+   */
+  function _buildPhysicalAdapter(state, cp) {
+    const engineCount = Array.from(state.cpNodes.values())
+      .filter((n) => n.componentId === 'controller-hw' || n.componentId === 'raid-engine').length;
+
+    const diskRoutes = [];
+    for (const node of state.nodes.values()) {
+      if (node.kind !== 'disk') continue;
+      const edge   = Array.from(state.cpEdges.values()).find((e) => e.fromNode === node.id);
+      const target = edge ? (state.cpNodes.get(edge.toNode)?.componentId ?? null) : null;
+      diskRoutes.push({ id: node.id, protocol: node.protocol, target });
+    }
+    return { raidType: cp.raidType, os: cp.os, engineCount, diskRoutes };
   }
 
   /**
@@ -463,7 +541,7 @@
   // ---------------------------------------------------------------------------
 
   const CanvasState = {
-    createState,
+    createState, reset,
     // Axis B
     addDisk, group, addToArray,
     setSegmentation, setRedundancy, setAlgorithm,

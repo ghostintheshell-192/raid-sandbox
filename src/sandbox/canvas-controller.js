@@ -12,17 +12,7 @@
 (function (root) {
   'use strict';
 
-  const DT_KEY = 'text/plain';
-
-  function setDrag(e, payload) {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(DT_KEY, JSON.stringify(payload));
-  }
-
-  function getDrag(e) {
-    try { return JSON.parse(e.dataTransfer.getData(DT_KEY)); }
-    catch { return null; }
-  }
+  const { setDrag, getDrag } = root.DragUtil;
 
   // ---------------------------------------------------------------------------
 
@@ -385,13 +375,22 @@
     // ---- evaluate -----------------------------------------------------------
 
     function _evaluateAndRender() {
-      render();
+      // evaluate() reconciles state (roots/members) first, so render() draws the
+      // cleaned-up tree — no phantom roots or duplicate nodes from a long history.
       const result = CS.evaluate(state, { stripes: _stripes });
+      render();
       if (typeof onEvaluate === 'function') onEvaluate(result);
     }
 
     function setStripes(n) {
       _stripes = Math.max(1, Math.min(32, n));
+      _evaluateAndRender();
+    }
+
+    // Master clear: wipe the build, repaint both views (onEvaluate re-renders the
+    // physical view too) and re-evaluate. Mode/challenge selection is untouched.
+    function clear() {
+      CS.reset(state);
       _evaluateAndRender();
     }
 
@@ -406,7 +405,7 @@
         .then(() => { _animating = false; });
     }
 
-    return { render, setupSidebar, setStripes, playAnimation };
+    return { render, setupSidebar, setStripes, playAnimation, clear };
   }
 
   // ---------------------------------------------------------------------------
