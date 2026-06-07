@@ -234,6 +234,40 @@
       background: rgba(231,76,60,.12); border-color: rgba(231,76,60,.45); color: #e74c3c;
     }
     .sbc-violations { display: flex; flex-direction: column; gap: .4rem; }
+
+    /* ---- prompt mode ---- */
+    .sbc-mode-select {
+      font-family: inherit; font-size: .78rem; padding: .25rem .4rem;
+      border-radius: 5px; border: 1px solid rgba(128,128,128,.35);
+      background: rgba(128,128,128,.1); color: inherit;
+    }
+    .sbc-prompt {
+      padding: .6rem .7rem; border-radius: 8px;
+      background: rgba(52,152,219,.1); border: 1px solid rgba(52,152,219,.35);
+      display: flex; flex-direction: column; gap: .4rem;
+    }
+    .sbc-prompt-client {
+      font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
+      opacity: .6; font-weight: 600;
+    }
+    .sbc-prompt-text { font-size: .82rem; line-height: 1.4; }
+    .sbc-hint-btn {
+      align-self: flex-start; font-family: inherit; font-size: .72rem; cursor: pointer;
+      padding: .25rem .5rem; border-radius: 5px;
+      border: 1px solid rgba(128,128,128,.35); background: rgba(128,128,128,.1); color: inherit;
+    }
+    .sbc-prompt-hint { font-size: .78rem; font-style: italic; opacity: .8; }
+    .sbc-reqs { display: flex; flex-direction: column; gap: .3rem; }
+    .sbc-req {
+      font-size: .78rem; padding: .3rem .5rem; border-radius: 5px;
+      border: 1px solid transparent;
+    }
+    .sbc-req--met   { background: rgba(46,204,113,.14); border-color: rgba(46,204,113,.4); color: #2ecc71; }
+    .sbc-req--unmet { background: rgba(128,128,128,.08); border-color: rgba(128,128,128,.25); opacity: .8; }
+    .sbc-win {
+      padding: .6rem .7rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
+      background: rgba(46,204,113,.2); border: 1px solid rgba(46,204,113,.55); color: #2ecc71;
+    }
     .sbc-animate-btn {
       font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
       padding: .45rem .8rem; border-radius: 6px;
@@ -267,6 +301,12 @@
     <a href="../../../index.html" style="font-size:.8rem; opacity:.7; color:inherit; text-decoration:none;">← back</a>
     <h1>RAID Sandbox</h1>
     <a href="../index.html" style="font-size:.8rem; opacity:.7; color:inherit;">Knowledge Base</a>
+    <label style="font-size:.78rem; opacity:.8; display:flex; align-items:center; gap:.35rem;">
+      mode
+      <select id="challenge-select" class="sbc-mode-select">
+        <option value="">Sandbox (free play)</option>
+      </select>
+    </label>
     <span style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
     <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
   </header>
@@ -342,6 +382,19 @@
 
   <!-- results -->
   <aside class="sbc-results" id="results">
+    <!-- Prompt mode: client brief + live requirement checklist (hidden in sandbox) -->
+    <div class="sbc-win" data-win hidden>✓ Challenge solved — the build meets every requirement.</div>
+    <div class="sbc-prompt" data-prompt hidden>
+      <div class="sbc-prompt-client" data-prompt-client></div>
+      <div class="sbc-prompt-text" data-prompt-text></div>
+      <button class="sbc-hint-btn" data-hint-btn type="button">Show hint</button>
+      <div class="sbc-prompt-hint" data-prompt-hint hidden></div>
+    </div>
+    <div data-requirements-wrap hidden>
+      <h3>Requirements</h3>
+      <div class="sbc-reqs" data-result="requirements"></div>
+    </div>
+
     <div>
       <h3>Livello RAID</h3>
       <div class="sbc-level" data-result="level">—</div>
@@ -382,12 +435,15 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
 <script src="model.js"></script>
 <script src="layout.js"></script>
 <script src="render.js"></script>
+<script src="validator.js"></script>
 <script src="canvas-state.js"></script>
 <script src="canvas-controller.js"></script>
 <script src="physical-controller.js"></script>
+<script src="challenge.js"></script>
 <script>
   const state      = CanvasState.createState();
   const canvasEl   = document.getElementById('canvas');
@@ -429,6 +485,52 @@
       div.textContent = `${x.severity === 'hard' ? '✕' : '⚠'} ${x.message}`;
       elViolations.appendChild(div);
     }
+  }
+
+  // ---- prompt mode (challenges) -------------------------------------------
+  const elChallengeSelect = document.getElementById('challenge-select');
+  const elWin          = document.querySelector('[data-win]');
+  const elPrompt       = document.querySelector('[data-prompt]');
+  const elPromptClient = document.querySelector('[data-prompt-client]');
+  const elPromptText   = document.querySelector('[data-prompt-text]');
+  const elHintBtn      = document.querySelector('[data-hint-btn]');
+  const elPromptHint   = document.querySelector('[data-prompt-hint]');
+  const elReqWrap      = document.querySelector('[data-requirements-wrap]');
+  const elReqs         = document.querySelector('[data-result="requirements"]');
+
+  let currentChallenge = null;   // null = sandbox (free) mode
+  let lastResult = null;         // last evaluate() result, so the challenge UI can refresh on its own
+
+  function renderPrompt(ch) {
+    elPromptClient.textContent = ch.client || 'Client request';
+    elPromptText.textContent   = ch.prompt || '';
+    elPromptHint.textContent   = ch.hint || '';
+    elPromptHint.hidden = true;
+    elHintBtn.hidden    = !ch.hint;
+    elPrompt.hidden     = false;
+    elReqWrap.hidden    = false;
+  }
+
+  function clearPrompt() {
+    elPrompt.hidden  = true;
+    elReqWrap.hidden = true;
+    elWin.hidden     = true;
+    elReqs.innerHTML = '';
+  }
+
+  // Win-check sits on top of evaluate(): reads analysis (perf) + violations (Stage C).
+  function updateChallengeUI(r) {
+    if (!currentChallenge) { elWin.hidden = true; return; }
+    const res = RaidChallenge.checkChallenge(currentChallenge, r || {});
+    elReqs.innerHTML = '';
+    for (const req of res.requirements) {
+      const row = document.createElement('div');
+      row.className = 'sbc-req ' + (req.met ? 'sbc-req--met' : 'sbc-req--unmet');
+      const actual = (req.actual === undefined || req.actual === null) ? '—' : req.actual;
+      row.textContent = `${req.met ? '✓' : '○'} ${req.label}  ·  now: ${actual}`;
+      elReqs.appendChild(row);
+    }
+    elWin.hidden = !res.satisfied;
   }
 
   function onEvaluate(r) {
@@ -486,6 +588,8 @@
     }
 
     renderViolations(r);
+    lastResult = r;
+    updateChallengeUI(r);
 
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
@@ -516,6 +620,34 @@
   document.getElementById('inp-stripes').addEventListener('change', (e) => {
     ctrl.setStripes(parseInt(e.target.value) || 4);
   });
+
+  // ---- challenge wiring ----------------------------------------------------
+  elHintBtn.addEventListener('click', () => { elPromptHint.hidden = !elPromptHint.hidden; });
+
+  function enterChallenge(id) {
+    if (!id) { currentChallenge = null; clearPrompt(); return; }
+    RaidChallenge.loadChallenge(id)
+      .then((ch) => { currentChallenge = ch; renderPrompt(ch); updateChallengeUI(lastResult); })
+      .catch(() => { currentChallenge = null; clearPrompt(); });
+  }
+
+  elChallengeSelect.addEventListener('change', (e) => enterChallenge(e.target.value));
+
+  // Populate the mode dropdown from the challenge index; deep-link via ?challenge=<id>.
+  RaidChallenge.loadIndex()
+    .then((list) => {
+      (list || []).forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.title;
+        elChallengeSelect.appendChild(opt);
+      });
+      const wanted = new URLSearchParams(location.search).get('challenge');
+      if (wanted && (list || []).some((c) => c.id === wanted)) {
+        elChallengeSelect.value = wanted;
+        enterChallenge(wanted);
+      }
+    })
+    .catch(() => { /* challenges unavailable (e.g. file:// without a server) — sandbox still works */ });
 </script>
 </body>
 </html>
