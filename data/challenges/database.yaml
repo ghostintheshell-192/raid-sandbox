@@ -1,25 +1,17 @@
 id: database
 title: High-Traffic Database
+client: "DBA, SaaS company"
 prompt: >
-  You have 4 disks of 1 TB each. You are hosting a busy database: you need
-  maximum read/write performance AND fault tolerance. Cost is not a concern.
-availableDisks: 4
-diskSizeGB: 1000
-targetRaid: raid10
-hint: Think about combining two RAID concepts — one for speed, one for redundancy.
+  I'm hosting a busy database on four disks. I need top read AND write
+  performance, and it must survive a disk failure. Cost is not a concern.
+inventory:
+  disks: [ { count: 4, sizeGB: 2, protocol: SATA } ]
+requirements:
+  - { metric: faultTolerance, op: '>=', value: 1 }
+  - { metric: readClass,      op: in, value: [high] }
+  - { metric: writeClass,     op: in, value: [high] }
+hint: Combine two ideas — striping for speed, mirroring for the failure you must survive.
 successMessage: >
-  RAID 10 stripes across two mirrored pairs, giving you top performance and
-  the ability to survive one (or more) disk failures as long as a full mirror
-  pair is not lost simultaneously.
-failureMessages:
-  raid0: >
-    RAID 0 is fast but has no fault tolerance — unacceptable for a production
-    database.
-  raid1: >
-    RAID 1 only mirrors 2 disks. With 4 disks you would need to stripe them too.
-  raid5: >
-    RAID 5 adds parity overhead on writes, which hurts database performance.
-    For write-heavy workloads, RAID 10 wins.
-  raid6: >
-    RAID 6 is even slower on writes due to double parity. Not ideal for a
-    high-traffic database.
+  RAID 10 stripes for speed and mirrors for safety, keeping writes cheap (no
+  parity penalty) — which is why it beats RAID 5/6 for write-heavy databases.
+  The write-performance bar is what excludes the parity levels here.

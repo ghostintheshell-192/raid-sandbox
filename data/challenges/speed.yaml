@@ -1,25 +1,18 @@
 id: speed
 title: Maximum Speed
+client: "VFX artist, render farm"
 prompt: >
-  You have 3 disks of 1 TB each. Your goal: the maximum possible read and
-  write throughput. Data loss is acceptable — this is a temporary rendering
-  cache.
-availableDisks: 3
-diskSizeGB: 1000
-targetRaid: raid0
-hint: You need no redundancy here. Put every disk to work for speed.
+  I need the maximum possible read and write throughput for a temporary
+  rendering cache. Data loss is acceptable — nothing here is permanent.
+inventory:
+  disks: [ { count: 3, sizeGB: 2, protocol: SATA } ]
+# Requirements are checked over DERIVED outcomes (analyze()), not a target level.
+# ANY topology meeting them wins — there may be more than one valid answer.
+requirements:
+  - { metric: readClass,  op: in, value: [high] }
+  - { metric: writeClass, op: in, value: [high] }
+hint: You need no redundancy here — put every disk to work for raw speed.
 successMessage: >
-  RAID 0 stripes data across all 3 disks, tripling throughput.
-  But remember — any single disk failure destroys everything.
-failureMessages:
-  raid1: >
-    RAID 1 would mirror just 2 disks. You lose two thirds of your capacity
-    and only get the write speed of one disk.
-  raid5: >
-    RAID 5 would work, but parity calculation adds write overhead.
-    For a pure temporary cache, it is overkill.
-  raid6: >
-    RAID 6 uses 2 disks for parity. With only 3 disks total, you would get
-    the usable capacity of just one.
-  raid10: >
-    RAID 10 requires at least 4 disks.
+  Striping every disk with no redundancy (RAID 0) gives you full read and write
+  throughput across all three. The cost — zero fault tolerance — is exactly the
+  trade-off the brief accepts.

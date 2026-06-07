@@ -1,21 +1,15 @@
 id: mirror
 title: Critical Data, Simple Setup
+client: "Solo dev, single workstation"
 prompt: >
-  You have 2 disks of 500 GB each. You need to store your operating system.
-  One disk failure must not cause any downtime.
-availableDisks: 2
-diskSizeGB: 500
-targetRaid: raid1
-hint: You only have 2 disks. You need a copy of everything on both.
+  I have just two disks and I need to keep my operating system running.
+  A single disk failure must not cause any downtime.
+inventory:
+  disks: [ { count: 2, sizeGB: 2, protocol: SATA } ]
+requirements:
+  - { metric: faultTolerance, op: '>=', value: 1 }
+hint: With only two disks, you need a full copy of everything on both.
 successMessage: >
-  RAID 1 mirrors every write to both disks. If one fails, the other keeps
-  running without missing a beat.
-failureMessages:
-  raid0: >
-    RAID 0 has zero redundancy — one failure means total data loss.
-  raid5: >
-    RAID 5 requires at least 3 disks.
-  raid6: >
-    RAID 6 requires at least 4 disks.
-  raid10: >
-    RAID 10 requires at least 4 disks.
+  Mirroring (RAID 1) writes every block to both disks, so either one can fail
+  and the system keeps running. Any topology that survives a disk loss satisfies
+  the brief — with two disks, the mirror is the natural fit.
