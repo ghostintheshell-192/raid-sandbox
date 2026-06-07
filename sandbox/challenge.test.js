@@ -23,24 +23,26 @@ const disks = (k, n = 2) => Array.from({ length: k }, () => d(n));
 const ev = (tree, hard = []) => ({ analysis: M.analyze(tree), violations: { hard, soft: [] } });
 
 // --- requirement fixtures (mirror data/challenges/*.yaml) ------------------
+const ANY = { diskCount: 'any', rawCapacityGB: 'any', capacityGB: 'any',
+              faultTolerance: 'any', readClass: 'any', writeClass: 'any' };
 const CH = {
-  speed:     { requirements: [ { metric: 'diskCount', op: '==', value: 3 },
-                               { metric: 'readClass', op: 'in', value: ['high'] },
-                               { metric: 'writeClass', op: 'in', value: ['high'] } ] },
-  mirror:    { requirements: [ { metric: 'diskCount', op: '==', value: 2 },
-                               { metric: 'rawCapacityGB', op: '==', value: 4 },
-                               { metric: 'faultTolerance', op: '>=', value: 1 } ] },
-  balanced:  { requirements: [ { metric: 'diskCount', op: '==', value: 4 },
-                               { metric: 'rawCapacityGB', op: '==', value: 8 },
-                               { metric: 'faultTolerance', op: '>=', value: 1 },
-                               { metric: 'capacityGB', op: '>=', value: 6 } ] },
-  resilient: { requirements: [ { metric: 'diskCount', op: '==', value: 6 },
-                               { metric: 'rawCapacityGB', op: '==', value: 24 },
-                               { metric: 'faultTolerance', op: '>=', value: 2 } ] },
-  database:  { requirements: [ { metric: 'diskCount', op: '==', value: 4 },
-                               { metric: 'faultTolerance', op: '>=', value: 1 },
-                               { metric: 'readClass', op: 'in', value: ['high'] },
-                               { metric: 'writeClass', op: 'in', value: ['high'] } ] },
+  speed:     { requirements: { ...ANY, diskCount: { op: '==', value: 3 },
+                               readClass: { op: 'in', value: ['high'] },
+                               writeClass: { op: 'in', value: ['high'] } } },
+  mirror:    { requirements: { ...ANY, diskCount: { op: '==', value: 2 },
+                               rawCapacityGB: { op: '==', value: 4 },
+                               faultTolerance: { op: '>=', value: 1 } } },
+  balanced:  { requirements: { ...ANY, diskCount: { op: '==', value: 4 },
+                               rawCapacityGB: { op: '==', value: 8 },
+                               capacityGB: { op: '>=', value: 6 },
+                               faultTolerance: { op: '>=', value: 1 } } },
+  resilient: { requirements: { ...ANY, diskCount: { op: '==', value: 6 },
+                               rawCapacityGB: { op: '==', value: 24 },
+                               faultTolerance: { op: '>=', value: 2 } } },
+  database:  { requirements: { ...ANY, diskCount: { op: '==', value: 4 },
+                               faultTolerance: { op: '>=', value: 1 },
+                               readClass: { op: 'in', value: ['high'] },
+                               writeClass: { op: 'in', value: ['high'] } } },
 };
 
 // --- canonical solution trees (from each challenge's inventory) -------------
@@ -126,26 +128,34 @@ test('no analysis (incomplete build) → not satisfied', () => {
 // ---------------------------------------------------------------------------
 console.log('\n[5] validateChallenge guards malformed challenges');
 
-const goodCh = { id: 'x', title: 'X', prompt: 'p',
-                 requirements: [{ metric: 'diskCount', op: '==', value: 3 }] };
+const goodReqs = { ...ANY, diskCount: { op: '==', value: 3 } };
+const goodCh   = { id: 'x', title: 'X', prompt: 'p', requirements: goodReqs };
 
-test('a well-formed challenge has no problems', () => eq(C.validateChallenge(goodCh).length, 0));
-test('unknown metric is rejected (the silent-unwinnable trap)', () => {
-  const p = C.validateChallenge({ ...goodCh, requirements: [{ metric: 'diskSize', op: '==', value: 4 }] });
+test('a complete, well-formed challenge has no problems', () => eq(C.validateChallenge(goodCh).length, 0));
+test('a missing metric is rejected (the record must be complete)', () => {
+  const reqs = { ...goodReqs }; delete reqs.writeClass;
+  assert(C.validateChallenge({ ...goodCh, requirements: reqs }).some((s) => /missing requirement.*writeClass/.test(s)));
+});
+test('an unknown metric key is rejected (the silent-unwinnable trap)', () => {
+  const p = C.validateChallenge({ ...goodCh, requirements: { ...goodReqs, diskSize: 'any' } });
   assert(p.some((s) => /unknown metric/.test(s)), p.join('; '));
 });
-test('unknown op is rejected', () => {
-  const p = C.validateChallenge({ ...goodCh, requirements: [{ metric: 'diskCount', op: '≥', value: 4 }] });
+test('an unknown op is rejected', () => {
+  const p = C.validateChallenge({ ...goodCh, requirements: { ...goodReqs, diskCount: { op: '≥', value: 4 } } });
   assert(p.some((s) => /unknown op/.test(s)), p.join('; '));
 });
-test('missing/empty requirements is rejected', () => {
-  assert(C.validateChallenge({ id: 'x', title: 'X', prompt: 'p' }).some((s) => /requirements/.test(s)));
+test('requirements must be a map, not a list', () => {
+  assert(C.validateChallenge({ id: 'x', title: 'X', prompt: 'p',
+    requirements: [{ metric: 'diskCount', op: '==', value: 3 }] }).some((s) => /map/.test(s)));
+});
+test('all-"any" is rejected (needs at least one real requirement)', () => {
+  assert(C.validateChallenge({ ...goodCh, requirements: { ...ANY } }).some((s) => /at least one real/.test(s)));
 });
 test("'in' needs a list value; comparators need a scalar", () => {
-  assert(C.validateChallenge({ ...goodCh, requirements: [{ metric: 'readClass', op: 'in', value: 'high' }] }).length > 0);
-  assert(C.validateChallenge({ ...goodCh, requirements: [{ metric: 'diskCount', op: '==', value: [3] }] }).length > 0);
+  assert(C.validateChallenge({ ...goodCh, requirements: { ...goodReqs, readClass: { op: 'in', value: 'high' } } }).length > 0);
+  assert(C.validateChallenge({ ...goodCh, requirements: { ...goodReqs, diskCount: { op: '==', value: [3] } } }).length > 0);
 });
-test('all five fixtures use only known metrics/ops', () => {
+test('all five fixtures are complete and valid', () => {
   for (const id of Object.keys(CH))
     eq(C.validateChallenge({ id, title: id, prompt: 'p', requirements: CH[id].requirements }).length, 0);
 });

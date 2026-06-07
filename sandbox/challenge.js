@@ -56,21 +56,28 @@
     return `${label} ${OP_TEXT[req.op] || req.op} ${val}`;
   }
 
+  const isAnySpec = (spec) => spec === 'any' || spec == null;
+
   function checkChallenge(challenge, evalResult) {
     const analysis   = evalResult && evalResult.analysis;
     const violations = (evalResult && evalResult.violations) || { hard: [], soft: [] };
-    const reqs       = (challenge && challenge.requirements) || [];
+    const reqs       = (challenge && challenge.requirements) || {};
 
-    const requirements = reqs.map((req) => {
-      const known  = KNOWN_METRICS.has(req.metric);
-      const actual = analysis ? analysis[req.metric] : undefined;
-      const met    = known && analysis != null && actual !== undefined && meets(actual, req.op, req.value);
-      return { ...req, actual, met, known, label: describe(req) };
+    // One row per metric in the vocabulary — `requirements` is a complete record,
+    // so the checker always reads something for every dimension. 'any' = unconstrained.
+    const requirements = Object.keys(METRIC_LABEL).map((metric) => {
+      const spec   = reqs[metric];
+      const actual = analysis ? analysis[metric] : undefined;
+      if (isAnySpec(spec))
+        return { metric, isAny: true, op: 'any', value: 'any', actual, met: true,
+                 label: `${METRIC_LABEL[metric]}: any` };
+      const met = analysis != null && actual !== undefined && meets(actual, spec.op, spec.value);
+      return { metric, isAny: false, op: spec.op, value: spec.value, actual, met,
+               label: describe({ metric, op: spec.op, value: spec.value }) };
     });
 
     const blockedBy = violations.hard || [];
     const satisfied = analysis != null
-      && requirements.length > 0
       && requirements.every((r) => r.met)
       && blockedBy.length === 0;
 
@@ -87,20 +94,35 @@
   function validateChallenge(ch) {
     const problems = [];
     if (!ch || typeof ch !== 'object') return ['challenge is not an object'];
-    if (!ch.id)    problems.push('missing id');
-    if (!ch.title) problems.push('missing title');
+    if (!ch.id)     problems.push('missing id');
+    if (!ch.title)  problems.push('missing title');
     if (!ch.prompt) problems.push('missing prompt');
-    if (!Array.isArray(ch.requirements) || ch.requirements.length === 0) {
-      problems.push('requirements must be a non-empty list');
-    } else {
-      ch.requirements.forEach((r, i) => {
-        if (!KNOWN_METRICS.has(r.metric)) problems.push(`req[${i}]: unknown metric "${r.metric}"`);
-        if (!KNOWN_OPS.has(r.op))         problems.push(`req[${i}]: unknown op "${r.op}"`);
-        if (r.value === undefined || r.value === null) problems.push(`req[${i}]: missing value`);
-        if (r.op === 'in' && !Array.isArray(r.value)) problems.push(`req[${i}]: 'in' needs a list value`);
-        if (r.op && r.op !== 'in' && Array.isArray(r.value)) problems.push(`req[${i}]: '${r.op}' needs a scalar value`);
-      });
+
+    const reqs = ch.requirements;
+    if (!reqs || typeof reqs !== 'object' || Array.isArray(reqs)) {
+      problems.push('requirements must be a map: metric → ("any" | { op, value })');
+      return problems;
     }
+    // Completeness: EVERY vocabulary metric must be present (use "any" if unconstrained),
+    // and no foreign keys — so the checker always reads a value for every dimension.
+    for (const m of KNOWN_METRICS)
+      if (!(m in reqs)) problems.push(`missing requirement for "${m}" (use "any" if unconstrained)`);
+    for (const m of Object.keys(reqs))
+      if (!KNOWN_METRICS.has(m)) problems.push(`unknown metric "${m}"`);
+
+    let realConstraints = 0;
+    for (const m of Object.keys(reqs)) {
+      if (!KNOWN_METRICS.has(m)) continue;
+      const spec = reqs[m];
+      if (isAnySpec(spec)) continue;
+      if (typeof spec !== 'object' || Array.isArray(spec)) { problems.push(`${m}: must be "any" or { op, value }`); continue; }
+      realConstraints++;
+      if (!KNOWN_OPS.has(spec.op)) problems.push(`${m}: unknown op "${spec.op}"`);
+      if (spec.value === undefined || spec.value === null) problems.push(`${m}: missing value`);
+      if (spec.op === 'in' && !Array.isArray(spec.value)) problems.push(`${m}: 'in' needs a list value`);
+      if (spec.op && spec.op !== 'in' && Array.isArray(spec.value)) problems.push(`${m}: '${spec.op}' needs a scalar value`);
+    }
+    if (realConstraints === 0) problems.push('a challenge needs at least one real (non-"any") requirement');
     return problems;
   }
 

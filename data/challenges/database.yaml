@@ -5,10 +5,12 @@ prompt: >
   I'm hosting a busy database on four disks. I need top read AND write
   performance, and it must survive a disk failure. Cost is not a concern.
 requirements:
-  - { metric: diskCount,      op: '==', value: 4 }
-  - { metric: faultTolerance, op: '>=', value: 1 }
-  - { metric: readClass,      op: in,   value: [high] }
-  - { metric: writeClass,     op: in,   value: [high] }
+  diskCount:      { op: '==', value: 4 }
+  rawCapacityGB:  any
+  capacityGB:     any
+  faultTolerance: { op: '>=', value: 1 }
+  readClass:      { op: in, value: [high] }
+  writeClass:     { op: in, value: [high] }
 hint: Combine two ideas — striping for speed, mirroring for the failure you must survive.
 successMessage: >
   RAID 10 stripes for speed and mirrors for safety, keeping writes cheap (no

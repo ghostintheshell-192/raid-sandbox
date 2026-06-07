@@ -576,7 +576,7 @@
     if (!currentChallenge) { elWin.hidden = true; return; }
     const res = RaidChallenge.checkChallenge(currentChallenge, r || {});
     elReqs.innerHTML = '';
-    for (const req of res.requirements) {
+    for (const req of res.requirements.filter((x) => !x.isAny)) {   // hide 'any' rows
       const row = document.createElement('div');
       row.className = 'sbc-req ' + (req.met ? 'sbc-req--met' : 'sbc-req--unmet');
       const actual = (req.actual === undefined || req.actual === null) ? '—' : req.actual;

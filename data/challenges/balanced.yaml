@@ -5,10 +5,12 @@ prompt: >
   I'm setting up a file server on four 2 TB disks. I want it to survive a disk
   failure, but I also need more usable space than simple mirroring would leave me.
 requirements:
-  - { metric: diskCount,      op: '==', value: 4 }
-  - { metric: rawCapacityGB,  op: '==', value: 8 }    # 4 × 2 TB
-  - { metric: faultTolerance, op: '>=', value: 1 }
-  - { metric: capacityGB,     op: '>=', value: 6 }    # beats mirroring's 4 TB
+  diskCount:      { op: '==', value: 4 }
+  rawCapacityGB:  { op: '==', value: 8 }    # 4 × 2 TB
+  capacityGB:     { op: '>=', value: 6 }    # beats mirroring's 4 TB
+  faultTolerance: { op: '>=', value: 1 }
+  readClass:      any
+  writeClass:     any
 hint: Parity protects against one failure while spending only one disk's worth of space.
 successMessage: >
   RAID 5 over the four 2 TB disks gives 6 TB usable and survives one failure —

@@ -1,18 +1,21 @@
 id: resilient
 title: Large Archive, High Risk
 client: "Archivist, research institute"
-# SINGLE SOURCE OF TRUTH: `requirements` is the complete, machine-checked contract.
-# The prompt is flavour. Every metric is read generically from analyze():
-#   supply  → diskCount · rawCapacityGB   (the disks you must use)
-#   outcome → capacityGB · faultTolerance · readClass · writeClass
+# SINGLE SOURCE OF TRUTH: `requirements` is the complete, machine-checked contract —
+# one entry per metric in the vocabulary, so the checker always reads something.
+# Use "any" when a dimension is unconstrained. The prompt is flavour.
+#   supply  → diskCount · rawCapacityGB     outcome → capacityGB · faultTolerance · readClass · writeClass
 prompt: >
   I'm building a long-term archive on six 4 TB disks. With this many drives, a
   second disk can fail during the hours-long rebuild after the first — so the
   array has to survive two simultaneous failures.
 requirements:
-  - { metric: diskCount,      op: '==', value: 6 }
-  - { metric: rawCapacityGB,  op: '==', value: 24 }   # 6 × 4 TB
-  - { metric: faultTolerance, op: '>=', value: 2 }
+  diskCount:      { op: '==', value: 6 }
+  rawCapacityGB:  { op: '==', value: 24 }   # 6 × 4 TB
+  capacityGB:     any
+  faultTolerance: { op: '>=', value: 2 }
+  readClass:      any
+  writeClass:     any
 hint: Six 4 TB disks, and you must survive two failures — you need two parity blocks per stripe.
 successMessage: >
   Double parity (RAID 6) over the six 4 TB disks survives any two simultaneous

@@ -5,9 +5,12 @@ prompt: >
   I have just two 2 TB disks and I need to keep my operating system running.
   A single disk failure must not cause any downtime.
 requirements:
-  - { metric: diskCount,      op: '==', value: 2 }
-  - { metric: rawCapacityGB,  op: '==', value: 4 }    # 2 × 2 TB
-  - { metric: faultTolerance, op: '>=', value: 1 }
+  diskCount:      { op: '==', value: 2 }
+  rawCapacityGB:  { op: '==', value: 4 }    # 2 × 2 TB
+  capacityGB:     any
+  faultTolerance: { op: '>=', value: 1 }
+  readClass:      any
+  writeClass:     any
 hint: With only two disks, you need a full copy of everything on both.
 successMessage: >
   Mirroring (RAID 1) writes every block to both disks, so either one can fail
