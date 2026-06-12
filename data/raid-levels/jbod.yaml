@@ -1,0 +1,27 @@
+id: jbod
+name: JBOD / spanned
+notRaid: true
+
+# Topology shape (matches the recognizer §4 rule)
+shape:
+  segmentation: linear
+  redundancy: none
+  members: disks
+
+minDisks: 2
+faultTolerance: 0
+capacityFormula: "sum of all disk sizes"
+defaultAlgorithm: null
+
+description: >
+  Just a Bunch Of Disks — concatenation with no striping and no redundancy.
+  Disks are addressed sequentially: the first disk fills up, then the second,
+  and so on. No performance gain, no fault tolerance.
+
+useCases:
+  - Combining disks of different sizes into one logical volume
+  - Extending a volume when budget does not allow redundancy
+
+notFor:
+  - Any data you cannot afford to lose
+  - Performance-sensitive workloads

@@ -1,0 +1,36 @@
+id: raid1
+name: RAID 1
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+shape:
+  segmentation: linear
+  redundancy: mirror
+  members: disks
+
+minDisks: 2
+faultTolerance: 1
+capacityFormula: "disk size (one copy's worth, regardless of disk count)"
+defaultAlgorithm: null
+
+description: >
+  Every disk is an exact, real-time copy of every other disk. If one fails,
+  the others keep everything running as if nothing happened.
+
+pros:
+  - Simplest form of redundancy
+  - Reads can be served from any member (potential read speedup)
+  - Survives N−1 disk failures (n-way mirror)
+
+cons:
+  - 1/N usable capacity (50% for 2 disks)
+  - Writes go to every disk simultaneously — write throughput limited by slowest disk
+
+useCases:
+  - Operating system drives
+  - Small databases needing high availability
+  - Any data too critical to lose
+
+notFor:
+  - Large storage pools (high capacity overhead)
+  - High-throughput write workloads

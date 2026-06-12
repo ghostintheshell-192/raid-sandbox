@@ -1,0 +1,52 @@
+id: raid10
+name: RAID 10
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule — §3a: flat, NOT nested)
+# A single array: striped + mirror + even disk count, copies=2.
+# This is mdadm's RAID 10 level — not nested RAID 1+0.
+shape:
+  segmentation: striped
+  redundancy: mirror
+  members: disks
+  constraint: even-disk-count
+  copies: 2
+
+minDisks: 4
+faultTolerance: 1   # guaranteed; may survive more if failures fall in different copy groups
+capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+defaultAlgorithm: near
+
+# Write-penalty: mirror = 2 (write every copy; no parity read-modify-write)
+writePenalty:
+  random: 2
+  sequential: 2
+
+note: >
+  RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build).
+  The flat form (this file) is mdadm's own RAID 10 level, which supports the
+  near/far/offset layout algorithms — none of which decompose into mirror pairs.
+  Nested RAID 1+0 is recognized separately (see raid1plus0.yaml).
+
+description: >
+  A single flat array with striped mirroring: every chunk is stored on `copies` disks,
+  spread across all disks by the chosen layout (near/far/offset). Combines the parallelism
+  of striping with the redundancy of mirroring, without the parity write penalty.
+
+pros:
+  - Best write performance among redundant RAID levels (mirror penalty only, no RMW)
+  - Full read parallelism across all N disks
+  - near/far/offset layouts available under Linux mdadm (software RAID only — §6 constraint)
+
+cons:
+  - 50% capacity efficiency (copies=2)
+  - near/far/offset require Linux mdadm; hardware/fake RAID → use nested RAID 1+0
+
+useCases:
+  - High-traffic databases
+  - Virtualization hosts
+  - Any workload needing both performance and fault tolerance
+
+notFor:
+  - Large storage on a budget (50% efficiency)
+  - Environments where near/far/offset layouts are needed on hardware RAID

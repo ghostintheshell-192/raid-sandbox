@@ -1,0 +1,44 @@
+id: raid50
+name: RAID 50
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+# A stripe (striped+none) over RAID-5 spans (striped+parity1 over disks).
+shape:
+  segmentation: striped
+  redundancy: none
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: parity1
+    members: disks
+
+minDisks: 6   # 2 spans × 3 disks minimum per RAID-5 span
+faultTolerance: 1   # per span; one failure per span is recoverable
+capacityFormula: "spans × (disksPerSpan − 1) × disk size"
+defaultAlgorithm: left-symmetric   # applies to each RAID-5 child span
+
+writePenalty:
+  random: 4     # inherited from the RAID-5 child spans
+  sequential: 1
+
+description: >
+  A stripe over two or more RAID-5 spans (RAID 5+0). Combines the parallelism of
+  striping with the fault tolerance of distributed parity. Each span independently
+  tolerates one disk failure; the stripe multiplies read/write throughput.
+
+pros:
+  - Higher read/write throughput than a single RAID-5 (stripe width scales with span count)
+  - Each span independently fault-tolerant (one failure per span recoverable)
+
+cons:
+  - A span losing two disks simultaneously destroys all data
+  - Rebuild affects an entire span, degrading throughput for the duration
+  - Minimum 6 disks
+
+useCases:
+  - Large-scale file servers
+  - High-throughput storage where RAID 5 alone is not fast enough
+
+notFor:
+  - Environments needing tolerance for 2 simultaneous failures in the same span

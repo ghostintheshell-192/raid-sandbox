@@ -1,0 +1,45 @@
+id: raid5
+name: RAID 5
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+shape:
+  segmentation: striped
+  redundancy: parity1
+  members: disks
+
+minDisks: 3
+faultTolerance: 1
+capacityFormula: "(N − 1) × disk size"
+defaultAlgorithm: left-symmetric
+
+# Write-penalty table (Patterson/Gibson/Katz small-write problem):
+#   random:     4 I/Os per logical write (read old-data + read old-P, write new-data + write new-P)
+#   sequential: ~1 I/Os (full-stripe write computes P once; no read-modify-write)
+writePenalty:
+  random: 4
+  sequential: 1
+
+description: >
+  Data is striped across all disks with one parity block per stripe distributed
+  rotating across the disks. Any single disk can fail and all data can be reconstructed
+  from the surviving disks using XOR.
+
+pros:
+  - Good balance of performance, capacity efficiency, and fault tolerance
+  - Read performance close to RAID 0 (N−1 disks serve data per stripe)
+  - No single parity disk bottleneck (distributed parity)
+
+cons:
+  - Write penalty: every small write triggers a read-modify-write cycle (4 I/Os)
+  - Rebuild is slow and risky: a second failure during rebuild means total data loss
+  - Rebuild time grows with disk capacity (12–24 h for large drives)
+
+useCases:
+  - File servers and NAS
+  - General-purpose storage
+  - The classic "balanced" RAID choice
+
+notFor:
+  - Environments needing tolerance for 2+ simultaneous disk failures
+  - Very write-heavy workloads (high parity calculation overhead)

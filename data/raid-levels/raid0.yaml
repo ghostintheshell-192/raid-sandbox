@@ -1,0 +1,36 @@
+id: raid0
+name: RAID 0
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+shape:
+  segmentation: striped
+  redundancy: none
+  members: disks
+
+minDisks: 2
+faultTolerance: 0
+capacityFormula: "N × disk size"
+defaultAlgorithm: null
+
+description: >
+  Data is split into blocks (stripes) and distributed across all disks in round-robin
+  order. Every disk holds a piece of every file. Pure speed — zero redundancy.
+
+pros:
+  - Maximum read and write throughput (all disks active in parallel)
+  - Full utilization: no disk space lost to parity or mirroring
+
+cons:
+  - Zero fault tolerance: one disk failure destroys all data
+  - The more disks, the higher the probability of a failure
+
+useCases:
+  - Video editing scratch disks
+  - Temporary rendering caches
+  - Test environments where data loss is acceptable
+
+notFor:
+  - Anything you cannot afford to lose
+  - Production databases
+  - Long-term storage

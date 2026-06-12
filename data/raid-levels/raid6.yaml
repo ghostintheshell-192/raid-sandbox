@@ -1,0 +1,50 @@
+id: raid6
+name: RAID 6
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+shape:
+  segmentation: striped
+  redundancy: parity2
+  members: disks
+
+minDisks: 4
+faultTolerance: 2
+capacityFormula: "(N − 2) × disk size"
+defaultAlgorithm: left-symmetric
+
+# Write-penalty table:
+#   random:     6 I/Os per logical write (read old-data + old-P + old-Q, write all three)
+#   sequential: ~1 I/Os (full-stripe write; both P and Q computed once)
+writePenalty:
+  random: 6
+  sequential: 1
+
+parity:
+  count: 2
+  type: distributed
+  algorithms:
+    P: xor
+    Q: galois-field    # Reed-Solomon / GF(2^8) — provides the second independent equation
+
+description: >
+  Like RAID 5, but with two independent parity blocks per stripe (P and Q).
+  The system survives the simultaneous loss of any two disks.
+
+pros:
+  - Survives any two simultaneous disk failures
+  - Safe during rebuild: a second failure during rebuild does not cause data loss
+  - Essential for large arrays where rebuild window risk is significant
+
+cons:
+  - Highest write overhead of any standard RAID level (6 I/Os per small write)
+  - Rebuilding Q (Galois Field arithmetic) is more CPU-intensive than RAID 5
+
+useCases:
+  - Large disk arrays (more disks = higher chance of failure during rebuild)
+  - Archival and backup storage
+  - Any environment where data loss is catastrophic
+
+notFor:
+  - Small arrays (two disks' worth of overhead hurts efficiency)
+  - High-frequency random write workloads

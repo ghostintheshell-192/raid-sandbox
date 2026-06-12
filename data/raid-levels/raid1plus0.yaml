@@ -1,0 +1,45 @@
+id: raid1plus0
+name: RAID 1+0
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule — nested, distinct from flat RAID 10)
+# A stripe (striped+none) over mirror spans (linear+mirror over disks).
+shape:
+  segmentation: striped
+  redundancy: none
+  members: arrays
+  childShape:
+    segmentation: linear
+    redundancy: mirror
+    members: disks
+
+minDisks: 4
+faultTolerance: 1   # guaranteed; may survive more if failures fall in different spans
+capacityFormula: "sum of span capacities  =  N/2 × disk size (for uniform spans)"
+defaultAlgorithm: null
+
+note: >
+  Nested RAID 1+0 is the classical textbook construction: RAID 0 (stripe) over
+  RAID 1 (mirror) pairs. Distinct from flat RAID 10 (mdadm RAID 10 level):
+  the flat form supports near/far/offset layouts; the nested form reproduces
+  the "near" placement by composition and is compatible with hardware RAID.
+
+description: >
+  A top-level stripe over two or more mirror spans. Each span is an independent
+  RAID 1 mirror; the stripe distributes data across the spans for parallelism.
+  Compatible with hardware and fake RAID (unlike flat RAID 10's near/far/offset).
+
+pros:
+  - Compatible with hardware and fake RAID controllers
+  - Simpler to reason about (explicit mirror pairs)
+
+cons:
+  - Slightly less flexible than flat RAID 10 (no far/offset layouts)
+  - Requires even total disk count (even disks per span)
+
+useCases:
+  - Hardware RAID environments needing both performance and fault tolerance
+  - When near/far/offset are not required or not supported
+
+notFor:
+  - Environments where far/offset copy distribution is desired (use flat RAID 10)

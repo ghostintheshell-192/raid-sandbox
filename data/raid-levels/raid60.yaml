@@ -1,0 +1,46 @@
+id: raid60
+name: RAID 60
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+# A stripe (striped+none) over RAID-6 spans (striped+parity2 over disks).
+shape:
+  segmentation: striped
+  redundancy: none
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: parity2
+    members: disks
+
+minDisks: 8   # 2 spans × 4 disks minimum per RAID-6 span
+faultTolerance: 2   # per span; two simultaneous failures per span are recoverable
+capacityFormula: "spans × (disksPerSpan − 2) × disk size"
+defaultAlgorithm: left-symmetric   # applies to each RAID-6 child span
+
+writePenalty:
+  random: 6     # inherited from the RAID-6 child spans
+  sequential: 1
+
+description: >
+  A stripe over two or more RAID-6 spans (RAID 6+0). Provides the highest fault
+  tolerance of any standard nested RAID: each span independently survives two
+  simultaneous disk failures. The stripe multiplies throughput across spans.
+
+pros:
+  - Highest fault tolerance: each span survives any two simultaneous failures
+  - Large rebuild window: second failure during rebuild is safe within each span
+  - High read throughput (stripe width × span count disks active in parallel)
+
+cons:
+  - Heaviest write overhead (6 I/Os per random write, from RAID-6 child spans)
+  - Requires at least 8 disks
+  - Complex rebuild (Galois Field Q parity reconstruction is CPU-intensive)
+
+useCases:
+  - Mission-critical archives with very large disk counts
+  - Environments where even a rebuild-time failure must be survivable
+
+notFor:
+  - Write-intensive workloads (highest write penalty of any standard configuration)
+  - Small arrays (two-disk overhead per span is expensive at small scale)

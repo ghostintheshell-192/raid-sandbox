@@ -1,0 +1,22 @@
+# index.yaml — raid-levels resource family
+# Lists all recognized RAID levels in the canonical display order.
+# Each entry: { id, name }  — id must match the filename and the file's own `id` field.
+
+- id: jbod
+  name: JBOD / spanned
+- id: raid0
+  name: RAID 0
+- id: raid1
+  name: RAID 1
+- id: raid5
+  name: RAID 5
+- id: raid6
+  name: RAID 6
+- id: raid10
+  name: RAID 10
+- id: raid1plus0
+  name: RAID 1+0
+- id: raid50
+  name: RAID 50
+- id: raid60
+  name: RAID 60
