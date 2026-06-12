@@ -302,3 +302,103 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sb-cell.dim   { opacity: .1; }
 .sb-cell.flash { transform: scale(1.1); box-shadow: 0 0 12px rgba(255,255,255,.45); }
 .sb-cell.lit   { opacity: 1; }
+
+/* ================================================================== */
+/* RESPONSIVE                                                          */
+/* ================================================================== */
+
+/* ---- large desktop (Full HD and up): use the extra width ---------- */
+@media (min-width: 1600px) {
+  .sbc-layout { grid-template-columns: 260px 1fr 320px; }
+  .sbc-sidebar, .sbc-results { padding: 1.1rem; }
+  .sbc-canvas { padding: 1.6rem; }
+  .sbc-chip   { font-size: .82rem; padding: .45rem .75rem; }
+  .sbc-level  { font-size: 1.35rem; }
+  .sbc-stat   { font-size: .95rem; }
+}
+
+/* ---- narrow desktop / tablet landscape ----------------------------- */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .sbc-layout { grid-template-columns: 180px 1fr 215px; }
+}
+
+/* ---- mobile / tablet portrait: single-column flow ------------------ */
+@media (max-width: 900px) {
+  /* The fixed-viewport grid becomes a normal scrolling page. */
+  .sbc-layout {
+    display: flex; flex-direction: column;
+    height: auto; min-height: 100vh; overflow: visible;
+  }
+
+  .sbc-header { padding: .6rem .8rem; gap: .6rem .8rem; }
+  /* Inline usage hint adds noise on small screens — the status bar is enough. */
+  .sbc-header-hint { display: none; }
+  .sbc-status { margin-left: 0; flex-basis: 100%; }
+
+  /* Sidebar becomes a horizontally scrollable chip bar above the canvas. */
+  .sbc-sidebar {
+    flex-direction: row; gap: 1.2rem;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border-right: none;
+    border-bottom: 1px solid rgba(128,128,128,.2);
+    padding: .6rem .8rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128,128,128,.35) transparent;
+  }
+  .sbc-sidebar::-webkit-scrollbar { height: 6px; }
+  .sbc-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(128,128,128,.35); border-radius: 3px;
+  }
+  .sbc-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sbc-sidebar > div { flex: 0 0 auto; }
+  .sbc-sidebar h3 { white-space: nowrap; }
+  .sbc-chips { flex-wrap: nowrap; }
+
+  /* Canvases stack with fixed working heights; the page scrolls instead. */
+  .sbc-canvas {
+    min-height: 46vh;
+    margin: .6rem .6rem .3rem;
+  }
+  .sbc-physical {
+    min-height: 34vh;
+    margin: .3rem .6rem .6rem;
+  }
+  .pln-canvas { min-height: 34vh; }
+
+  /* Results panel flows below the canvases. */
+  .sbc-results {
+    border-left: none;
+    border-top: 1px solid rgba(128,128,128,.2);
+    overflow-y: visible;
+  }
+}
+
+/* ---- touch devices: bigger targets, no hover-gated controls -------- */
+@media (pointer: coarse) {
+  .sbc-chip {
+    min-height: 40px;
+    display: inline-flex; align-items: center;
+    padding: .45rem .8rem;
+  }
+  .sbc-disk { min-height: 40px; display: inline-flex; align-items: center; }
+  .pln-node { min-height: 38px; }
+
+  /* Hover doesn't exist on touch — keep delete buttons visible. */
+  .sbc-delete, .pln-delete { opacity: .65; }
+  .sbc-slot--filled .sbc-delete--inline { opacity: .65; }
+
+  /* Port dots need a finger-sized hit area. */
+  .pln-port { width: 18px; height: 18px; }
+  .pln-port--in  { left:  -11px; }
+  .pln-port--out { right: -11px; }
+}
+
+/* Draggables: avoid double-tap zoom delays and long-press text selection,
+   so the touch-DnD shim can take over the gesture cleanly. */
+[draggable="true"] {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
