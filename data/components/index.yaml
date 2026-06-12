@@ -1,0 +1,21 @@
+# index.yaml — physical component resource family
+# Lists all components available in the physical layer sidebar.
+# Each entry: { id, file }  — id must match the file's own `id` field.
+# Only components listed here are loaded at startup.
+
+- id: backplane
+  file: backplane.yaml
+- id: hba
+  file: hba.yaml
+- id: controller-hw
+  file: controller-hw.yaml
+- id: raid-engine
+  file: raid-engine.yaml
+- id: os-linux
+  file: os-linux.yaml
+- id: os-windows
+  file: os-windows.yaml
+- id: pcie
+  file: pcie-bus.yaml
+- id: cpu
+  file: cpu.yaml

@@ -12,17 +12,27 @@
  * createPhysicalController({ canvasEl, svgEl, state, onEvaluate }) → controller
  *   controller.setupSidebar(sidebarEl)
  *   controller.render()
+ *
+ * Browser-only loader (spec §5a graceful-degradation pattern):
+ *   PhysicalController.loadComponentDefs(basePath) → Promise<void>
+ *   Fetches data/components/index.yaml and each component file, then merges
+ *   the ui: section into the live COMPONENTS table. The hard-coded defaults
+ *   remain active before the load completes and as fallback if load fails.
+ *   Never called in Node (headless tests do not depend on COMPONENTS).
  */
 
 (function (root) {
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // COMPONENT DEFINITIONS  (derived from data/components/*.yaml)
-  // ---------------------------------------------------------------------------
-
+  // COMPONENT DEFINITIONS  (source of truth: data/components/*.yaml, ui: section)
+  //
+  // This table is the hard-coded fallback. loadComponentDefs() (browser-only)
+  // merges the ui: fields from YAML on top of these defaults at startup.
+  // The keys must match the componentId values used by CanvasState.cpAddNode().
+  //
   // ports: array of { id, dir:'in'|'out', type, label }
-  // raidEnginePosition: from YAML — used by the recognizer
+  // ---------------------------------------------------------------------------
   const COMPONENTS = {
     'backplane':     { label: 'Backplane',      icon: '📋', color: 'rgba(149,165,166,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'block-storage' },
@@ -67,6 +77,59 @@
     if (outType === 'any' || inType === 'any') return true;
     return (COMPATIBLE[outType] || []).includes(inType) ||
            (COMPATIBLE[inType]  || []).includes(outType);
+  }
+
+  // ---------------------------------------------------------------------------
+  // BROWSER-ONLY LOADER (spec §5a graceful-degradation, mirrors challenge.js pattern)
+  //
+  // Reads data/components/index.yaml, then each component file, and merges
+  // the `ui:` section into the live COMPONENTS table. The fallback table above
+  // is active the whole time; a partial or missing YAML is silently ignored so
+  // the physical layer never breaks. Never called in headless tests.
+  // ---------------------------------------------------------------------------
+
+  function _loadYaml(path) {
+    return fetch(path)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
+        return res.text();
+      })
+      .then((txt) => root.jsyaml.load(txt));
+  }
+
+  /**
+   * Fetch component definitions from YAML and merge the ui: fields into the
+   * live COMPONENTS table. Call once at startup (fire-and-forget is fine).
+   * @param {string} basePath  Path to data/components/ (e.g. 'data/components')
+   * @returns {Promise<void>}
+   */
+  function loadComponentDefs(basePath) {
+    const base = (basePath || 'data/components').replace(/\/$/, '');
+    return _loadYaml(`${base}/index.yaml`)
+      .then((index) => {
+        if (!Array.isArray(index)) return;
+        return Promise.all(
+          index.map((entry) => {
+            if (!entry || !entry.id || !entry.file) return Promise.resolve();
+            return _loadYaml(`${base}/${entry.file}`)
+              .then((def) => {
+                if (!def || !def.ui) return;    // no ui: section → keep hard-coded default
+                const existing = COMPONENTS[def.id];
+                if (!existing) return;           // unknown id → skip silently (safety net)
+                // Merge: YAML ui: fields override the hard-coded defaults.
+                if (def.ui.icon  !== undefined) existing.icon  = def.ui.icon;
+                if (def.ui.color !== undefined) existing.color = def.ui.color;
+                if (def.ui.badge !== undefined) existing.badge = def.ui.badge;
+                if (Array.isArray(def.ui.ports)) existing.ports = def.ui.ports;
+                // Keep label from the hard-coded table (shorter display names)
+                // unless the YAML name is shorter or the hard-coded label is missing.
+                if (!existing.label && def.name) existing.label = def.name;
+              })
+              .catch(() => { /* individual file load failure → keep fallback */ });
+          })
+        );
+      })
+      .catch(() => { /* index load failure → keep all fallbacks */ });
   }
 
   const { setDrag, getDrag } = root.DragUtil;
@@ -402,7 +465,7 @@
   // EXPORT
   // ---------------------------------------------------------------------------
 
-  const PhysicalController = { createPhysicalController, COMPONENTS };
+  const PhysicalController = { createPhysicalController, COMPONENTS, loadComponentDefs };
   if (typeof module !== 'undefined' && module.exports) module.exports = PhysicalController;
   else root.PhysicalController = PhysicalController;
 

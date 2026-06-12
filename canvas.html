@@ -277,6 +277,10 @@
     if (physCtrl) physCtrl.render();
   }
 
+  // Load component definitions from YAML (§5a graceful-degradation: hard-coded
+  // fallback stays active; fire-and-forget — rendering works before load completes).
+  PhysicalController.loadComponentDefs('data/components');
+
   const challengeUI = ChallengeUI.createChallengeUI();
 
   // Data layer controller.

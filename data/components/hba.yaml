@@ -22,3 +22,14 @@ constraints:
       either by the OS (software RAID) or by a separate fake-RAID chip near the CPU.
 
 raidEnginePosition: null   # HBA never hosts the RAID engine
+
+ui:
+  icon: "🔌"
+  color: "rgba(149,165,166,.7)"
+  ports:
+    - id: in
+      dir: in
+      type: routing
+    - id: out
+      dir: out
+      type: pcie

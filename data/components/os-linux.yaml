@@ -27,3 +27,11 @@ note: >
   Without a battery-backed write cache (BBU) or UPS, a power loss during a write
   can leave the array in an inconsistent state. This is a soft constraint surfaced
   as a warning in the game.
+
+ui:
+  icon: "🐧"
+  color: "rgba(46,204,113,.7)"
+  ports:
+    - id: in
+      dir: in
+      type: cpu

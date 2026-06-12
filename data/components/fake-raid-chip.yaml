@@ -25,3 +25,15 @@ note: >
   Fake RAID is considered a hybrid: the hardware chip speeds up metadata operations,
   but the actual parity computation still involves the CPU. Without the OS driver the
   array cannot be accessed — unlike hardware RAID which is driver-independent.
+
+ui:
+  icon: "🔲"
+  color: "rgba(231,76,60,.4)"
+  badge: "Fake RAID"
+  ports:
+    - id: in
+      dir: in
+      type: pcie
+    - id: out
+      dir: out
+      type: pcie

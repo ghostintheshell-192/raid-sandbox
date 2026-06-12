@@ -4,6 +4,17 @@ category: connectivity
 pathSlot: backplane
 required: false
 
+ui:
+  icon: "📋"
+  color: "rgba(149,165,166,.7)"
+  ports:
+    - id: in
+      dir: in
+      type: block-storage
+    - id: out
+      dir: out
+      type: routing
+
 description: >
   Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller.
   Does not process data — purely a physical routing layer. Disks plug in on one side,

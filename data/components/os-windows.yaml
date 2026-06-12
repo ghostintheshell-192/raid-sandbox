@@ -22,3 +22,11 @@ derivedType: software
 tools:
   - storage-spaces       # modern Windows software RAID (ReFS or NTFS)
   - dynamic-volumes      # legacy: spanned/striped/mirrored/RAID-5 volumes
+
+ui:
+  icon: "🪟"
+  color: "rgba(46,204,113,.7)"
+  ports:
+    - id: in
+      dir: in
+      type: cpu
