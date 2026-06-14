@@ -194,7 +194,11 @@
 
   // --- striped(none) over sub-arrays → nested RAID (1+0 / 1+0+0 / 5+0 / 6+0) --
   // Compose each span's own grid side-by-side; number globally row by row, span by
-  // span (left→right). Two modes, chosen by whether any span carries parity:
+  // span (left→right).
+  // PROVISIONAL: this GLOBAL data-segment ordering is well-formed but NOT yet
+  // verified against a real controller's allocation order — only roles + per-span
+  // layout are golden. See .development/tech-debt/nested-data-allocation-order.md.
+  // Two modes, chosen by whether any span carries parity:
   //   parity spans (RAID 50/60): keep each span's data/P/Q roles, give a global seg
   //     only to DATA cells (P/Q stay seg:null), and band seq so a row's data lights
   //     (seq 2r) before its parity (seq 2r+1) — the causal write order.
