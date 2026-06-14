@@ -193,14 +193,12 @@
   }
 
   // --- striped(none) over sub-arrays → nested RAID (1+0 / 1+0+0 / 5+0 / 6+0) --
-  // Compose each span's own grid side-by-side; number globally row by row, span by
-  // span (left→right).
-  // PROVISIONAL: this GLOBAL data-segment ordering is well-formed but NOT yet
-  // verified against a real controller's allocation order — only roles + per-span
-  // layout are golden. See .development/tech-debt/nested-data-allocation-order.md.
+  // Compose each span's own grid side-by-side. The per-span layout is the canonical
+  // (Linux-verified) one; the CROSS-SPAN order is a stacking convention: the outer
+  // RAID 0 hands one span-stripe to each span per round, in ascending span order.
   // Two modes, chosen by whether any span carries parity:
-  //   parity spans (RAID 50/60): keep each span's data/P/Q roles, give a global seg
-  //     only to DATA cells (P/Q stay seg:null), and band seq so a row's data lights
+  //   parity spans (RAID 50/60): keep each span's data/P/Q roles, number only DATA
+  //     cells (P/Q stay seg:null) in write order, and band seq so a row's data lights
   //     (seq 2r) before its parity (seq 2r+1) — the causal write order.
   //   mirror spans (RAID 1+0, RAID 100): original and copy of one chunk share a
   //     global seg (and seq), so they light together. Reproduces the old 1+0 output
@@ -222,9 +220,17 @@
       for (let j = 0; j < grids.length; j++) {
         const childRow = grids[j].stripes[r] || [];
         if (hasParity) {
+          // Number data in the span's WRITE order (ascending local seg = left-
+          // symmetric order), NOT disk order — so the global numbering preserves
+          // the canonical "data right after parity, wrapping" sequence. Then place
+          // each cell back at its disk position.
+          const order = childRow.filter((c) => c.role === 'data')
+            .slice().sort((a, b) => a.seg - b.seg);
+          const toGlobal = new Map();
+          order.forEach((c) => toGlobal.set(c.seg, seg++));
           for (const cell of childRow)
             row.push(cell.role === 'data'
-              ? { role: 'data', seg: seg++, seq: 2 * r }
+              ? { role: 'data', seg: toGlobal.get(cell.seg), seq: 2 * r }
               : { role: cell.role, seg: null, seq: 2 * r + 1 });
         } else {
           // mirror span: map each distinct child chunk (seg) to one global seg,

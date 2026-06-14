@@ -296,11 +296,15 @@ test('all four algorithms produce the same total segment count', () => {
 
 // ---------------------------------------------------------------------------
 console.log('\n[7] nested placements (RAID 50/60/100/1E) + near generalization');
-// SCOPE OF VERIFICATION: roles (data/P/Q/mirror positions) and the per-span layout
-// are golden-verified. The leaf near / RAID 1E ordering is verified (slot-stream,
-// .personal/golden-raid1e.md). But the NESTED cross-span data-allocation ORDER
-// (which logical block lands where, globally) is NOT yet verified and the composer's
-// numbering is provisional — see .development/tech-debt/nested-data-allocation-order.md.
+// SCOPE OF VERIFICATION: the PER-SPAN layout (data/P/Q positions AND the data write
+// order) is golden, hand-derived from the Linux md source — raid5.c for parity
+// (LEFT_SYMMETRIC and the RAID6 Q-left variant ALGORITHM_ROTATING_N_CONTINUE) and
+// raid10.c for near. The expected grids below are computed BY HAND from those rules
+// (.personal/golden-raid{50,1e}.md and segment-allocation-rule-left-symmetric.md),
+// NOT dumped from the engine (a golden must not test the code against itself).
+// The CROSS-SPAN order (which span gets which span-stripe) is a stacking convention
+// — the kernel only defines the layout *within* a span — fixed here as: one
+// span-stripe per span per round, ascending span order, each span in write order.
 
 const disksOf = (n) => Array.from({ length: n }, (_, i) => M.disk('d' + i, 100));
 function placement(node, opts) {
@@ -357,20 +361,17 @@ test('RAID 50 — roles (per-span LS preserved, P null seg)', () => {
     ['P','data','data','P','data','data'],
   ], 'r50 roles');
 });
-// NOTE (data-allocation ORDER): the cross-span/global seg numbering for nested
-// RAID is NOT yet ground-truth-verified — the current composer uses a provisional
-// scheme that does NOT match the hand table in .personal (see
-// .development/tech-debt/nested-data-allocation-order.md). So we assert only
-// well-formedness here: data segs are exactly {0..N-1} once each, parity carries
-// no seg. Roles (above) and the per-span left-symmetric layout ARE verified.
-test('RAID 50 — data numbering is well-formed (a permutation of 0..11)', () => {
+// Exact global numbering, hand-derived: within each 3-disk RAID5 span the data is
+// written right after P, wrapping (left-symmetric); the outer RAID 0 gives span A
+// stripe r then span B stripe r. So stripe1 disk D3 (right after P@D2) holds the
+// LOWER seg (4), not D1 — the write-order property the engine must preserve.
+test('RAID 50 — exact data numbering (write order, hand-derived from raid5.c LS)', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
-  const data = g.segs.flat().filter((v) => v !== null).sort((a, b) => a - b);
-  assert(JSON.stringify(data) === JSON.stringify([...Array(12).keys()]),
-    `expected data segs {0..11}, got ${JSON.stringify(data)}`);
-  g.roles.forEach((row, r) => row.forEach((role, d) =>
-    assert((role !== 'data') === (g.segs[r][d] === null),
-      `r50 stripe ${r} col ${d}: role ${role} but seg ${g.segs[r][d]}`)));
+  eqGrid(g.segs, [
+    [0, 1, null, 2, 3, null],
+    [5, null, 4, 7, null, 6],
+    [null, 8, 9, null, 10, 11],
+  ], 'r50 segs');
 });
 test('RAID 50 — seq bands data(2r) before parity(2r+1)', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
@@ -391,11 +392,17 @@ test('RAID 60 — per-span roles match the .personal hand table (Q left of P, DD
     ['data','data','Q','P','data','data','data','data','Q','P','data','data'],
   ], 'r60 roles');
 });
-test('RAID 60 — parity cells carry no segment', () => {
+// Exact numbering hand-derived from raid5.c ALGORITHM_ROTATING_N_CONTINUE (Q left of
+// P, data after P) + the cross-span convention. Matches the corrected canonical table
+// in .personal/segment-allocation-rule-left-symmetric.md (NOT the old hand version,
+// whose row 3 was disk-order and whose row 2 had the spans swapped).
+test('RAID 60 — exact data numbering (write order + cross-span convention)', () => {
   const g = placement(M.array('striped', 'none', [span6(), span6()]), { stripes: 3 });
-  g.roles.forEach((row, r) => row.forEach((role, d) =>
-    assert((role === 'data') === (g.segs[r][d] !== null),
-      `r60 stripe ${r} col ${d}: role ${role} but seg ${g.segs[r][d]}`)));
+  eqGrid(g.segs, [
+    [0, 1, 2, 3, null, null, 4, 5, 6, 7, null, null],
+    [9, 10, 11, null, null, 8, 13, 14, 15, null, null, 12],
+    [18, 19, null, null, 16, 17, 22, 23, null, null, 20, 21],
+  ], 'r60 segs');
 });
 
 // RAID 100 — stripe over 2×(4-disk RAID10 near). Source: .personal/golden-raid100.md
