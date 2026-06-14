@@ -348,9 +348,25 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
     border-bottom: 1px solid rgba(128,128,128,.2);
     padding: .6rem .8rem;
   }
-  .sbc-sidebar > div { flex: 1 1 200px; min-width: 0; }
+  .sbc-sidebar > div { flex: 1 1 100%; min-width: 0; }
   .sbc-sidebar h3 { white-space: nowrap; }
   .sbc-chips { flex-wrap: wrap; }
+
+  /* --- accordion: each group collapses under its heading -------------- */
+  /* JS (sidebar-accordion.js) toggles .is-open, one section at a time.   */
+  .sbc-section > h3 {
+    margin: 0;
+    cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .5rem; padding: .55rem .2rem; min-height: 40px;
+  }
+  .sbc-section > h3::after {
+    content: '▸'; font-size: .85em; opacity: .55;
+    transition: transform .15s ease;
+  }
+  .sbc-section.is-open > h3::after { transform: rotate(90deg); }
+  .sbc-section > .sbc-chips { display: none; padding-bottom: .5rem; }
+  .sbc-section.is-open > .sbc-chips { display: flex; }
 
   /* Canvases stack with fixed working heights; the page scrolls instead. */
   .sbc-canvas {
