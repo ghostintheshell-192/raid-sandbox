@@ -295,4 +295,129 @@ test('all four algorithms produce the same total segment count', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[7] nested placements (RAID 50/60/100/1E) + near generalization');
+
+const disksOf = (n) => Array.from({ length: n }, (_, i) => M.disk('d' + i, 100));
+function placement(node, opts) {
+  const p = L.computePlacement(node, opts);
+  if (p.unsupported) throw new Error('unsupported: ' + p.reason);
+  return {
+    roles: p.stripes.map((r) => r.map((c) => c.role)),
+    segs:  p.stripes.map((r) => r.map((c) => c.seg)),
+    seqs:  p.stripes.map((r) => r.map((c) => c.seq)),
+    columns: p.columns,
+    algo: p.algorithm,
+  };
+}
+const eqGrid = (got, want, what) => want.forEach((row, s) => row.forEach((v, d) =>
+  assert(got[s][d] === v, `${what} stripe ${s} col ${d}: got ${JSON.stringify(got[s][d])}, want ${JSON.stringify(v)}`)));
+
+// near generalization — n=4 even must match the classic near (regression guard)
+// Source: .personal/golden-raid1e.md (slot-stream == classic near for even n).
+test('near n=4 (even) unchanged — roles + segs', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(4)));
+  eqGrid(g.roles, [
+    ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
+    ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
+  ], 'near4 roles');
+  eqGrid(g.segs, [[0,0,1,1],[2,2,3,3],[4,4,5,5],[6,6,7,7]], 'near4 segs');
+});
+
+// RAID 1E — striped mirror, ODD disks (n=3). Source: .personal/golden-raid1e.md
+test('RAID 1E n=3 — interleaved mirror roles + segs', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(3)));
+  eqGrid(g.roles, [
+    ['data','mirror','data'], ['mirror','data','mirror'],
+    ['data','mirror','data'], ['mirror','data','mirror'],
+  ], '1E roles');
+  eqGrid(g.segs, [[0,0,1],[1,2,2],[3,3,4],[4,5,5]], '1E segs');
+});
+test('RAID 1E — every chunk and its copy sit on different disks', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(3)));
+  const seen = new Map();   // seg -> set of disk columns
+  g.segs.forEach((row) => row.forEach((seg, d) => {
+    if (!seen.has(seg)) seen.set(seg, new Set());
+    seen.get(seg).add(d);
+  }));
+  for (const [seg, cols] of seen) assert(cols.size === 2, `chunk ${seg} must use 2 distinct disks, got ${cols.size}`);
+});
+
+// RAID 50 — stripe over 2×(3-disk RAID5 LS). Source: .personal/golden-raid50.md
+const span5 = () => M.array('striped', 'parity1', disksOf(3), 'left-symmetric');
+test('RAID 50 — roles (per-span LS preserved, P null seg)', () => {
+  const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
+  eqGrid(g.roles, [
+    ['data','data','P','data','data','P'],
+    ['data','P','data','data','P','data'],
+    ['P','data','data','P','data','data'],
+  ], 'r50 roles');
+});
+test('RAID 50 — global data numbering (row by row, span by span)', () => {
+  const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
+  eqGrid(g.segs, [
+    [0,1,null,2,3,null],
+    [4,null,5,6,null,7],
+    [null,8,9,null,10,11],
+  ], 'r50 segs');
+});
+test('RAID 50 — seq bands data(2r) before parity(2r+1)', () => {
+  const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
+  g.roles.forEach((row, r) => row.forEach((role, d) => {
+    const want = role === 'data' ? 2 * r : 2 * r + 1;
+    assert(g.seqs[r][d] === want, `r50 seq stripe ${r} col ${d}: got ${g.seqs[r][d]}, want ${want}`);
+  }));
+});
+
+// RAID 60 — stripe over 2×(6-disk RAID6 LS). Roles cross-checked against the
+// hand-verified table in .personal/segment-allocation-rule-left-symmetric.md.
+const span6 = () => M.array('striped', 'parity2', disksOf(6), 'left-symmetric');
+test('RAID 60 — per-span roles match the .personal hand table (Q left of P, DDF)', () => {
+  const g = placement(M.array('striped', 'none', [span6(), span6()]), { stripes: 3 });
+  eqGrid(g.roles, [
+    ['data','data','data','data','Q','P','data','data','data','data','Q','P'],
+    ['data','data','data','Q','P','data','data','data','data','Q','P','data'],
+    ['data','data','Q','P','data','data','data','data','Q','P','data','data'],
+  ], 'r60 roles');
+});
+test('RAID 60 — parity cells carry no segment', () => {
+  const g = placement(M.array('striped', 'none', [span6(), span6()]), { stripes: 3 });
+  g.roles.forEach((row, r) => row.forEach((role, d) =>
+    assert((role === 'data') === (g.segs[r][d] !== null),
+      `r60 stripe ${r} col ${d}: role ${role} but seg ${g.segs[r][d]}`)));
+});
+
+// RAID 100 — stripe over 2×(4-disk RAID10 near). Source: .personal/golden-raid100.md
+const span10 = () => M.array('striped', 'mirror', disksOf(4));
+test('RAID 100 — roles all data/mirror, label nested 1+0+0', () => {
+  const g = placement(M.array('striped', 'none', [span10(), span10()]));
+  assert(g.algo === 'nested 1+0+0', `expected nested 1+0+0, got ${g.algo}`);
+  assert(g.columns === 8, `expected 8 columns, got ${g.columns}`);
+  g.roles.forEach((row, r) => assert(
+    JSON.stringify(row) === JSON.stringify(['data','mirror','data','mirror','data','mirror','data','mirror']),
+    `r100 row ${r} roles: ${JSON.stringify(row)}`));
+});
+test('RAID 100 — original and copy of each chunk share a seg, on different disks', () => {
+  const g = placement(M.array('striped', 'none', [span10(), span10()]));
+  g.segs.forEach((row, r) => {
+    for (let d = 0; d < row.length; d += 2)
+      assert(row[d] === row[d + 1], `r100 stripe ${r}: cols ${d},${d+1} should share seg`);
+  });
+});
+
+// GUARDRAIL — RAID 1+0 (2-disk mirror spans) numbering unchanged.
+test('GUARDRAIL: RAID 1+0 placement (2-disk mirror spans) unchanged', () => {
+  const pair = () => M.array('linear', 'mirror', disksOf(2));
+  const g = placement(M.array('striped', 'none', [pair(), pair()]), { stripes: 2 });
+  assert(g.algo === 'nested 1+0', `expected nested 1+0, got ${g.algo}`);
+  eqGrid(g.roles, [['data','mirror','data','mirror'],['data','mirror','data','mirror']], '1+0 roles');
+  eqGrid(g.segs,  [[0,0,1,1],[2,2,3,3]], '1+0 segs');
+});
+
+// Structural cross-checks
+test('nested column count = sum of span columns', () => {
+  const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
+  assert(g.columns === 6, `expected 6, got ${g.columns}`);
+});
+
+// ---------------------------------------------------------------------------
 finish();

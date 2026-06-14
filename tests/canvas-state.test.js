@@ -280,17 +280,17 @@ test('flat RAID 10 (striped + mirror, even) → RAID 10, placement near', () => 
   eq(r.placement.algorithm, 'near');    // default mirror-class layout
 });
 
-test('valid but no placement (striped + mirror, odd = RAID 1E) → unsupported', () => {
+test('striped + mirror, odd disks → RAID 1E, interleaved near placement', () => {
   const s = CS.createState();
   const ids = [0, 1, 2].map(() => CS.addDisk(s, 2));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
   CS.setRedundancy(s, aid, 'mirror');
   const r = CS.evaluate(s);
-  eq(r.firstIssue, null);            // build is valid, just non-standard (RAID 1E)
-  assert(r.analysis !== null);        // recognizer still runs (capacity/FT derived)
-  assert(r.placement.unsupported);   // odd striped mirror has no verified layout
-  assert(r.placement.reason.length > 0);
+  eq(r.firstIssue, null);              // valid build
+  eq(r.analysis.level, 'RAID 1E');     // odd striped mirror is now named
+  assert(!r.placement.unsupported);    // and has a defined (near, slot-stream) layout
+  eq(r.placement.algorithm, 'near');
 });
 
 // ---------------------------------------------------------------------------
