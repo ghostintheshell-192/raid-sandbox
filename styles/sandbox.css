@@ -162,7 +162,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-physical.cp--active { border-color: rgba(52,152,219,.6); }
 /* The collapse toggle is a narrow-screen affordance only; desktop shows the
    physical canvas unconditionally. */
-.sbc-physical-toggle { display: none; }
+.sbc-physical-toggle, .sbc-canvas-title { display: none; }
 /* inner canvas + SVG overlay */
 .pln-canvas {
   position: relative; width: 100%; height: 100%;
@@ -403,9 +403,20 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   .sbc-section.is-open > .sbc-chips { display: flex; }
 
   /* Canvases stack with fixed working heights; the page scrolls instead. */
+  /* Data layer gets a title bar matching the physical layer's — but no chevron,
+     since it never collapses. Drop the faint corner label to avoid duplication. */
+  .sbc-canvas::before { display: none; }
+  .sbc-canvas-title {
+    display: flex; align-items: center; gap: .5rem;
+    margin: .6rem .6rem 0; padding: .7rem .85rem; min-height: 44px;
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .9;
+    background: rgba(128,128,128,.10);
+    border: 1px solid rgba(128,128,128,.22); border-radius: 8px 8px 0 0;
+  }
   .sbc-canvas {
     min-height: 46vh;
-    margin: .6rem .6rem .3rem;
+    margin: 0 .6rem .3rem;            /* flush under its title bar */
+    border-top: none; border-radius: 0 0 10px 10px;
   }
   /* Physical layer collapses under its own toggle (secondary view). Collapsed
      by default via JS; the panel framing moves onto the open canvas so the
