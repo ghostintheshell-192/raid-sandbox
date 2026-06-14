@@ -335,25 +335,22 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   .sbc-header-hint { display: none; }
   .sbc-status { margin-left: 0; flex-basis: 100%; }
 
-  /* Sidebar becomes a horizontally scrollable chip bar above the canvas. */
+  /* Sidebar becomes a wrapping chip area above the canvas: the groups flow
+     onto as many rows as the width allows, rather than scrolling off-screen.
+     Each group is a flex item that grows to share the row and shrinks so its
+     own chips can wrap inside it. */
   .sbc-sidebar {
-    flex-direction: row; gap: 1.2rem;
-    overflow-x: auto; overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+    flex-direction: row; flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .8rem 1.2rem;
+    overflow: visible;
     border-right: none;
     border-bottom: 1px solid rgba(128,128,128,.2);
     padding: .6rem .8rem;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(128,128,128,.35) transparent;
   }
-  .sbc-sidebar::-webkit-scrollbar { height: 6px; }
-  .sbc-sidebar::-webkit-scrollbar-thumb {
-    background: rgba(128,128,128,.35); border-radius: 3px;
-  }
-  .sbc-sidebar::-webkit-scrollbar-track { background: transparent; }
-  .sbc-sidebar > div { flex: 0 0 auto; }
+  .sbc-sidebar > div { flex: 1 1 200px; min-width: 0; }
   .sbc-sidebar h3 { white-space: nowrap; }
-  .sbc-chips { flex-wrap: nowrap; }
+  .sbc-chips { flex-wrap: wrap; }
 
   /* Canvases stack with fixed working heights; the page scrolls instead. */
   .sbc-canvas {
