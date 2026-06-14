@@ -93,6 +93,10 @@
 
   <!-- physical layer canvas -->
   <div class="sbc-physical" id="physical-panel">
+    <!-- Secondary view: on narrow screens this header collapses the canvas
+         (see the toggle wiring at the end of the inline script). -->
+    <button class="sbc-physical-toggle" id="physical-toggle" type="button"
+            aria-expanded="true" aria-controls="physical-canvas">Physical layer</button>
     <div class="pln-canvas" id="physical-canvas">
       <svg class="pln-svg" id="physical-svg"></svg>
     </div>
@@ -309,6 +313,31 @@
 
   // Master clear — wipes the build in both views; keeps the current mode/challenge.
   document.getElementById('btn-clear').addEventListener('click', () => ctrl.clear());
+
+  // The physical layer is secondary: on narrow screens it starts collapsed so the
+  // data layer and the results panel below stay discoverable. Expanding re-renders
+  // it, because its edges are positioned via getBoundingClientRect — which reads
+  // zero while the canvas is display:none. Desktop keeps it always open (CSS hides
+  // the toggle), so the class is a no-op there.
+  (function () {
+    const toggle = document.getElementById('physical-toggle');
+    const panel  = document.getElementById('physical-panel');
+    if (!toggle || !panel) return;
+    const narrow = window.matchMedia('(max-width: 900px)');
+
+    function setOpen(open) {
+      panel.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open && physCtrl) requestAnimationFrame(() => physCtrl.render());
+    }
+    toggle.addEventListener('click', () => setOpen(!panel.classList.contains('is-open')));
+
+    // Collapsed by default on narrow screens, open on desktop.
+    const sync = () => setOpen(!narrow.matches);
+    sync();
+    if (narrow.addEventListener) narrow.addEventListener('change', sync);
+    else if (narrow.addListener) narrow.addListener(sync);   // older Safari/WebKit
+  })();
 </script>
 </body>
 </html>
