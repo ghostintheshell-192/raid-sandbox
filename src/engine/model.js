@@ -72,7 +72,10 @@
   const childToken = (m) => {
     if (!allDisks(m)) return '∗';
     if (m.redundancy === 'none')   return m.segmentation === 'striped' ? 'r0' : 'jbod';
-    if (m.redundancy === 'mirror') return isStripedDiskMirror(m) ? 'r10' : 'mirror';
+    if (m.redundancy === 'mirror') {
+      if (!isStripedDiskMirror(m)) return 'mirror';            // linear mirror = RAID 1
+      return m.members.length % 2 === 0 ? 'r10' : 'r1e';       // even = RAID 10, odd = RAID 1E
+    }
     return m.redundancy;   // 'parity1' | 'parity2'
   };
   const uniformToken = (members) => {

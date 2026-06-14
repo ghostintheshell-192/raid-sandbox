@@ -50,16 +50,17 @@
   // ---------------------------------------------------------------------------
 
   // Level-specific disk minimums (RAID 0/JBOD's ≥2 is structural → _firstIssue).
+  // striped|mirror splits by parity of the disk count: EVEN is RAID 10 (≥4), ODD is
+  // RAID 1E (≥3) — both valid, just different minimums. (An odd striped mirror used
+  // to be flagged as an error; it is now the recognized RAID 1E level.)
   const MIN_DISKS = {
     'striped|parity1': 3,   // RAID 5
     'striped|parity2': 4,   // RAID 6
-    'striped|mirror':  4,   // RAID 10 (flat)
     'linear|mirror':   2,   // RAID 1
   };
   const LEVEL_NAME = {
     'striped|parity1': 'RAID 5',
     'striped|parity2': 'RAID 6',
-    'striped|mirror':  'RAID 10',
     'linear|mirror':   'RAID 1',
   };
 
@@ -67,25 +68,20 @@
     const out = [];
     for (const a of arrays(tree)) {
       if (!allDisks(a)) continue;                     // nested levels checked via their leaf spans
-      const key = `${a.segmentation}|${a.redundancy}`;
-      const min = MIN_DISKS[key];
+      let min, name;
+      if (a.segmentation === 'striped' && a.redundancy === 'mirror') {
+        const odd = a.members.length % 2 !== 0;
+        min  = odd ? 3 : 4;                            // RAID 1E (odd) vs RAID 10 (even)
+        name = odd ? 'RAID 1E' : 'RAID 10';
+      } else {
+        const key = `${a.segmentation}|${a.redundancy}`;
+        min = MIN_DISKS[key];
+        name = LEVEL_NAME[key];
+      }
       if (min && a.members.length < min)
         out.push(mk('min-disks', 'hard',
-          `${LEVEL_NAME[key]} needs at least ${min} disks (this array has ${a.members.length}).`,
+          `${name} needs at least ${min} disks (this array has ${a.members.length}).`,
           a.id, 'raid-types §6'));
-    }
-    return out;
-  }
-
-  function checkMirrorEven(tree) {
-    const out = [];
-    for (const a of arrays(tree)) {
-      if (allDisks(a) && a.segmentation === 'striped' && a.redundancy === 'mirror'
-          && a.members.length % 2 !== 0)
-        out.push(mk('mirror-even', 'hard',
-          `A striped mirror needs an even disk count to pair into 2 copies — ${a.members.length} is odd `
-          + `(that's the niche RAID 1E, not RAID 10).`,
-          a.id, 'distribuzione-segmenti-algoritmi.md §6'));
     }
     return out;
   }
@@ -153,7 +149,6 @@
     const found = [];
     if (tree) {
       found.push(...checkMinDisks(tree));
-      found.push(...checkMirrorEven(tree));
       found.push(...(checkCrossAxisLayout(tree, physical) || []));
       found.push(checkBackplaneDiversity(tree, physical));
     }

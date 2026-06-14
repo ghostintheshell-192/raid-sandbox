@@ -47,6 +47,10 @@ const r60     = arr('striped', 'none', [arr('striped', 'parity2', disks(4)), arr
 
 test('GUARDRAIL: stripe over mirror pairs stays RAID 1+0', () => eq(level(r1plus0), 'RAID 1+0'));
 test('stripe over RAID 10 spans → RAID 100 (not RAID 1+0)', () => eq(level(r100), 'RAID 100'));
+test('stripe over RAID 1E (odd) spans → non-standard, NOT RAID 100', () => {
+  const odd = () => arr('striped', 'mirror', disks(3));   // RAID 1E span (odd)
+  eq(level(arr('striped', 'none', [odd(), odd()])), null);
+});
 test('RAID 100 capacity = 8 (2 spans × 4/2 × 2GB)', () => eq(cap(r100), 8));
 test('RAID 100 fault tolerance = 1', () => eq(ft(r100), 1));
 test('stripe over RAID 5 spans stays RAID 50', () => eq(level(r50), 'RAID 50'));

@@ -33,15 +33,20 @@ test('the min-disks check is recursive — a RAID 50 with a 2-disk span flags it
 });
 
 // ---------------------------------------------------------------------------
-console.log('\n[2] Mirror even-count (hard)');
+console.log('\n[2] striped+mirror: RAID 1E (odd) vs RAID 10 (even)');
 
-test('striped+mirror with 3 disks → mirror-even', () => {
+test('striped+mirror with 3 disks → clean (valid RAID 1E, not an error)', () => {
   const r = V.validate(M.array('striped', 'mirror', disks(3)), {});
-  assert(hasCode(r.hard, 'mirror-even'));
+  assert(!hasCode(r.hard, 'mirror-even'), 'odd striped mirror is RAID 1E, no mirror-even');
+  assert(!hasCode(r.hard, 'min-disks'),   'RAID 1E min is 3, so 3 disks is fine');
 });
-test('striped+mirror with 4 disks → clean', () => {
+test('striped+mirror with 4 disks → clean (RAID 10)', () => {
   const r = V.validate(M.array('striped', 'mirror', disks(4)), {});
-  assert(!hasCode(r.hard, 'mirror-even'));
+  assert(r.hard.length === 0);
+});
+test('striped+mirror with 2 disks → min-disks (RAID 10 needs 4)', () => {
+  const r = V.validate(M.array('striped', 'mirror', disks(2)), {});
+  assert(hasCode(r.hard, 'min-disks'));
 });
 
 // ---------------------------------------------------------------------------
