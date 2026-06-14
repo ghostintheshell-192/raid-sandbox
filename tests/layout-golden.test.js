@@ -321,15 +321,39 @@ function placement(node, opts) {
 const eqGrid = (got, want, what) => want.forEach((row, s) => row.forEach((v, d) =>
   assert(got[s][d] === v, `${what} stripe ${s} col ${d}: got ${JSON.stringify(got[s][d])}, want ${JSON.stringify(v)}`)));
 
-// near generalization — n=4 even must match the classic near (regression guard)
-// Source: .personal/golden-raid1e.md (slot-stream == classic near for even n).
-test('near n=4 (even) unchanged — roles + segs', () => {
-  const g = placement(M.array('striped', 'mirror', disksOf(4)));
+// RAID 10 near, n=4 — hand-derived from raid10.c near (slot = chunk*near_copies + k,
+// dev = slot mod raid_disks, stripe = slot / raid_disks; near_copies=2). Copies on
+// adjacent disks. Also the regression guard for the slot-stream rewrite.
+test('RAID 10 near n=4 — roles + segs (raid10.c)', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(4), 'near'));
   eqGrid(g.roles, [
     ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
     ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
   ], 'near4 roles');
   eqGrid(g.segs, [[0,0,1,1],[2,2,3,3],[4,4,5,5],[6,6,7,7]], 'near4 segs');
+});
+
+// RAID 10 far, n=4 — hand-derived from raid10.c far: first copy of every chunk laid
+// out as pure RAID 0 (the "near region"), second copies in the "far region" shifted
+// by near_copies(=1) device. 8 chunks → 2 orig rows then 2 copy rows.
+test('RAID 10 far n=4 — pure-stripe originals, copies shifted +1 disk', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(4), 'far'), { chunks: 8 });
+  eqGrid(g.roles, [
+    ['data','data','data','data'], ['data','data','data','data'],
+    ['mirror','mirror','mirror','mirror'], ['mirror','mirror','mirror','mirror'],
+  ], 'far4 roles');
+  eqGrid(g.segs, [[0,1,2,3],[4,5,6,7],[3,0,1,2],[7,4,5,6]], 'far4 segs');
+});
+
+// RAID 10 offset, n=4 — like far, but each copy row sits immediately below its
+// original row (interleaved), same +1 shift.
+test('RAID 10 offset n=4 — orig row then its shifted copy row', () => {
+  const g = placement(M.array('striped', 'mirror', disksOf(4), 'offset'), { chunks: 8 });
+  eqGrid(g.roles, [
+    ['data','data','data','data'], ['mirror','mirror','mirror','mirror'],
+    ['data','data','data','data'], ['mirror','mirror','mirror','mirror'],
+  ], 'offset4 roles');
+  eqGrid(g.segs, [[0,1,2,3],[3,0,1,2],[4,5,6,7],[7,4,5,6]], 'offset4 segs');
 });
 
 // RAID 1E — striped mirror, ODD disks (n=3). Source: .personal/golden-raid1e.md
