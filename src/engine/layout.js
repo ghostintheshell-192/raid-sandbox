@@ -22,6 +22,13 @@
  * `seq` is the animation order: cells sharing a seq light up together; ascending
  * seq = write order. Parity gets a LATER seq than the data in its stripe, because
  * parity is computed from that data — the animation shows this causality.
+ *
+ * COVERAGE: leaf RAID 0/1/5/6/JBOD, flat RAID 10 (near/far/offset) and RAID 1E
+ * (near, odd disks), and nested stripes RAID 1+0 / 100 / 50 / 60. Mirror-of-arrays
+ * (RAID 51/61/0+1) is recognized but shown as stats only (no flat grid to animate).
+ * OUT OF SCOPE (no representation in the two-axis model): RAID 2/3/4 and RAID 30/03
+ * (byte/bit striping + dedicated parity), triple parity (parity3), and the mdadm
+ * RAID-6 Q-right convention (we use the DDF Q-left).
  */
 
 (function (root) {
