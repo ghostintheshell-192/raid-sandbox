@@ -352,20 +352,35 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   .sbc-sidebar h3 { white-space: nowrap; }
   .sbc-chips { flex-wrap: wrap; }
 
-  /* --- accordion: each group collapses under its heading -------------- */
-  /* JS (sidebar-accordion.js) toggles .is-open, one section at a time.   */
+  /* --- accordion: each group is a tappable, card-like collapsible row --- */
+  /* JS (sidebar-accordion.js) toggles .is-open, one section at a time.    */
+  .sbc-section {
+    border: 1px solid rgba(128,128,128,.22);
+    border-radius: 8px;
+    overflow: hidden;
+  }
   .sbc-section > h3 {
     margin: 0;
     cursor: pointer; user-select: none;
     display: flex; align-items: center; justify-content: space-between;
-    gap: .5rem; padding: .55rem .2rem; min-height: 40px;
+    gap: .5rem; padding: .7rem .85rem; min-height: 44px;
+    background: rgba(128,128,128,.10);
+    transition: background .12s ease;
   }
+  .sbc-section > h3:hover,
+  .sbc-section > h3:focus-visible { background: rgba(128,128,128,.18); }
+  .sbc-section.is-open > h3 {
+    background: rgba(128,128,128,.16);
+    border-bottom: 1px solid rgba(128,128,128,.22);
+  }
+  /* Chevron: a clear, finger-sized affordance that rotates open. */
   .sbc-section > h3::after {
-    content: '▸'; font-size: .85em; opacity: .55;
+    content: '\25B8';   /* ▸ */
+    font-size: 1.05rem; opacity: .75; line-height: 1;
     transition: transform .15s ease;
   }
   .sbc-section.is-open > h3::after { transform: rotate(90deg); }
-  .sbc-section > .sbc-chips { display: none; padding-bottom: .5rem; }
+  .sbc-section > .sbc-chips { display: none; padding: .7rem .85rem; }
   .sbc-section.is-open > .sbc-chips { display: flex; }
 
   /* Canvases stack with fixed working heights; the page scrolls instead. */
