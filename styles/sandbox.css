@@ -34,6 +34,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   border-right: 1px solid rgba(128,128,128,.2);
   padding: .8rem;
   overflow-y: auto;
+  min-height: 0;   /* let this grid item scroll internally instead of inflating the grid past 100vh */
   display: flex; flex-direction: column; gap: 1.2rem;
 }
 .sbc-sidebar h3 {
@@ -70,6 +71,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   border-radius: 10px;
   padding: 1.2rem;
   overflow: auto;
+  min-height: 0;   /* grid item: scroll its own content, don't inflate the grid */
   display: flex; flex-wrap: wrap; gap: 1rem; align-content: flex-start;
   background: repeating-linear-gradient(
     0deg, transparent, transparent 31px,
@@ -155,6 +157,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   border-radius: 10px;
   background: rgba(0,0,0,.05);
   overflow: hidden;
+  min-height: 0;   /* grid item: don't inflate the grid past 100vh */
 }
 .sbc-physical.cp--active { border-color: rgba(52,152,219,.6); }
 /* The collapse toggle is a narrow-screen affordance only; desktop shows the
@@ -214,6 +217,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   border-left: 1px solid rgba(128,128,128,.2);
   padding: .8rem;
   overflow-y: auto;
+  min-height: 0;   /* see .sbc-sidebar: scroll internally, don't inflate the grid */
   display: flex; flex-direction: column; gap: .8rem;
 }
 .sbc-results h3 {
