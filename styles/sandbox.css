@@ -314,6 +314,18 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 /* RESPONSIVE                                                          */
 /* ================================================================== */
 
+/* ---- desktop: pin the shell to the real viewport box ----------------- */
+/* Some setups report 100vh larger than the usable height (here 100vh≈1074 vs
+   innerHeight 1042), which added a ~32px page scrollbar. Anchoring the shell to
+   height:100% along html→body→layout uses the actual viewport box instead, and
+   overflow:hidden guarantees the app never scrolls the page. Desktop only — the
+   <=900px layout below stays a normal scrolling column. */
+@media (min-width: 901px) {
+  html, body { height: 100%; overflow: hidden; }
+  body { min-height: 0; }
+  .sbc-layout { height: 100%; }
+}
+
 /* ---- large desktop (Full HD and up): use the extra width ---------- */
 @media (min-width: 1600px) {
   .sbc-layout { grid-template-columns: 260px 1fr 320px; }
