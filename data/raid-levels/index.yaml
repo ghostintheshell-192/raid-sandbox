@@ -14,9 +14,17 @@
   name: RAID 6
 - id: raid10
   name: RAID 10
+- id: raid1e
+  name: RAID 1E
 - id: raid1plus0
   name: RAID 1+0
+- id: raid100
+  name: RAID 100
 - id: raid50
   name: RAID 50
 - id: raid60
   name: RAID 60
+- id: raid51
+  name: RAID 51
+- id: raid61
+  name: RAID 61

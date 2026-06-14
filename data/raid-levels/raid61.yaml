@@ -1,0 +1,47 @@
+id: raid61
+name: RAID 61
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+# A mirror over RAID-6 spans (striped+parity2 over disks). Mirror parent modelled
+# as linear+mirror (no placement algorithm of its own).
+shape:
+  segmentation: linear
+  redundancy: mirror
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: parity2
+    members: disks
+
+minDisks: 8   # 2 mirrored legs × 4-disk RAID 6
+faultTolerance: 5   # each RAID-6 leg costs 3 failures to kill; the mirror sums both legs
+capacityFormula: "(disksPerSpan − 2) × disk size   (one mirrored RAID-6 leg)"
+
+writePenalty:
+  random: 2     # modelled as the mirror's penalty (dominant write path); see raid51.yaml
+  sequential: 2
+
+note: >
+  RAID 61 mirrors a whole RAID 6 onto a second RAID 6 — the highest fault tolerance in
+  this model. Placement is statistics-only (mirror parent, not a stripe), same as RAID 51.
+  Write-penalty modelling follows raid51.yaml (mirror dominates the parent write path).
+
+description: >
+  Two RAID 6 arrays mirrored together. Survives many simultaneous failures as long as one
+  RAID-6 leg (minus its double-parity tolerance) remains.
+
+pros:
+  - Extreme fault tolerance (mirror of a double-parity array)
+  - Read parallelism across both legs
+
+cons:
+  - Very low capacity efficiency
+  - Minimum 8 disks
+  - Overkill for most workloads
+
+useCases:
+  - Archival / compliance storage demanding maximum durability
+
+notFor:
+  - Cost- or capacity-sensitive storage

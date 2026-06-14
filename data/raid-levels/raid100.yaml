@@ -1,0 +1,49 @@
+id: raid100
+name: RAID 100
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+# A stripe (striped+none) over flat RAID-10 spans (striped+mirror over disks).
+shape:
+  segmentation: striped
+  redundancy: none
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: mirror
+    members: disks
+
+minDisks: 8   # 2 spans × 4-disk RAID 10 minimum
+faultTolerance: 1   # per span (each RAID 10 span survives one disk)
+capacityFormula: "spans × (disksPerSpan / 2) × disk size"
+
+writePenalty:
+  random: 2     # mirror only; no parity read-modify-write
+  sequential: 2
+
+note: >
+  RAID 100 (1+0+0) stripes across two or more flat RAID 10 spans. Distinct from RAID 1+0
+  (a stripe over plain mirror PAIRS): the recognizer separates a flat-RAID10 child span
+  from a mirror-pair child by shape. Each span keeps its near layout; the top stripe
+  numbers chunks across spans (.personal/golden-raid100.md).
+
+description: >
+  A stripe over multiple RAID 10 spans: extra striping throughput on top of RAID 10's
+  mirror redundancy, for very large high-traffic arrays.
+
+pros:
+  - Aggregate throughput of many RAID 10 spans
+  - Each span independently survives a disk failure
+  - No parity write penalty
+
+cons:
+  - 50% capacity efficiency (mirroring)
+  - Many disks required (≥ 8)
+  - Two failures within one span destroy data
+
+useCases:
+  - Very large, high-throughput databases and virtualization pools
+
+notFor:
+  - Capacity-efficient storage
+  - Small arrays

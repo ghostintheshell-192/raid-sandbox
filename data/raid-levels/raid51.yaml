@@ -1,0 +1,51 @@
+id: raid51
+name: RAID 51
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule)
+# A mirror over RAID-5 spans (striped+parity1 over disks). The mirror parent is
+# modelled as linear+mirror (a plain 2-leg mirror of arrays — not striped), so it
+# carries no placement algorithm of its own.
+shape:
+  segmentation: linear
+  redundancy: mirror
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: parity1
+    members: disks
+
+minDisks: 6   # 2 mirrored legs × 3-disk RAID 5
+faultTolerance: 3   # each RAID-5 leg costs 2 failures to kill; the mirror sums both legs
+capacityFormula: "(disksPerSpan − 1) × disk size   (one mirrored RAID-5 leg)"
+
+writePenalty:
+  random: 2     # see note — modelled as the mirror's penalty (dominant write path)
+  sequential: 2
+
+note: >
+  RAID 51 mirrors a whole RAID 5 onto a second RAID 5. Very high fault tolerance (the
+  mirror survives the loss of an entire RAID-5 leg, ±parity), at 25% capacity efficiency.
+  Modelling choice: write penalty is taken as the MIRROR's (W=2) — the mirror is the
+  dominant write path of the parent — rather than inheriting the RAID-5 RMW penalty.
+  Placement is shown as statistics only: the parent is a mirror, not a stripe, so there
+  is no single flat data grid to animate (the two legs are full copies).
+
+description: >
+  Two RAID 5 arrays mirrored together. Extreme redundancy: survives multiple disk losses
+  as long as one full RAID-5 leg (minus its single-parity tolerance) stays alive.
+
+pros:
+  - Very high fault tolerance (mirror of a parity array)
+  - Read parallelism across both legs
+
+cons:
+  - 25% capacity efficiency (mirror × parity overhead)
+  - Expensive: minimum 6 disks for modest usable capacity
+  - Rarely needed outside high-availability niches
+
+useCases:
+  - Mission-critical data where downtime is unacceptable
+
+notFor:
+  - Cost- or capacity-sensitive storage

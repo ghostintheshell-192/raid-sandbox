@@ -1,0 +1,50 @@
+id: raid1e
+name: RAID 1E
+notRaid: false
+
+# Topology shape (matches the recognizer §4 rule — §3a)
+# A single array: striped + mirror over an ODD disk count, copies=2.
+# The interleaved mirror: md raid10 "near" generalizes to odd disks.
+shape:
+  segmentation: striped
+  redundancy: mirror
+  members: disks
+  constraint: odd-disk-count
+  copies: 2
+
+minDisks: 3
+faultTolerance: 1
+capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+defaultAlgorithm: near
+
+writePenalty:
+  random: 2
+  sequential: 2
+
+note: >
+  RAID 1E is the interleaved striped mirror used when the disk count is odd (so the
+  chunks cannot pair into clean 2-copy stripes as flat RAID 10 does). The placement is
+  the slot-stream "near" layout (md raid10 near with odd disks): copy k of chunk c lands
+  at disk (c*2+k) mod N, so a chunk and its copy always sit on different disks. Verified
+  by hand in .personal/golden-raid1e.md.
+
+description: >
+  A mirror that works on an odd number of disks by interleaving chunks and their copies
+  across all disks. Same redundancy as RAID 10 (survives one disk), but does not need an
+  even disk count.
+
+pros:
+  - Mirroring on an odd disk count (RAID 10 needs an even count)
+  - Full read parallelism across all N disks
+  - Survives any single disk failure
+
+cons:
+  - 50% capacity efficiency (copies=2)
+  - Niche: supported only by some controllers; less common than RAID 10
+
+useCases:
+  - Mirrored redundancy when only an odd number of disks is available
+
+notFor:
+  - Capacity-efficient storage (50% overhead)
+  - Tolerating two simultaneous failures
