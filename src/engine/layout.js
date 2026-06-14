@@ -198,8 +198,9 @@
   // RAID 0 hands one span-stripe to each span per round, in ascending span order.
   // Two modes, chosen by whether any span carries parity:
   //   parity spans (RAID 50/60): keep each span's data/P/Q roles, number only DATA
-  //     cells (P/Q stay seg:null) in write order, and band seq so a row's data lights
-  //     (seq 2r) before its parity (seq 2r+1) — the causal write order.
+  //     cells (P/Q stay seg:null) in write order. Each data block gets its own seq so
+  //     it animates ONE AT A TIME (disk-access order); a span-stripe's parity lights
+  //     together right after that span-stripe's data — the causal write order.
   //   mirror spans (RAID 1+0, RAID 100): original and copy of one chunk share a
   //     global seg (and seq), so they light together. Reproduces the old 1+0 output
   //     for 2-disk mirror spans and extends to multi-chunk near spans (RAID 100).
@@ -214,6 +215,7 @@
     const rows = Math.max(...grids.map((g) => g.stripes.length));
     const stripes = [];
     let seg = 0;
+    let seq = 0;   // animation step counter — one per data block (lit one at a time)
 
     for (let r = 0; r < rows; r++) {
       const row = [];
@@ -222,16 +224,18 @@
         if (hasParity) {
           // Number data in the span's WRITE order (ascending local seg = left-
           // symmetric order), NOT disk order — so the global numbering preserves
-          // the canonical "data right after parity, wrapping" sequence. Then place
-          // each cell back at its disk position.
+          // the canonical "data right after parity, wrapping" sequence. Each data
+          // block gets its OWN seq (animates one at a time, showing the disk-access
+          // order); this span-stripe's parity lights together right after its data.
           const order = childRow.filter((c) => c.role === 'data')
             .slice().sort((a, b) => a.seg - b.seg);
-          const toGlobal = new Map();
-          order.forEach((c) => toGlobal.set(c.seg, seg++));
+          const segOf = new Map(), seqOf = new Map();
+          order.forEach((c) => { segOf.set(c.seg, seg++); seqOf.set(c.seg, seq++); });
+          const paritySeq = seq++;
           for (const cell of childRow)
             row.push(cell.role === 'data'
-              ? { role: 'data', seg: toGlobal.get(cell.seg), seq: 2 * r }
-              : { role: cell.role, seg: null, seq: 2 * r + 1 });
+              ? { role: 'data', seg: segOf.get(cell.seg), seq: seqOf.get(cell.seg) }
+              : { role: cell.role, seg: null, seq: paritySeq });
         } else {
           // mirror span: map each distinct child chunk (seg) to one global seg,
           // so original + copy keep a shared id.

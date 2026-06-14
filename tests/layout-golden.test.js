@@ -397,12 +397,27 @@ test('RAID 50 — exact data numbering (write order, hand-derived from raid5.c L
     [null, 8, 9, null, 10, 11],
   ], 'r50 segs');
 });
-test('RAID 50 — seq bands data(2r) before parity(2r+1)', () => {
+test('RAID 50 — data animates ONE AT A TIME, in write order; parity after its data', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
-  g.roles.forEach((row, r) => row.forEach((role, d) => {
-    const want = role === 'data' ? 2 * r : 2 * r + 1;
-    assert(g.seqs[r][d] === want, `r50 seq stripe ${r} col ${d}: got ${g.seqs[r][d]}, want ${want}`);
+  const data = [];
+  g.segs.forEach((row, r) => row.forEach((seg, d) => {
+    if (seg !== null) data.push({ seg, seq: g.seqs[r][d] });
   }));
+  // one at a time: every data block has a distinct seq
+  const seqs = data.map((x) => x.seq);
+  assert(new Set(seqs).size === seqs.length, 'each data block must have a distinct seq');
+  // write order: ordering by seg matches ordering by seq (monotonic)
+  const bySeg = [...data].sort((a, b) => a.seg - b.seg);
+  for (let i = 1; i < bySeg.length; i++)
+    assert(bySeg[i].seq > bySeg[i - 1].seq, `data seg ${bySeg[i].seg} must light after seg ${bySeg[i-1].seg}`);
+  // parity of each row lights only after that row's first data (causal)
+  g.roles.forEach((row, r) => {
+    const dataSeqs = row.map((role, d) => role === 'data' ? g.seqs[r][d] : null).filter((v) => v !== null);
+    row.forEach((role, d) => {
+      if (role === 'P' || role === 'Q')
+        assert(g.seqs[r][d] > Math.min(...dataSeqs), `r50 parity at stripe ${r} col ${d} must follow its data`);
+    });
+  });
 });
 
 // RAID 60 — stripe over 2×(6-disk RAID6 LS). Roles cross-checked against the
