@@ -64,6 +64,22 @@
     isArray(n) && n.segmentation === 'striped' && n.redundancy === 'mirror' && allDisks(n);
   const copiesOf = (n) => n.copies || 2;
 
+  // Classify a child array by its SHAPE (never its algorithm) for nesting rules.
+  // A leaf child reduces to a span token; a child that is itself nested is '∗'
+  // (deeper nesting has no canonical name here). The token distinguishes a flat
+  // RAID 10 ('r10') from a plain mirror pair ('mirror') — the fix that lets a
+  // stripe-over-RAID10 be RAID 100 instead of collapsing into RAID 1+0.
+  const childToken = (m) => {
+    if (!allDisks(m)) return '∗';
+    if (m.redundancy === 'none')   return m.segmentation === 'striped' ? 'r0' : 'jbod';
+    if (m.redundancy === 'mirror') return isStripedDiskMirror(m) ? 'r10' : 'mirror';
+    return m.redundancy;   // 'parity1' | 'parity2'
+  };
+  const uniformToken = (members) => {
+    const tokens = members.map(childToken);
+    return tokens.every((t) => t === tokens[0]) ? tokens[0] : null;
+  };
+
   /** Total number of physical disks under a node (recursive). */
   function countDisks(node) {
     if (isDisk(node)) return 1;
@@ -96,10 +112,11 @@
             ? `${node.members.length}-way mirroring (RAID 1, ${node.members.length} copies)`
             : 'mirroring');
         // striped + mirror = flat RAID 10 (copies 2) for an even disk count;
-        // an odd count cannot pair into 2 copies → RAID 1E (niche, non-standard). §3a
+        // an odd count cannot pair into 2 copies → RAID 1E, the interleaved
+        // striped mirror (niche but real: md raid10 near with odd disks). §3a
         return node.members.length % 2 === 0
           ? mk('RAID 10', true, 'striped mirroring, 2 copies (flat RAID 10)')
-          : mk(null, false, 'striped mirror with odd disks (RAID 1E family — niche)');
+          : mk('RAID 1E', true, 'interleaved striped mirroring, odd disk count');
       }
       if (red === 'parity1') return seg === 'striped'
         ? mk('RAID 5', true, 'striping with single distributed parity')
@@ -109,14 +126,24 @@
         : mk(null, false, 'double parity without striping (non-standard)');
     }
 
-    // Nesting arrays — a pure stripe over uniform redundant child arrays.
+    // Nesting: a pure stripe (RAID 0) over uniform child arrays. The child token
+    // is shape-derived (never the algorithm), so 'mirror' pairs → 1+0 while flat
+    // RAID 10 spans → RAID 100.
     if (seg === 'striped' && red === 'none' && allArrays(node)) {
-      const childReds = node.members.map((m) => (allDisks(m) ? m.redundancy : '∗'));
-      const uniform = childReds.every((r) => r === childReds[0]) ? childReds[0] : null;
-      switch (uniform) {
+      switch (uniformToken(node.members)) {
         case 'mirror':  return mk('RAID 1+0', true, 'striping over mirror spans (nested 1+0)');
-        case 'parity1': return mk('RAID 50', true, 'striping over RAID-5 spans (5+0)');
-        case 'parity2': return mk('RAID 60', true, 'striping over RAID-6 spans (6+0)');
+        case 'r10':     return mk('RAID 100', true, 'striping over RAID 10 spans (1+0+0)');
+        case 'parity1': return mk('RAID 50',  true, 'striping over RAID-5 spans (5+0)');
+        case 'parity2': return mk('RAID 60',  true, 'striping over RAID-6 spans (6+0)');
+      }
+    }
+
+    // Nesting: a mirror over uniform child arrays (the "x1" family).
+    if (red === 'mirror' && allArrays(node)) {
+      switch (uniformToken(node.members)) {
+        case 'r0':      return mk('RAID 0+1', true, 'mirror over RAID-0 spans (0+1)');
+        case 'parity1': return mk('RAID 51',  true, 'mirror over RAID-5 spans (5+1)');
+        case 'parity2': return mk('RAID 61',  true, 'mirror over RAID-6 spans (6+1)');
       }
     }
 
