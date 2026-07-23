@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID — Knowledge Base · Valentina Malavenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header class="page-header">
+    <a class="back-link" href="https://ghostintheshell-192.github.io/">← back</a>
+    <h1 class="page-title">RAID <span>Knowledge Base</span></h1>
+    <p class="page-subtitle">Reference for the interactive <a href="./">RAID Sandbox</a></p>
+  </header>
+
+  <!-- Nav: the game (sandbox) is the main page; this is the reference -->
+  <nav class="tabs" role="navigation">
+    <a class="tab-btn" href="./">▶ Open the Sandbox</a>
+    <span class="tab-btn active" aria-current="page">Knowledge Base</span>
+  </nav>
+
+  <!-- Knowledge Base -->
+  <section id="view-kb" class="view" role="region" aria-label="Knowledge Base">
+    <div id="kb-content"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+</div>
+
+<!-- js-yaml: parses the intro.yaml content -->
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<!-- KaTeX: LaTeX rendering (kept for any formulas in the reference content) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="kb.js"></script>
+</body>
+</html>

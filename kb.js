@@ -1,7 +1,7 @@
 /**
  * kb.js — Knowledge Base page for the RAID guide.
  *
- * The interactive game now lives in the sandbox (sandbox/canvas.html); this page
+ * The interactive game is the site's front page (index.html); this page
  * is the static reference, built from data/intro.yaml. Extracted from the retired
  * engine.js, which also drove the old Visualize gallery and the linear Build quiz
  * (both removed in the move to the composition-based sandbox).
