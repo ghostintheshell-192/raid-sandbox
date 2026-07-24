@@ -29,7 +29,8 @@ Spec-driven and incremental:
 - **Vanilla HTML/CSS/JS** — no framework, no build step. Rendering is DOM (`render.js`
   builds divs); the file historically named `canvas.html` is now `index.html`.
 - **YAML data files** (`data/`) — RAID levels, algorithms, components, challenges.
-  Parsed in-browser via **js-yaml** (currently from a CDN — see tech-debt: vendor locally).
+  Parsed in-browser via **js-yaml**, vendored in `vendor/js-yaml/` (not a CDN, and not
+  an npm dependency — see `vendor/README.md`).
 - **Touch support** — `touch-dnd.js` shims the HTML5 drag-and-drop API, which does not
   exist on touch devices.
 - **Zero runtime dependencies** — the headless node tests must not require YAML parsing.
