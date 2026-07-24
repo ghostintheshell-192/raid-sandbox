@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="RAID Sandbox">
+  <!--
+    The icon is not a metaphor for a RAID array — it is one. Four disks (columns),
+    four stripes (rows), with parity (amber) placed as the Linux md rules place it
+    for a left-* RAID 5: starting on the last disk and walking left one disk per
+    stripe. Same ground truth as the rest of the project, at 32 pixels.
+
+    Only the parity *placement* is shown, which is what left-symmetric and
+    left-asymmetric share; the data ordering that tells them apart is not legible
+    at this size, so the icon does not claim it.
+  -->
+  <rect width="32" height="32" rx="5" fill="#0a0e14"/>
+  <g fill="#00ff9f">
+    <rect x="2.5"  y="2.5"  width="6" height="6" rx="1"/>
+    <rect x="9.5"  y="2.5"  width="6" height="6" rx="1"/>
+    <rect x="16.5" y="2.5"  width="6" height="6" rx="1"/>
+
+    <rect x="2.5"  y="9.5"  width="6" height="6" rx="1"/>
+    <rect x="9.5"  y="9.5"  width="6" height="6" rx="1"/>
+    <rect x="23.5" y="9.5"  width="6" height="6" rx="1"/>
+
+    <rect x="2.5"  y="16.5" width="6" height="6" rx="1"/>
+    <rect x="16.5" y="16.5" width="6" height="6" rx="1"/>
+    <rect x="23.5" y="16.5" width="6" height="6" rx="1"/>
+
+    <rect x="9.5"  y="23.5" width="6" height="6" rx="1"/>
+    <rect x="16.5" y="23.5" width="6" height="6" rx="1"/>
+    <rect x="23.5" y="23.5" width="6" height="6" rx="1"/>
+  </g>
+  <g fill="#ffaa33">
+    <rect x="23.5" y="2.5"  width="6" height="6" rx="1"/>
+    <rect x="16.5" y="9.5"  width="6" height="6" rx="1"/>
+    <rect x="9.5"  y="16.5" width="6" height="6" rx="1"/>
+    <rect x="2.5"  y="23.5" width="6" height="6" rx="1"/>
+  </g>
+</svg>
