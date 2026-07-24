@@ -9,8 +9,8 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: two branches in review — `feature/vendor-js-yaml` (PR #4) and
-`feature/seo-metadata`. The scaffold alignment merged as PR #3, hooks included.
+**Active Work**: SEO metadata on `feature/seo-metadata` (PR #5). The scaffold alignment
+(PR #3, hooks included) and the js-yaml vendoring (PR #4) are both merged.
 Next candidate: **validator phase 2**.
 
 ## Recent Milestones
@@ -57,9 +57,13 @@ Next candidate: **validator phase 2**.
       constraints (`mixed-disk-sizes`, `uneven-spans` → warn, don't block). Its step 1
       (registry) may be pulled forward if the picker needs finer validity than `axis` alone.
       Details in `specs/` completion log and the 2026-06-14 handoff.
-- [ ] **Vendor js-yaml locally** — boot currently costs ~15 round-trips (external CDN
-      blocking script + per-file YAML fetches). Degrades gracefully but half a second of
-      blank screen on slow 4G. *In review as PR #4.*
+- [x] **Vendor js-yaml locally** — DONE (PR #4, merged). `vendor/js-yaml/js-yaml.min.js`
+      (4.1.0, MIT, fetched from the GitHub tag, checksum recorded in `vendor/README.md`)
+      replaces the blocking `cdn.jsdelivr.net` script in **both** `index.html` and
+      `kb.html`. Removes a third-party DNS + TLS + round-trip from the boot path, and the
+      dependency on a host nobody here controls. KaTeX in `kb.html` is still on jsDelivr —
+      it ships web fonts, so it is a directory rather than a file; worth doing only if the
+      reference content actually uses formulas.
 - [x] **SEO metadata** — DONE. Both pages had no `description`, no canonical, no social
       preview and no favicon (so `/favicon.ico` was a 404). Added: descriptions,
       search-shaped titles, canonical, Open Graph + Twitter card, `theme-color`, a
@@ -83,8 +87,9 @@ Next candidate: **validator phase 2**.
       the project has deliberately avoided, so it is a real trade, not a detail.
       Whichever is chosen, `TechArticle`/`LearningResource` JSON-LD becomes honest then.
 - [ ] **Google Fonts is still a third-party blocking request** — the same argument that
-      applies to js-yaml, on the critical path of both pages. Self-hosting JetBrains
-      Mono would close it (KaTeX in `kb.html` is a separate, heavier case).
+      justified vendoring js-yaml, and now the last external host on the critical path of
+      both pages. Self-hosting JetBrains Mono would close it (KaTeX in `kb.html` is a
+      separate, heavier case: it ships web fonts of its own).
 - [ ] **TypeScript via `@ts-check`** — incremental, zero runtime change.
 - [x] **CI** — DONE (PR #2, merged). `.github/workflows/tests.yml` runs the 10 headless
       suites (one at a time, zero deps) on every push to main and every PR. `main` is now
