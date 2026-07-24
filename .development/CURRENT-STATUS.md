@@ -9,10 +9,17 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: none in flight. Next candidate is the **mobile inline picker** (see below).
+**Active Work**: none in flight. Next candidates: **vendor js-yaml locally** and/or
+**validator phase 2** (see below).
 
 ## Recent Milestones
 
+- Mobile **tap-to-build** (PR #1, merged to `main`, live): the mobile inline picker
+  grew into a full tap-to-build flow — every empty zone (canvas, loose disk, array,
+  attribute slot) taps open an inline picker of what fits, each option carrying its
+  own action; soft glow on the active zone; canvas-first mobile layout. Additive, not
+  gated (drag stays the desktop path). **Scope fixed: single backplane**; multi-group
+  RAID on the data layer stays. Validated in-browser (author + a designer) - 2026-07-24
 - Repo extraction + Vercel + custom domain: game split into its own repo (89-commit
   history preserved), connected to Vercel, `raid-sandbox.dev` live in HTTPS,
   site stubs forward old URLs - 2026-07-24
@@ -26,11 +33,12 @@ forwards its two indexed game URLs here via canonical + refresh stubs.
 
 ## Next Steps (task list)
 
-- [ ] **Mobile inline picker** — invert the touch flow: tap an empty slot → it offers
-      the piece types that fit its `axis` (inline expansion), instead of drag-to-place.
-      Machinery mostly exists: `canvas-controller.js` sets `el.dataset.axis`; the drop
-      handler already filters `payload.type === axis`. Kills the tutorial question and
-      makes invalid combinations *unbuildable*.
+- [x] **Mobile inline picker** — DONE, shipped as mobile **tap-to-build** (PR #1, live).
+      Grew beyond the original slot picker: every empty zone taps open an inline picker;
+      reusable `_openPicker(anchor, options, {kind, placeAfter})`; canvas-first layout;
+      persistent "+ add a disk" zone keeps multi-group RAID reachable by tap. Follow-up
+      parked: **nesting arrays via tap** (RAID 50/60) still needs drag on desktop. The
+      datacenter/`seal`/`edit` roadmap is in `.memory-bank/ideas/2026-07-24-datacenter-tab-seal-edit.md`.
 - [ ] **Validator phase 2** — refactor `validator.js` into a declarative rule registry
       ({code, severity, layer, run}), dedup by (code, nodeId); then add data-layer SOFT
       constraints (`mixed-disk-sizes`, `uneven-spans` → warn, don't block). Its step 1
@@ -42,8 +50,8 @@ forwards its two indexed game URLs here via canonical + refresh stubs.
 - [ ] **TypeScript via `@ts-check`** — incremental, zero runtime change.
 - [ ] **CI** — GitHub Actions running the headless node suites (Vercel preview deploys
       are a checkbox, not CI).
-- [ ] **Touch gesture** — re-scope after the inline picker (the `touch-dnd.js` shim may
-      become desktop-only dead code).
+- [ ] **Touch gesture** — re-scope now that tap-to-build ships: on touch, drag is largely
+      redundant, so `touch-dnd.js` may be reducible to a desktop-only path (or dead code).
 - [ ] **Knowledge Base rework** — scope undefined (Valentina's note); ask what feels
       wrong before touching `kb.html` / `kb.js`.
 
