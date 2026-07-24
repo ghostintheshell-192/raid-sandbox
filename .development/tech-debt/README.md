@@ -13,8 +13,16 @@ priority: [high|medium|low]
 status: [open|in-progress|resolved|closed|rejected]
 discovered: YYYY-MM-DD
 related: []  # List of related issue filenames
+related_decision: null  # Optional: link to reference/decisions/NNN-name.md
 ---
 ```
+
+### Linking to an architecture decision
+
+`related_decision` is a placeholder kept deliberately: **this project has no
+ADRs yet**, and `reference/decisions/` does not exist. If a decision here ever
+earns a durable record, create the directory, start from `001`, and link it from
+the issue. Do not point the field at another project's ADRs.
 
 ## Workflow
 
@@ -42,7 +50,7 @@ of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
 
-*Auto-updated: 2026-07-24 22:24*
+*Auto-updated: 2026-07-24 22:30*
 
 **High Priority:** None currently
 
