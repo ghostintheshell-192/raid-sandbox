@@ -3,11 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAID Sandbox</title>
+
+  <title>RAID Sandbox — build an array, see the real data layout</title>
+  <meta name="description" content="Drag disks onto a canvas, build a RAID array, and see where data and parity actually land — layouts follow the Linux md kernel rules. Free, in your browser.">
+  <link rel="canonical" href="https://raid-sandbox.dev/">
+  <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:image must be an absolute URL: the crawlers that read
+       it are not fetching this page from the same origin. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/">
+  <meta property="og:title" content="RAID Sandbox — build an array, see the real data layout">
+  <meta property="og:description" content="Drag disks onto a canvas, build a RAID array, and see where data and parity actually land — layouts follow the Linux md kernel rules.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/styles.css">
   <link rel="stylesheet" href="styles/sandbox.css">
+
+  <!--
+    Structured data. Every field below is a fact that can be checked against the
+    site itself. Deliberately absent: aggregateRating, reviewCount, datePublished
+    — this project has no ratings and no reviews, and inventing them would be
+    both a lie about the site and a structured-data policy violation.
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "RAID Sandbox",
+    "url": "https://raid-sandbox.dev/",
+    "description": "An interactive sandbox for RAID storage concepts: build arrays from physical components and watch the resulting data and parity layout render.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (modern web browser)",
+    "browserRequirements": "Requires JavaScript.",
+    "isAccessibleForFree": true,
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
 </head>
 <body>
 <div class="sbc-layout">

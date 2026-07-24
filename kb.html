@@ -3,11 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAID — Knowledge Base · Valentina Malavenda</title>
+  <title>RAID Knowledge Base — striping, mirroring, parity, rebuild</title>
+  <meta name="description" content="Reference notes behind the RAID Sandbox: storage layers, striping and redundancy, fault tolerance, capacity, throughput and rebuild time.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb.html">
+  <meta property="og:title" content="RAID Knowledge Base — striping, mirroring, parity, rebuild">
+  <meta property="og:description" content="Reference notes behind the RAID Sandbox: storage layers, striping and redundancy, fault tolerance, capacity, throughput, rebuild time.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/styles.css">
+
+  <!--
+    No JSON-LD here on purpose. The obvious candidates (Article, TechArticle,
+    LearningResource) all describe a body of text, and this page ships an empty
+    #kb-content that kb.js fills from intro.yaml at runtime. Declaring an article
+    whose text is not in the served HTML would be asserting more than the page
+    delivers. It becomes appropriate if the content is ever inlined or
+    pre-rendered — see the SEO note in .development/CURRENT-STATUS.md.
+  -->
 </head>
 <body>
 
