@@ -56,3 +56,7 @@ Thumbs.db
 node_modules/
 coverage/
 npm-debug.log*
+
+# ---- Python bytecode (the doc generators in .development/scripts/) ----
+__pycache__/
+*.pyc

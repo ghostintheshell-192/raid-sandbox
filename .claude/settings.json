@@ -11,6 +11,25 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.development/scripts/generate-architecture.sh\" >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.development/scripts/generate-index.py\" >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.development/scripts/update-tech-debt-index.py\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

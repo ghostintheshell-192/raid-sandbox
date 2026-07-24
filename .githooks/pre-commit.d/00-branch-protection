@@ -1,0 +1,64 @@
+#!/bin/bash
+# Pre-commit module: branch protection for `main`.
+#
+# GitHub's protection on main is deliberately lightweight: the `headless` check
+# gates PRs, but `enforce_admins: false` leaves the owner able to commit
+# directly — on purpose, so a single maintainer can land a doc fix without the
+# PR ceremony. This hook keeps that door open and closes the other one: on
+# `main`, doc-only commits pass; anything touching code needs a branch.
+#
+# "Doc-only" = every staged path is a *.md file or lives under .development/.
+# Deliberately narrow: .claude/settings.json, data/*.yaml and src/ are code as
+# far as this check is concerned.
+#
+# There is no `develop` branch on this project, and no spec-workflow hook — the
+# scaffold's clauses for both were dropped rather than carried over dead.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+
+echo -e "${GREEN}[Branch Protection]${NC} Checking current branch..."
+
+if [ "$BRANCH" != "main" ]; then
+    echo -e "${GREEN}✓ Branch '$BRANCH' OK${NC}"
+    exit 0
+fi
+
+# Merges are the expected way to get work into main; only direct authoring
+# of new work is what this module is about.
+if [ -f "$GIT_DIR/MERGE_HEAD" ]; then
+    echo -e "${GREEN}✓ Merge commit on 'main' allowed${NC}"
+    exit 0
+fi
+
+STAGED=$(git diff --cached --name-only)
+NON_DOC=$(echo "$STAGED" | grep -vE '(\.md$|^\.development/)')
+
+if [ -z "$NON_DOC" ]; then
+    echo -e "${GREEN}✓ Doc-only commit on 'main' allowed${NC}"
+    exit 0
+fi
+
+echo ""
+echo -e "${RED}═══════════════════════════════════════════════${NC}"
+echo -e "${RED}  COMMIT BLOCCATO: 'main' accetta solo doc${NC}"
+echo -e "${RED}═══════════════════════════════════════════════${NC}"
+echo ""
+echo -e "${YELLOW}Questi file staged non sono documentazione:${NC}"
+echo "$NON_DOC" | sed 's/^/    /'
+echo ""
+echo -e "${YELLOW}Crea un branch dedicato:${NC}"
+echo ""
+echo "  git checkout -b feature/nome-feature"
+echo "  git checkout -b fix/nome-bug"
+echo "  git checkout -b refactor/descrizione"
+echo ""
+echo -e "${YELLOW}Per bypass (NON RACCOMANDATO):${NC}"
+echo "  git commit --no-verify"
+echo ""
+exit 1

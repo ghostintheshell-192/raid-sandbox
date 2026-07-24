@@ -1,0 +1,48 @@
+#!/bin/bash
+# Pre-commit module: derived-docs regeneration.
+#
+# Delegates to the project's docs-update entry point and stages whatever
+# generated files changed. It knows nothing about the generators themselves —
+# that knowledge lives in .development/automation/docs-update.sh.
+#
+# This overlaps with the SessionStart hook in .claude/settings.json but does
+# not duplicate it: that one refreshes the docs when a session opens, this one
+# guarantees the commit itself never carries a stale ARCHITECTURE.md.
+#
+# Never blocks: derived docs are an output, not a gate.
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+ENTRY_POINT="$PROJECT_ROOT/.development/automation/docs-update.sh"
+
+if [[ ! -x "$ENTRY_POINT" ]]; then
+    exit 0
+fi
+
+echo -e "${BLUE}[Derived Docs]${NC}"
+
+(cd "$PROJECT_ROOT" && "$ENTRY_POINT") | sed 's/^/  /'
+
+GENERATED=(
+    ".development/ARCHITECTURE.md"
+    ".development/INDEX.md"
+    ".development/tech-debt/README.md"
+)
+STAGED_ANY=0
+for file in "${GENERATED[@]}"; do
+    if ! git diff --quiet "$PROJECT_ROOT/$file" 2>/dev/null; then
+        git add "$PROJECT_ROOT/$file"
+        STAGED_ANY=1
+    fi
+done
+
+if [[ $STAGED_ANY -eq 1 ]]; then
+    echo -e "  ${GREEN}✓${NC} Regenerated docs staged"
+else
+    echo -e "  ${GREEN}✓${NC} Derived docs already current"
+fi
+
+exit 0
