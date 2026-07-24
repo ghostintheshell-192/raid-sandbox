@@ -24,10 +24,12 @@ The first three run automatically at session start (`SessionStart` hook in
 `.claude/settings.json`); `session-archive.py` runs at `SessionEnd`. All are
 idempotent and safe to run by hand.
 
-## No ADRs here
-
-There is no `reference/decisions/`: this project has recorded no ADRs. Do not
-import them from another project — see `.claude/CLAUDE.md`.
+- **`reference/`** — durable reference documentation
+  - `decisions/` — ADRs (`NNN-name.md`). **Empty: no ADRs recorded yet.** Start
+    from `001` when one is earned; `ARCHITECTURE.md` grows a "Key Decisions"
+    section automatically. Never import another project's ADRs — see
+    `.claude/CLAUDE.md`.
+  - `technical/` — technical notes
 
 ## Related
 

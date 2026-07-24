@@ -48,14 +48,15 @@ The following rules are automatically loaded from `.claude/rules/`:
 
 ## No ADRs on this project
 
-There is no `.development/reference/decisions/` here and no `key-decisions.md`:
-**this project has recorded no ADRs.** The architecture decisions that exist
-(vanilla stack, level derived rather than selected, no license for now) live in
-`.claude/rules/overview.md` and in the handoffs.
+`.development/reference/decisions/` exists but is **empty**: this project has
+recorded no ADRs yet, and there is no `key-decisions.md`. The architecture
+decisions that exist (vanilla stack, level derived rather than selected, no
+license for now) live in `.claude/rules/overview.md` and in the handoffs.
 
 Do **not** import ADRs, ADR numbers, or a `key-decisions.md` from another
-project — they belong to that project, not this one. If a decision here earns a
-durable record, create the directory and start from `001`.
+project — they belong to that project, not this one. When a decision here earns
+a durable record, start from `001`; the "Key Decisions" section of the generated
+`ARCHITECTURE.md` fills itself in.
 
 ---
 

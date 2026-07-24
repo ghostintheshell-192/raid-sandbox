@@ -32,6 +32,9 @@ The dependency arrow points one way. `engine/` never reaches into `sandbox/`.
 (`drivers/md/raid5.c`, `raid10.c`). Golden tables are hand-derived from the
 kernel rules and never regenerated from the engine.
 
+## Key Decisions
+
+
 ## Project Tree
 
 > Auto-generated from source code.

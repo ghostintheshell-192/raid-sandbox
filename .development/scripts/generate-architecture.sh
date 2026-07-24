@@ -113,10 +113,10 @@ build_find_name_args() {
 }
 
 generate_adr_list() {
-    # No ADR directory = this project has no ADRs. Emit nothing rather than a
-    # pointer to a directory that does not exist: a dangling reference reads as
-    # "the decisions are recorded elsewhere" and sends the reader hunting.
-    [[ -d "$ADR_DIR" ]] || return
+    if [[ ! -d "$ADR_DIR" ]]; then
+        echo "- See \`reference/decisions/\` for architecture decisions"
+        return
+    fi
 
     for adr in "$ADR_DIR"/[0-9]*.md; do
         [[ -f "$adr" ]] || continue
@@ -143,13 +143,11 @@ generate_header() {
 
     generate_project_header
 
-    # Section header only if there is something to put under it.
-    if [[ -d "$ADR_DIR" ]]; then
-        echo ""
-        echo "## Key Decisions"
-        echo ""
-        generate_adr_list
-    fi
+    echo ""
+    echo "## Key Decisions"
+    echo ""
+
+    generate_adr_list
 
     echo ""
     echo "## Project Tree"
