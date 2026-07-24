@@ -23,15 +23,22 @@
     let _animating   = false;
     let _stripes     = 4;
     let _dragPayload = null;   // set on dragstart, read during dragover, cleared on dragend
+    let _sidebarEl   = null;   // set by setupSidebar; the static option catalogue for the picker
 
     _setupCanvasDropTarget();
 
     // Cleanup for cancelled drags / drops outside any target (dragend always fires).
     document.addEventListener('dragend', () => { _dragPayload = null; _clearHint(); });
 
+    // Inline picker dismissal: any click that reaches the document (i.e. outside an
+    // anchor or an open picker — those stopPropagation) closes it, as does Escape.
+    document.addEventListener('click', () => _closePickers());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _closePickers(); });
+
     // ---- sidebar ------------------------------------------------------------
 
     function setupSidebar(sidebarEl) {
+      _sidebarEl = sidebarEl;   // the picker reads its option catalogue + labels from here
       sidebarEl.querySelectorAll('[data-drag]').forEach((chip) => {
         chip.setAttribute('draggable', 'true');
         chip.addEventListener('dragstart', (e) => {
@@ -192,6 +199,28 @@
           node.kind === 'disk' ? _makeDiskEl(id, node) : _makeArrayEl(id, node)
         );
       }
+      // Persistent add-zone: always present, so a fresh loose disk — and thus a
+      // separate RAID group — can be started by tap even when the canvas isn't
+      // empty (mirrors dragging a disk onto blank canvas). `roots` is a Set, so
+      // multiple independent groups are first-class state, not a workaround.
+      canvasEl.appendChild(_makeAddZone(state.roots.size === 0));
+    }
+
+    // A tap-to-build zone that drops a fresh loose disk. When the canvas is empty
+    // it fills the space as the "start here" affordance; otherwise it sits after
+    // the groups as a quiet "+ add a disk" that can seed a new, separate group.
+    function _makeAddZone(isEmpty) {
+      const zone = document.createElement('div');
+      zone.className   = isEmpty ? 'sbc-canvas-empty' : 'sbc-canvas-add';
+      zone.textContent = isEmpty
+        ? 'Tap to add a disk — or drag one from the palette'
+        : '+ add a disk';
+      zone.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _openPicker(zone, _diskPickerOptions((sizeGB, protocol) => CS.addDisk(state, sizeGB, protocol)),
+                    { kind: 'disk' });
+      });
+      return zone;
     }
 
     // ---- element builders ---------------------------------------------------
@@ -222,6 +251,17 @@
         e.stopPropagation();
         _dragPayload = { source: 'canvas', type: 'disk', id };
         setDrag(e, _dragPayload);
+      });
+      // Tap-to-build: a disk offers disk chips. A loose disk forms a new array
+      // with the chosen disk; a disk already in an array grows that array.
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const parent = _findParentArray(id);
+        _openPicker(el, _diskPickerOptions((sizeGB, protocol) => {
+          const newId = CS.addDisk(state, sizeGB, protocol);
+          if (parent) CS.addToArray(state, parent, newId);
+          else        CS.group(state, [id, newId]);
+        }), { kind: 'disk' });
       });
       el.addEventListener('dragover', (e) => {
         e.preventDefault(); e.stopPropagation();
@@ -273,6 +313,15 @@
       // Dissolve button: returns disks to canvas, removes array.
       el.appendChild(_deleteBtn(() => { CS.dissolve(state, id); _evaluateAndRender(); }));
 
+      // Tap-to-build: tapping the array body (outside slots/members/×) grows it.
+      // The picker lands after the members, reading as "one more disk here".
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _openPicker(el, _diskPickerOptions((sizeGB, protocol) => {
+          CS.addToArray(state, id, CS.addDisk(state, sizeGB, protocol));
+        }), { kind: 'disk', placeAfter: members });
+      });
+
       el.addEventListener('dragover', (e) => {
         e.preventDefault(); e.stopPropagation();
         _previewDrop(el, 'array', id);
@@ -305,6 +354,113 @@
       return row;
     }
 
+    // ---- inline picker (touch-first, additive to drag-and-drop) -------------
+    // Every empty zone offers, in-flow, the things that can go into it: a slot
+    // offers its axis values, an empty canvas / loose disk / array offers disk
+    // chips. The chosen option carries its own action (opt.apply), so the same
+    // picker widget drives both attribute-setting and building. Drag still works
+    // for mouse users; this just frees touch from it.
+
+    // Algorithm options depend on the array's class, exactly as _makeSlots
+    // decides whether to show the slot at all (parity vs flat mirror).
+    const _ALGOS_PARITY = ['left-symmetric', 'left-asymmetric', 'right-symmetric', 'right-asymmetric'];
+    const _ALGOS_MIRROR = ['near', 'far', 'offset'];
+
+    /** Valid option values for an axis on a given array, in catalogue order. */
+    function _axisOptions(axis, arrayId) {
+      if (axis === 'algorithm') {
+        const node = state.nodes.get(arrayId);
+        if (!node) return [];
+        const isParity     = node.redundancy === 'parity1' || node.redundancy === 'parity2';
+        const isFlatMirror = node.segmentation === 'striped' && node.redundancy === 'mirror';
+        if (isParity)     return _ALGOS_PARITY.slice();
+        if (isFlatMirror) return _ALGOS_MIRROR.slice();
+        return [];
+      }
+      // segmentation / redundancy: read the static catalogue from the sidebar chips.
+      if (!_sidebarEl) return [];
+      return Array.from(_sidebarEl.querySelectorAll(`[data-drag="${axis}"]`))
+                  .map((c) => c.dataset.value)
+                  .filter(Boolean);
+    }
+
+    /** Human label for a value, reused from the sidebar chip; falls back to the raw value. */
+    function _axisLabel(axis, value) {
+      const chip = _sidebarEl &&
+        _sidebarEl.querySelector(`[data-drag="${axis}"][data-value="${value}"]`);
+      return chip ? chip.textContent.trim() : value;
+    }
+
+    /** Apply an axis value (shared by drop and picker), then re-evaluate + render. */
+    function _applyAxis(axis, arrayId, value) {
+      if (axis === 'segmentation')    CS.setSegmentation(state, arrayId, value);
+      else if (axis === 'redundancy') CS.setRedundancy(state, arrayId, value);
+      else if (axis === 'algorithm')  CS.setAlgorithm(state, arrayId, value);
+      _evaluateAndRender();
+    }
+
+    // ---- picker option builders ({ label, apply }) --------------------------
+
+    /** Axis values for a slot, each wired to set that value on the array. */
+    function _axisPickerOptions(axis, arrayId) {
+      return _axisOptions(axis, arrayId).map((value) => ({
+        label: _axisLabel(axis, value),
+        apply: () => _applyAxis(axis, arrayId, value),
+      }));
+    }
+
+    /**
+     * Disk chips from the sidebar catalogue, each wired to `place(sizeGB, protocol)`
+     * — the caller decides whether the new disk lands loose, forms an array, or
+     * joins one.
+     */
+    function _diskPickerOptions(place) {
+      if (!_sidebarEl) return [];
+      return Array.from(_sidebarEl.querySelectorAll('[data-drag="disk"]')).map((chip) => ({
+        label: chip.textContent.trim(),
+        apply: () => { place(Number(chip.dataset.size), chip.dataset.protocol); _evaluateAndRender(); },
+      }));
+    }
+
+    // ---- picker widget ------------------------------------------------------
+
+    /** Close every open picker and drop the active-zone glow. */
+    function _closePickers() {
+      canvasEl.querySelectorAll('.sbc-picker').forEach((p) => p.remove());
+      canvasEl.querySelectorAll('.sbc-picking')
+              .forEach((s) => s.classList.remove('sbc-picking'));
+    }
+
+    /**
+     * Toggle an inline picker anchored to `anchorEl` (which gets the glow).
+     * The panel is placed right after `placeAfter` (defaults to the anchor), so
+     * a slot can drop it under its whole row rather than splitting the row.
+     */
+    function _openPicker(anchorEl, options, { kind, placeAfter } = {}) {
+      const wasOpen = anchorEl.classList.contains('sbc-picking');
+      _closePickers();
+      if (wasOpen || !options.length) return;   // second click on the same zone closes it
+
+      const panel = document.createElement('div');
+      panel.className = 'sbc-picker';
+      if (kind) panel.dataset.kind = kind;
+      for (const opt of options) {
+        const pick = document.createElement('button');
+        pick.className   = 'sbc-pick';
+        pick.textContent = opt.label;
+        pick.addEventListener('dragstart', (e) => e.preventDefault());
+        pick.addEventListener('click', (e) => {
+          e.stopPropagation();   // opt.apply re-renders, which wipes the panel
+          opt.apply();
+        });
+        panel.appendChild(pick);
+      }
+
+      anchorEl.classList.add('sbc-picking');
+      const ref = placeAfter || anchorEl;
+      ref.parentNode.insertBefore(panel, ref.nextSibling);
+    }
+
     function _makeSlot(axis, arrayId, value) {
       const el = document.createElement('div');
       el.className = value ? 'sbc-slot sbc-slot--filled' : 'sbc-slot sbc-slot--empty';
@@ -312,7 +468,7 @@
       el.dataset.arrayId = arrayId;
 
       if (value) {
-        el.textContent = value;
+        el.appendChild(document.createTextNode(_axisLabel(axis, value)));
         const x = document.createElement('button');
         x.className   = 'sbc-delete sbc-delete--inline';
         x.textContent = '×';
@@ -320,18 +476,22 @@
         x.addEventListener('dragstart', (e) => e.preventDefault());
         x.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (axis === 'segmentation')    CS.setSegmentation(state, arrayId, null);
-          else if (axis === 'redundancy') CS.setRedundancy(state, arrayId, null);
-          else if (axis === 'algorithm')  CS.setAlgorithm(state, arrayId, null);
-          _evaluateAndRender();
+          _applyAxis(axis, arrayId, null);
         });
         el.appendChild(x);
       } else {
         const hint = document.createElement('span');
         hint.className   = 'sbc-slot-hint';
-        hint.textContent = `drop ${axis}`;
+        hint.textContent = `+ ${axis}`;
         el.appendChild(hint);
       }
+
+      // Tap/click opens the inline picker (touch-first path, additive to DnD).
+      // The panel lands under the whole slots row, not inside this one slot.
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _openPicker(el, _axisPickerOptions(axis, arrayId), { kind: axis, placeAfter: el.parentNode });
+      });
 
       el.addEventListener('dragover', (e) => {
         e.preventDefault(); e.stopPropagation();
@@ -345,16 +505,7 @@
         el.classList.remove('sbc-slot--over');
         const payload = getDrag(e);
         if (!payload || payload.source !== 'sidebar') return;
-        if (payload.type === 'segmentation' && axis === 'segmentation') {
-          CS.setSegmentation(state, arrayId, payload.value);
-          _evaluateAndRender();
-        } else if (payload.type === 'redundancy' && axis === 'redundancy') {
-          CS.setRedundancy(state, arrayId, payload.value);
-          _evaluateAndRender();
-        } else if (payload.type === 'algorithm' && axis === 'algorithm') {
-          CS.setAlgorithm(state, arrayId, payload.value);
-          _evaluateAndRender();
-        }
+        if (payload.type === axis) _applyAxis(axis, arrayId, payload.value);
       });
 
       return el;
