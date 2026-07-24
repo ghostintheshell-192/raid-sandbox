@@ -9,11 +9,20 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: none in flight. Next candidates: **vendor js-yaml locally** and/or
-**validator phase 2** (see below).
+**Active Work**: scaffold alignment on `chore/scaffold-alignment` (see below). Next
+candidates after it: **vendor js-yaml locally**, then **validator phase 2**.
 
 ## Recent Milestones
 
+- **Scaffold alignment** (`chore/scaffold-alignment`): the project config was a partial,
+  older-generation copy of the dev-dash scaffold. Restored the root `CLAUDE.md` entry
+  point and — the actual gap — the **Session Start** directive that makes the latest
+  handoff the first thing read in a session. `.memory-bank/` flattened (the
+  `projects/raid-explorer/` nesting was a leftover of the repo split). Doc generators
+  ported: `ARCHITECTURE.md`, `INDEX.md` and the tech-debt index now regenerate at session
+  start, and `ARCHITECTURE.md` is imported into every session as the navigation map.
+  Dev-dash-specific leftovers removed (ADR references, "issues for DevDash"); **this
+  project still has no ADRs and imports none** - 2026-07-24
 - **CI + branch protection** (PR #2, merged): GitHub Actions runs the 10 headless suites
   on push/PR; `main` protected lightly (required `headless` check to merge PRs, admin
   commits still allowed). The automated gate the repo lacked - 2026-07-24
