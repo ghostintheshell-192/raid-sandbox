@@ -135,6 +135,14 @@ def generate_index_section(issues: List[Dict]) -> str:
     return '\n'.join(lines)
 
 
+def strip_timestamp(text: str) -> str:
+    """Drop the updated-at line so two runs can be compared for real change."""
+    return '\n'.join(
+        line for line in text.splitlines()
+        if not line.startswith('*Auto-updated:')
+    )
+
+
 def update_readme(new_section: str) -> bool:
     """Update README.md with new index section."""
     if not README_FILE.exists():
@@ -158,6 +166,13 @@ def update_readme(new_section: str) -> bool:
         else:
             # Just append at end
             new_content = content.rstrip() + '\n\n' + new_section
+
+    # Rewrite only on real change. A pre-commit hook regenerates this file on
+    # every commit; without the guard the refreshed "*Auto-updated:*" line
+    # alone would attach a one-line diff to each of them — noise that trains
+    # the reader to stop reading the diff.
+    if strip_timestamp(content) == strip_timestamp(new_content):
+        return True
 
     README_FILE.write_text(new_content, encoding='utf-8')
     return True

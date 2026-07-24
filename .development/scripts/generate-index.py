@@ -16,6 +16,10 @@ DOCS_DIR = PROJECT_ROOT / "docs"
 INDEX_FILE = DEVELOPMENT_DIR / "INDEX.md"
 DAYS_RECENT = 7
 
+# Marker of the generated-at line. Kept out of the change detection in main():
+# see the comment there for why the file must not rewrite itself every run.
+TIMESTAMP_PREFIX = "*Auto-generated:"
+
 # Folders to exclude from indexing
 EXCLUDE_FOLDERS = {
     "scripts",
@@ -68,6 +72,19 @@ def scan_directory(base_dir: Path, relative_to: Path) -> Dict[str, List[dict]]:
             result.update(sub_result)
 
     return result
+
+
+def recency_key(file_info: dict) -> tuple:
+    """Sort key: most recent day first, then name.
+
+    Deliberately coarse. Sorting by the raw mtime is precise to the second, but
+    every entry is *rendered* only to the day ("today", "2d ago"), so a
+    second-level tie-break produces reorderings the reader cannot account for.
+    INDEX.md indexes itself, so writing it bumps its own mtime and the next run
+    would shuffle the neighbouring entries — a diff on every commit with no
+    change behind it. Day granularity plus the name makes the order total.
+    """
+    return (-file_info["mtime"].toordinal(), file_info["name"])
 
 
 def format_file_entry(file_info: dict, now: datetime) -> str:
@@ -129,8 +146,8 @@ def generate_index() -> str:
         lines.append(f"### {folder_display}/ ({len(files)} files)")
         lines.append("")
 
-        # Sort files by modification time (newest first)
-        files.sort(key=lambda x: x["mtime"], reverse=True)
+        # Sort files by modification day (newest first), then by name
+        files.sort(key=recency_key)
 
         for f in files:
             lines.append(format_file_entry(f, now))
@@ -173,7 +190,7 @@ def generate_index() -> str:
 
     recent_cutoff = now - timedelta(days=DAYS_RECENT)
     recent_files = [f for f in all_files if f["mtime"] > recent_cutoff]
-    recent_files.sort(key=lambda x: x["mtime"], reverse=True)
+    recent_files.sort(key=recency_key)
 
     if recent_files:
         for i, f in enumerate(recent_files[:10], 1):
@@ -191,9 +208,29 @@ def generate_index() -> str:
     return "\n".join(lines)
 
 
+def strip_timestamp(text: str) -> str:
+    """Drop the generated-at line so two runs can be compared for real change."""
+    return "\n".join(
+        line for line in text.splitlines() if not line.startswith(TIMESTAMP_PREFIX)
+    )
+
+
 def main():
-    """Main entry point."""
+    """Main entry point.
+
+    Rewrites INDEX.md only when its substance changed. The timestamp alone is
+    not substance: a pre-commit hook regenerates this file on every commit, and
+    an unconditional write would attach a one-line diff to each of them —
+    noise that trains the reader to stop looking at the diff.
+    """
     content = generate_index()
+
+    if INDEX_FILE.exists():
+        current = INDEX_FILE.read_text(encoding="utf-8")
+        if strip_timestamp(current) == strip_timestamp(content):
+            print(f"Unchanged {INDEX_FILE}")
+            return
+
     INDEX_FILE.write_text(content, encoding="utf-8")
     print(f"Generated {INDEX_FILE}")
 

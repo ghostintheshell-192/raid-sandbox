@@ -1,6 +1,6 @@
 # INDEX - Development Documentation
 
-*Auto-generated: 2026-07-24 22:46*
+*Auto-generated: 2026-07-24 23:10*
 
 ---
 
@@ -18,9 +18,9 @@
 ### (root)/ (4 files)
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) (4KB, 2026-07-24) **RECENT**
-- [README.md](README.md) (1KB, 2026-07-24) **RECENT**
-- [INDEX.md](INDEX.md) (1KB, 2026-07-24) **RECENT**
 - [CURRENT-STATUS.md](CURRENT-STATUS.md) (5KB, 2026-07-24) **RECENT**
+- [INDEX.md](INDEX.md) (1KB, 2026-07-24) **RECENT**
+- [README.md](README.md) (1KB, 2026-07-24) **RECENT**
 
 ### specs/implemented/ (1 files)
 
@@ -45,13 +45,13 @@
 ## Recently Modified (last 7 days)
 
 1. [ARCHITECTURE.md](ARCHITECTURE.md) (today)
-2. [README.md](README.md) (today)
+2. [CURRENT-STATUS.md](CURRENT-STATUS.md) (today)
 3. [INDEX.md](INDEX.md) (today)
-4. [README.md](tech-debt/README.md) (today)
-5. [_TEMPLATE.md](tech-debt/_TEMPLATE.md) (today)
-6. [CURRENT-STATUS.md](CURRENT-STATUS.md) (today)
-7. [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (today)
-8. [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) (today)
+4. [README.md](README.md) (today)
+5. [README.md](tech-debt/README.md) (today)
+6. [_TEMPLATE.md](tech-debt/_TEMPLATE.md) (today)
+7. [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) (today)
+8. [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (today)
 
 ---
 
