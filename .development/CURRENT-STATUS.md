@@ -14,6 +14,9 @@ forwards its two indexed game URLs here via canonical + refresh stubs.
 
 ## Recent Milestones
 
+- **CI + branch protection** (PR #2, merged): GitHub Actions runs the 10 headless suites
+  on push/PR; `main` protected lightly (required `headless` check to merge PRs, admin
+  commits still allowed). The automated gate the repo lacked - 2026-07-24
 - Mobile **tap-to-build** (PR #1, merged to `main`, live): the mobile inline picker
   grew into a full tap-to-build flow — every empty zone (canvas, loose disk, array,
   attribute slot) taps open an inline picker of what fits, each option carrying its
@@ -48,8 +51,12 @@ forwards its two indexed game URLs here via canonical + refresh stubs.
       blocking script + per-file YAML fetches). Degrades gracefully but half a second of
       blank screen on slow 4G. Same phase as mobile work.
 - [ ] **TypeScript via `@ts-check`** — incremental, zero runtime change.
-- [ ] **CI** — GitHub Actions running the headless node suites (Vercel preview deploys
-      are a checkbox, not CI).
+- [x] **CI** — DONE (PR #2, merged). `.github/workflows/tests.yml` runs the 10 headless
+      suites (one at a time, zero deps) on every push to main and every PR. `main` is now
+      branch-protected (lightweight): the `headless` check is **required to merge a PR**;
+      `enforce_admins: false` so the owner can still commit directly to main; force-push
+      and deletion of main are blocked. This is the automated gate a future `develop`
+      flow was waiting on.
 - [ ] **Touch gesture** — re-scope now that tap-to-build ships: on touch, drag is largely
       redundant, so `touch-dnd.js` may be reducible to a desktop-only path (or dead code).
 - [ ] **Knowledge Base rework** — scope undefined (Valentina's note); ask what feels
