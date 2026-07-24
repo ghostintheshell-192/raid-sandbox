@@ -51,6 +51,13 @@ part the next session cannot reconstruct from `MEMORY.md` or the git log, so it
 is the most valuable thing in the file. If a task has a caveat ("ask before
 touching X"), it belongs here too.
 
+**If this session did not advance the project's task list** — config, tooling,
+documentation or scaffold work — say so explicitly at the top and **link the
+most recent handoff that does carry it**, instructing the next session to read
+that one as well. Otherwise the next session reads "we updated the config" and
+has no idea what the project is actually working on. Do not copy the list
+across: link it, so there is one authority and it cannot go stale.
+
 If the session touched branches or merges, record branch names and commit
 hashes in **Notes** so git state can be resumed without hunting.
 
