@@ -1,5 +1,20 @@
 # Git Workflow and Development Commands
 
+## Session Start
+
+At the beginning of every session, before starting any work:
+
+1. **Read the latest handoff** in `.memory-bank/` (the most recent `.md` file by
+   date in the filename)
+2. **Read any linked files** referenced in the handoff (specs, idea notes,
+   related handoffs)
+3. **Cross-reference** with `memory/MEMORY.md` for stable project facts
+
+This is the continuity mechanism between sessions and it is not optional. The
+handoffs are session diaries — what was done, why, what is next, in priority
+order. `MEMORY.md` is a compact index of stable facts; it does **not** carry the
+task ordering or the per-task caveats, so starting from it alone loses them.
+
 ## Branch Strategy
 
 - **main**: Production. Vercel deploys automatically from `main` to raid-sandbox.dev.
@@ -49,8 +64,25 @@ no build step (static site); Vercel just serves the files.
 Valentina runs verification herself. When changes warrant it, flag *what* to check
 rather than running the suite proactively.
 
-## Session Handoffs
+## Session End
 
-At end of session, use `/handoff` to write a note in
-`.memory-bank/projects/raid-explorer/`. Handoffs are local (gitignored); only
+**Write a handoff note before ending any session.** This is non-negotiable: the
+`.memory-bank/` diary is the primary continuity mechanism (see *Session Start*),
+and skipping it breaks it for the next session.
+
+When the user signals end of session — in any form, in any language — invoke the
+`session-handoff` skill **before** replying farewell. Recognize "fermiamoci",
+"è tardi", "chiudiamo", "continuiamo domani", "ciao", `/exit`, `/clear`,
+explicit requests for a summary, and equivalent signals.
+
+The handoff lives **flat** in `.memory-bank/`, named `YYYY-MM-DD-HHmm-<slug>.md`,
+with a **NEXT** section carrying the remaining work in priority order. If the
+session touched branches or merges, include branch names and commit hashes so
+the next session can resume git state without hunting.
+
+Do not rely on the `SessionEnd` hook in `.claude/settings.json` — that archives
+the raw transcript to `.memory-bank/sessions/`, it does not produce a semantic
+handoff.
+
+Handoffs and session transcripts are local (gitignored); only
 `.memory-bank/ideas/` is tracked.
