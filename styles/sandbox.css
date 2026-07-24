@@ -146,6 +146,69 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-slot--filled[data-axis="algorithm"]    { background: rgba(230,126,34,.18); border: 1.5px solid rgba(230,126,34,.5); }
 .sbc-slot--empty[data-axis="algorithm"]     { border-color: rgba(230,126,34,.3); }
 
+/* Every slot is tappable: it opens the inline option picker. */
+.sbc-slot { cursor: pointer; }
+
+/* Active-zone glow: the tapped slot / disk / array / empty canvas lights up
+   softly while its picker is open — "you've selected where to put something". */
+.sbc-picking {
+  box-shadow: 0 0 0 2px rgba(120,170,255,.5), 0 0 14px rgba(120,170,255,.35);
+  border-radius: 8px;
+  transition: box-shadow .15s ease;
+}
+
+/* Inline picker — appears in-flow next to the zone it belongs to. */
+.sbc-picker {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  margin: .4rem 0 .2rem; padding: .5rem;
+  border-radius: 8px;
+  background: rgba(128,128,128,.08);
+  border: 1px solid rgba(128,128,128,.25);
+  animation: sbc-picker-in .12s ease-out;
+}
+@keyframes sbc-picker-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: none; }
+}
+.sbc-pick {
+  padding: .45rem .7rem; border-radius: 6px;
+  font-size: .78rem; font-weight: 600; color: inherit;
+  cursor: pointer; user-select: none;
+  border: 1px solid rgba(128,128,128,.35);
+  background: rgba(128,128,128,.1);
+  transition: background .15s;
+}
+.sbc-pick:hover { background: rgba(128,128,128,.22); }
+/* Kind colours mirror the sidebar chips, so the picker speaks the same language. */
+.sbc-picker[data-kind="disk"]         .sbc-pick { border-color: rgba(52,152,219,.5);  background: rgba(52,152,219,.12); }
+.sbc-picker[data-kind="segmentation"] .sbc-pick { border-color: rgba(155,89,182,.5); background: rgba(155,89,182,.12); }
+.sbc-picker[data-kind="redundancy"]   .sbc-pick { border-color: rgba(46,204,113,.5);  background: rgba(46,204,113,.12); }
+.sbc-picker[data-kind="algorithm"]    .sbc-pick { border-color: rgba(230,126,34,.5);  background: rgba(230,126,34,.12); }
+
+/* Empty canvas = a tap-to-build zone + the "start here" affordance. */
+.sbc-canvas-empty {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 120px; padding: 1.5rem;
+  text-align: center; font-size: .85rem; opacity: .55;
+  border: 2px dashed rgba(128,128,128,.3); border-radius: 10px;
+  cursor: pointer; transition: opacity .15s ease;
+}
+.sbc-canvas-empty:hover { opacity: .8; }
+/* When the empty-canvas picker opens, keep the dashed frame readable. */
+.sbc-canvas-empty.sbc-picking { opacity: .9; }
+
+/* Persistent add-zone after existing groups: quieter than the empty hint.
+   Tapping it seeds a fresh loose disk = the start of a separate RAID group. */
+.sbc-canvas-add {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: .5rem; padding: .55rem;
+  font-size: .8rem; font-weight: 600; opacity: .5;
+  border: 1.5px dashed rgba(128,128,128,.3); border-radius: 8px;
+  cursor: pointer; transition: opacity .15s ease;
+}
+.sbc-canvas-add:hover,
+.sbc-canvas-add.sbc-picking { opacity: .85; }
+
 .sbc-chip[data-drag="algorithm"]  { border-color: rgba(230,126,34,.5);  background: rgba(230,126,34,.12); }
 .sbc-chip[data-drag="component"] { border-color: rgba(149,165,166,.5); background: rgba(149,165,166,.12); }
 
@@ -348,6 +411,16 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
     display: flex; flex-direction: column;
     height: auto; min-height: 100vh; overflow: visible;
   }
+
+  /* Canvas-first: the data layer is the primary view, so it leads; the palette
+     — now a catalogue you tap into rather than the main gesture — drops to the
+     bottom. `order` only bites here, where the grid is a flex column. */
+  .sbc-header       { order: 0; }
+  .sbc-canvas-title { order: 1; }
+  .sbc-canvas       { order: 2; }
+  .sbc-physical     { order: 3; }
+  .sbc-results      { order: 4; }
+  .sbc-sidebar      { order: 5; }
 
   .sbc-header { padding: .6rem .8rem; gap: .6rem .8rem; }
   /* Inline usage hint adds noise on small screens — the status bar is enough. */
