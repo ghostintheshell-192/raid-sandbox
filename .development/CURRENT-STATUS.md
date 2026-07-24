@@ -9,9 +9,9 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: SEO metadata on `feature/seo-metadata` (PR #5). The scaffold alignment
-(PR #3, hooks included) and the js-yaml vendoring (PR #4) are both merged.
-Next candidate: **validator phase 2**.
+**Active Work**: none in flight — PRs #3 (scaffold + hooks), #4 (js-yaml vendored) and
+#5 (SEO metadata) are all merged and live. Next candidate: **validator phase 2**; the
+open SEO ceiling (content not in the served HTML) is the other substantial one.
 
 ## Recent Milestones
 
