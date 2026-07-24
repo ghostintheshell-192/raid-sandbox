@@ -9,8 +9,8 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: scaffold alignment on `chore/scaffold-alignment` (see below). Next
-candidates after it: **vendor js-yaml locally**, then **validator phase 2**.
+**Active Work**: js-yaml vendoring on `feature/vendor-js-yaml` (see below). The scaffold
+alignment merged as PR #3, hooks included. Next candidate: **validator phase 2**.
 
 ## Recent Milestones
 
@@ -56,9 +56,13 @@ candidates after it: **vendor js-yaml locally**, then **validator phase 2**.
       constraints (`mixed-disk-sizes`, `uneven-spans` → warn, don't block). Its step 1
       (registry) may be pulled forward if the picker needs finer validity than `axis` alone.
       Details in `specs/` completion log and the 2026-06-14 handoff.
-- [ ] **Vendor js-yaml locally** — boot currently costs ~15 round-trips (external CDN
-      blocking script + per-file YAML fetches). Degrades gracefully but half a second of
-      blank screen on slow 4G. Same phase as mobile work.
+- [x] **Vendor js-yaml locally** — DONE. `vendor/js-yaml/js-yaml.min.js` (4.1.0, MIT,
+      fetched from the GitHub tag, checksum recorded in `vendor/README.md`) replaces the
+      blocking `cdn.jsdelivr.net` script in **both** `index.html` and `kb.html`. Removes
+      a third-party DNS + TLS + round-trip from the boot path, and the dependency on a
+      host nobody here controls. KaTeX in `kb.html` is still on jsDelivr — it ships web
+      fonts, so it is a directory rather than a file; worth doing only if the reference
+      content actually uses formulas.
 - [ ] **TypeScript via `@ts-check`** — incremental, zero runtime change.
 - [x] **CI** — DONE (PR #2, merged). `.github/workflows/tests.yml` runs the 10 headless
       suites (one at a time, zero deps) on every push to main and every PR. `main` is now
