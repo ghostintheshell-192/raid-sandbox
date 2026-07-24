@@ -4,8 +4,6 @@ priority: [high|medium|low]
 status: open
 discovered: YYYY-MM-DD
 related: []
-related_decision: null  # Optional: link to reference/decisions/NNN-name.md
-report: null  # Optional: link to archive/analysis/YYYY-MM-DD_report_agent-name.md
 ---
 
 # [Issue Title]
@@ -35,8 +33,7 @@ report: null  # Optional: link to archive/analysis/YYYY-MM-DD_report_agent-name.
 ## Related Documentation
 
 - **Related Issues**: (if any in `related:` frontmatter)
-- **Architecture Decision**: (if linked via `related_decision:`)
-- **Agent Report**: (if created from agent finding via `report:`)
+- **Spec**: (if the issue touches the domain model, link `.development/specs/`)
 - **Code Locations**: (link to specific files and line numbers)
 
 ---
