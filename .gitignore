@@ -1,0 +1,58 @@
+# ---- Session / personal (never tracked) ----
+.personal/
+
+# Memory bank: handoffs and session transcripts stay local (per-machine),
+# but tangential idea notes are tracked as provenance.
+.memory-bank/*
+!.memory-bank/ideas/
+
+# NOTE: .development/ IS tracked — design docs, specs, tech-debt and the
+# session-archive script live with the code.
+
+# ---- Claude Code local / per-machine ----
+.claude/settings.local.json
+.claude/agents
+
+# Harness-injected runtime artifacts show up as sandbox char devices (not real
+# files), so the trailing-slash patterns miss them — match them bare too.
+.claude/hooks
+.claude/launch.json
+.claude/loop.md
+.claude/output-styles
+.claude/routines
+.claude/scheduled_tasks.json
+.claude/workflows
+.mcp.json
+.tmp/
+
+# ---- Shell & system dotfiles (sandbox artifacts) ----
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+
+# ---- Git config (global, not project) ----
+.gitconfig
+.gitmodules
+
+# ---- Tool config ----
+.ripgreprc
+
+# ---- IDE ----
+.idea
+.idea/
+.vscode
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Node (the game is zero-dependency, but tests run under node) ----
+node_modules/
+coverage/
+npm-debug.log*
