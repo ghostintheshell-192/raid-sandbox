@@ -1,0 +1,30 @@
+name: tests
+
+# Headless suites run on every push to main and every PR. They are the automated
+# gate the project lacked (Vercel preview deploys check the UI, not the engine).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  headless:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # Zero runtime deps (no package.json to install); each suite is standalone
+      # and runs in its own node process — per .claude/rules/workflow.md
+      # ("run one at a time"). Run all of them, then fail if any was red, so a
+      # single run surfaces every failure instead of stopping at the first.
+      - name: Run headless suites (one at a time)
+        run: |
+          fail=0
+          for f in tests/*.test.js; do
+            echo "::group::$f"
+            node "$f" || fail=1
+            echo "::endgroup::"
+          done
+          exit $fail
