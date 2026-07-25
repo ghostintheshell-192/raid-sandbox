@@ -44,11 +44,16 @@
    * Build an array node over a list of member nodes (disks or arrays).
    * @param segmentation 'striped' | 'linear'
    * @param redundancy   'none' | 'mirror' | 'parity1' | 'parity2'
+   * @param id           the canvas node this array was compiled from, when there is
+   *                     one. Carried so a per-node consumer (the validator's
+   *                     (code, nodeId) dedup, UI highlighting) can tell two arrays
+   *                     apart; a hand-built tree has no canvas behind it and passes
+   *                     nothing. The model itself never reads it.
    */
-  function array(segmentation, redundancy, members, algorithm = null) {
+  function array(segmentation, redundancy, members, algorithm = null, id = null) {
     if (!SEGMENTATIONS.includes(segmentation)) throw new Error(`Unknown segmentation: ${segmentation}`);
     if (!REDUNDANCIES.includes(redundancy))    throw new Error(`Unknown redundancy: ${redundancy}`);
-    return { kind: 'array', segmentation, redundancy, members, algorithm };
+    return { kind: 'array', id, segmentation, redundancy, members, algorithm };
   }
 
   const isDisk  = (n) => n && n.kind === 'disk';

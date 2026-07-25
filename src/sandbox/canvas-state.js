@@ -324,7 +324,9 @@
     const compiledMembers = node.members.map((mid) => compile(state, mid));
     if (compiledMembers.some((m) => m === null)) return null;
 
-    return Model.array(node.segmentation, node.redundancy, compiledMembers, node.algorithm);
+    // The canvas id rides along so a violation can name WHICH array it is about
+    // (see Model.array). Without it every compiled array is indistinguishable.
+    return Model.array(node.segmentation, node.redundancy, compiledMembers, node.algorithm, node.id);
   }
 
   // ---------------------------------------------------------------------------
