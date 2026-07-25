@@ -1,6 +1,8 @@
 ---
 captured: 2026-07-25
-status: open
+status: promoted-to-spec
+promoted_to: ../../.development/specs/planned/informative-ui.md
+promoted_at: 2026-07-25
 context: "emerged from the validator phase-2 work (refactor/validator-registry, PR #6): violations can now name spans, but the canvas cannot"
 tags: [ux, terminology, teaching, canvas]
 ---
