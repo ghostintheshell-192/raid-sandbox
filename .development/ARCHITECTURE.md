@@ -46,6 +46,7 @@ kernel rules and never regenerated from the engine.
 - `challenge-ui.js` — Challenge mode UI for the RAID Sandbox.
 
 ### src/engine
+- `graph.js` — RAID Sandbox: the control-path graph, as a graph (Phase 5, Stage E).
 - `layout.js` — RAID Sandbox: headless data-placement engine (Phase 2a).
 - `model.js` — RAID Sandbox: the recursive domain model + level recognizer.
 - `validator.js` — RAID Sandbox: the constraint engine (Phase 5, Stage C).
@@ -66,6 +67,7 @@ kernel rules and never regenerated from the engine.
 - `canvas-state.test.js` — headless tests for canvas-state.js Run with: node canvas-state.test.js
 - `challenge-data.test.js` — validates the REAL challenge YAML files. Run with: node challenge-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so python is the reader....
 - `challenge.test.js` — headless tests for the requirement-satisfaction win-check. Run with: node challenge.test.js
+- `graph.test.js` — headless tests for the control-path graph module. Run with: node graph.test.js
 - `layout-golden.test.js` — golden-table verification for all parity algorithms. Run with: node layout-golden.test.js
 - `model-perf.test.js` — headless tests for the performance derivation (§4b). Run with: node model-perf.test.js
 - `model-recognize.test.js` — headless tests for the level RECOGNIZER (§4). Run with: node model-recognize.test.js
