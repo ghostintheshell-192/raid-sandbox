@@ -392,7 +392,8 @@ test('hardware: the reason names the controller card, and points at it', () => {
   CS.cpConnect(s, ctrl, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, 'hardware');
-  assert(/controller card/i.test(r.controlPathReason), r.controlPathReason);
+  // The wording must use a name the canvas actually shows, not a synonym.
+  assert(/Controller HW/.test(r.controlPathReason), r.controlPathReason);
   eq(r.engineNodeId, ctrl);
 });
 

@@ -493,8 +493,11 @@
 
       return { raidType: 'hardware', os: null, complete: true, issue: null,
                engineNodeId: ctrlId,
-               reason: 'The RAID engine is on the controller card, before the PCIe bus — '
-                     + 'the card builds the array itself and the OS sees one virtual drive.' };
+               // Names the piece exactly as the canvas labels it. A sentence that
+               // says "the controller card" points at something the player cannot
+               // find: that name exists nowhere in the game.
+               reason: 'The RAID engine is inside the Controller HW — it sits before the '
+                     + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
     }
 
     const hasEngine = components.has('raid-engine');
