@@ -16,7 +16,7 @@ security property, not an oversight. `bootstrap.sh` sets
 
 | Module | What it does | Blocks? |
 | ------ | ------------ | ------- |
-| `00-branch-protection` | On `main`, allows doc-only commits (`*.md`, `.development/`) and merges; anything touching code needs a branch | yes |
+| `00-branch-protection` | On `main`, allows **merges only**; everything else — documentation included — needs a branch | yes |
 | `01-security` | Scans staged files for secrets — by filename, by content pattern, by directory | yes |
 | `04-docs-update` | Runs `.development/automation/docs-update.sh` and stages the regenerated docs | no |
 
@@ -42,6 +42,9 @@ Same reasoning for `post-checkout` / `post-merge` (spec bookkeeping) and for
 The hooks are the *local* half. The *remote* half is GitHub branch protection on
 `main` plus the `headless` CI check, and the two are complementary:
 
-- GitHub has `enforce_admins: false` on purpose, so the maintainer can land a doc
-  fix directly. `00-branch-protection` is what keeps that door narrow — doc-only.
+- GitHub has `enforce_admins: false`, which leaves the maintainer *able* to commit
+  straight to `main`. `00-branch-protection` is what makes sure they don't: locally,
+  only merges land on `main`. The remote setting stays permissive so a genuine
+  emergency (or a stuck required check, as on 2026-07-25) can still be resolved —
+  it is an escape hatch, not the daily path.
 - CI runs `.development/automation/test.sh`, the same script you run locally.
