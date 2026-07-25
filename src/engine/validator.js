@@ -37,9 +37,13 @@
 
   const Model = (typeof require !== 'undefined') ? require('./model.js') : root.RaidModel;
 
-  const isDisk   = (n) => n && n.kind === 'disk';
-  const isArray  = (n) => n && n.kind === 'array';
-  const allDisks = (a) => a.members.length > 0 && a.members.every(isDisk);
+  const isDisk    = (n) => n && n.kind === 'disk';
+  const isArray   = (n) => n && n.kind === 'array';
+  const allDisks  = (a) => a.members.length > 0 && a.members.every(isDisk);
+  const allArrays = (a) => a.members.length > 0 && a.members.every(isArray);
+
+  const uniqSorted = (xs) => [...new Set(xs)].sort((x, y) => x - y);
+  const fmt        = (n) => Math.round(n * 100) / 100;
 
   /** Collect every array node in the tree (depth-first). */
   function arrays(node, acc = []) {
@@ -140,6 +144,61 @@
     return out;
   }
 
+  // Mixed disk sizes in one array (soft): the larger disks are coerced down.
+  //
+  // Only mirror and parity coerce. md RAID 0 does NOT: create_strip_zones()
+  // (raid0.c) lays a first strip zone across all devices up to the smallest, then
+  // further zones over what is left of the larger ones — a striped or linear array
+  // of mixed disks wastes nothing, and `capacityGB` already sums them. Warning
+  // there would be telling the player something the panel itself contradicts.
+  const COERCING = new Set(['mirror', 'parity1', 'parity2']);
+
+  function checkMixedDiskSizes(tree, physical, ctx) {
+    const out = [];
+    for (const a of ctx.arrays) {
+      if (!allDisks(a) || !COERCING.has(a.redundancy)) continue;
+      const sizes = a.members.map((d) => d.sizeGB);
+      const min = Math.min(...sizes);
+      const max = Math.max(...sizes);
+      if (min === max) continue;
+      out.push({
+        message: `This array mixes disk sizes (${uniqSorted(sizes).join(', ')} TB). `
+          + `Mirroring and parity coerce every member to the smallest, so each ${max} TB `
+          + `disk contributes only ${min} TB and the remainder is unusable.`,
+        nodeId: a.id,
+      });
+    }
+    return out;
+  }
+
+  // Spans of unequal capacity under one parent (soft) — two different truths, so
+  // two different messages:
+  //   mirror parent  → the array keeps one copy's worth, i.e. the smallest span
+  //                    (`capacityGB` takes the min); the excess is unusable.
+  //   striped parent → md zones the leftover instead of dropping it (raid0.c
+  //                    again), so no capacity is lost, but the tail of the volume
+  //                    lives on fewer spans and is slower there.
+  function checkUnevenSpans(tree, physical, ctx) {
+    const out = [];
+    for (const a of ctx.arrays) {
+      if (!allArrays(a)) continue;
+      const caps = a.members.map(Model.capacityGB);
+      const min = Math.min(...caps);
+      const max = Math.max(...caps);
+      if (min === max) continue;
+      out.push({
+        message: a.redundancy === 'mirror'
+          ? `The spans under this mirror are unequal (${fmt(min)} vs ${fmt(max)} TB usable). `
+            + `A mirror holds one copy's worth, so the array is limited to the smallest span.`
+          : `The spans under this stripe are unequal (${fmt(min)} vs ${fmt(max)} TB usable). `
+            + `No capacity is lost, but the tail of the volume is striped over fewer spans, `
+            + `so throughput drops there.`,
+        nodeId: a.id,
+      });
+    }
+    return out;
+  }
+
   // Soft, and DORMANT in v1: members of a span should span different backplanes.
   // v1 has a single backplane node (the diversity module is deferred, §9.4), so
   // this can never fire yet. Registered + documented so the §6 rule is visible and
@@ -161,6 +220,12 @@
   const RULES = [
     { code: 'min-disks',                 severity: 'hard', layer: 'data',
       source: 'raid-types §6',           run: checkMinDisks },
+
+    { code: 'mixed-disk-sizes',          severity: 'soft', layer: 'data',
+      source: 'domain-model §6',         run: checkMixedDiskSizes },
+
+    { code: 'uneven-spans',              severity: 'soft', layer: 'data',
+      source: 'domain-model §6 (md raid0.c)', run: checkUnevenSpans },
 
     { code: 'cross-axis-near-far-offset', severity: 'hard', layer: 'cross',
       source: 'cross-axis §6/§9.7',      run: checkCrossAxisLayout },

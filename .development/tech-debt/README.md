@@ -50,11 +50,12 @@ of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
 
-*Auto-updated: 2026-07-24 22:30*
+*Auto-updated: 2026-07-25 10:14*
 
 **High Priority:** None currently
 
-**Medium Priority:** None currently
+**Medium Priority:**
+- `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
 
 **Low Priority:**
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order

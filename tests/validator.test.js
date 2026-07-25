@@ -106,7 +106,64 @@ test('validate always returns hard + soft arrays (even with null tree)', () => {
 });
 
 // ---------------------------------------------------------------------------
-console.log('\n[6] Rule registry');
+console.log('\n[6] Data-layer soft constraints');
+
+const mixed = (sizes) => sizes.map((gb) => M.disk(`d${gb}${Math.random()}`, gb));
+
+test('RAID 5 over 2+4+4 TB disks → mixed-disk-sizes (soft, not hard)', () => {
+  const r = V.validate(M.array('striped', 'parity1', mixed([2, 4, 4])), {});
+  assert(hasCode(r.soft, 'mixed-disk-sizes'));
+  assert(!hasCode(r.hard, 'mixed-disk-sizes'), 'it warns, it does not block');
+});
+test('RAID 1 over 2+4 TB disks → mixed-disk-sizes', () => {
+  const r = V.validate(M.array('linear', 'mirror', mixed([2, 4])), {});
+  assert(hasCode(r.soft, 'mixed-disk-sizes'));
+});
+test('RAID 5 over equal disks → clean', () => {
+  const r = V.validate(M.array('striped', 'parity1', mixed([2, 2, 2])), {});
+  assert(!hasCode(r.soft, 'mixed-disk-sizes'));
+});
+test('RAID 0 over 2+4 TB disks → NOT flagged (md zones the leftover, raid0.c)', () => {
+  const r = V.validate(M.array('striped', 'none', mixed([2, 4])), {});
+  assert(!hasCode(r.soft, 'mixed-disk-sizes'), 'striping wastes nothing on mixed disks');
+});
+test('JBOD over 2+4 TB disks → NOT flagged (concatenation uses every sector)', () => {
+  const r = V.validate(M.array('linear', 'none', mixed([2, 4])), {});
+  assert(!hasCode(r.soft, 'mixed-disk-sizes'));
+});
+test('the message names the sizes actually on the canvas', () => {
+  const r = V.validate(M.array('striped', 'parity1', mixed([2, 4, 4])), {});
+  const v = r.soft.find((x) => x.code === 'mixed-disk-sizes');
+  assert(v.message.includes('2, 4 TB'), `message was: ${v.message}`);
+});
+
+test('RAID 50 with a 3-disk and a 4-disk span → uneven-spans', () => {
+  const span = (n) => M.array('striped', 'parity1', disks(n));
+  const r = V.validate(M.array('striped', 'none', [span(3), span(4)]), {});
+  assert(hasCode(r.soft, 'uneven-spans'));
+});
+test('RAID 50 with equal spans → clean', () => {
+  const span = () => M.array('striped', 'parity1', disks(3));
+  const r = V.validate(M.array('striped', 'none', [span(), span()]), {});
+  assert(!hasCode(r.soft, 'uneven-spans'));
+});
+test('equal disk count but smaller disks still counts as uneven', () => {
+  const span = (gb) => M.array('striped', 'parity1', mixed([gb, gb, gb]));
+  const r = V.validate(M.array('striped', 'none', [span(2), span(4)]), {});
+  assert(hasCode(r.soft, 'uneven-spans'), 'capacity is the metric, not disk count');
+});
+test('a striped parent says capacity is not lost; a mirror parent says it is', () => {
+  const span = (n) => M.array('striped', 'parity1', disks(n));
+  const striped = V.validate(M.array('striped', 'none', [span(3), span(4)]), {})
+    .soft.find((v) => v.code === 'uneven-spans');
+  const mirror  = V.validate(M.array('linear', 'mirror', [span(3), span(4)]), {})
+    .soft.find((v) => v.code === 'uneven-spans');
+  assert(striped.message.includes('No capacity is lost'), striped.message);
+  assert(mirror.message.includes('limited to the smallest span'), mirror.message);
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[7] Rule registry');
 
 test('every rule declares a unique code, a valid severity and a valid layer', () => {
   const codes = new Set();

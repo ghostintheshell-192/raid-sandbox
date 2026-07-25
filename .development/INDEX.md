@@ -1,6 +1,6 @@
 # INDEX - Development Documentation
 
-*Auto-generated: 2026-07-25 10:01*
+*Auto-generated: 2026-07-25 10:14*
 
 ---
 
@@ -24,10 +24,11 @@
 
 ### specs/implemented/ (1 files)
 
-- [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (37KB, 2026-07-24) **RECENT**
+- [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (37KB, 2026-07-25) **RECENT**
 
-### tech-debt/ (3 files)
+### tech-debt/ (4 files)
 
+- [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) (3KB, 2026-07-25) **RECENT**
 - [README.md](tech-debt/README.md) (2KB, 2026-07-24) **RECENT**
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) (1KB, 2026-07-24) **RECENT**
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) (1KB, 2026-07-24) **RECENT**
@@ -46,12 +47,13 @@
 
 1. [ARCHITECTURE.md](ARCHITECTURE.md) (today)
 2. [INDEX.md](INDEX.md) (today)
-3. [CURRENT-STATUS.md](CURRENT-STATUS.md) (today)
-4. [README.md](README.md) (today)
-5. [README.md](tech-debt/README.md) (today)
-6. [_TEMPLATE.md](tech-debt/_TEMPLATE.md) (today)
-7. [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) (today)
-8. [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (today)
+3. [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) (today)
+4. [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) (today)
+5. [CURRENT-STATUS.md](CURRENT-STATUS.md) (today)
+6. [README.md](README.md) (today)
+7. [README.md](tech-debt/README.md) (today)
+8. [_TEMPLATE.md](tech-debt/_TEMPLATE.md) (today)
+9. [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) (today)
 
 ---
 
