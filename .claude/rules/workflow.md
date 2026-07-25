@@ -21,9 +21,17 @@ task ordering or the per-task caveats, so starting from it alone loses them.
 - **feature/**: New features (e.g., `feature/mobile-inline-picker`)
 - **fix/**: Bug fixes (e.g., `fix/nested-write-order`)
 - **refactor/**: Refactoring (e.g., `refactor/validator-registry`)
+- **docs/**: Documentation, notes, specs (e.g., `docs/informative-ui-map`)
+- **chore/**: Tooling, config, hooks (e.g., `chore/strict-branch-protection`)
 
-Before non-trivial work (refactor, multi-file change, migration), create a dedicated
-branch. The branch name is a signal: `feature/X` means "work on X, nothing else."
+**Nothing is authored directly on `main` — documentation included.** Only merges land
+there, and the `00-branch-protection` hook enforces it. The doc-only exemption was tried
+and dropped (2026-07-25): the derived docs regenerate on every commit, so a doc commit on
+`main` conflicts with any open branch's regenerated copies, forcing a merge, a new head
+SHA and a fresh CI run. The friction outweighed the convenience.
+
+Before any work, create a dedicated branch. The branch name is a signal: `feature/X`
+means "work on X, nothing else."
 
 ## Development Workflow
 
