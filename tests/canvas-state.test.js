@@ -310,6 +310,29 @@ test('compile returns null for unknown id', () => {
   eq(CS.compile(s, 'nonexistent'), null);
 });
 
+test('compile carries the canvas id onto every array node, nested spans included', () => {
+  const s = CS.createState();
+  const span = (n) => {
+    const ds  = Array.from({ length: n }, () => CS.addDisk(s, 2));
+    const aid = CS.group(s, ds);
+    CS.setSegmentation(s, aid, 'striped');
+    CS.setRedundancy(s, aid, 'parity1');
+    return aid;
+  };
+  const s1 = span(3), s2 = span(3);
+  const top = CS.group(s, [s1, s2]);
+  CS.setSegmentation(s, top, 'striped');
+  CS.setRedundancy(s, top, 'none');
+
+  const tree = CS.compile(s, top);           // RAID 50
+  eq(tree.id, top);
+  eq(tree.members[0].id, s1);
+  eq(tree.members[1].id, s2);
+  // Distinct ids are what lets the validator report per-span violations
+  // instead of collapsing them — see the (code, nodeId) dedup.
+  assert(tree.members[0].id !== tree.members[1].id);
+});
+
 // ---------------------------------------------------------------------------
 console.log('\n[12] evaluate() reconciles a corrupted root/member history');
 

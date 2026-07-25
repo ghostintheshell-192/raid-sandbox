@@ -399,6 +399,8 @@ a central rulebook — that's what keeps "add a file" honest.
 | NVMe bypasses backplane + controller | `protocolli-dischi.md` | hard |
 | RAID 10 `near/far/offset` layout requires **software RAID / Linux** (mdadm); hw/fake → nested 1+0 only; Windows Storage Spaces → its own flat scheme (columns/copies, not near/far/offset) | cross-axis: control path **gates** the layout menu | hard |
 | members of a span *should* span different backplanes | `terminologia.md` | **soft** (best practice / warning) |
+| **mixed disk sizes inside a mirror or parity array** → every member is coerced to the smallest, the remainder is unusable. **RAID 0 / linear are exempt**: md does not coerce, `create_strip_zones` zones the leftover of the larger disks (verified 2026-07-25) | `drivers/md/raid0.c` | **soft** (added 2026-07-25) |
+| **spans of unequal capacity under one parent** → a *mirror* parent keeps one copy's worth and is limited to the smallest span; a *striped* parent loses no capacity, but the tail of the volume is striped over fewer spans and is slower there | `drivers/md/raid0.c` + §5c | **soft** (added 2026-07-25) |
 | hot-spare capacity ≥ coerced capacity of failed disk | `terminologia.md` | runtime module — deferred |
 
 **[DECISION]** Prompt mode *blocks* on hard constraints step-by-step; sandbox *allows the

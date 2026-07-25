@@ -9,9 +9,10 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: none in flight — PRs #3 (scaffold + hooks), #4 (js-yaml vendored) and
-#5 (SEO metadata) are all merged and live. Next candidate: **validator phase 2**; the
-open SEO ceiling (content not in the served HTML) is the other substantial one.
+**Active Work**: `refactor/validator-registry` — validator phase 2 (data layer) done in
+three commits, headless gate green (10 suites), **not yet verified in-browser**. PRs #3,
+#4 and #5 are merged and live. Next: the physical half of phase 2; the open SEO ceiling
+(content not in the served HTML) is the other substantial one.
 
 ## Recent Milestones
 
@@ -52,11 +53,20 @@ open SEO ceiling (content not in the served HTML) is the other substantial one.
       persistent "+ add a disk" zone keeps multi-group RAID reachable by tap. Follow-up
       parked: **nesting arrays via tap** (RAID 50/60) still needs drag on desktop. The
       datacenter/`seal`/`edit` roadmap is in `.memory-bank/ideas/2026-07-24-datacenter-tab-seal-edit.md`.
-- [ ] **Validator phase 2** — refactor `validator.js` into a declarative rule registry
-      ({code, severity, layer, run}), dedup by (code, nodeId); then add data-layer SOFT
-      constraints (`mixed-disk-sizes`, `uneven-spans` → warn, don't block). Its step 1
-      (registry) may be pulled forward if the picker needs finer validity than `axis` alone.
-      Details in `specs/` completion log and the 2026-06-14 handoff.
+- [x] **Validator phase 2 — data layer** — DONE (`refactor/validator-registry`, 3 commits).
+      `validator.js` is a declarative registry (`{code, severity, layer, source, run}`),
+      violations carry `layer` (data|physical|**cross** — cross-axis and backplane-diversity
+      read both axes and calling them 'data' would have been a lie), dedup by (code, nodeId).
+      The dedup needed a real nodeId: `compile()` never passed the canvas id to
+      `Model.array()`, so every array was indistinguishable — fixed first, on its own commit.
+      Soft constraints added and **scoped to where coercion is real**: `mixed-disk-sizes`
+      exempts RAID 0/JBOD (md's `create_strip_zones` zones the leftover instead of coercing —
+      verified against `raid0.c`), `uneven-spans` says capacity is lost under a mirror parent
+      and only throughput under a striped one. Both rows added to the §6 spec table.
+- [ ] **Validator phase 2 part 2 — physical layer** (deferred from the 2026-06-14 plan):
+      fake RAID limited to 0/1/5/10 (no 6/50/60); SATA/SAS need an HBA/controller in the path;
+      mixed-protocol arrays; Windows Storage Spaces specifics. The registry is the base, and
+      `ctx.level` is already computed once for exactly these rules.
 - [x] **Vendor js-yaml locally** — DONE (PR #4, merged). `vendor/js-yaml/js-yaml.min.js`
       (4.1.0, MIT, fetched from the GitHub tag, checksum recorded in `vendor/README.md`)
       replaces the blocking `cdn.jsdelivr.net` script in **both** `index.html` and
