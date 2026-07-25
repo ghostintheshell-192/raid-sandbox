@@ -8,6 +8,17 @@
 
 # NOTE: .development/ IS tracked — design docs, specs, tech-debt and the
 # session-archive script live with the code.
+#
+# ...except the two *indexes*, which are derived and regenerate from what is
+# already in the repo. Tracking them bought nothing and cost a conflict on
+# every parallel branch: 04-docs-update regenerates them on each commit, and
+# INDEX.md carries a generation timestamp, so two branches diverge there even
+# when neither changed a real file. Rebuild with .development/automation/docs-update.sh
+# (the SessionStart hook already does it). ARCHITECTURE.md stays tracked: it is
+# imported into every session as the navigation map, and it is deterministic —
+# same sources, same bytes — so it does not collide.
+.development/INDEX.md
+.development/tech-debt/README.md
 
 # ---- Claude Code local / per-machine ----
 .claude/settings.local.json

@@ -26,10 +26,12 @@ echo -e "${BLUE}[Derived Docs]${NC}"
 
 (cd "$PROJECT_ROOT" && "$ENTRY_POINT") | sed 's/^/  /'
 
+# Only the tracked derived file is staged. INDEX.md and tech-debt/README.md are
+# gitignored (see .gitignore): docs-update.sh still refreshes them locally, but
+# staging an ignored path is an error, and versioning them produced a conflict
+# on every parallel branch.
 GENERATED=(
     ".development/ARCHITECTURE.md"
-    ".development/INDEX.md"
-    ".development/tech-debt/README.md"
 )
 STAGED_ANY=0
 for file in "${GENERATED[@]}"; do

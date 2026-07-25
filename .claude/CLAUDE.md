@@ -39,7 +39,7 @@ The following rules are automatically loaded from `.claude/rules/`:
 - **[.development/](.development/)** - Operational documentation
   - **[CURRENT-STATUS.md](.development/CURRENT-STATUS.md)** - Project state
   - **[ARCHITECTURE.md](.development/ARCHITECTURE.md)** - Layer overview + module tree (auto-generated)
-  - **[INDEX.md](.development/INDEX.md)** - Navigation (auto-generated)
+  - **INDEX.md** - Navigation (auto-generated, not tracked — regenerated at session start)
   - `specs/` - Feature specifications (design backbone)
   - `tech-debt/` - Known issues (`README.md` auto-generated)
   - `scripts/` - Doc generators + session archiving
