@@ -8,11 +8,19 @@ Operational documentation for RAID Sandbox — tracked, lives with the code.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — layer overview + module tree *(auto-generated)*.
   Imported into every Claude session by `.claude/CLAUDE.md`, so it is the
   navigation map: read it before exploring source.
-- **[INDEX.md](INDEX.md)** — navigation over this folder *(auto-generated)*
+- **INDEX.md** — navigation over this folder *(auto-generated, **not tracked**)*
 - **`specs/`** — feature specifications (the design backbone)
   - `implemented/raid-sandbox-domain-model.md` — the blueprint the YAML data and engine derive from
-- **`tech-debt/`** — known issues, one file per item (`README.md` is auto-generated;
-  start new items from `_TEMPLATE.md`)
+- **`tech-debt/`** — known issues, one file per item (`README.md` is auto-generated
+  and **not tracked**; start new items from `_TEMPLATE.md`)
+
+> **The two indexes are gitignored.** They derive from what is already in the repo,
+> and versioning them made every parallel branch conflict on them — they regenerate
+> on each commit, and `INDEX.md` carries a timestamp, so two branches diverge there
+> even when neither touched a real file. A fresh clone has no copy until the
+> generators run: the `SessionStart` hook does it, or run
+> `.development/automation/docs-update.sh` by hand. `ARCHITECTURE.md` stays tracked —
+> it is imported into every session, and it is byte-identical for identical sources.
 - **`scripts/`** — project scripts
   - `generate-architecture.sh` (+ `extract-summary.sh`) — regenerates `ARCHITECTURE.md`
     from the source tree, reading each file's leading JSDoc block
