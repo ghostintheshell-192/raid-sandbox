@@ -49,13 +49,14 @@ There is no `archive/` on this project and no archiving script: with a handful
 of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
-*Auto-updated: 2026-07-25 10:37*
+
+*Auto-updated: 2026-07-25 13:48*
 
 **High Priority:** None currently
 
 **Medium Priority:**
-- `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
+- `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
 
 **Low Priority:**
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order
