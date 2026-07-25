@@ -59,16 +59,30 @@
 
   /**
    * Wire one panel entry to the nodes it talks about.
-   * No-op when there is nothing to point at, so an entry without a nodeId
-   * (a whole-path violation, say) simply stays inert rather than pretending.
+   *
+   * Safe to call again on the SAME element: some entries are rebuilt on every
+   * evaluation (violations) and others are reused (the RAID-type line), so the
+   * listeners are registered once and read the current targets at event time.
+   * Calling with no usable id detaches instead — an entry with nothing to point
+   * at goes inert rather than pretending to point.
    */
   function attach(el, ids) {
+    if (!el) return;
     const targets = (ids || []).filter((id) => id != null);
-    if (!el || !targets.length) return;
 
+    el._refIds = targets;
+
+    if (!targets.length) {
+      el.classList.remove(CLASS_REFERER, 'is-pinned');
+      if (_pinned === el) unpin();
+      return;
+    }
     el.classList.add(CLASS_REFERER);
 
-    el.addEventListener('mouseenter', () => { if (!_pinned) set(targets); });
+    if (el._refWired) return;
+    el._refWired = true;
+
+    el.addEventListener('mouseenter', () => { if (!_pinned) set(el._refIds); });
     el.addEventListener('mouseleave', () => { if (!_pinned) clear(); });
 
     // Touch path: tap pins, tap again (or anywhere else) releases.
@@ -78,7 +92,7 @@
       unpin();
       _pinned = el;
       el.classList.add('is-pinned');
-      set(targets);
+      set(el._refIds);
     });
 
     if (!_wiredDoc) {

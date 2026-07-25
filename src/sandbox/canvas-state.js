@@ -423,6 +423,8 @@
       os:                  cp.os,
       controlPathComplete: cp.complete,
       controlPathIssue:    cp.issue,
+      controlPathReason:   cp.reason ?? null,
+      engineNodeId:        cp.engineNodeId ?? null,
       violations,
     };
   }
@@ -456,14 +458,28 @@
    *
    * For MVP: inspect the set of component types present in the graph.
    * Full graph-traversal recognizer deferred to when constraint engine lands.
+   *
+   * Every determined verdict also carries `reason` and `engineNodeId`. The panel
+   * used to show the verdict alone, which hides the one insight axis A exists to
+   * teach (§2): hardware/software/fake are the SAME path with the engine in a
+   * different place. The explanation belongs here, with the derivation — a view
+   * that re-derives it could disagree with the badge above it.
    */
   function _recognizePhysicalLayer(cpNodes, cpEdges) {
     const components = new Set(Array.from(cpNodes.values()).map(n => n.componentId));
     const osNode = Array.from(cpNodes.values()).find(n => n.componentId === 'os-linux' || n.componentId === 'os-windows');
     const os = osNode ? osNode.componentId : null;
+    const osName = os === 'os-windows' ? 'Windows' : 'Linux';
+    const nodeIdOf = (componentId) => {
+      const n = Array.from(cpNodes.values()).find((x) => x.componentId === componentId);
+      return n ? n.id : null;
+    };
 
     if (components.has('controller-hw'))
-      return { raidType: 'hardware', os: null, complete: true, issue: null };
+      return { raidType: 'hardware', os: null, complete: true, issue: null,
+               engineNodeId: nodeIdOf('controller-hw'),
+               reason: 'The RAID engine is on the controller card, before the PCIe bus — '
+                     + 'the card builds the array itself and the OS sees one virtual drive.' };
 
     const hasEngine = components.has('raid-engine');
     const hasHBA    = components.has('hba');
@@ -489,10 +505,16 @@
         const c = cpNodes.get(e.toNode)?.componentId;
         return c === 'os-linux' || c === 'os-windows';
       });
-      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null };
+      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null,
+        engineNodeId: engineId,
+        reason: `The RAID engine sits in the OS — ${osName} computes the layout itself, `
+              + 'with no RAID hardware in the path.' };
 
       // Fake RAID: engine output goes to CPU or PCIe (engine sits before CPU).
-      return { raidType: 'fake', os, complete: true, issue: null };
+      return { raidType: 'fake', os, complete: true, issue: null,
+        engineNodeId: engineId,
+        reason: 'The RAID engine sits before the CPU, not in the OS — but it is a chip, '
+              + 'not a full controller, so the CPU still does the real work.' };
     }
 
     if (!hasHBA && !components.has('controller-hw'))

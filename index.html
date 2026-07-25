@@ -193,6 +193,9 @@
     <div data-result="issue" class="sbc-issue" hidden></div>
     <div data-result="raid-type" class="sbc-issue" hidden
          style="border-radius:6px; padding:.4rem .6rem; font-size:.78rem; font-weight:600; border: 1px solid;"></div>
+    <!-- Why it is that type. The verdict alone hides the point of axis A: the
+         three types are one path with the engine in a different place (§2). -->
+    <div data-result="raid-type-reason" class="sbc-reason" hidden></div>
     <div data-result="violations" class="sbc-violations"></div>
     <div style="display:flex; align-items:center; gap:.5rem;">
       <button class="sbc-animate-btn" id="btn-animate" disabled>▶ animate write</button>
@@ -255,6 +258,7 @@
   const elIssue    = document.querySelector('[data-result="issue"]');
   const elRaidType = document.querySelector('[data-result="raid-type"]');
   const elViolations = document.querySelector('[data-result="violations"]');
+  const elRaidWhy    = document.querySelector('[data-result="raid-type-reason"]');
   const elGrid     = document.querySelector('[data-result="grid"]');
 
   // Sandbox = allow + explain (§6): violations are shown live, never block the build.
@@ -271,6 +275,17 @@
       RaidHighlight.attach(div, [x.nodeId]);
       elViolations.appendChild(div);
     }
+  }
+
+  // Why the build is hardware / software / fake, next to the verdict itself.
+  // Pointing at the sentence lights the node that decides it — the engine.
+  function renderRaidWhy(r) {
+    if (!elRaidWhy) return;
+    elRaidWhy.textContent = r.controlPathReason ?? '';
+    elRaidWhy.hidden      = !r.controlPathReason;
+    // Re-attach every time: the engine node is a different id after a rebuild,
+    // and passing none detaches (see highlight.js).
+    RaidHighlight.attach(elRaidWhy, r.controlPathReason ? [r.engineNodeId] : []);
   }
 
   function onEvaluate(r) {
@@ -319,11 +334,13 @@
         elRaidType.style.background   = colors[r.raidType];
         elRaidType.style.borderColor  = colors[r.raidType].replace('.2', '.6').replace('.3', '.6');
         elRaidType.hidden             = false;
+        renderRaidWhy(r);
       } else {
         elRaidType.textContent = r.controlPathIssue ?? '—';
         elRaidType.style.background  = 'transparent';
         elRaidType.style.borderColor = 'rgba(128,128,128,.3)';
         elRaidType.hidden = !r.controlPathIssue;
+        renderRaidWhy(r);
       }
     }
 
