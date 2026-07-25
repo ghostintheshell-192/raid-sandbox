@@ -475,11 +475,27 @@
       return n ? n.id : null;
     };
 
-    if (components.has('controller-hw'))
+    // A controller dropped on the canvas is not yet ON the path. Presence alone
+    // used to be enough to declare hardware RAID — the verdict came out before a
+    // single cable existed. Same bar as the software/fake branch below: the
+    // engine-bearing node must be wired onward, and the path must reach an OS.
+    if (components.has('controller-hw')) {
+      const ctrlId  = nodeIdOf('controller-hw');
+      const ctrlOut = Array.from(cpEdges.values()).filter((e) => e.fromNode === ctrlId);
+
+      if (ctrlOut.length === 0)
+        return { raidType: null, os: null, complete: false,
+                 issue: 'Connect the controller output — until it is wired, nothing can be '
+                      + 'said about which RAID you are building.' };
+      if (!os)
+        return { raidType: null, os: null, complete: false,
+                 issue: 'Add an OS node to complete the path.' };
+
       return { raidType: 'hardware', os: null, complete: true, issue: null,
-               engineNodeId: nodeIdOf('controller-hw'),
+               engineNodeId: ctrlId,
                reason: 'The RAID engine is on the controller card, before the PCIe bus — '
                      + 'the card builds the array itself and the OS sees one virtual drive.' };
+    }
 
     const hasEngine = components.has('raid-engine');
     const hasHBA    = components.has('hba');

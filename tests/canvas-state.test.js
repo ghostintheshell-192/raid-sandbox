@@ -388,10 +388,33 @@ function withRaid5(s) {
 test('hardware: the reason names the controller card, and points at it', () => {
   const s = withRaid5(CS.createState());
   const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, ctrl, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, 'hardware');
   assert(/controller card/i.test(r.controlPathReason), r.controlPathReason);
   eq(r.engineNodeId, ctrl);
+});
+
+test('a controller sitting unconnected decides nothing', () => {
+  // Reported in-browser: dropping the controller printed "Hardware RAID" plus
+  // its explanation, with not one cable drawn.
+  const s = withRaid5(CS.createState());
+  CS.cpAddNode(s, 'controller-hw');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  eq(r.controlPathReason, null);
+  assert(/Connect the controller/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('a wired controller with no OS is still undetermined', () => {
+  const s = withRaid5(CS.createState());
+  const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const pcie = CS.cpAddNode(s, 'pcie');
+  CS.cpConnect(s, ctrl, 'out', pcie, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(r.controlPathIssue, 'it says what is still missing');
 });
 
 test('software: the reason names the OS that computes it', () => {
