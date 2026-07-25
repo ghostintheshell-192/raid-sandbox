@@ -1,8 +1,9 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-07-25
+resolved: 2026-07-25
 related: []
 related_decision: null
 ---
@@ -61,6 +62,34 @@ surface in its own right — a decision that belongs with the informative-UI wor
 
 Do it on its own branch: it changes when the game is willing to say "this is a hardware
 RAID", so it needs its own in-browser pass across all three types.
+
+## Resolution (2026-07-25) — Option A
+
+`src/engine/graph.js` (new, headless) indexes the control path as a directed graph and
+answers reachability; `_recognizePhysicalLayer` now walks it. A component counts as being
+on the path only when **a disk reaches it and it reaches an OS** — presence is no longer
+read as participation, which is what let a floating HBA satisfy the software branch.
+
+Three things surfaced while doing it, each now covered by a test:
+
+- **Cycles are constructible, not hypothetical.** The RAID Engine's ports are typed `any`
+  and `portsCompatible` short-circuits on `any`, so `engine → backplane` is a legal draw.
+  Every walk carries its visited set from the first step.
+- **The graph spans two node maps.** Disks live in `state.nodes` and appear in `cpEdges`
+  by disk id only. A traversal built from `cpNodes` alone has no sources at all.
+- **`cpAutoRoute` was only ever called by the physical view's `render()`** — domain truth
+  (protocol → entry point) reached from the DOM layer. `evaluate()` now calls it before
+  recognising, otherwise the verdict would depend on whether a render had happened.
+
+Over-strictness was watched for: junk the verdict does not depend on (a stray PCIe bus)
+still passes, and each refusal names what is missing rather than falling silent.
+
+**Deliberately not done — Option B.** Order is still unverified: a path can be reachable
+and physically absurd (engine between CPU and OS, two engines in series). The
+fake-vs-software discriminant is likewise unchanged, still the direct `engine → OS` edge.
+Both belong to the derived-controller work (`specs/planned/derived-controller.md`), whose
+two-threshold rule is the thing that will actually need order — and which can now ask for
+it as two reachability queries in opposite directions rather than as a path.
 
 ## Notes
 
