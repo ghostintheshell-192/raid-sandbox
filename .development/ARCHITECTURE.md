@@ -54,6 +54,7 @@ kernel rules and never regenerated from the engine.
 - `canvas-controller.js` — RAID Sandbox: drag-and-drop controller (Phase 3).
 - `canvas-state.js` — RAID Sandbox: mutable canvas state + evaluation pipeline.
 - `drag-util.js` — shared drag-and-drop helpers for canvas-controller and physical-controller.
+- `highlight.js` — RAID Sandbox: "what I am talking about is THAT one".
 - `physical-controller.js` — RAID Sandbox: physical layer (axis A) canvas controller.
 - `render.js` — RAID Sandbox: render + animate a placement grid (Phase 2b).
 - `sidebar-accordion.js` — collapse the palette into an accordion on narrow screens.

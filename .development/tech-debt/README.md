@@ -50,13 +50,14 @@ of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
 
-*Auto-updated: 2026-07-25 12:26*
+*Auto-updated: 2026-07-25 12:46*
 
 **High Priority:** None currently
 
 **Medium Priority:**
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 - `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
+- `physical-recognizer-does-not-walk-the-path.md` - The physical recognizer checks presence and one edge, not the path
 
 **Low Priority:**
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order

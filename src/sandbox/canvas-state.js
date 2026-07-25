@@ -423,6 +423,8 @@
       os:                  cp.os,
       controlPathComplete: cp.complete,
       controlPathIssue:    cp.issue,
+      controlPathReason:   cp.reason ?? null,
+      engineNodeId:        cp.engineNodeId ?? null,
       violations,
     };
   }
@@ -456,14 +458,47 @@
    *
    * For MVP: inspect the set of component types present in the graph.
    * Full graph-traversal recognizer deferred to when constraint engine lands.
+   *
+   * Every determined verdict also carries `reason` and `engineNodeId`. The panel
+   * used to show the verdict alone, which hides the one insight axis A exists to
+   * teach (§2): hardware/software/fake are the SAME path with the engine in a
+   * different place. The explanation belongs here, with the derivation — a view
+   * that re-derives it could disagree with the badge above it.
    */
   function _recognizePhysicalLayer(cpNodes, cpEdges) {
     const components = new Set(Array.from(cpNodes.values()).map(n => n.componentId));
     const osNode = Array.from(cpNodes.values()).find(n => n.componentId === 'os-linux' || n.componentId === 'os-windows');
     const os = osNode ? osNode.componentId : null;
+    const osName = os === 'os-windows' ? 'Windows' : 'Linux';
+    const nodeIdOf = (componentId) => {
+      const n = Array.from(cpNodes.values()).find((x) => x.componentId === componentId);
+      return n ? n.id : null;
+    };
 
-    if (components.has('controller-hw'))
-      return { raidType: 'hardware', os: null, complete: true, issue: null };
+    // A controller dropped on the canvas is not yet ON the path. Presence alone
+    // used to be enough to declare hardware RAID — the verdict came out before a
+    // single cable existed. Same bar as the software/fake branch below: the
+    // engine-bearing node must be wired onward, and the path must reach an OS.
+    if (components.has('controller-hw')) {
+      const ctrlId  = nodeIdOf('controller-hw');
+      const ctrlOut = Array.from(cpEdges.values()).filter((e) => e.fromNode === ctrlId);
+
+      if (ctrlOut.length === 0)
+        return { raidType: null, os: null, complete: false,
+                 issue: 'Connect the controller output — until it is wired, nothing can be '
+                      + 'said about which RAID you are building.' };
+      if (!os)
+        return { raidType: null, os: null, complete: false,
+                 issue: 'Add an OS node to complete the path.' };
+
+      return { raidType: 'hardware', os: null, complete: true, issue: null,
+               engineNodeId: ctrlId,
+               // Names the piece exactly as the canvas labels it. A sentence that
+               // says "the controller card" points at something the player cannot
+               // find: that name exists nowhere in the game.
+               reason: 'The RAID engine is inside the Controller HW — it sits before the '
+                     + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
+    }
 
     const hasEngine = components.has('raid-engine');
     const hasHBA    = components.has('hba');
@@ -489,10 +524,16 @@
         const c = cpNodes.get(e.toNode)?.componentId;
         return c === 'os-linux' || c === 'os-windows';
       });
-      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null };
+      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null,
+        engineNodeId: engineId,
+        reason: `The RAID engine sits in the OS — ${osName} computes the layout itself, `
+              + 'with no RAID hardware in the path.' };
 
       // Fake RAID: engine output goes to CPU or PCIe (engine sits before CPU).
-      return { raidType: 'fake', os, complete: true, issue: null };
+      return { raidType: 'fake', os, complete: true, issue: null,
+        engineNodeId: engineId,
+        reason: 'The RAID engine sits before the CPU, not in the OS — but it is a chip, '
+              + 'not a full controller, so the CPU still does the real work.' };
     }
 
     if (!hasHBA && !components.has('controller-hw'))
