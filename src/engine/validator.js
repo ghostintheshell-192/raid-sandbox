@@ -45,9 +45,20 @@
   const uniqSorted = (xs) => [...new Set(xs)].sort((x, y) => x - y);
   const fmt        = (n) => Math.round(n * 100) / 100;
 
-  /** Collect every array node in the tree (depth-first). */
-  function arrays(node, acc = []) {
-    if (isArray(node)) { acc.push(node); node.members.forEach((m) => arrays(m, acc)); }
+  /**
+   * Collect every array node (depth-first) together with a STRUCTURAL LABEL.
+   *
+   * A nested build fires the same rule once per span, with the same wording each
+   * time — two identical lines in the panel read as a duplicate, not as two facts.
+   * Until violations can highlight their own node, the message has to name its
+   * subject itself: the root is "This array", its array children are "Span 1",
+   * "Span 2", deeper ones "Span 1.2". Matches the §8 vocabulary: a span IS the
+   * child array of a nested level.
+   */
+  function walkArrays(node, path, acc) {
+    if (!isArray(node)) return acc;
+    acc.push({ node, label: path.length ? `Span ${path.join('.')}` : 'This array' });
+    node.members.forEach((m, i) => walkArrays(m, path.concat(i + 1), acc));
     return acc;
   }
 
@@ -74,7 +85,7 @@
 
   function checkMinDisks(tree, physical, ctx) {
     const out = [];
-    for (const a of ctx.arrays) {
+    for (const { node: a, label } of ctx.arrays) {
       if (!allDisks(a)) continue;                     // nested levels checked via their leaf spans
       let min, name;
       if (a.segmentation === 'striped' && a.redundancy === 'mirror') {
@@ -88,7 +99,7 @@
       }
       if (min && a.members.length < min)
         out.push({
-          message: `${name} needs at least ${min} disks (this array has ${a.members.length}).`,
+          message: `${label} is a ${name} — it needs at least ${min} disks and has ${a.members.length}.`,
           nodeId: a.id,
         });
     }
@@ -133,11 +144,11 @@
     const linuxSoftware = physical.raidType === 'software' && physical.os === 'os-linux';
     if (linuxSoftware) return null;
     const out = [];
-    for (const a of ctx.arrays) {
+    for (const { node: a, label } of ctx.arrays) {
       if (MDADM_LAYOUTS.has(a.algorithm))
         out.push({
-          message: `The "${a.algorithm}" layout only exists under Linux software RAID (mdadm). `
-            + `On ${physical.raidType} RAID, build a nested RAID 1+0 instead.`,
+          message: `${label} uses the "${a.algorithm}" layout, which only exists under Linux `
+            + `software RAID (mdadm). On ${physical.raidType} RAID, build a nested RAID 1+0 instead.`,
           nodeId: a.id,
         });
     }
@@ -155,14 +166,14 @@
 
   function checkMixedDiskSizes(tree, physical, ctx) {
     const out = [];
-    for (const a of ctx.arrays) {
+    for (const { node: a, label } of ctx.arrays) {
       if (!allDisks(a) || !COERCING.has(a.redundancy)) continue;
       const sizes = a.members.map((d) => d.sizeGB);
       const min = Math.min(...sizes);
       const max = Math.max(...sizes);
       if (min === max) continue;
       out.push({
-        message: `This array mixes disk sizes (${uniqSorted(sizes).join(', ')} TB). `
+        message: `${label} mixes disk sizes (${uniqSorted(sizes).join(', ')} TB). `
           + `Mirroring and parity coerce every member to the smallest, so each ${max} TB `
           + `disk contributes only ${min} TB and the remainder is unusable.`,
         nodeId: a.id,
@@ -180,7 +191,7 @@
   //                    lives on fewer spans and is slower there.
   function checkUnevenSpans(tree, physical, ctx) {
     const out = [];
-    for (const a of ctx.arrays) {
+    for (const { node: a, label } of ctx.arrays) {
       if (!allArrays(a)) continue;
       const caps = a.members.map(Model.capacityGB);
       const min = Math.min(...caps);
@@ -188,9 +199,9 @@
       if (min === max) continue;
       out.push({
         message: a.redundancy === 'mirror'
-          ? `The spans under this mirror are unequal (${fmt(min)} vs ${fmt(max)} TB usable). `
-            + `A mirror holds one copy's worth, so the array is limited to the smallest span.`
-          : `The spans under this stripe are unequal (${fmt(min)} vs ${fmt(max)} TB usable). `
+          ? `${label} mirrors spans of unequal size (${fmt(min)} vs ${fmt(max)} TB usable). `
+            + `A mirror holds one copy's worth, so it is limited to the smallest span.`
+          : `${label} stripes over spans of unequal size (${fmt(min)} vs ${fmt(max)} TB usable). `
             + `No capacity is lost, but the tail of the volume is striped over fewer spans, `
             + `so throughput drops there.`,
         nodeId: a.id,
@@ -254,7 +265,7 @@
    */
   function validate(tree, physical = {}) {
     const ctx = {
-      arrays: tree ? arrays(tree) : [],
+      arrays: tree ? walkArrays(tree, [], []) : [],   // [{ node, label }]
       // Recognized once here rather than per rule: the phase-2b physical rules
       // (fake RAID is limited to 0/1/5/10, …) all need the level, and a rule
       // deriving it on its own could disagree with the panel.

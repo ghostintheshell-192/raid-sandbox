@@ -137,6 +137,23 @@ test('the message names the sizes actually on the canvas', () => {
   assert(v.message.includes('2, 4 TB'), `message was: ${v.message}`);
 });
 
+test('two spans mixing sizes produce two DISTINGUISHABLE messages', () => {
+  // The in-browser case: RAID 50, each span 2×4 TB + 2×2 TB. Same rule, same
+  // wording, two different arrays — the panel has no per-node highlighting, so
+  // the message has to name its own subject.
+  const span = (id) => M.array('striped', 'parity1', mixed([4, 4, 2, 2]), null, id);
+  const r = V.validate(M.array('striped', 'none', [span('s1'), span('s2')], null, 'top'), {});
+  const msgs = r.soft.filter((v) => v.code === 'mixed-disk-sizes').map((v) => v.message);
+  eq(msgs.length, 2);
+  assert(msgs[0] !== msgs[1], `both spans said the same thing: ${msgs[0]}`);
+  assert(msgs[0].startsWith('Span 1 '), msgs[0]);
+  assert(msgs[1].startsWith('Span 2 '), msgs[1]);
+});
+test('a top-level array calls itself "This array", not a span', () => {
+  const r = V.validate(M.array('striped', 'parity1', mixed([2, 4, 4])), {});
+  assert(r.soft[0].message.startsWith('This array mixes'), r.soft[0].message);
+});
+
 test('RAID 50 with a 3-disk and a 4-disk span → uneven-spans', () => {
   const span = (n) => M.array('striped', 'parity1', disks(n));
   const r = V.validate(M.array('striped', 'none', [span(3), span(4)]), {});
