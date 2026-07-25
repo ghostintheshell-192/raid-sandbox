@@ -518,8 +518,19 @@
              + 'said about which RAID you are building.';
       if (!os)
         return 'Add an OS node to complete the path.';
-      if (!fedByDisk(id))
-        return `No disk reaches the ${label} yet — the path has to start at the disks.`;
+      if (!fedByDisk(id)) {
+        // Two different builds land here and they need different advice. Nothing
+        // wired at all is "start at the disks"; disks wired into a chain that
+        // dead-ends is the opposite problem, and telling that player to start at
+        // the disks describes something they can see they already did. Found
+        // in-browser with two backplanes, the disks auto-routed to the one that
+        // was not cabled onward.
+        const anyDiskWired = disks.some((d) => (g.out.get(d) || []).length > 0);
+        return anyDiskWired
+          ? `The disks are wired, but the chain breaks before the ${label} — `
+            + 'follow the cables forward from them to find the gap.'
+          : `No disk reaches the ${label} yet — the path has to start at the disks.`;
+      }
       if (!reachesOS(id))
         return `The ${label} does not reach the OS — the path stops before it.`;
       return null;
@@ -549,11 +560,18 @@
 
       // The HBA must be BETWEEN the disks and the engine, not merely present.
       // A card lying unwired on the canvas used to satisfy this branch.
-      const hbaOnPath = Graph.nodesWith(g, 'hba')
-        .some((h) => fedByDisk(h) && Graph.reaches(g, h, engineId));
-      if (!hbaOnPath)
-        return undetermined('Route the disks through an HBA before the RAID Engine — '
-                          + 'without it nothing carries them to the engine.');
+      const hbas      = Graph.nodesWith(g, 'hba');
+      const hbaOnPath = hbas.some((h) => fedByDisk(h) && Graph.reaches(g, h, engineId));
+      if (!hbaOnPath) {
+        // An HBA wired downstream of the engine is present AND connected, so
+        // "without it" would be describing a canvas the player is not looking at.
+        const hbaIsDownstream = hbas.some((h) => Graph.reaches(g, engineId, h));
+        return undetermined(hbaIsDownstream
+          ? 'The HBA sits after the RAID Engine — it is what carries the disks TO the '
+          + 'engine, so it belongs between them.'
+          : 'Route the disks through an HBA before the RAID Engine — '
+          + 'without it nothing carries them to the engine.');
+      }
 
       // Software RAID: engine output goes directly to an OS node.
       const connectsToOS = (g.out.get(engineId) || []).some((toId) => osIds.includes(toId));

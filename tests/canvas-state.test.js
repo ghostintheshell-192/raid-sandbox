@@ -482,7 +482,27 @@ test('a gap between the disks and the engine is caught', () => {
   assert(bp, 'the backplane is on the canvas, just not wired onward');
   const r = CS.evaluate(s);
   eq(r.raidType, null);
-  assert(/No disk reaches/i.test(r.controlPathIssue), r.controlPathIssue);
+  // The disks DID start a path — into the backplane. Saying "start at the disks"
+  // would describe something the player can see they already did.
+  assert(/chain breaks/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('disks wired nowhere and disks wired into a dead end read differently', () => {
+  // Found in-browser: two backplanes, disks auto-routed to the one not cabled on.
+  const wiredNowhere = withRaid5(CS.createState());
+  CS.cpAddNode(wiredNowhere, 'controller-hw');
+  const ctrlA = Array.from(wiredNowhere.cpNodes.keys())[0];
+  CS.cpConnect(wiredNowhere, ctrlA, 'out', CS.cpAddNode(wiredNowhere, 'os-linux'), 'in');
+  assert(/has to start at the disks/i.test(CS.evaluate(wiredNowhere).controlPathIssue));
+
+  const deadEnd = withRaid5(CS.createState());
+  backplane(deadEnd);                       // disks auto-route here…
+  const bp2  = CS.cpAddNode(deadEnd, 'backplane');
+  const ctrl = CS.cpAddNode(deadEnd, 'controller-hw');
+  const os   = CS.cpAddNode(deadEnd, 'os-linux');
+  CS.cpConnect(deadEnd, bp2, 'out', ctrl, 'in');   // …but the SECOND one is cabled
+  CS.cpConnect(deadEnd, ctrl, 'out', os, 'in');
+  assert(/chain breaks/i.test(CS.evaluate(deadEnd).controlPathIssue));
 });
 
 test('an engine that reaches no OS decides nothing', () => {
@@ -512,7 +532,24 @@ test('a floating HBA no longer satisfies the software branch', () => {
   CS.cpConnect(s, eng, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, null);
-  assert(/HBA/.test(r.controlPathIssue), r.controlPathIssue);
+  assert(/without it nothing carries/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('an HBA wired after the engine is told it is on the wrong side', () => {
+  // It is present and connected, so "without it" would describe another canvas.
+  const s = withRaid5(CS.createState());
+  const bp  = backplane(s);
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  const hba = CS.cpAddNode(s, 'hba');
+  const cpu = CS.cpAddNode(s, 'cpu');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, bp, 'out', eng, 'in');
+  CS.cpConnect(s, eng, 'out', hba, 'in');   // the wrong side
+  CS.cpConnect(s, hba, 'out', cpu, 'in');
+  CS.cpConnect(s, cpu, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/sits after the RAID Engine/i.test(r.controlPathIssue), r.controlPathIssue);
 });
 
 test('junk the verdict does not depend on is tolerated', () => {
