@@ -106,4 +106,46 @@ test('validate always returns hard + soft arrays (even with null tree)', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[6] Rule registry');
+
+test('every rule declares a unique code, a valid severity and a valid layer', () => {
+  const codes = new Set();
+  for (const r of V.RULES) {
+    assert(!codes.has(r.code), `duplicate rule code: ${r.code}`);
+    codes.add(r.code);
+    assert(['hard', 'soft'].includes(r.severity),          `${r.code}: severity ${r.severity}`);
+    assert(['data', 'physical', 'cross'].includes(r.layer), `${r.code}: layer ${r.layer}`);
+    assert(typeof r.source === 'string' && r.source.length,  `${r.code}: missing source`);
+    assert(typeof r.run === 'function',                      `${r.code}: run is not a function`);
+  }
+});
+
+test('violations are stamped with their rule’s layer', () => {
+  const r = V.validate(M.array('striped', 'parity1', disks(2)), { engineCount: 2 });
+  eq(r.hard.find((v) => v.code === 'min-disks').layer, 'data');
+  eq(r.hard.find((v) => v.code === 'engine-single-point').layer, 'physical');
+});
+
+test('two spans failing the same rule stay two violations (distinct nodeId)', () => {
+  const bad = (id) => M.array('striped', 'parity1', disks(2), null, id);
+  const r = V.validate(M.array('striped', 'none', [bad('a1'), bad('a2')], null, 'top'), {});
+  eq(r.hard.filter((v) => v.code === 'min-disks').length, 2);
+  eq(r.hard.filter((v) => v.code === 'min-disks').map((v) => v.nodeId).join(','), 'a1,a2');
+});
+
+test('the same rule firing twice on the same node is reported once', () => {
+  // Same id on both spans is not something the canvas can produce; it is the
+  // direct probe of the (code, nodeId) dedup.
+  const bad = () => M.array('striped', 'parity1', disks(2), null, 'same');
+  const r = V.validate(M.array('striped', 'none', [bad(), bad()], null, 'top'), {});
+  eq(r.hard.filter((v) => v.code === 'min-disks').length, 1);
+});
+
+test('data-layer rules do not run without a tree, physical rules still do', () => {
+  const r = V.validate(null, { engineCount: 2 });
+  assert(hasCode(r.hard, 'engine-single-point'), 'physical rule runs with no tree');
+  assert(r.hard.every((v) => v.layer === 'physical'), 'no data/cross rule fired');
+});
+
+// ---------------------------------------------------------------------------
 finish();
