@@ -385,10 +385,16 @@ function withRaid5(s) {
   return s;
 }
 
+// The disks are SATA, so cpAutoRoute wires them into the backplane: every
+// complete path below starts there. Building one is now the price of a verdict.
+function backplane(s) { return CS.cpAddNode(s, 'backplane'); }
+
 test('hardware: the reason names the controller card, and points at it', () => {
   const s = withRaid5(CS.createState());
+  const bp   = backplane(s);
   const ctrl = CS.cpAddNode(s, 'controller-hw');
   const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, bp, 'out', ctrl, 'in');
   CS.cpConnect(s, ctrl, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, 'hardware');
@@ -405,7 +411,7 @@ test('a controller sitting unconnected decides nothing', () => {
   const r = CS.evaluate(s);
   eq(r.raidType, null);
   eq(r.controlPathReason, null);
-  assert(/Connect the controller/i.test(r.controlPathIssue), r.controlPathIssue);
+  assert(/Connect the Controller HW/i.test(r.controlPathIssue), r.controlPathIssue);
 });
 
 test('a wired controller with no OS is still undetermined', () => {
@@ -420,9 +426,12 @@ test('a wired controller with no OS is still undetermined', () => {
 
 test('software: the reason names the OS that computes it', () => {
   const s = withRaid5(CS.createState());
-  CS.cpAddNode(s, 'hba');
+  const bp  = backplane(s);
+  const hba = CS.cpAddNode(s, 'hba');
   const eng = CS.cpAddNode(s, 'raid-engine');
   const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, bp, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', eng, 'in');
   CS.cpConnect(s, eng, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, 'software');
@@ -432,15 +441,122 @@ test('software: the reason names the OS that computes it', () => {
 
 test('fake: the reason says the CPU still does the work', () => {
   const s = withRaid5(CS.createState());
-  CS.cpAddNode(s, 'hba');
+  const bp  = backplane(s);
+  const hba = CS.cpAddNode(s, 'hba');
   const eng = CS.cpAddNode(s, 'raid-engine');
-  CS.cpAddNode(s, 'os-linux');
   const cpu = CS.cpAddNode(s, 'cpu');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, bp, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', eng, 'in');
   CS.cpConnect(s, eng, 'out', cpu, 'in');
+  CS.cpConnect(s, cpu, 'out', os, 'in');
   const r = CS.evaluate(s);
   eq(r.raidType, 'fake');
   assert(/CPU still does/i.test(r.controlPathReason), r.controlPathReason);
   eq(r.engineNodeId, eng);
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[13c] the verdict is a claim about a path, and walks it');
+
+test('a complete-looking path with the disks wired nowhere decides nothing', () => {
+  // Every component present and correctly chained — but no backplane, so the
+  // disks route into thin air. The old recognizer said "Hardware RAID".
+  const s = withRaid5(CS.createState());
+  const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, ctrl, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/No disk reaches/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('a gap between the disks and the engine is caught', () => {
+  const s = withRaid5(CS.createState());
+  const bp  = backplane(s);
+  const hba = CS.cpAddNode(s, 'hba');
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, hba, 'out', eng, 'in');   // backplane → hba never drawn
+  CS.cpConnect(s, eng, 'out', os, 'in');
+  assert(bp, 'the backplane is on the canvas, just not wired onward');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/No disk reaches/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('an engine that reaches no OS decides nothing', () => {
+  const s = withRaid5(CS.createState());
+  const bp   = backplane(s);
+  const hba  = CS.cpAddNode(s, 'hba');
+  const eng  = CS.cpAddNode(s, 'raid-engine');
+  const cpu  = CS.cpAddNode(s, 'cpu');
+  CS.cpAddNode(s, 'os-linux');              // present, but nothing reaches it
+  CS.cpConnect(s, bp, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', eng, 'in');
+  CS.cpConnect(s, eng, 'out', cpu, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/does not reach the OS/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('a floating HBA no longer satisfies the software branch', () => {
+  // The hole named in tech-debt/physical-recognizer-does-not-walk-the-path.md:
+  // presence of an HBA was read as participation.
+  const s = withRaid5(CS.createState());
+  const bp  = backplane(s);
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpAddNode(s, 'hba');                   // dropped, wired to nothing
+  CS.cpConnect(s, bp, 'out', eng, 'in');
+  CS.cpConnect(s, eng, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/HBA/.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('junk the verdict does not depend on is tolerated', () => {
+  // Over-strictness guard: a stray PCIe bus lying around must not veto a path
+  // that genuinely runs end to end.
+  const s = withRaid5(CS.createState());
+  const bp   = backplane(s);
+  const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpAddNode(s, 'pcie');
+  CS.cpConnect(s, bp, 'out', ctrl, 'in');
+  CS.cpConnect(s, ctrl, 'out', os, 'in');
+  eq(CS.evaluate(s).raidType, 'hardware');
+});
+
+test('a cycle in the control path does not hang the evaluation', () => {
+  // The RAID Engine has `any` ports, so the player can wire it back upstream.
+  const s = withRaid5(CS.createState());
+  const bp  = backplane(s);
+  const hba = CS.cpAddNode(s, 'hba');
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, bp, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', eng, 'in');
+  CS.cpConnect(s, eng, 'out', bp, 'in');    // back upstream
+  CS.cpConnect(s, eng, 'out', os, 'in');
+  eq(CS.evaluate(s).raidType, 'software');
+});
+
+test('NVMe disks reach the engine through the PCIe bus, with no backplane', () => {
+  // The protocol decides the entry point (§2): a backplane is not universal.
+  const s = CS.createState();
+  const a = CS.group(s, [CS.addDisk(s, 2, 'NVMe'), CS.addDisk(s, 2, 'NVMe'),
+                         CS.addDisk(s, 2, 'NVMe')]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity1');
+  const pcie = CS.cpAddNode(s, 'pcie');
+  const hba  = CS.cpAddNode(s, 'hba');
+  const eng  = CS.cpAddNode(s, 'raid-engine');
+  const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, pcie, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', eng, 'in');
+  CS.cpConnect(s, eng, 'out', os, 'in');
+  eq(CS.evaluate(s).raidType, 'software');
 });
 
 test('an undetermined path has no reason to give', () => {

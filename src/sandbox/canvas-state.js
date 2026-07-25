@@ -10,7 +10,7 @@
  * can update pixel coordinates without touching domain state or triggering evaluate().
  * evaluate() is called once per gesture (on drop), never during drag.
  *
- * Depends on: model.js (RaidModel), layout.js (RaidLayout)
+ * Depends on: model.js (RaidModel), layout.js (RaidLayout), graph.js (RaidGraph)
  *
  * Axis B mutations:
  *   CanvasState.addDisk(state, sizeGB, protocol, pos)     → id
@@ -32,6 +32,7 @@
   const Model     = (typeof require !== 'undefined') ? require('../engine/model.js')     : root.RaidModel;
   const Layout    = (typeof require !== 'undefined') ? require('../engine/layout.js')    : root.RaidLayout;
   const Validator = (typeof require !== 'undefined') ? require('../engine/validator.js') : root.RaidValidator;
+  const Graph     = (typeof require !== 'undefined') ? require('../engine/graph.js')     : root.RaidGraph;
 
   // ---------------------------------------------------------------------------
   // ID GENERATION
@@ -411,7 +412,12 @@
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
-    const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges);
+    // Disk edges are protocol-derived, not player-drawn, so they are domain
+    // truth — but the only caller was the physical view's render(). Now that the
+    // verdict is a walk from the disks, a recognizer that ran before a render
+    // would see a graph with no sources at all. Idempotent by construction.
+    cpAutoRoute(state);
+    const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges, _diskIds(state));
 
     // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
     // its output here (same loose bolt-on pattern as _recognizePhysicalLayer).
@@ -427,6 +433,15 @@
       engineNodeId:        cp.engineNodeId ?? null,
       violations,
     };
+  }
+
+  /**
+   * The disks, as the control-path graph knows them: they live on axis B and
+   * appear in cpEdges by disk id only, so the recognizer has to be told which
+   * endpoints are sources.
+   */
+  function _diskIds(state) {
+    return Array.from(state.nodes.values()).filter((n) => n.kind === 'disk').map((n) => n.id);
   }
 
   /**
@@ -456,8 +471,16 @@
    *   A node with componentId 'raid-engine' AND an OS node → engine position
    *     determines fake (between hba and cpu) vs software (in/after os)
    *
-   * For MVP: inspect the set of component types present in the graph.
-   * Full graph-traversal recognizer deferred to when constraint engine lands.
+   * The verdict is a claim about a PATH, so it is derived by walking one
+   * (`engine/graph.js`). The MVP shortcut — inspect which component types are
+   * present, plus one outgoing edge from the engine — declared a type for
+   * builds where no path existed: a floating HBA still counted as an HBA, and
+   * disks that reached nothing still counted as disks. A component is on the
+   * path here only if a disk reaches it AND it reaches an OS.
+   *
+   * What is NOT re-derived here: the fake-vs-software discriminant is still the
+   * direct engine→OS edge. Replacing it with the two-threshold rule (PCIe, OS)
+   * is the derived-controller work and belongs to its own branch.
    *
    * Every determined verdict also carries `reason` and `engineNodeId`. The panel
    * used to show the verdict alone, which hides the one insight axis A exists to
@@ -465,31 +488,50 @@
    * different place. The explanation belongs here, with the derivation — a view
    * that re-derives it could disagree with the badge above it.
    */
-  function _recognizePhysicalLayer(cpNodes, cpEdges) {
-    const components = new Set(Array.from(cpNodes.values()).map(n => n.componentId));
-    const osNode = Array.from(cpNodes.values()).find(n => n.componentId === 'os-linux' || n.componentId === 'os-windows');
-    const os = osNode ? osNode.componentId : null;
+  function _recognizePhysicalLayer(cpNodes, cpEdges, diskIds) {
+    const g     = Graph.build(cpNodes, cpEdges);
+    const disks = diskIds || [];
+
+    const osIds  = Graph.nodesWith(g, 'os-linux').concat(Graph.nodesWith(g, 'os-windows'));
+    const os     = osIds.length ? g.nodes.get(osIds[0]).componentId : null;
     const osName = os === 'os-windows' ? 'Windows' : 'Linux';
-    const nodeIdOf = (componentId) => {
-      const n = Array.from(cpNodes.values()).find((x) => x.componentId === componentId);
-      return n ? n.id : null;
-    };
+
+    const undetermined = (issue) => ({ raidType: null, os: null, complete: false, issue });
+
+    // The two halves of "on the path", kept separate because they fail with
+    // different advice: nothing feeds this, versus this feeds nothing.
+    const fedByDisk = (id) => disks.some((d) => Graph.reaches(g, d, id));
+    const reachesOS = (id) => osIds.some((o) => Graph.reaches(g, id, o));
+    const onPath    = (id) => fedByDisk(id) && reachesOS(id);
+
+    const ctrlIds   = Graph.nodesWith(g, 'controller-hw');
+    const engineIds = Graph.nodesWith(g, 'raid-engine');
+
+    /**
+     * Shared gate for both engine-bearing components: the same four questions,
+     * asked in the order the player can act on them. Returns an issue string,
+     * or null when the node genuinely sits on a disks→OS path.
+     */
+    function pathIssueFor(id, label) {
+      if (g.out.get(id).length === 0)
+        return `Connect the ${label} output — until it is wired, nothing can be `
+             + 'said about which RAID you are building.';
+      if (!os)
+        return 'Add an OS node to complete the path.';
+      if (!fedByDisk(id))
+        return `No disk reaches the ${label} yet — the path has to start at the disks.`;
+      if (!reachesOS(id))
+        return `The ${label} does not reach the OS — the path stops before it.`;
+      return null;
+    }
 
     // A controller dropped on the canvas is not yet ON the path. Presence alone
     // used to be enough to declare hardware RAID — the verdict came out before a
-    // single cable existed. Same bar as the software/fake branch below: the
-    // engine-bearing node must be wired onward, and the path must reach an OS.
-    if (components.has('controller-hw')) {
-      const ctrlId  = nodeIdOf('controller-hw');
-      const ctrlOut = Array.from(cpEdges.values()).filter((e) => e.fromNode === ctrlId);
-
-      if (ctrlOut.length === 0)
-        return { raidType: null, os: null, complete: false,
-                 issue: 'Connect the controller output — until it is wired, nothing can be '
-                      + 'said about which RAID you are building.' };
-      if (!os)
-        return { raidType: null, os: null, complete: false,
-                 issue: 'Add an OS node to complete the path.' };
+    // single cable existed.
+    if (ctrlIds.length) {
+      const ctrlId = ctrlIds.find(onPath) ?? ctrlIds[0];
+      const issue  = pathIssueFor(ctrlId, 'Controller HW');
+      if (issue) return undetermined(issue);
 
       return { raidType: 'hardware', os: null, complete: true, issue: null,
                engineNodeId: ctrlId,
@@ -500,30 +542,21 @@
                      + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
     }
 
-    const hasEngine = components.has('raid-engine');
-    const hasHBA    = components.has('hba');
-    const hasOS     = !!os;
+    if (engineIds.length) {
+      const engineId = engineIds.find(onPath) ?? engineIds[0];
+      const issue    = pathIssueFor(engineId, 'RAID Engine');
+      if (issue) return undetermined(issue);
 
-    if (hasHBA && hasEngine && hasOS) {
-      const engineNode = Array.from(cpNodes.values()).find(n => n.componentId === 'raid-engine');
-      const engineId   = engineNode ? engineNode.id : null;
-
-      // Engine must be connected on its output side to know its position.
-      // Check ALL outgoing edges from the engine (with 'any' ports the user
-      // could have made multiple connections; we look for the most specific one).
-      const engineOutEdges = engineId
-        ? Array.from(cpEdges.values()).filter(e => e.fromNode === engineId)
-        : [];
-
-      if (engineOutEdges.length === 0)
-        return { raidType: null, os: null, complete: false,
-                 issue: 'Connect the RAID Engine output — its position determines the RAID type.' };
+      // The HBA must be BETWEEN the disks and the engine, not merely present.
+      // A card lying unwired on the canvas used to satisfy this branch.
+      const hbaOnPath = Graph.nodesWith(g, 'hba')
+        .some((h) => fedByDisk(h) && Graph.reaches(g, h, engineId));
+      if (!hbaOnPath)
+        return undetermined('Route the disks through an HBA before the RAID Engine — '
+                          + 'without it nothing carries them to the engine.');
 
       // Software RAID: engine output goes directly to an OS node.
-      const connectsToOS = engineOutEdges.some(e => {
-        const c = cpNodes.get(e.toNode)?.componentId;
-        return c === 'os-linux' || c === 'os-windows';
-      });
+      const connectsToOS = (g.out.get(engineId) || []).some((toId) => osIds.includes(toId));
       if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null,
         engineNodeId: engineId,
         reason: `The RAID engine sits in the OS — ${osName} computes the layout itself, `
@@ -536,17 +569,11 @@
               + 'not a full controller, so the CPU still does the real work.' };
     }
 
-    if (!hasHBA && !components.has('controller-hw'))
-      return { raidType: null, os: null, complete: false,
-               issue: 'Add a controller (HBA or Controller HW) to the physical path.' };
-    if (!hasEngine && !components.has('controller-hw'))
-      return { raidType: null, os: null, complete: false,
-               issue: 'Add a RAID Engine to the path — its position determines the RAID type.' };
-    if (!hasOS)
-      return { raidType: null, os: null, complete: false,
-               issue: 'Add an OS node to complete the path.' };
-
-    return { raidType: null, os: null, complete: false, issue: 'Connect all nodes to complete the path.' };
+    if (Graph.nodesWith(g, 'hba').length === 0)
+      return undetermined('Add a controller (HBA or Controller HW) to the physical path.');
+    if (!os)
+      return undetermined('Add an OS node to complete the path.');
+    return undetermined('Add a RAID Engine to the path — its position determines the RAID type.');
   }
 
   // Derive the first actionable hint from the current state.
