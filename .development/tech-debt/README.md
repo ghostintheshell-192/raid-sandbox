@@ -50,11 +50,12 @@ of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
 
-*Auto-updated: 2026-07-24 22:30*
+*Auto-updated: 2026-07-25 10:37*
 
 **High Priority:** None currently
 
-**Medium Priority:** None currently
+**Medium Priority:**
+- `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 
 **Low Priority:**
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order
