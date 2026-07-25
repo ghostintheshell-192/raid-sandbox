@@ -1,6 +1,6 @@
 # INDEX - Development Documentation
 
-*Auto-generated: 2026-07-25 11:56*
+*Auto-generated: 2026-07-25 12:34*
 
 ---
 
@@ -19,7 +19,7 @@
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) (4KB, 2026-07-25) **RECENT**
 - [CURRENT-STATUS.md](CURRENT-STATUS.md) (9KB, 2026-07-25) **RECENT**
-- [INDEX.md](INDEX.md) (1KB, 2026-07-25) **RECENT**
+- [INDEX.md](INDEX.md) (2KB, 2026-07-25) **RECENT**
 - [README.md](README.md) (1KB, 2026-07-24) **RECENT**
 
 ### specs/implemented/ (1 files)

@@ -220,6 +220,7 @@
 <script src="src/engine/validator.js"></script>
 <script src="src/sandbox/canvas-state.js"></script>
 <script src="src/sandbox/drag-util.js"></script>
+<script src="src/sandbox/highlight.js"></script>
 <script src="src/sandbox/touch-dnd.js"></script>
 <script src="src/sandbox/sidebar-accordion.js"></script>
 <script src="src/sandbox/canvas-controller.js"></script>
@@ -265,6 +266,9 @@
       const div = document.createElement('div');
       div.className = 'sbc-issue' + (x.severity === 'hard' ? ' sbc-issue--hard' : '');
       div.textContent = `${x.severity === 'hard' ? '✕' : '⚠'} ${x.message}`;
+      // The message names its subject in words ("Span 2"); pointing at it lights
+      // the actual node, so the player never has to hunt for which one it means.
+      RaidHighlight.attach(div, [x.nodeId]);
       elViolations.appendChild(div);
     }
   }

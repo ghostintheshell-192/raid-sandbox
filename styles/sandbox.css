@@ -157,6 +157,21 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   transition: box-shadow .15s ease;
 }
 
+/* Reference highlight: "the line you are pointing at is about THIS node".
+   Deliberately not the picking blue — picking means "you are about to place
+   something here", this means "this is what I am talking about". One language
+   for every panel entry that refers to the canvas (violations, RAID type). */
+.sbc-referenced {
+  box-shadow: 0 0 0 2px rgba(255,190,90,.75), 0 0 16px rgba(255,190,90,.4);
+  border-radius: 8px;
+  transition: box-shadow .12s ease;
+}
+
+/* The entry doing the pointing: readable as interactive, without a button's weight. */
+.sbc-refs { cursor: help; }
+.sbc-refs:hover,
+.sbc-refs.is-pinned { background: rgba(255,190,90,.1); }
+
 /* Inline picker — appears in-flow next to the zone it belongs to. */
 .sbc-picker {
   display: flex; flex-wrap: wrap; gap: .4rem;
