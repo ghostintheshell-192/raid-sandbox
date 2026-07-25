@@ -1,15 +1,17 @@
 #!/bin/bash
 # Pre-commit module: branch protection for `main`.
 #
-# GitHub's protection on main is deliberately lightweight: the `headless` check
-# gates PRs, but `enforce_admins: false` leaves the owner able to commit
-# directly — on purpose, so a single maintainer can land a doc fix without the
-# PR ceremony. This hook keeps that door open and closes the other one: on
-# `main`, doc-only commits pass; anything touching code needs a branch.
+# NOTHING is authored directly on `main` — documentation included. Only merges
+# land here.
 #
-# "Doc-only" = every staged path is a *.md file or lives under .development/.
-# Deliberately narrow: .claude/settings.json, data/*.yaml and src/ are code as
-# far as this check is concerned.
+# This used to admit doc-only commits (`*.md`, `.development/`), on the argument
+# that a single maintainer should be able to land a doc fix without the PR
+# ceremony. Tried, and dropped 2026-07-25: the derived docs (`INDEX.md`,
+# `tech-debt/README.md`) are regenerated on every commit, so a doc commit on main
+# while a branch is open conflicts with that branch's own regenerated copies.
+# Every such conflict forces a merge into the open branch, which creates a new
+# head SHA, which needs a fresh CI run — one of which hung and had to be force
+# merged. The convenience was worth less than the merge friction it produced.
 #
 # There is no `develop` branch on this project, and no spec-workflow hook — the
 # scaffold's clauses for both were dropped rather than carried over dead.
@@ -36,27 +38,20 @@ if [ -f "$GIT_DIR/MERGE_HEAD" ]; then
     exit 0
 fi
 
-STAGED=$(git diff --cached --name-only)
-NON_DOC=$(echo "$STAGED" | grep -vE '(\.md$|^\.development/)')
-
-if [ -z "$NON_DOC" ]; then
-    echo -e "${GREEN}✓ Doc-only commit on 'main' allowed${NC}"
-    exit 0
-fi
-
 echo ""
 echo -e "${RED}═══════════════════════════════════════════════${NC}"
-echo -e "${RED}  COMMIT BLOCCATO: 'main' accetta solo doc${NC}"
+echo -e "${RED}  COMMIT BLOCCATO: su 'main' si mergia soltanto${NC}"
 echo -e "${RED}═══════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${YELLOW}Questi file staged non sono documentazione:${NC}"
-echo "$NON_DOC" | sed 's/^/    /'
+echo -e "${YELLOW}File staged:${NC}"
+git diff --cached --name-only | sed 's/^/    /'
 echo ""
-echo -e "${YELLOW}Crea un branch dedicato:${NC}"
+echo -e "${YELLOW}Crea un branch dedicato — anche per la sola documentazione:${NC}"
 echo ""
 echo "  git checkout -b feature/nome-feature"
 echo "  git checkout -b fix/nome-bug"
 echo "  git checkout -b refactor/descrizione"
+echo "  git checkout -b docs/argomento"
 echo ""
 echo -e "${YELLOW}Per bypass (NON RACCOMANDATO):${NC}"
 echo "  git commit --no-verify"
