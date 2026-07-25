@@ -375,6 +375,84 @@ test('a node that is both a root and a member counts only as a member', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[13b] the physical verdict explains itself');
+
+// A valid RAID 5 on the data side, so evaluate() reaches the physical branch.
+function withRaid5(s) {
+  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity1');
+  return s;
+}
+
+test('hardware: the reason names the controller card, and points at it', () => {
+  const s = withRaid5(CS.createState());
+  const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const os   = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, ctrl, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, 'hardware');
+  // The wording must use a name the canvas actually shows, not a synonym.
+  assert(/Controller HW/.test(r.controlPathReason), r.controlPathReason);
+  eq(r.engineNodeId, ctrl);
+});
+
+test('a controller sitting unconnected decides nothing', () => {
+  // Reported in-browser: dropping the controller printed "Hardware RAID" plus
+  // its explanation, with not one cable drawn.
+  const s = withRaid5(CS.createState());
+  CS.cpAddNode(s, 'controller-hw');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  eq(r.controlPathReason, null);
+  assert(/Connect the controller/i.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+test('a wired controller with no OS is still undetermined', () => {
+  const s = withRaid5(CS.createState());
+  const ctrl = CS.cpAddNode(s, 'controller-hw');
+  const pcie = CS.cpAddNode(s, 'pcie');
+  CS.cpConnect(s, ctrl, 'out', pcie, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(r.controlPathIssue, 'it says what is still missing');
+});
+
+test('software: the reason names the OS that computes it', () => {
+  const s = withRaid5(CS.createState());
+  CS.cpAddNode(s, 'hba');
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, eng, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, 'software');
+  assert(/Linux/.test(r.controlPathReason), r.controlPathReason);
+  eq(r.engineNodeId, eng);
+});
+
+test('fake: the reason says the CPU still does the work', () => {
+  const s = withRaid5(CS.createState());
+  CS.cpAddNode(s, 'hba');
+  const eng = CS.cpAddNode(s, 'raid-engine');
+  CS.cpAddNode(s, 'os-linux');
+  const cpu = CS.cpAddNode(s, 'cpu');
+  CS.cpConnect(s, eng, 'out', cpu, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, 'fake');
+  assert(/CPU still does/i.test(r.controlPathReason), r.controlPathReason);
+  eq(r.engineNodeId, eng);
+});
+
+test('an undetermined path has no reason to give', () => {
+  const s = withRaid5(CS.createState());
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  eq(r.controlPathReason, null);
+  eq(r.engineNodeId, null);
+  assert(r.controlPathIssue, 'it still says what is missing');
+});
+
+// ---------------------------------------------------------------------------
 console.log('\n[13] reset() — master clear');
 
 test('reset wipes both axes and leaves an empty, evaluable state', () => {
