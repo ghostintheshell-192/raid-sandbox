@@ -34,6 +34,7 @@ kernel rules and never regenerated from the engine.
 
 ## Key Decisions
 
+- [ADR-001: The RAID engine's type comes from which object it is, not where it sits](reference/decisions/001-engine-identity-not-position.md) `[high]` — Hardware vs. fake RAID is decided by which of two distinct engine objects sits on the control path (compute silicon vs. metadata-only chip), not by the engine's position relative to the PCIe bus; software RAID is the configuration where neither is present.
 
 ## Project Tree
 
@@ -42,8 +43,8 @@ kernel rules and never regenerated from the engine.
 
 
 ### src/challenge
-- `challenge.js` — RAID Sandbox: prompt-mode win-check (Phase 5, Stage D).
 - `challenge-ui.js` — Challenge mode UI for the RAID Sandbox.
+- `challenge.js` — RAID Sandbox: prompt-mode win-check (Phase 5, Stage D).
 
 ### src/engine
 - `graph.js` — RAID Sandbox: the control-path graph, as a graph (Phase 5, Stage E).
