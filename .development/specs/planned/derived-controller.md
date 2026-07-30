@@ -1,6 +1,7 @@
 # The controller is derived, not dragged
 
-**Status:** PLANNED — design agreed 2026-07-25, not implemented
+**Status:** IMPLEMENTED — `engine-roc` / `engine-metadata` landed on
+`feature/derived-controller` (2026-07-30), not yet merged
 **Amended:** 2026-07-30, see [ADR-001](../../reference/decisions/001-engine-identity-not-position.md)
 and the "Update 2026-07-30" section below — the Hardware/Fake discriminant changed
 **Origin:** the RIEPILOGO diagram (`.personal/IMG20260601163917.jpg`), re-read with its
@@ -142,3 +143,31 @@ Still open: the final badge text for the metadata-only chip. "Fake RAID" (the cu
 draft badge in `fake-raid-chip.yaml`) is genuine industry terminology, but it still hands
 the player the verdict before they build anything — same problem `controller-hw`'s badge
 already avoided by saying "RAID Engine" instead of "Hardware RAID".
+
+## Update 2026-07-30 — implemented, badge question resolved
+
+Both pieces renamed and shipped: `controller-hw.yaml` → `data/components/engine-roc.yaml`
+(`id: engine-roc`), `fake-raid-chip.yaml` promoted and renamed →
+`data/components/engine-metadata.yaml` (`id: engine-metadata`). `raid-engine.yaml` removed.
+
+The badge question above is resolved by making the point literal rather than picking a
+new neutral word: **both pieces share the same label, "RAID Engine"**, distinguished only
+by a small tag — badge `"RoC"` on one, `"metadata"` on the other (sidebar chips read "RAID
+Engine (RoC)" / "RAID Engine (metadata)"). Hardware and fake RAID look the same in the
+wiring; now they look the same in the palette too, and only the object's real identity —
+not its position, not a verdict word — tells them apart. A `title=` tooltip on each sidebar
+chip (drawn from the YAML `description:` field, previously unused — see
+`data/components/engine-roc.yaml` / `engine-metadata.yaml`) gives the player the one fact
+that legitimately differs: RoC has its own compute silicon, the metadata chip does not.
+
+`_recognizePhysicalLayer` (`src/sandbox/canvas-state.js`) now branches on `engine-roc` /
+`engine-metadata` presence, with software as the case where neither exists and the OS is
+reached directly. The HBA-in-path gate is scoped to SATA/SAS disks, closing
+`tech-debt/nvme-software-raid-unbuildable.md` in the same pass. Retiring `raid-engine.yaml`
+also removed the system's last `any`-typed ports, closing
+`tech-debt/control-path-tolerates-cycles.md` (the player can no longer wire a cycle through
+the drag-and-drop UI at all — port typing forbids it structurally).
+
+Not yet done: the hardware-claims verification against a primary source (ADR-001, Cons),
+and the dashed-box/hover-highlight verdict rendering described earlier in this document —
+that remains a separate, unscheduled piece of UI work.

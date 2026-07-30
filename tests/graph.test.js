@@ -18,9 +18,11 @@ const edges = (...pairs) => new Map(
   pairs.map(([from, to], i) => [`cpe${i}`, { id: `cpe${i}`, fromNode: from, toNode: to }])
 );
 
-// A complete software-RAID path: two SATA disks → backplane → hba → engine → os.
+// A complete control-path shape: two SATA disks → backplane → hba → engine → os.
+// The graph module is agnostic to which engine object 'e' is — that reading
+// belongs to the recognizer in canvas-state.js, not to this fixture.
 const softwarePath = () => G.build(
-  nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'raid-engine'], ['o', 'os-linux']),
+  nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'engine-metadata'], ['o', 'os-linux']),
   edges(['d1', 'b'], ['d2', 'b'], ['b', 'h'], ['h', 'e'], ['e', 'o'])
 );
 
@@ -82,7 +84,7 @@ console.log('\n[3] reachableFrom — the holes the recognizer must stop declarin
 
 test('a floating HBA is not reachable from the disks', () => {
   const g = G.build(
-    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'raid-engine'], ['o', 'os-linux']),
+    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'engine-metadata'], ['o', 'os-linux']),
     edges(['d1', 'b'], ['b', 'e'], ['e', 'o'])   // hba on the canvas, wired to nothing
   );
   assert(G.reaches(g, 'd1', 'o'), 'the path itself should still hold');
@@ -97,7 +99,7 @@ test('a disk wired nowhere reaches nothing', () => {
 });
 test('a gap in the middle breaks reachability to the OS', () => {
   const g = G.build(
-    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'raid-engine'], ['o', 'os-linux']),
+    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'engine-metadata'], ['o', 'os-linux']),
     edges(['d1', 'b'], ['b', 'h'], ['e', 'o'])   // hba → engine never drawn
   );
   assert(!G.reaches(g, 'd1', 'o'));
@@ -108,7 +110,7 @@ console.log('\n[4] cycles — the engine has `any` ports, so the player can buil
 
 test('a cycle terminates instead of hanging', () => {
   const g = G.build(
-    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'raid-engine']),
+    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'engine-metadata']),
     edges(['b', 'h'], ['h', 'e'], ['e', 'b'])
   );
   eq(G.reachableFrom(g, 'b').size, 3);
@@ -123,7 +125,7 @@ test('a self-loop terminates', () => {
 });
 test('a cycle off the path does not hide the OS behind it', () => {
   const g = G.build(
-    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'raid-engine'], ['o', 'os-linux']),
+    nodes(['b', 'backplane'], ['h', 'hba'], ['e', 'engine-metadata'], ['o', 'os-linux']),
     edges(['d1', 'b'], ['b', 'h'], ['h', 'e'], ['e', 'b'], ['e', 'o'])
   );
   assert(G.reaches(g, 'd1', 'o'));
@@ -133,14 +135,14 @@ test('a cycle off the path does not hide the OS behind it', () => {
 console.log('\n[5] nodesWith — duplicates are the caller\'s problem, not a coin toss');
 
 test('finds the single node of a type', () => {
-  eq(G.nodesWith(softwarePath(), 'raid-engine').join(','), 'e');
+  eq(G.nodesWith(softwarePath(), 'engine-metadata').join(','), 'e');
 });
 test('returns BOTH nodes when the player dropped two backplanes', () => {
   const g = G.build(nodes(['b1', 'backplane'], ['b2', 'backplane']), edges());
   eq(G.nodesWith(g, 'backplane').length, 2);
 });
 test('an absent type yields an empty list', () => {
-  eq(G.nodesWith(softwarePath(), 'controller-hw').length, 0);
+  eq(G.nodesWith(softwarePath(), 'engine-roc').length, 0);
 });
 test('disks match only the null component type', () => {
   eq(G.nodesWith(softwarePath(), null).length, 2);

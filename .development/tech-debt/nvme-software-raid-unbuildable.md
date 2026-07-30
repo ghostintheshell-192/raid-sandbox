@@ -1,8 +1,9 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-07-30
+resolved: 2026-07-30
 related: [physical-recognizer-does-not-walk-the-path.md]
 related_decision: ../reference/decisions/001-engine-identity-not-position.md
 ---
@@ -44,6 +45,15 @@ Option A, folded into the ADR-001 implementation branch — the engine branch of
 recognizer is being rewritten there anyway (engine identity instead of the engine→OS
 edge), so the protocol-scoped HBA rule lands in the same pass. Noted in ADR-001,
 Consequences/Pros.
+
+## Resolution
+
+Option A, landed with the ADR-001 implementation (`feature/derived-controller`): the
+HBA-in-path gate in `_recognizePhysicalLayer` (`hbaGateFor`) is now scoped to disks whose
+protocol is not NVMe. An all-NVMe build (disks → PCIe → CPU → OS, no HBA, no engine node
+— the OS is the engine) resolves to Software RAID; SATA/SAS builds still require the HBA
+on the path. Covered by `tests/canvas-state.test.js` ("NVMe-only software RAID no longer
+requires an HBA").
 
 ## Notes
 

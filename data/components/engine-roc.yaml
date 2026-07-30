@@ -1,7 +1,7 @@
-id: controller-hw
-name: Hardware RAID Controller
-category: controller
-pathSlot: controller
+id: engine-roc
+name: RAID Engine (RoC)
+category: engine
+pathSlot: engine
 
 description: >
   A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a
@@ -19,9 +19,6 @@ provides:
 requires:
   - pcie-slot
 
-raidEnginePosition: on-controller   # engine is on the PCIe card → Hardware RAID
-derivedType: hardware
-
 note: >
   Because the OS sees only the Virtual Drive, software-level RAID tools (mdadm, ZFS)
   cannot manage the individual disks — they are hidden by the controller firmware.
@@ -29,7 +26,7 @@ note: >
 ui:
   icon: "🖥"
   color: "rgba(52,152,219,.7)"
-  badge: "RAID Engine"
+  badge: "RoC"
   ports:
     - id: in
       dir: in

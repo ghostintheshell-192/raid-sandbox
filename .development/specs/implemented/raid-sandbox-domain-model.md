@@ -307,6 +307,12 @@ Sketch of the component set (granularity: **down to the HBA**, per author's inte
 | `cpu-chip-raid` | raid-engine (fake) | Intel RST → fake RAID |
 | `os-linux` / `os-windows` | raid-engine (software) | mdadm/ZFS · Storage Spaces; needs UPS |
 
+> **Superseded 2026-07-30**: this early sketch's ids never shipped as written and the
+> Hardware/Fake discriminant it implies (RAID-capable component vs. not) is superseded —
+> see [ADR-001](../../reference/decisions/001-engine-identity-not-position.md). The
+> components that actually shipped are `engine-roc` and `engine-metadata`
+> (`data/components/`), told apart by identity, not by which capability they declare.
+
 ### 5b. Algorithm resource — schema (proposal)
 
 Carries the placement rule **and** the animation. Example, the default

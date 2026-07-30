@@ -8,10 +8,10 @@ description: >
   (HBAs, RAID controllers) to the CPU/chipset. All data between the controller and the
   CPU flows over this bus.
 
-  In the RAID context, the PCIe bus is the boundary where the RAID engine type is determined:
-  - Engine ON the PCIe card (before the bus) → Hardware RAID
-  - Engine between PCIe bus and CPU           → Fake RAID
-  - Engine in the OS (after CPU)              → Software RAID
+  It carries no weight in deriving the RAID type: hardware and fake RAID sit in the
+  same wiring position (see ADR-001) and are told apart by which engine object is on
+  the path — a RAID-on-Chip processor versus a metadata-only chip — not by where the
+  bus sits relative to either.
 
 provides:
   - pcie-connection

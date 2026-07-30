@@ -1,10 +1,11 @@
 ---
 type: bug
 priority: low
-status: open
+status: resolved
 discovered: 2026-07-25
+resolved: 2026-07-30
 related: [physical-recognizer-does-not-walk-the-path.md]
-related_decision: null
+related_decision: ../reference/decisions/001-engine-identity-not-position.md
 ---
 
 # A control path that loops back on itself is accepted in silence
@@ -52,11 +53,21 @@ failure mode the informative-UI work is trying to remove.
 verdict — the player is told the drawing loops, not that they are forbidden from drawing
 it.
 
-## Notes
+## Resolution
 
-Whatever the rule says must survive the derived-controller rework, which may replace the
-position-based reading of the path entirely. See
-`.memory-bank/ideas/2026-07-25-fake-raid-has-no-chip-thresholds-may-not-be-positions.md`.
+Closed by ADR-001, as anticipated in its Consequences/Pros: `raid-engine.yaml` — the only
+component with `any`-typed ports — is retired. `engine-roc` (routing→virtual-drive) and
+`engine-metadata` (pcie→pcie) both carry concrete, non-`any` port types, and no other pair
+of ports in the system type-checks back to something upstream of itself. A player can no
+longer construct a cycle through the drag-and-drop UI at all — `portsCompatible`'s `any`
+escape hatch is now unreachable code, since no component declares it.
+
+The graph walk itself still tolerates a cycle if one exists (`tests/graph.test.js` §4,
+`tests/canvas-state.test.js` §13c "a cycle in the control path does not hang the
+evaluation") — `cpConnect` itself never validated port types, only the browser drag UI
+does, so this is defense-in-depth rather than a live gap. The broader question this issue
+opened — whether the recognizer should verify component ORDER as well as reachability —
+is unaffected by this closure and remains open ground, not currently blocking anything.
 
 ## Related Documentation
 
