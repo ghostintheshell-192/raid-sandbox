@@ -1,6 +1,8 @@
 # The controller is derived, not dragged
 
 **Status:** PLANNED — design agreed 2026-07-25, not implemented
+**Amended:** 2026-07-30, see [ADR-001](../../reference/decisions/001-engine-identity-not-position.md)
+and the "Update 2026-07-30" section below — the Hardware/Fake discriminant changed
 **Origin:** the RIEPILOGO diagram (`.personal/IMG20260601163917.jpg`), re-read with its
 author while wiring the self-explaining RAID-type badge
 **Touches:** axis A (control path) — the physical layer's component model
@@ -45,6 +47,13 @@ wording, not the shape.
 
 ## What changes
 
+> **Superseded 2026-07-30** — the position reading below (before/after the PCIe bus) does
+> not hold: two real products (a hardware RAID card and a fake-RAID add-in chip) can sit
+> in the identical slot and wiring position. See
+> [ADR-001](../../reference/decisions/001-engine-identity-not-position.md) and the
+> "Update 2026-07-30" section at the end of this document for the model that replaces it.
+> Kept verbatim below as the record of the original reasoning.
+
 **One engine piece. Three positions. The controller becomes an outcome.**
 
 | the engine sits… | resulting type | the dashed box encloses |
@@ -82,9 +91,12 @@ It is the same box around a different set of pieces.
 
 ## Open questions
 
-- **Is "which side of the PCIe bus" the right discriminator** between hardware and fake?
+- ~~**Is "which side of the PCIe bus" the right discriminator** between hardware and fake?
   It matches the diagram and is crisp to check, but it should be confirmed against the
-  source notes before it becomes the rule.
+  source notes before it becomes the rule.~~ **SUPERSEDED 2026-07-30**: no — see
+  [ADR-001](../../reference/decisions/001-engine-identity-not-position.md). The
+  discriminant is which object the player places (RAID-on-Chip vs. metadata-only chip),
+  not its position relative to PCIe.
 - **Can the player still build a wrong physical path**, and what does the game say then?
   The box has no colour when the engine's position is undetermined — that is the honest
   state, and `controlPathIssue` already carries the message.
@@ -99,3 +111,34 @@ It is the same box around a different set of pieces.
 - `.development/specs/planned/informative-ui.md` — same workstream: naming before rendering
 - `.development/tech-debt/physical-recognizer-does-not-walk-the-path.md` — prerequisite in
   practice
+
+## Update 2026-07-30 — engine identity, not position
+
+Superseded by [ADR-001](../../reference/decisions/001-engine-identity-not-position.md).
+The model below replaces "one engine, three positions" wherever the two disagree; the
+rest of this document — the HBA description, the "controller becomes an outcome" framing,
+the dashed-box-as-verdict rendering idea — is unaffected.
+
+**Two engine objects, not one, and not a parameter on one:**
+
+| piece | what it models | presence on a valid disks→OS path (HBA upstream, reaches an OS node — the check `_recognizePhysicalLayer` already performs) means |
+|---|---|---|
+| RAID-on-Chip (`controller-hw.yaml`, kept, renamed) | dedicated compute silicon — RoC, cache, XOR/Galois accelerator | **Hardware** |
+| Metadata-only chip (`fake-raid-chip.yaml`, kept, renamed) | firmware + metadata, no compute silicon — Intel RST, cheap add-in chips | **Fake** |
+| neither present, HBA reaches an OS node directly | the OS declares `provides: raid-engine` itself | **Software** |
+
+`raid-engine.yaml` — the generic, `any`-port, position-derived piece — is retired: it was
+the data-file scaffold for the position reading this update replaces.
+
+`pcie-bus.yaml` stays as an **illustrative node only** — without it the physical layer
+stops depicting an actual bus topology — but it carries no weight in the derivation,
+before this update or after; the recognizer never inspected it.
+
+The `raidEnginePosition` / `derivedType` fields on the surviving component YAMLs
+(`cpu.yaml`, `hba.yaml`, `os-linux.yaml`, `os-windows.yaml`, `pcie-bus.yaml`) encode the
+abandoned positional reading and are removed.
+
+Still open: the final badge text for the metadata-only chip. "Fake RAID" (the current
+draft badge in `fake-raid-chip.yaml`) is genuine industry terminology, but it still hands
+the player the verdict before they build anything — same problem `controller-hw`'s badge
+already avoided by saying "RAID Engine" instead of "Hardware RAID".
