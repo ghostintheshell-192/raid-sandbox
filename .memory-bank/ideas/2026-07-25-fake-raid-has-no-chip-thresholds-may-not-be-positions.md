@@ -1,6 +1,8 @@
 ---
 captured: 2026-07-25
-status: open
+status: promoted-to-adr
+promoted_to: ../../.development/reference/decisions/001-engine-identity-not-position.md
+promoted_at: 2026-07-30
 context: "emerged in-browser while testing the graph-traversal recognizer (feature/engine-graph-traversal): Valentina questioned whether the fake-RAID chain engine → PCIe → CPU is physically true"
 tags: [domain-model, ground-truth, derived-controller, teaching]
 ---

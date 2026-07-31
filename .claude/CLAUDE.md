@@ -46,17 +46,16 @@ The following rules are automatically loaded from `.claude/rules/`:
 - **[.memory-bank/](.memory-bank/)** - Session handoffs, **flat** (local) + tracked `ideas/`
 - **[.personal/](.personal/)** - Personal notes (not tracked)
 
-## No ADRs on this project
+## ADRs on this project
 
-`.development/reference/decisions/` exists but is **empty**: this project has
-recorded no ADRs yet, and there is no `key-decisions.md`. The architecture
-decisions that exist (vanilla stack, level derived rather than selected, no
-license for now) live in `.claude/rules/overview.md` and in the handoffs.
+`.development/reference/decisions/` holds this project's ADRs, starting from
+`001`; the "Key Decisions" section of the generated `ARCHITECTURE.md` fills
+itself in from there. Architecture decisions that predate any ADR (vanilla
+stack, level derived rather than selected, no license for now) live in
+`.claude/rules/overview.md` and in the handoffs.
 
 Do **not** import ADRs, ADR numbers, or a `key-decisions.md` from another
-project — they belong to that project, not this one. When a decision here earns
-a durable record, start from `001`; the "Key Decisions" section of the generated
-`ARCHITECTURE.md` fills itself in.
+project — they belong to that project, not this one.
 
 ---
 
