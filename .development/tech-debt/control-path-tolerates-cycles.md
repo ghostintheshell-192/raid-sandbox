@@ -54,9 +54,12 @@ it.
 
 ## Notes
 
-Whatever the rule says must survive the derived-controller rework, which may replace the
-position-based reading of the path entirely. See
-`.memory-bank/ideas/2026-07-25-fake-raid-has-no-chip-thresholds-may-not-be-positions.md`.
+Whatever the rule says must survive the derived-controller rework. As of ADR-001
+(2026-07-30, `reference/decisions/001-engine-identity-not-position.md`) the rework is no
+longer speculative: it retires `raid-engine.yaml`, the piece whose `any`-typed ports are
+this bug's actual root cause. Once that lands, the `any` escape hatch this issue depends
+on is gone and this entry can likely close outright rather than need a soft-violation
+rule — reassess when the ADR-001 implementation branch is done, before building Option A.
 
 ## Related Documentation
 
