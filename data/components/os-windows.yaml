@@ -16,9 +16,6 @@ provides:
 requires:
   - hba
 
-raidEnginePosition: in-os
-derivedType: software
-
 tools:
   - storage-spaces       # modern Windows software RAID (ReFS or NTFS)
   - dynamic-volumes      # legacy: spanned/striped/mirrored/RAID-5 volumes

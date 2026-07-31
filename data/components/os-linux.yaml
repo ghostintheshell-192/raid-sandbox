@@ -15,9 +15,6 @@ provides:
 requires:
   - hba                  # needs individual disks visible (not a Virtual Drive)
 
-raidEnginePosition: in-os   # → Software RAID
-derivedType: software
-
 tools:
   - mdadm                # classical Linux MD RAID
   - zfs                  # ZFS with native RAID-Z

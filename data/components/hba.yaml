@@ -19,9 +19,7 @@ constraints:
   - rule: not-raid-capable
     message: >
       An HBA alone cannot host the RAID engine. With an HBA, RAID must be handled
-      either by the OS (software RAID) or by a separate fake-RAID chip near the CPU.
-
-raidEnginePosition: null   # HBA never hosts the RAID engine
+      either by the OS (software RAID) or by a separate metadata-only chip near the CPU.
 
 ui:
   icon: "🔌"

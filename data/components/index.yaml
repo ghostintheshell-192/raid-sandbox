@@ -7,10 +7,10 @@
   file: backplane.yaml
 - id: hba
   file: hba.yaml
-- id: controller-hw
-  file: controller-hw.yaml
-- id: raid-engine
-  file: raid-engine.yaml
+- id: engine-roc
+  file: engine-roc.yaml
+- id: engine-metadata
+  file: engine-metadata.yaml
 - id: os-linux
   file: os-linux.yaml
 - id: os-windows

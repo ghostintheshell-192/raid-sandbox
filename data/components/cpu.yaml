@@ -16,10 +16,6 @@ provides:
 requires:
   - pcie-connection
 
-raidEnginePosition:
-  - software: in-os        # engine runs as OS kernel code on the CPU
-  - fake:     near-cpu     # engine chip sits between PCIe and CPU execution context
-
 ui:
   icon: "⚡"
   color: "rgba(241,196,15,.7)"

@@ -40,17 +40,17 @@
     'hba':           { label: 'HBA',            icon: '🔌', color: 'rgba(149,165,166,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'routing' },
                                { id:'out', dir:'out', type:'pcie' }] },
-    'controller-hw': { label: 'Controller HW',  icon: '🖥', color: 'rgba(52,152,219,.7)',
+    // Two distinct engine objects (ADR-001): identical badge prefix ("RAID Engine"),
+    // distinguished only by the tag naming which object it is — hardware and fake
+    // RAID look the same in the wiring, and the palette makes that literally true.
+    'engine-roc':      { label: 'RAID Engine',  icon: '🖥', color: 'rgba(52,152,219,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'routing' },
                                { id:'out', dir:'out', type:'virtual-drive' }],
-                       badge: 'RAID Engine' },
-    'raid-engine':   { label: 'RAID Engine',    icon: '⚙', color: 'rgba(231,76,60,.7)',
-                       // 'any' type: the engine connects anywhere in the chain.
-                       // Its position (before CPU = fake; after CPU = software)
-                       // is determined by the recognizer, not port validation.
-                       ports: [{ id:'in',  dir:'in',  type:'any' },
-                               { id:'out', dir:'out', type:'any' }],
-                       badge: 'Engine' },
+                       badge: 'RoC' },
+    'engine-metadata': { label: 'RAID Engine',  icon: '🔲', color: 'rgba(231,76,60,.4)',
+                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
+                               { id:'out', dir:'out', type:'pcie' }],
+                       badge: 'metadata' },
     'os-linux':      { label: 'Linux',          icon: '🐧', color: 'rgba(46,204,113,.7)',
                        ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
     'os-windows':    { label: 'Windows',        icon: '🪟', color: 'rgba(46,204,113,.7)',
@@ -69,7 +69,7 @@
     'routing':       ['routing'],
     'pcie':          ['pcie', 'pcie-raid'],
     'pcie-raid':     ['pcie'],
-    'virtual-drive': ['pcie'],   // controller-hw → pcie bus → cpu
+    'virtual-drive': ['pcie'],   // engine-roc → pcie bus → cpu
     'cpu':           ['cpu'],
   };
 

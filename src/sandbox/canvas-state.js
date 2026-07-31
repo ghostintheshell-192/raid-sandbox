@@ -4,7 +4,8 @@
  * Two orthogonal axes (spec §2):
  *   Axis B (data layout) — disk/array tree; recognizer derives the RAID level.
  *   Axis A (control path) — the physical path disks→backplane→controller→CPU→OS;
- *                           engine position derives hardware/fake/software RAID.
+ *                           which engine object sits on it derives hardware/fake/
+ *                           software RAID (ADR-001) — position carries no weight.
  *
  * Positions are kept in a separate map so the drag fast-path (requestAnimationFrame)
  * can update pixel coordinates without touching domain state or triggering evaluate().
@@ -438,20 +439,23 @@
   /**
    * The disks, as the control-path graph knows them: they live on axis B and
    * appear in cpEdges by disk id only, so the recognizer has to be told which
-   * endpoints are sources.
+   * endpoints are sources. Protocol rides along because the HBA requirement
+   * (below) is scoped to SATA/SAS — NVMe disks reach the PCIe bus directly.
    */
   function _diskIds(state) {
-    return Array.from(state.nodes.values()).filter((n) => n.kind === 'disk').map((n) => n.id);
+    return Array.from(state.nodes.values())
+      .filter((n) => n.kind === 'disk')
+      .map((n) => ({ id: n.id, protocol: n.protocol }));
   }
 
   /**
    * Build the derived physical view the validator consumes (never the raw cp* Maps).
-   *   engineCount — RAID-engine-bearing nodes (controller-hw or raid-engine); >1 is illegal
+   *   engineCount — RAID-engine-bearing nodes (engine-roc or engine-metadata); >1 is illegal
    *   diskRoutes  — each disk's protocol + the component it actually wires into
    */
   function _buildPhysicalAdapter(state, cp) {
     const engineCount = Array.from(state.cpNodes.values())
-      .filter((n) => n.componentId === 'controller-hw' || n.componentId === 'raid-engine').length;
+      .filter((n) => n.componentId === 'engine-roc' || n.componentId === 'engine-metadata').length;
 
     const diskRoutes = [];
     for (const node of state.nodes.values()) {
@@ -466,31 +470,31 @@
   /**
    * Derive hardware/fake/software from the physical layer graph.
    *
-   * Rules (from component YAML raidEnginePosition fields):
-   *   A node with componentId 'controller-hw'              → Hardware RAID
-   *   A node with componentId 'raid-engine' AND an OS node → engine position
-   *     determines fake (between hba and cpu) vs software (in/after os)
+   * Rules (ADR-001 — identity, not position):
+   *   A node with componentId 'engine-roc'      on the path → Hardware RAID
+   *   A node with componentId 'engine-metadata' on the path → Fake RAID
+   *   Neither object anywhere, OS reached directly           → Software RAID
+   *     (the OS itself is the engine: `provides: raid-engine`, os-linux.yaml /
+   *     os-windows.yaml)
    *
    * The verdict is a claim about a PATH, so it is derived by walking one
-   * (`engine/graph.js`). The MVP shortcut — inspect which component types are
-   * present, plus one outgoing edge from the engine — declared a type for
-   * builds where no path existed: a floating HBA still counted as an HBA, and
-   * disks that reached nothing still counted as disks. A component is on the
-   * path here only if a disk reaches it AND it reaches an OS.
+   * (`engine/graph.js`). A component is on the path only if a disk reaches it
+   * AND it reaches an OS — presence alone (a floating node) does not count.
    *
-   * What is NOT re-derived here: the fake-vs-software discriminant is still the
-   * direct engine→OS edge. Replacing it with the two-threshold rule (PCIe, OS)
-   * is the derived-controller work and belongs to its own branch.
+   * The HBA-in-path requirement is scoped to SATA/SAS disks (checked via each
+   * disk's protocol, carried in `disks`): NVMe disks reach the PCIe bus
+   * directly and were wrongly blocked by an unconditional HBA gate before
+   * (tech-debt/nvme-software-raid-unbuildable.md).
    *
    * Every determined verdict also carries `reason` and `engineNodeId`. The panel
    * used to show the verdict alone, which hides the one insight axis A exists to
-   * teach (§2): hardware/software/fake are the SAME path with the engine in a
-   * different place. The explanation belongs here, with the derivation — a view
-   * that re-derives it could disagree with the badge above it.
+   * teach (§2): hardware/software/fake are the SAME path, told apart by which
+   * engine object sits on it (or none). The explanation belongs here, with the
+   * derivation — a view that re-derives it could disagree with the badge above it.
    */
-  function _recognizePhysicalLayer(cpNodes, cpEdges, diskIds) {
+  function _recognizePhysicalLayer(cpNodes, cpEdges, disks) {
     const g     = Graph.build(cpNodes, cpEdges);
-    const disks = diskIds || [];
+    disks       = disks || [];
 
     const osIds  = Graph.nodesWith(g, 'os-linux').concat(Graph.nodesWith(g, 'os-windows'));
     const os     = osIds.length ? g.nodes.get(osIds[0]).componentId : null;
@@ -500,17 +504,19 @@
 
     // The two halves of "on the path", kept separate because they fail with
     // different advice: nothing feeds this, versus this feeds nothing.
-    const fedByDisk = (id) => disks.some((d) => Graph.reaches(g, d, id));
+    const fedByDisk = (id) => disks.some((d) => Graph.reaches(g, d.id, id));
     const reachesOS = (id) => osIds.some((o) => Graph.reaches(g, id, o));
     const onPath    = (id) => fedByDisk(id) && reachesOS(id);
 
-    const ctrlIds   = Graph.nodesWith(g, 'controller-hw');
-    const engineIds = Graph.nodesWith(g, 'raid-engine');
+    const rocIds  = Graph.nodesWith(g, 'engine-roc');
+    const chipIds = Graph.nodesWith(g, 'engine-metadata');
 
     /**
-     * Shared gate for both engine-bearing components: the same four questions,
-     * asked in the order the player can act on them. Returns an issue string,
-     * or null when the node genuinely sits on a disks→OS path.
+     * Shared gate for "does a disk reach this id, and does it reach an OS":
+     * the same questions, asked in the order the player can act on them.
+     * Returns an issue string, or null when the node genuinely sits on a
+     * disks→OS path. Used both for an engine object and, when there is none,
+     * for the OS node itself (the software verdict).
      */
     function pathIssueFor(id, label) {
       if (g.out.get(id).length === 0)
@@ -525,7 +531,7 @@
         // the disks describes something they can see they already did. Found
         // in-browser with two backplanes, the disks auto-routed to the one that
         // was not cabled onward.
-        const anyDiskWired = disks.some((d) => (g.out.get(d) || []).length > 0);
+        const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
         return anyDiskWired
           ? `The disks are wired, but the chain breaks before the ${label} — `
             + 'follow the cables forward from them to find the gap.'
@@ -536,62 +542,118 @@
       return null;
     }
 
-    // A controller dropped on the canvas is not yet ON the path. Presence alone
-    // used to be enough to declare hardware RAID — the verdict came out before a
-    // single cable existed.
-    if (ctrlIds.length) {
-      const ctrlId = ctrlIds.find(onPath) ?? ctrlIds[0];
-      const issue  = pathIssueFor(ctrlId, 'Controller HW');
+    /**
+     * SATA/SAS disks need an HBA between them and `id`; NVMe disks reach PCIe
+     * directly and need none (tech-debt/nvme-software-raid-unbuildable.md).
+     * `id` is either an engine object or, for the software verdict, the OS
+     * node — the sentence reads naturally either way.
+     */
+    function hbaGateFor(id, label) {
+      const feeding  = disks.filter((d) => Graph.reaches(g, d.id, id));
+      const needsHba = feeding.some((d) => d.protocol !== 'NVMe');
+      if (!needsHba) return null;
+
+      const hbas      = Graph.nodesWith(g, 'hba');
+      const hbaOnPath = hbas.some((h) => fedByDisk(h) && Graph.reaches(g, h, id));
+      if (hbaOnPath) return null;
+
+      // An HBA wired downstream is present AND connected, so "without it"
+      // would be describing a canvas the player is not looking at.
+      const hbaIsDownstream = hbas.some((h) => Graph.reaches(g, id, h));
+      return hbaIsDownstream
+        ? `The HBA sits after the ${label} — SATA/SAS disks need it in front, `
+        + 'so it belongs between the disks and it.'
+        : `Route the SATA/SAS disks through an HBA before the ${label} — `
+        + 'without it nothing carries them there.';
+    }
+
+    // A RAID-on-Chip dropped on the canvas is not yet ON the path. Presence
+    // alone used to be enough to declare hardware RAID — the verdict came out
+    // before a single cable existed. It already includes protocol translation
+    // (provides: protocol-translation), so no separate HBA gate applies.
+    if (rocIds.length) {
+      const rocId = rocIds.find(onPath) ?? rocIds[0];
+      const issue = pathIssueFor(rocId, 'RAID Engine (RoC)');
       if (issue) return undetermined(issue);
 
       return { raidType: 'hardware', os: null, complete: true, issue: null,
-               engineNodeId: ctrlId,
-               // Names the piece exactly as the canvas labels it. A sentence that
-               // says "the controller card" points at something the player cannot
-               // find: that name exists nowhere in the game.
-               reason: 'The RAID engine is inside the Controller HW — it sits before the '
+               engineNodeId: rocId,
+               // Names the piece exactly as the canvas labels it. A sentence
+               // that says "the controller card" points at something the
+               // player cannot find: that name exists nowhere in the game.
+               reason: 'The RAID engine is a RAID-on-Chip — it sits before the '
                      + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
     }
 
-    if (engineIds.length) {
-      const engineId = engineIds.find(onPath) ?? engineIds[0];
-      const issue    = pathIssueFor(engineId, 'RAID Engine');
+    if (chipIds.length) {
+      const chipId = chipIds.find(onPath) ?? chipIds[0];
+      const issue  = pathIssueFor(chipId, 'RAID Engine (metadata)');
       if (issue) return undetermined(issue);
 
-      // The HBA must be BETWEEN the disks and the engine, not merely present.
-      // A card lying unwired on the canvas used to satisfy this branch.
-      const hbas      = Graph.nodesWith(g, 'hba');
-      const hbaOnPath = hbas.some((h) => fedByDisk(h) && Graph.reaches(g, h, engineId));
-      if (!hbaOnPath) {
-        // An HBA wired downstream of the engine is present AND connected, so
-        // "without it" would be describing a canvas the player is not looking at.
-        const hbaIsDownstream = hbas.some((h) => Graph.reaches(g, engineId, h));
-        return undetermined(hbaIsDownstream
-          ? 'The HBA sits after the RAID Engine — it is what carries the disks TO the '
-          + 'engine, so it belongs between them.'
-          : 'Route the disks through an HBA before the RAID Engine — '
-          + 'without it nothing carries them to the engine.');
-      }
+      const hbaIssue = hbaGateFor(chipId, 'RAID Engine (metadata)');
+      if (hbaIssue) return undetermined(hbaIssue);
 
-      // Software RAID: engine output goes directly to an OS node.
-      const connectsToOS = (g.out.get(engineId) || []).some((toId) => osIds.includes(toId));
-      if (connectsToOS) return { raidType: 'software', os, complete: true, issue: null,
-        engineNodeId: engineId,
-        reason: `The RAID engine sits in the OS — ${osName} computes the layout itself, `
-              + 'with no RAID hardware in the path.' };
-
-      // Fake RAID: engine output goes to CPU or PCIe (engine sits before CPU).
       return { raidType: 'fake', os, complete: true, issue: null,
-        engineNodeId: engineId,
-        reason: 'The RAID engine sits before the CPU, not in the OS — but it is a chip, '
-              + 'not a full controller, so the CPU still does the real work.' };
+        engineNodeId: chipId,
+        reason: 'The RAID engine is a metadata-only chip — it owns the array '
+              + 'metadata, but the CPU still computes the parity, not the chip.' };
     }
 
-    if (Graph.nodesWith(g, 'hba').length === 0)
-      return undetermined('Add a controller (HBA or Controller HW) to the physical path.');
+    // Software RAID: neither engine object is anywhere on the canvas, so the
+    // OS itself is the engine (`provides: raid-engine`). Only the FIRST hop
+    // (routing the disks somewhere) is common to all three verdicts, so it
+    // is the only one advised unconditionally; past it, hardware and fake
+    // stay open for a while (see hardwareOpen/fakeOpen below) and nothing
+    // is said until only software remains possible.
+    const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
+    if (!anyDiskWired) {
+      const allNvme = disks.length > 0 && disks.every((d) => d.protocol === 'NVMe');
+      return undetermined(allNvme
+        ? 'Nothing carries the disks anywhere yet — add a PCIe bus so they have somewhere to go.'
+        : 'Nothing carries the disks anywhere yet — add a Backplane so they have somewhere to go.');
+    }
+
+    // Past this point, do NOT name a specific next component unless it is
+    // required by EVERY verdict still reachable from here — naming one that
+    // only some remaining verdicts need presumes the direction the player
+    // has not chosen yet (the same "derive, don't select" principle the
+    // level recognizer already follows for axis B).
+    const hbas = Graph.nodesWith(g, 'hba');
+
+    // Hardware is open until an HBA actually intercepts the disk flow: a RoC
+    // wired straight from the Backplane skips the HBA entirely (it already
+    // provides protocol-translation). NVMe disks never reach a RoC at all
+    // (its input is routing-typed, NVMe disks auto-route to PCIe) — hardware
+    // was never open for them, so it can't be what's still blocking software.
+    const hardwareOpen = disks.some((d) => d.protocol !== 'NVMe') && !hbas.some(fedByDisk);
+    if (hardwareOpen) return undetermined(null);
+
+    // Past the HBA, hardware is foreclosed (its pcie-typed output cannot
+    // reach the RoC's routing-typed input), but fake is still open — a
+    // metadata chip could still be wired in before the CPU — until a CPU is
+    // actually reached with no chip node on the canvas to have gone through.
+    const cpuIds  = Graph.nodesWith(g, 'cpu');
+    const fakeOpen = !cpuIds.some(fedByDisk);
+    if (fakeOpen) return undetermined(null);
+
     if (!os)
       return undetermined('Add an OS node to complete the path.');
-    return undetermined('Add a RAID Engine to the path — its position determines the RAID type.');
+
+    // The OS is a sink (no output port), so the question is just "does a
+    // disk reach it" — not the "is its own output wired" question
+    // pathIssueFor asks for engine nodes.
+    const osId = osIds[0];
+    if (!fedByDisk(osId))
+      return undetermined('The disks are wired, but the chain breaks before the OS — '
+        + 'follow the cables forward from them to find the gap.');
+
+    const hbaIssue = hbaGateFor(osId, 'OS');
+    if (hbaIssue) return undetermined(hbaIssue);
+
+    return { raidType: 'software', os, complete: true, issue: null,
+      engineNodeId: null,
+      reason: `No RAID engine sits on the path — ${osName} and the CPU compute `
+            + 'the layout themselves, with no RAID hardware involved.' };
   }
 
   // Derive the first actionable hint from the current state.
