@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 """
 Generate INDEX.md for the development documentation.
-Scans .development/ and docs/ folders and creates a navigable index.
+
+INDEX.md is a *map*, not a history. It answers "what documents exist and what
+is each one for", and nothing else. Anything about when a file changed, how
+recently, or in what order things moved belongs to git, which records it
+better: with the reason, the author, and in a form that survives a clone.
+
+That distinction is what makes this generator deterministic. It reads only
+paths and file contents — never mtimes, never the clock — so the same tree
+produces the same bytes on any machine, in any checkout, at any time. Which is
+in turn why INDEX.md can be tracked in git without generating a diff on every
+commit.
 """
 
-import os
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # Configuration
 DEVELOPMENT_DIR = Path(__file__).parent.parent
 PROJECT_ROOT = DEVELOPMENT_DIR.parent
 DOCS_DIR = PROJECT_ROOT / "docs"
 INDEX_FILE = DEVELOPMENT_DIR / "INDEX.md"
-DAYS_RECENT = 7
 
-# Marker of the generated-at line. Kept out of the change detection in main():
-# see the comment there for why the file must not rewrite itself every run.
-TIMESTAMP_PREFIX = "*Auto-generated:"
+# How far into a file to look for its H1 before giving up.
+TITLE_SEARCH_LINES = 40
 
 # Folders to exclude from indexing
 EXCLUDE_FOLDERS = {
@@ -27,20 +33,33 @@ EXCLUDE_FOLDERS = {
 }
 
 # Quick links - files to highlight at the top
-# This project has no ADRs and no specs/README.md; specs are still listed in
-# the per-directory scan below. Add entries here as those artifacts appear.
+# Neither specs/ nor reference/decisions/ carries a README index in this project,
+# so linking to one would render as "file not found". ADR-001 exists; specs and
+# decisions are still reached through the per-directory scan below. Add entries
+# here if those index pages ever appear.
 QUICK_LINKS = [
     ("Current Status", "CURRENT-STATUS.md"),
     ("Tech Debt", "tech-debt/README.md"),
 ]
 
 
-def get_file_info(path: Path) -> Tuple[str, int, datetime]:
-    """Get file name, size in KB, and modification time."""
-    stat = path.stat()
-    size_kb = stat.st_size // 1024
-    mtime = datetime.fromtimestamp(stat.st_mtime)
-    return path.name, size_kb, mtime
+def read_title(path: Path) -> str:
+    """First H1 of the document, or "" if it has none.
+
+    This is the annotation that earns the index its keep: a bare list of
+    filenames is a worse `ls`, while "006-headless-browser-scraping.md —
+    Headless Browser for Anti-Bot Protected Sources" says something the
+    filename cannot. Frontmatter is skipped implicitly by scanning for the
+    first "# " line rather than the first line.
+    """
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for _, line in zip(range(TITLE_SEARCH_LINES), fh):
+                if line.startswith("# "):
+                    return line[2:].strip()
+    except OSError:
+        pass
+    return ""
 
 
 def scan_directory(base_dir: Path, relative_to: Path) -> Dict[str, List[dict]]:
@@ -62,12 +81,10 @@ def scan_directory(base_dir: Path, relative_to: Path) -> Dict[str, List[dict]]:
             folder = rel_path.parent.as_posix() if rel_path.parent != Path(".") else "root"
             if folder not in result:
                 result[folder] = []
-            name, size, mtime = get_file_info(item)
             result[folder].append({
-                "name": name,
+                "name": item.name,
                 "path": rel_path.as_posix(),
-                "size_kb": size,
-                "mtime": mtime,
+                "title": read_title(item),
             })
         elif item.is_dir():
             sub_result = scan_directory(item, relative_to)
@@ -76,42 +93,28 @@ def scan_directory(base_dir: Path, relative_to: Path) -> Dict[str, List[dict]]:
     return result
 
 
-def recency_key(file_info: dict) -> tuple:
-    """Sort key: most recent day first, then name.
-
-    Deliberately coarse. Sorting by the raw mtime is precise to the second, but
-    every entry is *rendered* only to the day ("today", "2d ago"), so a
-    second-level tie-break produces reorderings the reader cannot account for.
-    INDEX.md indexes itself, so writing it bumps its own mtime and the next run
-    would shuffle the neighbouring entries — a diff on every commit with no
-    change behind it. Day granularity plus the name makes the order total.
-    """
-    return (-file_info["mtime"].toordinal(), file_info["name"])
-
-
-def format_file_entry(file_info: dict, now: datetime, prefix: str = "") -> str:
-    """Format a single file entry with optional 'recent' marker.
+def format_file_entry(file_info: dict, prefix: str = "") -> str:
+    """Format a single file entry: filename as the link, H1 as the annotation.
 
     `prefix` is prepended to the link target for sections whose paths are
     relative to the project root rather than to INDEX.md's own directory.
     """
-    days_ago = (now - file_info["mtime"]).days
-    recent_marker = " **RECENT**" if days_ago <= DAYS_RECENT else ""
-    date_str = file_info["mtime"].strftime("%Y-%m-%d")
-    size_str = f"{file_info['size_kb']}KB" if file_info["size_kb"] > 0 else "<1KB"
     link = f"{prefix}{file_info['path']}"
-    return f"- [{file_info['name']}]({link}) ({size_str}, {date_str}){recent_marker}"
+    entry = f"- [{file_info['name']}]({link})"
+    if file_info["title"]:
+        entry += f" — {file_info['title']}"
+    return entry
 
 
 def generate_index() -> str:
     """Generate the complete INDEX.md content."""
-    now = datetime.now()
     lines = []
 
     # Header
     lines.append("# INDEX - Development Documentation")
     lines.append("")
-    lines.append(f"*Auto-generated: {now.strftime('%Y-%m-%d %H:%M')}*")
+    lines.append("*A map of what exists and what each document is for.*")
+    lines.append("*For when and why something changed, ask git.*")
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -153,11 +156,11 @@ def generate_index() -> str:
         lines.append(f"### {folder_display}/ ({len(files)} files)")
         lines.append("")
 
-        # Sort files by modification day (newest first), then by name
-        files.sort(key=recency_key)
+        # Alphabetical: in a map you scan for a name, not for a date.
+        files.sort(key=lambda f: f["name"])
 
         for f in files:
-            lines.append(format_file_entry(f, now))
+            lines.append(format_file_entry(f))
         lines.append("")
 
     lines.append("---")
@@ -179,8 +182,9 @@ def generate_index() -> str:
                 continue
             lines.append(f"### {folder}/")
             lines.append("")
+            files.sort(key=lambda f: f["name"])
             for f in files:
-                lines.append(format_file_entry(f, now, prefix="../"))
+                lines.append(format_file_entry(f, prefix="../"))
             lines.append("")
     else:
         lines.append("*docs/ folder not found*")
@@ -188,57 +192,24 @@ def generate_index() -> str:
 
     lines.append("---")
     lines.append("")
-
-    # Recently Modified
-    lines.append("## Recently Modified (last 7 days)")
-    lines.append("")
-
-    all_files = []
-    for folder, files in dev_files.items():
-        all_files.extend(files)
-
-    recent_cutoff = now - timedelta(days=DAYS_RECENT)
-    recent_files = [f for f in all_files if f["mtime"] > recent_cutoff]
-    recent_files.sort(key=recency_key)
-
-    if recent_files:
-        for i, f in enumerate(recent_files[:10], 1):
-            days = (now - f["mtime"]).days
-            days_str = "today" if days == 0 else f"{days}d ago"
-            lines.append(f"{i}. [{f['name']}]({f['path']}) ({days_str})")
-    else:
-        lines.append("*No files modified in the last 7 days*")
-
-    lines.append("")
-    lines.append("---")
-    lines.append("")
     lines.append("*Run `python .development/scripts/generate-index.py` to regenerate*")
 
     return "\n".join(lines)
 
 
-def strip_timestamp(text: str) -> str:
-    """Drop the generated-at line so two runs can be compared for real change."""
-    return "\n".join(
-        line for line in text.splitlines() if not line.startswith(TIMESTAMP_PREFIX)
-    )
-
-
 def main():
     """Main entry point.
 
-    Rewrites INDEX.md only when its substance changed. The timestamp alone is
-    not substance: a pre-commit hook regenerates this file on every commit, and
-    an unconditional write would attach a one-line diff to each of them —
-    noise that trains the reader to stop looking at the diff.
+    Writes only on real change. With the timestamp gone this is no longer a
+    workaround for self-inflicted churn — identical input now genuinely means
+    identical output — but it still spares the file a pointless rewrite on
+    every commit.
     """
     content = generate_index()
 
-    if INDEX_FILE.exists():
-        current = INDEX_FILE.read_text(encoding="utf-8")
-        if strip_timestamp(current) == strip_timestamp(content):
-            print(f"Unchanged {INDEX_FILE}")
-            return
+    if INDEX_FILE.exists() and INDEX_FILE.read_text(encoding="utf-8") == content:
+        print(f"Unchanged {INDEX_FILE}")
+        return
 
     INDEX_FILE.write_text(content, encoding="utf-8")
     print(f"Generated {INDEX_FILE}")

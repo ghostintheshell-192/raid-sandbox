@@ -6,19 +6,16 @@
 .memory-bank/*
 !.memory-bank/ideas/
 
-# NOTE: .development/ IS tracked — design docs, specs, tech-debt and the
-# session-archive script live with the code.
+# NOTE: .development/ IS tracked in full — design docs, specs, tech-debt, the
+# session-archive script, and the derived docs too.
 #
-# ...except the two *indexes*, which are derived and regenerate from what is
-# already in the repo. Tracking them bought nothing and cost a conflict on
-# every parallel branch: 04-docs-update regenerates them on each commit, and
-# INDEX.md carries a generation timestamp, so two branches diverge there even
-# when neither changed a real file. Rebuild with .development/automation/docs-update.sh
-# (the SessionStart hook already does it). ARCHITECTURE.md stays tracked: it is
-# imported into every session as the navigation map, and it is deterministic —
-# same sources, same bytes — so it does not collide.
-.development/INDEX.md
-.development/tech-debt/README.md
+# INDEX.md and tech-debt/README.md were excluded here until 2026-08-29, because
+# 04-docs-update regenerates them on every commit and they carried a generation
+# timestamp, so two branches diverged there even when neither had touched a real
+# file. The criterion was right and stated in this very note — ARCHITECTURE.md
+# stayed tracked because it is deterministic, same sources same bytes. The
+# generators are now deterministic too: no clock, no mtimes. So the exclusion
+# has no reason left, and it had a cost — see 1e55217.
 
 # ---- Claude Code local / per-machine ----
 .claude/settings.local.json

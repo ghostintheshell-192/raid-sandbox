@@ -11,7 +11,6 @@ Run from anywhere - paths are relative to script location.
 """
 
 import re
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -97,10 +96,13 @@ def scan_issues() -> List[Dict]:
 
 def generate_index_section(issues: List[Dict]) -> str:
     """Generate the markdown section for current issues by priority."""
+    # No generated-at stamp: this section is a map of what is open, and git
+    # already records when it last changed. Stamping the clock here made the
+    # output differ on every run for no reason, which is what forced the
+    # rewrite-only-on-change guard below and, elsewhere, the decision to stop
+    # tracking this file at all.
     lines = [
         "## Current Issues by Priority",
-        "",
-        f"*Auto-updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
         "",
     ]
 
@@ -135,19 +137,16 @@ def generate_index_section(issues: List[Dict]) -> str:
     return '\n'.join(lines)
 
 
-def strip_timestamp(text: str) -> str:
-    """Drop the updated-at line so two runs can be compared for real change."""
-    return '\n'.join(
-        line for line in text.splitlines()
-        if not line.startswith('*Auto-updated:')
-    )
+def update_readme(new_section: str) -> str:
+    """Update README.md with the new index section.
 
-
-def update_readme(new_section: str) -> bool:
-    """Update README.md with new index section."""
+    Returns "written", "unchanged", or "failed" — the caller reports which.
+    Collapsing the first two into one message made the script claim it had
+    updated a file it had deliberately left alone.
+    """
     if not README_FILE.exists():
         print(f"ERROR: README not found at {README_FILE}")
-        return False
+        return "failed"
 
     content = README_FILE.read_text(encoding='utf-8')
 
@@ -156,7 +155,11 @@ def update_readme(new_section: str) -> bool:
     pattern = r'## Current Issues by Priority.*?(?=\n## [^#]|\Z)'
 
     if re.search(pattern, content, re.DOTALL):
-        new_content = re.sub(pattern, new_section.rstrip() + '\n', content, flags=re.DOTALL)
+        # Lambda replacement: issue titles may contain backslashes (e.g. \s in a
+        # regex-related title), which re.sub would parse as escape sequences.
+        new_content = re.sub(
+            pattern, lambda _: new_section.rstrip() + '\n', content, flags=re.DOTALL
+        )
     else:
         # Section not found - append before ## Integration
         integration_match = re.search(r'\n## Integration', content)
@@ -167,15 +170,15 @@ def update_readme(new_section: str) -> bool:
             # Just append at end
             new_content = content.rstrip() + '\n\n' + new_section
 
-    # Rewrite only on real change. A pre-commit hook regenerates this file on
-    # every commit; without the guard the refreshed "*Auto-updated:*" line
-    # alone would attach a one-line diff to each of them — noise that trains
-    # the reader to stop reading the diff.
-    if strip_timestamp(content) == strip_timestamp(new_content):
-        return True
+    # Write only on real change. With the stamp gone this is no longer a
+    # workaround for self-inflicted churn — identical issues now genuinely
+    # produce identical bytes — but it still spares the file a pointless
+    # rewrite on every commit.
+    if content == new_content:
+        return "unchanged"
 
     README_FILE.write_text(new_content, encoding='utf-8')
-    return True
+    return "written"
 
 
 def main():
@@ -198,12 +201,12 @@ def main():
 
     new_section = generate_index_section(issues)
 
-    if update_readme(new_section):
-        print(f"Updated {README_FILE}")
-    else:
+    outcome = update_readme(new_section)
+    if outcome == "failed":
         print("Failed to update README")
         return 1
 
+    print(f"{'Updated' if outcome == 'written' else 'Unchanged'} {README_FILE}")
     return 0
 
 
