@@ -1,0 +1,66 @@
+# INDEX - Development Documentation
+
+*A map of what exists and what each document is for.*
+*For when and why something changed, ask git.*
+
+---
+
+## Quick Links
+
+- [Current Status](CURRENT-STATUS.md)
+- [Tech Debt](tech-debt/README.md)
+
+---
+
+## Development Documentation (.development/)
+
+*Specs, tech-debt, decisions*
+
+### (root)/ (4 files)
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Architecture Reference
+- [CURRENT-STATUS.md](CURRENT-STATUS.md) — Current Status
+- [INDEX.md](INDEX.md) — INDEX - Development Documentation
+- [README.md](README.md) — .development
+
+### specs/implemented/ (1 files)
+
+- [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) — RAID Sandbox — Domain Model (design backbone)
+
+### specs/planned/ (2 files)
+
+- [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
+- [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
+
+### tech-debt/ (10 files)
+
+- [README.md](tech-debt/README.md) — Tech Debt Issues
+- [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
+- [automation-not-checked-on-windows.md](tech-debt/automation-not-checked-on-windows.md) — The hooks and dev scripts are authored and tested only on the Linux workstation
+- [canvas-nodes-are-unnamed.md](tech-debt/canvas-nodes-are-unnamed.md) — The canvas does not name the things the player builds
+- [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) — Usable capacity is approximate when an array mixes disk sizes
+- [control-path-tolerates-cycles.md](tech-debt/control-path-tolerates-cycles.md) — A control path that loops back on itself is accepted in silence
+- [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
+- [nvme-software-raid-unbuildable.md](tech-debt/nvme-software-raid-unbuildable.md) — All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
+- [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
+- [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
+
+### reference/ (1 files)
+
+- [physical-model-fidelity.md](reference/physical-model-fidelity.md) — Physical model vs. physical reality — fidelity audit
+
+### reference/decisions/ (1 files)
+
+- [001-engine-identity-not-position.md](reference/decisions/001-engine-identity-not-position.md) — ADR-001: The RAID engine's type comes from which object it is, not where it sits
+
+---
+
+## Public Documentation (docs/)
+
+*Committed to git - user-facing documentation*
+
+*docs/ folder not found*
+
+---
+
+*Run `python .development/scripts/generate-index.py` to regenerate*
