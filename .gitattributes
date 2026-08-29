@@ -1,0 +1,19 @@
+# Fully derived documentation
+#
+# A generator owns these two files end to end, so when both sides of a merge
+# have regenerated them there is nothing to reconcile: keep either side and let
+# .githooks/post-merge regenerate from the merged tree. Without this, two
+# branches that each added a tech-debt issue or a spec conflict on files that
+# are about to be rewritten wholesale — the friction that had these two
+# gitignored until 1e55217.
+#
+# The `generated` driver is registered per clone by
+# .development/automation/bootstrap.sh, next to core.hooksPath — without the
+# hooks, this attribute would silently keep one side and never regenerate.
+#
+# .development/tech-debt/README.md is deliberately absent: a generator owns one
+# section of it and the surrounding prose is hand-written, so keeping one side
+# would discard the other's edits and regeneration would not restore them.
+# Its conflicts are real and have to be read.
+.development/ARCHITECTURE.md merge=generated
+.development/INDEX.md merge=generated
