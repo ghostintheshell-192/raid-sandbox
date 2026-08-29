@@ -25,6 +25,20 @@ EXCLUDE_FILES = {"README.md", "_TEMPLATE.md"}
 # Priority order for display
 PRIORITY_ORDER = ["high", "medium", "low"]
 
+# Written when README.md is absent, so the generator can bootstrap the file it
+# maintains instead of refusing. Deliberately minimal: this script owns one
+# section of that README and nothing else, so the skeleton carries only what
+# makes the file legible and the pointer to where the real conventions live.
+# A project that wants the full document copies it from the scaffold.
+README_SKELETON = """# Tech Debt Issues
+
+One markdown file per issue, with the frontmatter schema in `_TEMPLATE.md`.
+`update-tech-debt-index.py` reads `priority` and `status` from it to generate
+the section below; an issue without frontmatter appears in neither the index
+nor the archiving automation.
+
+"""
+
 
 def parse_frontmatter(content: str) -> Dict[str, str]:
     """Extract YAML frontmatter from markdown content."""
@@ -140,13 +154,21 @@ def generate_index_section(issues: List[Dict]) -> str:
 def update_readme(new_section: str) -> str:
     """Update README.md with the new index section.
 
-    Returns "written", "unchanged", or "failed" — the caller reports which.
-    Collapsing the first two into one message made the script claim it had
-    updated a file it had deliberately left alone.
+    Returns "written" or "unchanged" — the caller reports which. Collapsing
+    the two into one message made the script claim it had updated a file it
+    had deliberately left alone.
+
+    A missing README is a bootstrap, not a failure. This script owns one
+    section of that file and cannot reconstruct the prose around it, which is
+    why it used to refuse outright — but refusing left the project unable to
+    regenerate a third of its derived documentation, while its two sibling
+    generators create their output happily. Writing a skeleton and proceeding
+    keeps the "owns a section" contract and drops the "requires a file" one.
     """
     if not README_FILE.exists():
-        print(f"ERROR: README not found at {README_FILE}")
-        return "failed"
+        README_FILE.parent.mkdir(parents=True, exist_ok=True)
+        README_FILE.write_text(README_SKELETON, encoding='utf-8')
+        print(f"Created {README_FILE} (was missing)")
 
     content = README_FILE.read_text(encoding='utf-8')
 
@@ -202,10 +224,6 @@ def main():
     new_section = generate_index_section(issues)
 
     outcome = update_readme(new_section)
-    if outcome == "failed":
-        print("Failed to update README")
-        return 1
-
     print(f"{'Updated' if outcome == 'written' else 'Unchanged'} {README_FILE}")
     return 0
 

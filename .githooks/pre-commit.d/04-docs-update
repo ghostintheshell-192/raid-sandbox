@@ -7,7 +7,7 @@
 #
 # This overlaps with the SessionStart hook in .claude/settings.json but does
 # not duplicate it: that one refreshes the docs when a session opens, this one
-# guarantees the commit itself never carries a stale ARCHITECTURE.md.
+# guarantees the commit itself never carries stale derived docs.
 #
 # Never blocks: derived docs are an output, not a gate.
 
@@ -26,22 +26,33 @@ echo -e "${BLUE}[Derived Docs]${NC}"
 
 (cd "$PROJECT_ROOT" && "$ENTRY_POINT") | sed 's/^/  /'
 
-# Only the tracked derived file is staged. INDEX.md and tech-debt/README.md are
-# gitignored (see .gitignore): docs-update.sh still refreshes them locally, but
-# staging an ignored path is an error, and versioning them produced a conflict
-# on every parallel branch.
+# Every file docs-update.sh regenerates. This list held only ARCHITECTURE.md
+# while INDEX.md and tech-debt/README.md were gitignored — correct then, since
+# staging an ignored path is an error. 1e55217 started tracking both, and this
+# list was not part of that change: they were regenerated on every commit and
+# staged on none, left modified in the working tree instead. The conflict on
+# parallel branches that motivated ignoring them is handled now by the
+# merge=generated driver in .gitattributes.
 GENERATED=(
     ".development/ARCHITECTURE.md"
+    ".development/INDEX.md"
+    ".development/tech-debt/README.md"
 )
-STAGED_ANY=0
+
+# Add unconditionally: `git add` on an unchanged tracked file is a no-op, so
+# the pre-test bought nothing and got the create case wrong. It used to be
+# `git diff --quiet <file>`, which reports no difference for a file git does
+# not track yet — so whenever a generator CREATED its output rather than
+# updating it (a fresh clone, a deleted file), the new file was left untracked
+# and the hook announced the docs were already current.
+STAGED=()
 for file in "${GENERATED[@]}"; do
-    if ! git diff --quiet "$PROJECT_ROOT/$file" 2>/dev/null; then
-        git add "$PROJECT_ROOT/$file"
-        STAGED_ANY=1
-    fi
+    [[ -f "$PROJECT_ROOT/$file" ]] || continue
+    git add "$PROJECT_ROOT/$file"
+    STAGED+=("$PROJECT_ROOT/$file")
 done
 
-if [[ $STAGED_ANY -eq 1 ]]; then
+if [[ ${#STAGED[@]} -gt 0 ]] && ! git diff --cached --quiet -- "${STAGED[@]}" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} Regenerated docs staged"
 else
     echo -e "  ${GREEN}✓${NC} Derived docs already current"
