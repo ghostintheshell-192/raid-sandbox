@@ -57,13 +57,15 @@ def scan_directory(base_dir: Path, relative_to: Path) -> Dict[str, List[dict]]:
         rel_path = item.relative_to(relative_to)
 
         if item.is_file() and item.suffix == ".md":
-            folder = str(rel_path.parent) if rel_path.parent != Path(".") else "root"
+            # as_posix() keeps forward slashes on Windows too: these strings end up
+            # as markdown link targets, and backslashes break them everywhere.
+            folder = rel_path.parent.as_posix() if rel_path.parent != Path(".") else "root"
             if folder not in result:
                 result[folder] = []
             name, size, mtime = get_file_info(item)
             result[folder].append({
                 "name": name,
-                "path": str(rel_path),
+                "path": rel_path.as_posix(),
                 "size_kb": size,
                 "mtime": mtime,
             })
@@ -87,13 +89,18 @@ def recency_key(file_info: dict) -> tuple:
     return (-file_info["mtime"].toordinal(), file_info["name"])
 
 
-def format_file_entry(file_info: dict, now: datetime) -> str:
-    """Format a single file entry with optional 'recent' marker."""
+def format_file_entry(file_info: dict, now: datetime, prefix: str = "") -> str:
+    """Format a single file entry with optional 'recent' marker.
+
+    `prefix` is prepended to the link target for sections whose paths are
+    relative to the project root rather than to INDEX.md's own directory.
+    """
     days_ago = (now - file_info["mtime"]).days
     recent_marker = " **RECENT**" if days_ago <= DAYS_RECENT else ""
     date_str = file_info["mtime"].strftime("%Y-%m-%d")
     size_str = f"{file_info['size_kb']}KB" if file_info["size_kb"] > 0 else "<1KB"
-    return f"- [{file_info['name']}]({file_info['path']}) ({size_str}, {date_str}){recent_marker}"
+    link = f"{prefix}{file_info['path']}"
+    return f"- [{file_info['name']}]({link}) ({size_str}, {date_str}){recent_marker}"
 
 
 def generate_index() -> str:
@@ -163,6 +170,8 @@ def generate_index() -> str:
     lines.append("")
 
     if DOCS_DIR.exists():
+        # These paths are relative to the project root, but INDEX.md sits in
+        # .development/ — hence the "../" so the links resolve from there.
         docs_files = scan_directory(DOCS_DIR, PROJECT_ROOT)
         for folder in sorted(docs_files.keys()):
             files = docs_files[folder]
@@ -171,7 +180,7 @@ def generate_index() -> str:
             lines.append(f"### {folder}/")
             lines.append("")
             for f in files:
-                lines.append(format_file_entry(f, now))
+                lines.append(format_file_entry(f, now, prefix="../"))
             lines.append("")
     else:
         lines.append("*docs/ folder not found*")
