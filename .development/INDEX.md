@@ -32,7 +32,7 @@
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 
-### tech-debt/ (10 files)
+### tech-debt/ (13 files)
 
 - [README.md](tech-debt/README.md) — Tech Debt Issues
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
@@ -40,8 +40,11 @@
 - [canvas-nodes-are-unnamed.md](tech-debt/canvas-nodes-are-unnamed.md) — The canvas does not name the things the player builds
 - [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) — Usable capacity is approximate when an array mixes disk sizes
 - [control-path-tolerates-cycles.md](tech-debt/control-path-tolerates-cycles.md) — A control path that loops back on itself is accepted in silence
+- [headless-tests-bypass-port-validation.md](tech-debt/headless-tests-bypass-port-validation.md) — `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
+- [nvme-hardware-raid-unbuildable.md](tech-debt/nvme-hardware-raid-unbuildable.md) — NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
 - [nvme-software-raid-unbuildable.md](tech-debt/nvme-software-raid-unbuildable.md) — All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
+- [physical-layer-canvas-has-no-touch-picker.md](tech-debt/physical-layer-canvas-has-no-touch-picker.md) — The Physical Layer canvas never got the mobile tap-to-picker inversion
 - [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
 - [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
 

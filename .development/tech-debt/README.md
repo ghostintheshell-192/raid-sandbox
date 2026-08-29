@@ -55,7 +55,10 @@ of issues, git history is a better record than a second directory.
 **Medium Priority:**
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 - `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
+- `headless-tests-bypass-port-validation.md` - `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
+- `nvme-hardware-raid-unbuildable.md` - NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
 - `nvme-software-raid-unbuildable.md` - All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
+- `physical-layer-canvas-has-no-touch-picker.md` - The Physical Layer canvas never got the mobile tap-to-picker inversion
 - `physical-recognizer-does-not-walk-the-path.md` - The physical recognizer checks presence and one edge, not the path
 
 **Low Priority:**
