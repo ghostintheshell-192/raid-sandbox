@@ -50,19 +50,18 @@
    */
   function loadCatalog(basePath) {
     const base = (basePath || 'data/components').replace(/\/$/, '');
+    // Fetch, then hand everything to the engine's own assembler: this file
+    // decides nothing about the manifest's shape (see RaidCatalog.assemble).
     return _loadYaml(`${base}/index.yaml`).then((index) => {
       if (!index || !Array.isArray(index.components))
         throw new Error(`${base}/index.yaml: expected a "components" list`);
-      return Promise.all(index.components.map((entry) => {
-        if (!entry || !entry.id || !entry.file)
-          throw new Error(`${base}/index.yaml: every entry needs an id and a file`);
-        return _loadYaml(`${base}/${entry.file}`).then((def) => {
-          if (!def || def.id !== entry.id)
-            throw new Error(`${base}/${entry.file}: id "${def && def.id}" does not match the index entry "${entry.id}"`);
-          return def;
-        });
-      })).then((components) =>
-        root.RaidCatalog.createCatalog({ components, portTypes: index.portTypes }));
+      return Promise.all(index.components.map((entry) =>
+        _loadYaml(`${base}/${entry.file}`).then((def) => [entry.file, def])
+      )).then((pairs) => {
+        const files = {};
+        for (const [name, def] of pairs) files[name] = def;
+        return root.RaidCatalog.createCatalog(root.RaidCatalog.assemble(index, files));
+      });
     });
   }
 
@@ -95,8 +94,32 @@
 
     // ---- sidebar setup (called once) ----------------------------------------
 
+    /**
+     * Build the physical palette FROM the catalogue — one chip per component,
+     * in catalogue order — then arm every chip for dragging. Adding a component
+     * is adding a file (spec §5): no markup to edit. Safe to call twice: before
+     * the catalogue has loaded it only arms whatever chips exist (none), after
+     * it draws them; chips already armed are not armed again.
+     */
     function setupSidebar(sidebarEl) {
+      const host = sidebarEl.querySelector('[data-phys-chips]');
+      if (host && state.catalog) {
+        host.textContent = '';
+        for (const id of state.catalog.ids()) {
+          const def  = _def(id);
+          const ui   = state.catalog.get(id).ui || {};
+          const chip = document.createElement('div');
+          chip.className = 'sbc-chip';
+          chip.dataset.drag = 'phys-component';
+          chip.dataset.component = id;
+          chip.textContent = ui.chip || (def.badge ? `${def.label} (${def.badge})` : def.label);
+          if (ui.tooltip) chip.title = ui.tooltip;
+          host.appendChild(chip);
+        }
+      }
       sidebarEl.querySelectorAll('[data-drag="phys-component"]').forEach(chip => {
+        if (chip.dataset.armed) return;
+        chip.dataset.armed = '1';
         chip.setAttribute('draggable', 'true');
         chip.addEventListener('dragstart', e => {
           setDrag(e, { source: 'sidebar', type: 'phys-component',

@@ -353,11 +353,13 @@
    * disk → acceptor when one exists on the canvas, and clears stale disk edges
    * when it does not. Hand-drawn edges are never touched.
    *
-   * Two nodes of the same accepting type is an ambiguity the v1 model cannot
-   * express (disks cannot be assigned by hand yet): the first placed wins,
-   * deterministically, and the verdict's "chain breaks" diagnostics take over
-   * if that one is not cabled onward. Manual assignment arrives with the
-   * backplane-diversity module (§9.4).
+   * Two acceptors on the canvas is an ambiguity the v1 model cannot express
+   * (disks cannot be assigned by hand yet). It is resolved deterministically:
+   * acceptor PRIORITY is catalogue order (a tri-mode controller listed before
+   * the PCIe bus takes the NVMe disks whenever it is present), and among nodes
+   * of the same kind the first placed wins; the verdict's "chain breaks"
+   * diagnostics take over if that one is not cabled onward. Manual assignment
+   * arrives with the backplane-diversity module (§9.4).
    */
   function cpAutoRoute(state) {
     for (const node of state.nodes.values()) {
@@ -380,14 +382,15 @@
     }
   }
 
-  /** The first placed node whose catalogue entry accepts `protocol`, with the port. */
+  /**
+   * The node a disk of `protocol` routes to, with the port: acceptors in
+   * catalogue order, and for each the first node of that kind on the canvas.
+   */
   function _acceptorNodeFor(state, protocol) {
     if (!state.catalog) return null;
-    const acceptors = state.catalog.acceptorsOf(protocol);
-    if (acceptors.length === 0) return null;
-    for (const node of state.cpNodes.values()) {
-      const a = acceptors.find((x) => x.componentId === node.componentId);
-      if (a) return { node, portId: a.portId };
+    for (const a of state.catalog.acceptorsOf(protocol)) {
+      for (const node of state.cpNodes.values())
+        if (node.componentId === a.componentId) return { node, portId: a.portId };
     }
     return null;
   }
@@ -506,11 +509,12 @@
     // cpAutoRoute), so the recognizer sees the graph exactly as the canvas
     // draws it. Nothing here writes to the state.
     const disks = _diskIds(state);
-    const cp    = Physical.recognize(state.cpNodes, state.cpEdges, disks);
+    const cp    = Physical.recognize(state.cpNodes, state.cpEdges, disks, state.catalog);
 
     // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
     // its output here (same loose bolt-on pattern as the physical recognizer).
-    const violations = Validator.validate(tree, Physical.buildView(state.cpNodes, state.cpEdges, disks, cp));
+    const violations = Validator.validate(tree,
+      Physical.buildView(state.cpNodes, state.cpEdges, disks, cp, state.catalog));
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,

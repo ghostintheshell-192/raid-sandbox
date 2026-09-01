@@ -1,22 +1,43 @@
 /**
  * physical.js — RAID Sandbox: the physical-layer recognizer (axis A, ADR-001).
  *
- * PURE and headless: takes the two raw control-path maps plus the disk list,
- * returns the hardware / fake / software verdict — with the reason, or the one
- * issue the player can act on next. This is the brain of axis A; it used to live
- * inside canvas-state.js (the file that owns the mutable state) and moved here so
- * the engine layer holds every derivation and the sandbox layer none.
+ * PURE and headless. Takes the two raw control-path maps, the disk list and the
+ * component CATALOGUE, and returns the verdict — hardware / fake / software —
+ * with the reason, or the one issue the player can act on next.
  *
- *   recognize(cpNodes, cpEdges, disks)   → { raidType, os, complete, issue, reason?, engineNodeId? }
- *   buildView(cpNodes, cpEdges, disks, cp) → the derived PhysicalView the validator consumes
+ * What it knows about the domain by name: nothing. Every component-specific
+ * fact is read off the catalogue (data/components/*.yaml, indexed by
+ * engine/catalog.js):
+ *
+ *   - which objects are RAID engines and what verdict each yields — any
+ *     non-sink component that declares a `verdict:` block (raidType + reason);
+ *     when several kinds sit on the canvas, the first in catalogue order wins;
+ *   - where the path ends — the `roles.sink` capability in index.yaml (the OS),
+ *     with the label and article the diagnostics name it by;
+ *   - how a piece is called in a message — its ui.label (+ badge);
+ *   - where a disk goes — the components that `accept` its protocol;
+ *   - which verdicts are still OPEN on a half-built canvas — an engine object
+ *     whose input port could still be fed by a wired chain's loose end. While
+ *     any is, the recognizer says nothing rather than presume the player's
+ *     direction (the "derive, don't select" principle of axis B, on axis A).
+ *
+ * The old HBA gate ("SATA/SAS disks need protocol translation before the
+ * engine") is not here any more: with typed ports nothing but a backplane
+ * outputs `routing`, and only a translator consumes it, so the port relation
+ * enforces it structurally — a wire that skipped the HBA cannot be drawn.
+ *
+ * Every determined verdict carries `reason` and `engineNodeId`: the panel used
+ * to show the verdict alone, which hides the one insight axis A exists to teach
+ * (§2) — hardware/software/fake are the SAME path, told apart by which engine
+ * object sits on it, or none. The explanation belongs with the derivation.
+ *
+ *   recognize(cpNodes, cpEdges, disks, catalog)
+ *     → { raidType, os, complete, issue, reason, engineNodeId }
+ *   buildView(cpNodes, cpEdges, disks, cp, catalog)
+ *     → { raidType, os, engineCount, diskRoutes }   // the PhysicalView the validator consumes
  *
  * `disks` is [{ id, protocol }]: disks live on axis B and appear in cpEdges by
  * id only, so the recognizer has to be told which endpoints are sources.
- *
- * What it does NOT do: read files, know the catalogue, or touch the DOM. It
- * still names component ids (`engine-roc`, `hba`, `os-linux`, …) in code — that
- * is the next refactor step (verdict from declared capabilities), kept separate
- * so this move stays mechanical and reviewable on its own.
  *
  * Depends on: graph.js (RaidGraph).
  */
@@ -26,15 +47,161 @@
 
   const Graph = (typeof require !== 'undefined') ? require('./graph.js') : root.RaidGraph;
 
+  // ---------------------------------------------------------------------------
+  // CATALOGUE READERS — the only place the domain's shape is interpreted
+  // ---------------------------------------------------------------------------
+
+  /** "RAID Engine (RoC)": the label the palette and the canvas show. */
+  function displayName(def) {
+    const ui    = def.ui || {};
+    const label = ui.label || def.name || def.id;
+    return ui.badge ? `${label} (${ui.badge})` : label;
+  }
+
+  function sinkRole(catalog) {
+    const sink = (catalog.roles || {}).sink;
+    if (!sink || !sink.capability)
+      throw new Error('catalog: roles.sink.capability is required — the recognizer needs to know where the path ends');
+    return { capability: sink.capability, label: sink.label || 'end of the path', article: sink.article || 'a' };
+  }
+
+  const isSink = (def, sink) => (def.provides || []).includes(sink.capability);
+
+  /** Engine objects: non-sink components that declare a verdict, in catalogue order. */
+  function engineDefs(catalog, sink) {
+    return catalog.ids().map((id) => catalog.get(id))
+      .filter((def) => def.verdict && !isSink(def, sink));
+  }
+
+  const unique = (xs) => Array.from(new Set(xs));
+
+  // ---------------------------------------------------------------------------
+  // RECOGNIZE
+  // ---------------------------------------------------------------------------
+
+  function recognize(cpNodes, cpEdges, disks, catalog) {
+    disks = disks || [];
+    const undetermined = (issue) =>
+      ({ raidType: null, os: null, complete: false, issue, reason: null, engineNodeId: null });
+
+    if (!catalog)
+      return undetermined('No component catalogue is loaded — the physical layer cannot be read yet.');
+
+    const sink    = sinkRole(catalog);
+    const engines = engineDefs(catalog, sink);
+    const g       = Graph.build(cpNodes, cpEdges);
+    const defOf   = (nodeId) => {
+      const n = g.nodes.get(nodeId);
+      return n && n.componentId ? catalog.get(n.componentId) : null;
+    };
+
+    const sinkIds = Array.from(g.nodes.values())
+      .filter((n) => { const d = defOf(n.id); return d && isSink(d, sink); })
+      .map((n) => n.id);
+    const os = sinkIds.length ? g.nodes.get(sinkIds[0]).componentId : null;
+
+    // The two halves of "on the path", kept separate because they fail with
+    // different advice: nothing feeds this, versus this feeds nothing.
+    const fedByDisk   = (id) => disks.some((d) => Graph.reaches(g, d.id, id));
+    const reachesSink = (id) => sinkIds.some((o) => Graph.reaches(g, id, o));
+    const onPath      = (id) => fedByDisk(id) && reachesSink(id);
+    const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
+
+    /**
+     * Shared gate for "does a disk reach this id, and does it reach the sink":
+     * the same questions, asked in the order the player can act on them.
+     * Returns an issue string, or null when the node genuinely sits on a
+     * disks → sink path.
+     */
+    function pathIssueFor(id, label) {
+      if (g.out.get(id).length === 0)
+        return `Connect the ${label} output — until it is wired, nothing can be `
+             + 'said about which RAID you are building.';
+      if (!os)
+        return `Add ${sink.article} ${sink.label} node to complete the path.`;
+      if (!fedByDisk(id)) {
+        // Two different builds land here and they need different advice. Nothing
+        // wired at all is "start at the disks"; disks wired into a chain that
+        // dead-ends is the opposite problem, and telling that player to start at
+        // the disks describes something they can see they already did. Found
+        // in-browser with two backplanes, the disks auto-routed to the one that
+        // was not cabled onward.
+        return anyDiskWired
+          ? `The disks are wired, but the chain breaks before the ${label} — `
+            + 'follow the cables forward from them to find the gap.'
+          : `No disk reaches the ${label} yet — the path has to start at the disks.`;
+      }
+      if (!reachesSink(id))
+        return `The ${label} does not reach the ${sink.label} — the path stops before it.`;
+      return null;
+    }
+
+    // 1. An engine object on the canvas decides — once it is actually ON the
+    //    path. Presence alone used to be enough to declare hardware RAID; the
+    //    verdict came out before a single cable existed.
+    for (const def of engines) {
+      const ids = Graph.nodesWith(g, def.id);
+      if (!ids.length) continue;
+      const id    = ids.find(onPath) ?? ids[0];
+      const issue = pathIssueFor(id, displayName(def));
+      if (issue) return undetermined(issue);
+      return { raidType: def.verdict.raidType, os, complete: true, issue: null,
+               engineNodeId: id, reason: def.verdict.reason };
+    }
+
+    // 2. No engine object anywhere. Only the FIRST hop — routing the disks
+    //    somewhere — is common to every verdict, so it is the only one advised
+    //    unconditionally; the pieces named are whatever accepts these disks.
+    if (!anyDiskWired) {
+      const labels = unique(disks.flatMap((d) => catalog.acceptorsOf(d.protocol))
+        .map((a) => displayName(catalog.get(a.componentId))));
+      if (!labels.length)
+        return undetermined('No component accepts these disks — the catalogue has nowhere to route them.');
+      return undetermined(`Nothing carries the disks anywhere yet — add a ${labels.join(' or ')} `
+        + 'so they have somewhere to go.');
+    }
+
+    // 3. Past the first hop, say nothing while an engine verdict is still open:
+    //    naming the next piece would presume a direction the player has not
+    //    chosen. A verdict is open while some loose end of a disk-fed chain
+    //    has an output that could feed that engine's input.
+    const frontierTypes = unique(Array.from(g.nodes.values())
+      .filter((n) => n.componentId && fedByDisk(n.id) && (g.out.get(n.id) || []).length === 0)
+      .flatMap((n) => catalog.portsOf(n.componentId).filter((p) => p.dir === 'out').map((p) => p.type)));
+    const anyOpen = engines.some((def) => def.ports.some((p) =>
+      p.dir === 'in' && frontierTypes.some((t) => catalog.connectsTo(t).includes(p.type))));
+    if (anyOpen) return undetermined(null);
+
+    // 4. Only the sink's own verdict remains: the OS is the engine.
+    if (!os)
+      return undetermined(`Add ${sink.article} ${sink.label} node to complete the path.`);
+    const sinkId = sinkIds[0];
+    if (!fedByDisk(sinkId))
+      return undetermined(`The disks are wired, but the chain breaks before the ${sink.label} — `
+        + 'follow the cables forward from them to find the gap.');
+    const def = catalog.get(os);
+    if (!def.verdict)
+      return undetermined(`${displayName(def)} declares no verdict — the catalogue is incomplete.`);
+    return { raidType: def.verdict.raidType, os, complete: true, issue: null,
+             engineNodeId: null, reason: def.verdict.reason };
+  }
+
+  // ---------------------------------------------------------------------------
+  // VIEW — what the validator sees (never the raw cp* Maps)
+  // ---------------------------------------------------------------------------
+
   /**
-   * Build the derived physical view the validator consumes (never the raw cp* Maps).
-   * `disks` is the axis-B disk list as [{ id, protocol }] (see canvas-state _diskIds).
-   *   engineCount — RAID-engine-bearing nodes (engine-roc or engine-metadata); >1 is illegal
+   * Build the derived physical view the validator consumes.
+   *   engineCount — engine objects on the canvas (verdict-bearing, non-sink); >1 is illegal
    *   diskRoutes  — each disk's protocol + the component it actually wires into
    */
-  function buildView(cpNodes, cpEdges, disks, cp) {
-    const engineCount = Array.from(cpNodes.values())
-      .filter((n) => n.componentId === 'engine-roc' || n.componentId === 'engine-metadata').length;
+  function buildView(cpNodes, cpEdges, disks, cp, catalog) {
+    let engineCount = 0;
+    if (catalog) {
+      const sink = sinkRole(catalog);
+      const ids  = new Set(engineDefs(catalog, sink).map((d) => d.id));
+      engineCount = Array.from(cpNodes.values()).filter((n) => ids.has(n.componentId)).length;
+    }
 
     const diskRoutes = [];
     for (const d of disks) {
@@ -45,198 +212,11 @@
     return { raidType: cp.raidType, os: cp.os, engineCount, diskRoutes };
   }
 
-  /**
-   * Derive hardware/fake/software from the physical layer graph.
-   *
-   * Rules (ADR-001 — identity, not position):
-   *   A node with componentId 'engine-roc'      on the path → Hardware RAID
-   *   A node with componentId 'engine-metadata' on the path → Fake RAID
-   *   Neither object anywhere, OS reached directly           → Software RAID
-   *     (the OS itself is the engine: `provides: raid-engine`, os-linux.yaml /
-   *     os-windows.yaml)
-   *
-   * The verdict is a claim about a PATH, so it is derived by walking one
-   * (`engine/graph.js`). A component is on the path only if a disk reaches it
-   * AND it reaches an OS — presence alone (a floating node) does not count.
-   *
-   * The HBA-in-path requirement is scoped to SATA/SAS disks (checked via each
-   * disk's protocol, carried in `disks`): NVMe disks reach the PCIe bus
-   * directly and were wrongly blocked by an unconditional HBA gate before
-   * (tech-debt/nvme-software-raid-unbuildable.md).
-   *
-   * Every determined verdict also carries `reason` and `engineNodeId`. The panel
-   * used to show the verdict alone, which hides the one insight axis A exists to
-   * teach (§2): hardware/software/fake are the SAME path, told apart by which
-   * engine object sits on it (or none). The explanation belongs here, with the
-   * derivation — a view that re-derives it could disagree with the badge above it.
-   */
-  function recognize(cpNodes, cpEdges, disks) {
-    const g     = Graph.build(cpNodes, cpEdges);
-    disks       = disks || [];
-
-    const osIds  = Graph.nodesWith(g, 'os-linux').concat(Graph.nodesWith(g, 'os-windows'));
-    const os     = osIds.length ? g.nodes.get(osIds[0]).componentId : null;
-    const osName = os === 'os-windows' ? 'Windows' : 'Linux';
-
-    const undetermined = (issue) => ({ raidType: null, os: null, complete: false, issue });
-
-    // The two halves of "on the path", kept separate because they fail with
-    // different advice: nothing feeds this, versus this feeds nothing.
-    const fedByDisk = (id) => disks.some((d) => Graph.reaches(g, d.id, id));
-    const reachesOS = (id) => osIds.some((o) => Graph.reaches(g, id, o));
-    const onPath    = (id) => fedByDisk(id) && reachesOS(id);
-
-    const rocIds  = Graph.nodesWith(g, 'engine-roc');
-    const chipIds = Graph.nodesWith(g, 'engine-metadata');
-
-    /**
-     * Shared gate for "does a disk reach this id, and does it reach an OS":
-     * the same questions, asked in the order the player can act on them.
-     * Returns an issue string, or null when the node genuinely sits on a
-     * disks→OS path. Used both for an engine object and, when there is none,
-     * for the OS node itself (the software verdict).
-     */
-    function pathIssueFor(id, label) {
-      if (g.out.get(id).length === 0)
-        return `Connect the ${label} output — until it is wired, nothing can be `
-             + 'said about which RAID you are building.';
-      if (!os)
-        return 'Add an OS node to complete the path.';
-      if (!fedByDisk(id)) {
-        // Two different builds land here and they need different advice. Nothing
-        // wired at all is "start at the disks"; disks wired into a chain that
-        // dead-ends is the opposite problem, and telling that player to start at
-        // the disks describes something they can see they already did. Found
-        // in-browser with two backplanes, the disks auto-routed to the one that
-        // was not cabled onward.
-        const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
-        return anyDiskWired
-          ? `The disks are wired, but the chain breaks before the ${label} — `
-            + 'follow the cables forward from them to find the gap.'
-          : `No disk reaches the ${label} yet — the path has to start at the disks.`;
-      }
-      if (!reachesOS(id))
-        return `The ${label} does not reach the OS — the path stops before it.`;
-      return null;
-    }
-
-    /**
-     * SATA/SAS disks need an HBA between them and `id`; NVMe disks reach PCIe
-     * directly and need none (tech-debt/nvme-software-raid-unbuildable.md).
-     * `id` is either an engine object or, for the software verdict, the OS
-     * node — the sentence reads naturally either way.
-     */
-    function hbaGateFor(id, label) {
-      const feeding  = disks.filter((d) => Graph.reaches(g, d.id, id));
-      const needsHba = feeding.some((d) => d.protocol !== 'NVMe');
-      if (!needsHba) return null;
-
-      const hbas      = Graph.nodesWith(g, 'hba');
-      const hbaOnPath = hbas.some((h) => fedByDisk(h) && Graph.reaches(g, h, id));
-      if (hbaOnPath) return null;
-
-      // There used to be a second message here for an HBA wired downstream of
-      // the engine. With typed ports that canvas cannot be drawn (nothing but a
-      // backplane outputs `routing`, and no engine feeds a backplane), so the
-      // branch described a state no player will ever see. Removed 2026-09-02.
-      return `Route the SATA/SAS disks through an HBA before the ${label} — `
-           + 'without it nothing carries them there.';
-    }
-
-    // A RAID-on-Chip dropped on the canvas is not yet ON the path. Presence
-    // alone used to be enough to declare hardware RAID — the verdict came out
-    // before a single cable existed. It already includes protocol translation
-    // (provides: protocol-translation), so no separate HBA gate applies.
-    if (rocIds.length) {
-      const rocId = rocIds.find(onPath) ?? rocIds[0];
-      const issue = pathIssueFor(rocId, 'RAID Engine (RoC)');
-      if (issue) return undetermined(issue);
-
-      return { raidType: 'hardware', os: null, complete: true, issue: null,
-               engineNodeId: rocId,
-               // Names the piece exactly as the canvas labels it. A sentence
-               // that says "the controller card" points at something the
-               // player cannot find: that name exists nowhere in the game.
-               reason: 'The RAID engine is a RAID-on-Chip — it sits before the '
-                     + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
-    }
-
-    if (chipIds.length) {
-      const chipId = chipIds.find(onPath) ?? chipIds[0];
-      const issue  = pathIssueFor(chipId, 'RAID Engine (metadata)');
-      if (issue) return undetermined(issue);
-
-      const hbaIssue = hbaGateFor(chipId, 'RAID Engine (metadata)');
-      if (hbaIssue) return undetermined(hbaIssue);
-
-      return { raidType: 'fake', os, complete: true, issue: null,
-        engineNodeId: chipId,
-        reason: 'The RAID engine is a metadata-only chip — it owns the array '
-              + 'metadata, but the CPU still computes the parity, not the chip.' };
-    }
-
-    // Software RAID: neither engine object is anywhere on the canvas, so the
-    // OS itself is the engine (`provides: raid-engine`). Only the FIRST hop
-    // (routing the disks somewhere) is common to all three verdicts, so it
-    // is the only one advised unconditionally; past it, hardware and fake
-    // stay open for a while (see hardwareOpen/fakeOpen below) and nothing
-    // is said until only software remains possible.
-    const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
-    if (!anyDiskWired) {
-      const allNvme = disks.length > 0 && disks.every((d) => d.protocol === 'NVMe');
-      return undetermined(allNvme
-        ? 'Nothing carries the disks anywhere yet — add a PCIe bus so they have somewhere to go.'
-        : 'Nothing carries the disks anywhere yet — add a Backplane so they have somewhere to go.');
-    }
-
-    // Past this point, do NOT name a specific next component unless it is
-    // required by EVERY verdict still reachable from here — naming one that
-    // only some remaining verdicts need presumes the direction the player
-    // has not chosen yet (the same "derive, don't select" principle the
-    // level recognizer already follows for axis B).
-    const hbas = Graph.nodesWith(g, 'hba');
-
-    // Hardware is open until an HBA actually intercepts the disk flow: a RoC
-    // wired straight from the Backplane skips the HBA entirely (it already
-    // provides protocol-translation). NVMe disks never reach a RoC at all
-    // (its input is routing-typed, NVMe disks auto-route to PCIe) — hardware
-    // was never open for them, so it can't be what's still blocking software.
-    const hardwareOpen = disks.some((d) => d.protocol !== 'NVMe') && !hbas.some(fedByDisk);
-    if (hardwareOpen) return undetermined(null);
-
-    // Past the HBA, hardware is foreclosed (its pcie-typed output cannot
-    // reach the RoC's routing-typed input), but fake is still open — a
-    // metadata chip could still be wired in before the CPU — until a CPU is
-    // actually reached with no chip node on the canvas to have gone through.
-    const cpuIds  = Graph.nodesWith(g, 'cpu');
-    const fakeOpen = !cpuIds.some(fedByDisk);
-    if (fakeOpen) return undetermined(null);
-
-    if (!os)
-      return undetermined('Add an OS node to complete the path.');
-
-    // The OS is a sink (no output port), so the question is just "does a
-    // disk reach it" — not the "is its own output wired" question
-    // pathIssueFor asks for engine nodes.
-    const osId = osIds[0];
-    if (!fedByDisk(osId))
-      return undetermined('The disks are wired, but the chain breaks before the OS — '
-        + 'follow the cables forward from them to find the gap.');
-
-    const hbaIssue = hbaGateFor(osId, 'OS');
-    if (hbaIssue) return undetermined(hbaIssue);
-
-    return { raidType: 'software', os, complete: true, issue: null,
-      engineNodeId: null,
-      reason: `No RAID engine sits on the path — ${osName} and the CPU compute `
-            + 'the layout themselves, with no RAID hardware involved.' };
-  }
-
   // ---------------------------------------------------------------------------
   // EXPORT
   // ---------------------------------------------------------------------------
 
-  const RaidPhysical = { recognize, buildView };
+  const RaidPhysical = { recognize, buildView, displayName };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = RaidPhysical;
   else root.RaidPhysical = RaidPhysical;

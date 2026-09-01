@@ -23,11 +23,21 @@ note: >
   Because the OS sees only the Virtual Drive, software-level RAID tools (mdadm, ZFS)
   cannot manage the individual disks — they are hidden by the controller firmware.
 
+# The verdict this object yields when it sits on the disks → OS path (ADR-001:
+# the object's identity decides, and the object declares it here — the engine
+# reads this block, it does not know this component by name).
+verdict:
+  raidType: hardware
+  reason: >-
+    The RAID engine is a RAID-on-Chip — it sits before the PCIe bus, builds the
+    array itself, and the OS sees one virtual drive.
+
 ui:
   label: "RAID Engine"
   icon: "🖥"
   color: "rgba(52,152,219,.7)"
   badge: "RoC"
+  tooltip: "Dedicated compute silicon — has its own processor and XOR/Galois accelerator, computes the array itself."
 
 # Ports are model, not UI: the engine reads them to validate every connection
 # and to route disks (`accepts`). The port-type relation is in index.yaml.

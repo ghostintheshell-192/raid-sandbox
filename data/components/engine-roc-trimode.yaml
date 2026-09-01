@@ -1,0 +1,58 @@
+id: engine-roc-trimode
+name: RAID Engine (RoC, tri-mode)
+category: engine
+pathSlot: engine
+
+# PROVISIONAL (2026-09-02): id, badge and wording are placeholders until
+# Valentina settles them (handoff 2026-07-31, "Opzione C": a third distinct
+# engine object for tri-mode controllers, not a wider engine-roc). This file is
+# the acceptance test of the data-driven verdict: adding it added a buildable
+# NVMe hardware RAID without touching the engine
+# (tech-debt/nvme-hardware-raid-unbuildable.md).
+
+description: >
+  A RAID-on-Chip controller whose ports speak SAS, SATA and NVMe alike
+  (Broadcom MegaRAID 9500/9600 "tri-mode", Adaptec SmartRAID 3200). NVMe drives
+  plug straight into it — no HBA, no SAS/SATA backplane in between — and it
+  still builds the array itself and exposes one virtual drive to the OS. It is
+  the one way hardware RAID over NVMe exists.
+
+provides:
+  - protocol-translation
+  - raid-engine
+  - virtual-drive
+
+requires:
+  - pcie-slot
+
+note: >
+  Same object family as the RAID Engine (RoC): compute silicon, protected cache,
+  autonomous rebuild. What changes is the drive side, which is why it is a
+  distinct piece rather than a wider RoC — one component per real device family.
+
+verdict:
+  raidType: hardware
+  reason: >-
+    The RAID engine is a tri-mode RAID-on-Chip — it takes SAS, SATA and NVMe
+    drives directly, builds the array itself, and the OS sees one virtual drive.
+
+ui:
+  label: "RAID Engine"
+  icon: "🖥"
+  color: "rgba(52,152,219,.7)"
+  badge: "RoC tri-mode"
+  tooltip: "A RAID-on-Chip whose ports take SAS, SATA and NVMe drives alike — the one way to build hardware RAID over NVMe."
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+# SAS/SATA arrive through the backplane (`routing`); NVMe drives route straight
+# to this port. Listed before the PCIe bus in index.yaml, so when both are on
+# the canvas the NVMe disks take the controller (acceptor priority = catalogue order).
+ports:
+  - id: in
+    dir: in
+    type: routing
+    accepts: [NVMe]
+  - id: out
+    dir: out
+    type: virtual-drive

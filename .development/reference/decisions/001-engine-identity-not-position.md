@@ -108,3 +108,16 @@ driver loads), the CPU computes it. Software — the OS owns it and computes it.
   turns this into code.
 - Builds made with the retired generic `raid-engine` piece lose their meaning and need
   the correct named piece instead.
+
+## Update 2026-09-02 — the object declares its own verdict
+
+Implemented one step further in the direction this ADR points: the discriminant is
+still *which object* sits on the path, but the recognizer no longer knows the objects
+by name. Each engine object's YAML carries a `verdict:` block (`raidType` + the
+`reason` the panel shows), the OS files carry the software verdict for the case where
+no engine object is on the path, and `src/engine/physical.js` reads those blocks off
+the catalogue — any non-sink component with a `verdict:` is an engine object, in
+catalogue order. The first consequence: the tri-mode controller
+(`tech-debt/nvme-hardware-raid-unbuildable.md`, Option C) arrived as one file with no
+engine change. The "hardware and fake look identical in the wiring" lesson is
+unchanged; it is now also true of the code that tells them apart.

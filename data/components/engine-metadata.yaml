@@ -25,11 +25,19 @@ note: >
   the actual parity computation still involves the CPU. Without the OS driver the
   array cannot be accessed — unlike hardware RAID which is driver-independent.
 
+# The verdict this object yields when it sits on the disks → OS path (ADR-001).
+verdict:
+  raidType: fake
+  reason: >-
+    The RAID engine is a metadata-only chip — it owns the array metadata, but
+    the CPU still computes the parity, not the chip.
+
 ui:
   label: "RAID Engine"
   icon: "🔲"
   color: "rgba(231,76,60,.4)"
   badge: "metadata"
+  tooltip: "Metadata and boot firmware only, no compute silicon — a general-purpose CPU does the actual math."
 
 # Ports are model, not UI: the engine reads them to validate every connection
 # and to route disks (`accepts`). The port-type relation is in index.yaml.

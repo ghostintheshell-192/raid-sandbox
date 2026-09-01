@@ -16,7 +16,7 @@
 
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { createCatalog } = require('../src/engine/catalog.js');
+const { createCatalog, assemble } = require('../src/engine/catalog.js');
 const fixture = require('./fixtures/components.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
@@ -38,10 +38,9 @@ try {
   process.exit(1);
 }
 const { index, files } = data;
-const realManifest = {
-  components: index.components.map((e) => files[e.file]),
-  portTypes:  index.portTypes,
-};
+// Assembled by the SAME function the browser loader uses, so a field the loader
+// would drop is dropped here too — and the fixture comparison below catches it.
+const realManifest = assemble(index, files);
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] index.yaml and the component files agree');
@@ -66,6 +65,18 @@ test('the real manifest builds a catalogue', () => {
   eq(c.ids().length, index.components.length);
 });
 
+test('the assembled manifest carries the roles the recognizer needs', () => {
+  const c = createCatalog(realManifest);
+  assert(c.roles.sink && typeof c.roles.sink.capability === 'string', 'roles.sink.capability missing');
+});
+
+test('assemble refuses a file whose id does not match the index', () => {
+  const broken = Object.assign({}, files, { [index.components[0].file]: { id: 'imposter', ports: [] } });
+  let err = null;
+  try { assemble(index, broken); } catch (e) { err = e; }
+  assert(err && /does not match the index entry/.test(err.message), err && err.message);
+});
+
 // ---------------------------------------------------------------------------
 console.log('\n[2] every disk protocol has somewhere to route');
 
@@ -82,8 +93,13 @@ for (const protocol of ['SATA', 'SAS', 'NVMe']) {
 // ---------------------------------------------------------------------------
 console.log('\n[3] the headless fixture mirrors the YAML');
 
+// The fields the engine reads (plus the two ui fields the recognizer names a
+// piece by). YAML folded scalars (`>-`) fold to one line, so a verdict reason
+// compares as a single string on both sides.
 const modelFields = (def) => JSON.stringify({
   id: def.id, provides: def.provides || [], ports: def.ports,
+  verdict: def.verdict || null,
+  ui: { label: (def.ui || {}).label, badge: (def.ui || {}).badge },
 });
 
 test('same component ids, same order', () => {
@@ -101,6 +117,29 @@ for (const real of realManifest.components) {
 
 test('portTypes match the YAML', () => {
   eq(JSON.stringify(fixture.portTypes), JSON.stringify(realManifest.portTypes));
+});
+
+test('roles match the YAML', () => {
+  eq(JSON.stringify(fixture.roles), JSON.stringify(realManifest.roles));
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[4] the verdict data is complete');
+
+test('every non-sink component with a verdict has an output port, and the sink capability exists', () => {
+  const sinkCap = realManifest.roles.sink.capability;
+  let sinks = 0;
+  for (const def of realManifest.components) {
+    const isSink = (def.provides || []).includes(sinkCap);
+    if (isSink) { sinks++; assert(def.verdict, `${def.id}: a sink must declare its verdict`); }
+    if (def.verdict && !isSink)
+      assert(def.ports.some((p) => p.dir === 'out'), `${def.id}: an engine object needs an output port`);
+    if (def.verdict) {
+      assert(typeof def.verdict.raidType === 'string', `${def.id}: verdict.raidType`);
+      assert(typeof def.verdict.reason === 'string' && def.verdict.reason.length > 20, `${def.id}: verdict.reason`);
+    }
+  }
+  assert(sinks >= 1, 'no component provides the sink capability');
 });
 
 finish();

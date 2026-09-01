@@ -1,13 +1,18 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-07-31
 related: [nvme-software-raid-unbuildable.md, ../reference/physical-model-fidelity.md]
 related_decision: ../reference/decisions/001-engine-identity-not-position.md
 ---
 
 # NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
+
+> **Resolved 2026-09-02** on `refactor/verdict-from-capabilities`, by Option C as
+> decided — and as a single YAML file, because the verdict is now read off the
+> catalogue. See the resolution sections at the end. The id, badge and wording of
+> that file are **provisional** (marked in the file) until Valentina settles them.
 
 ## Problem
 
@@ -104,10 +109,42 @@ live status for this specific question going forward.
 - **Tech debt**: `nvme-software-raid-unbuildable.md` (the sibling case — NVMe vs. the
   HBA gate, resolved by scoping the gate to non-NVMe)
 - **Architecture Decision**: `reference/decisions/001-engine-identity-not-position.md`
-- **Code Locations**: `src/sandbox/canvas-state.js` (`_diskTargetComponent`,
-  `cpAutoRoute`), `data/components/engine-roc.yaml` (`in` port, type `routing`),
-  `data/components/backplane.yaml` (`out` port, type `routing` — the only source),
-  `src/sandbox/physical-controller.js` (`COMPATIBLE` port-type table)
+- **Code Locations** (as of the fix): `data/components/engine-roc-trimode.yaml`
+  (the whole fix), `data/components/index.yaml` (`roles`, acceptor priority,
+  `portTypes`), `src/engine/physical.js` (reads `verdict:` blocks — names no component),
+  `src/sandbox/canvas-state.js` (`cpAutoRoute`, `_acceptorNodeFor`: routing by `accepts`)
+
+## Solution Implemented
+
+Option C, as one file: `data/components/engine-roc-trimode.yaml` declares
+`provides: [protocol-translation, raid-engine, virtual-drive]`, a `verdict:` block
+(`raidType: hardware` + its own `reason`), and an input port typed `routing` (SAS/SATA
+via the backplane, as the RoC) that also `accepts: [NVMe]` — so NVMe disks route
+straight into it. Not one line of `src/` mentions it: the recognizer
+(`src/engine/physical.js`) treats any non-sink component with a `verdict:` block as an
+engine object, in catalogue order, and the palette chip is generated from the file's
+`ui:` block. This was the acceptance test of the data-driven verdict (spec §5: adding
+a capability = adding a file), and it passed.
+
+Because both the PCIe bus and the tri-mode controller accept NVMe, acceptor priority
+had to be defined: catalogue order (`index.yaml`), so when both are on the canvas the
+disks take the controller. The first-hop advice for NVMe disks now names both.
+
+The three details the Recommended Approach left open are answered provisionally:
+id `engine-roc-trimode`, badge `RoC tri-mode` (explicit — the verdict word "hardware"
+is still not on the chip, only the device family), reason text in the file. All three
+are one-line edits in that file.
+
+## Testing
+
+`tests/canvas-state.test.js` [13e] ("a tri-mode engine added as a FILE makes NVMe
+hardware RAID buildable"; acceptor priority; first-hop advice names both acceptors)
+and `tests/components-data.test.js` [4] (every verdict block is complete).
+
+## Impact
+
+`reference/physical-model-fidelity.md` §4's "acceptable omission" is no longer an
+omission. The pattern generalises: the next engine family is a file too.
 
 ---
 

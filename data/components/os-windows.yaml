@@ -12,6 +12,7 @@ description: >
 provides:
   - raid-engine
   - software-raid
+  - os                   # the end of the control path (index.yaml `roles.sink`)
 
 requires:
   - hba
@@ -20,8 +21,17 @@ tools:
   - storage-spaces       # modern Windows software RAID (ReFS or NTFS)
   - dynamic-volumes      # legacy: spanned/striped/mirrored/RAID-5 volumes
 
+# The verdict when NO engine object sits on the path and the disks reach this
+# OS: the OS itself is the engine (`provides: raid-engine`).
+verdict:
+  raidType: software
+  reason: >-
+    No RAID engine sits on the path — Windows and the CPU compute the layout
+    themselves, with no RAID hardware involved.
+
 ui:
   label: "Windows"
+  chip: "OS Windows"
   icon: "🪟"
   color: "rgba(46,204,113,.7)"
 

@@ -20,6 +20,8 @@ components:
     file: hba.yaml
   - id: engine-roc
     file: engine-roc.yaml
+  - id: engine-roc-trimode
+    file: engine-roc-trimode.yaml
   - id: engine-metadata
     file: engine-metadata.yaml
   - id: os-linux
@@ -30,6 +32,21 @@ components:
     file: pcie-bus.yaml
   - id: cpu
     file: cpu.yaml
+
+# What the physical recognizer (engine/physical.js) needs to know about this
+# domain's control path, so it can read the rest off the components:
+#   sink — the component family where the path ends; the verdict needs one reached.
+#          `label`/`article` name it in the player-facing diagnostics.
+# Engine objects need no role: any non-sink component that declares a `verdict:`
+# block is one, and the first in this list wins when several are on the path.
+roles:
+  sink:
+    capability: os
+    label: "OS"
+    article: "an"
+
+# Acceptor priority: when a disk's protocol is accepted by more than one
+# component on the canvas, the one listed FIRST above takes it.
 
 portTypes:
   # A disk-facing input. Disks are never wired by hand (spec §2, v1): they route
