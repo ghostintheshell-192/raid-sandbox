@@ -16,7 +16,7 @@
 
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { createCatalog } = require('../src/engine/catalog.js');
+const { createCatalog, assemble } = require('../src/engine/catalog.js');
 const fixture = require('./fixtures/components.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
@@ -38,11 +38,9 @@ try {
   process.exit(1);
 }
 const { index, files } = data;
-const realManifest = {
-  roles:      index.roles,
-  components: index.components.map((e) => files[e.file]),
-  portTypes:  index.portTypes,
-};
+// Assembled by the SAME function the browser loader uses, so a field the loader
+// would drop is dropped here too — and the fixture comparison below catches it.
+const realManifest = assemble(index, files);
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] index.yaml and the component files agree');
@@ -65,6 +63,18 @@ for (const entry of index.components) {
 test('the real manifest builds a catalogue', () => {
   const c = createCatalog(realManifest);
   eq(c.ids().length, index.components.length);
+});
+
+test('the assembled manifest carries the roles the recognizer needs', () => {
+  const c = createCatalog(realManifest);
+  assert(c.roles.sink && typeof c.roles.sink.capability === 'string', 'roles.sink.capability missing');
+});
+
+test('assemble refuses a file whose id does not match the index', () => {
+  const broken = Object.assign({}, files, { [index.components[0].file]: { id: 'imposter', ports: [] } });
+  let err = null;
+  try { assemble(index, broken); } catch (e) { err = e; }
+  assert(err && /does not match the index entry/.test(err.message), err && err.message);
 });
 
 // ---------------------------------------------------------------------------

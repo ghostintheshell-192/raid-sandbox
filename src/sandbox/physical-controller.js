@@ -50,19 +50,18 @@
    */
   function loadCatalog(basePath) {
     const base = (basePath || 'data/components').replace(/\/$/, '');
+    // Fetch, then hand everything to the engine's own assembler: this file
+    // decides nothing about the manifest's shape (see RaidCatalog.assemble).
     return _loadYaml(`${base}/index.yaml`).then((index) => {
       if (!index || !Array.isArray(index.components))
         throw new Error(`${base}/index.yaml: expected a "components" list`);
-      return Promise.all(index.components.map((entry) => {
-        if (!entry || !entry.id || !entry.file)
-          throw new Error(`${base}/index.yaml: every entry needs an id and a file`);
-        return _loadYaml(`${base}/${entry.file}`).then((def) => {
-          if (!def || def.id !== entry.id)
-            throw new Error(`${base}/${entry.file}: id "${def && def.id}" does not match the index entry "${entry.id}"`);
-          return def;
-        });
-      })).then((components) =>
-        root.RaidCatalog.createCatalog({ components, portTypes: index.portTypes }));
+      return Promise.all(index.components.map((entry) =>
+        _loadYaml(`${base}/${entry.file}`).then((def) => [entry.file, def])
+      )).then((pairs) => {
+        const files = {};
+        for (const [name, def] of pairs) files[name] = def;
+        return root.RaidCatalog.createCatalog(root.RaidCatalog.assemble(index, files));
+      });
     });
   }
 

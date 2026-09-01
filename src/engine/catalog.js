@@ -49,6 +49,13 @@
     if (!portTypes || typeof portTypes !== 'object' || Array.isArray(portTypes))
       fail('manifest.portTypes must be a map: type → { connectsTo: [type, …] }');
 
+    if (manifest.roles !== undefined) {
+      const { roles } = manifest;
+      if (!roles || typeof roles !== 'object' || Array.isArray(roles)) fail('manifest.roles must be a map');
+      if (roles.sink !== undefined && (!roles.sink || typeof roles.sink.capability !== 'string'))
+        fail('manifest.roles.sink needs a "capability" string');
+    }
+
     for (const [type, spec] of Object.entries(portTypes)) {
       if (!spec || !Array.isArray(spec.connectsTo))
         fail(`portTypes.${type}: connectsTo must be a list`);
@@ -79,6 +86,30 @@
         }
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // ASSEMBLY — index.yaml + component files → manifest
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Turn the parsed index.yaml and the parsed component files (keyed by the file
+   * name the index lists) into a manifest. This is the ONE assembly path: the
+   * browser loader and the data test both go through it, so what the browser
+   * builds is exactly what the test checked. (The first version of the loader
+   * assembled by hand and forgot `roles`; the suites were green and the game
+   * threw on every completed build — 2026-09-02.)
+   */
+  function assemble(index, filesByName) {
+    if (!index || !Array.isArray(index.components)) fail('index: expected a "components" list');
+    const components = index.components.map((entry) => {
+      if (!entry || !entry.id || !entry.file) fail('index: every entry needs an id and a file');
+      const def = filesByName[entry.file];
+      if (!def) fail(`index: ${entry.file} was not loaded`);
+      if (def.id !== entry.id) fail(`${entry.file}: id "${def.id}" does not match the index entry "${entry.id}"`);
+      return def;
+    });
+    return { roles: index.roles || {}, components, portTypes: index.portTypes };
   }
 
   // ---------------------------------------------------------------------------
@@ -152,7 +183,7 @@
   // EXPORT
   // ---------------------------------------------------------------------------
 
-  const RaidCatalog = { createCatalog };
+  const RaidCatalog = { createCatalog, assemble };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = RaidCatalog;
   else root.RaidCatalog = RaidCatalog;
