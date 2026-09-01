@@ -141,7 +141,11 @@
       return { ok: true };
     }
 
-    return { ids, has, get, portsOf, portOf, provides, connectsTo, acceptorsOf, canConnect, manifest };
+    // `roles` is the manifest's reading guide for the recognizer (which
+    // capability marks the end of the path, how to name it); the catalogue
+    // carries it, the recognizer interprets it.
+    return { ids, has, get, portsOf, portOf, provides, connectsTo, acceptorsOf, canConnect,
+             roles: manifest.roles || {}, manifest };
   }
 
   // ---------------------------------------------------------------------------

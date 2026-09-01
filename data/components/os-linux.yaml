@@ -11,6 +11,7 @@ description: >
 provides:
   - raid-engine          # the RAID engine is the OS kernel (md driver or ZFS)
   - software-raid
+  - os                   # the end of the control path (index.yaml `roles.sink`)
 
 requires:
   - hba                  # needs individual disks visible (not a Virtual Drive)
@@ -25,8 +26,17 @@ note: >
   can leave the array in an inconsistent state. This is a soft constraint surfaced
   as a warning in the game.
 
+# The verdict when NO engine object sits on the path and the disks reach this
+# OS: the OS itself is the engine (`provides: raid-engine`).
+verdict:
+  raidType: software
+  reason: >-
+    No RAID engine sits on the path — Linux and the CPU compute the layout
+    themselves, with no RAID hardware involved.
+
 ui:
   label: "Linux"
+  chip: "OS Linux"
   icon: "🐧"
   color: "rgba(46,204,113,.7)"
 

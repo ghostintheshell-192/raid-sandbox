@@ -95,8 +95,32 @@
 
     // ---- sidebar setup (called once) ----------------------------------------
 
+    /**
+     * Build the physical palette FROM the catalogue — one chip per component,
+     * in catalogue order — then arm every chip for dragging. Adding a component
+     * is adding a file (spec §5): no markup to edit. Safe to call twice: before
+     * the catalogue has loaded it only arms whatever chips exist (none), after
+     * it draws them; chips already armed are not armed again.
+     */
     function setupSidebar(sidebarEl) {
+      const host = sidebarEl.querySelector('[data-phys-chips]');
+      if (host && state.catalog) {
+        host.textContent = '';
+        for (const id of state.catalog.ids()) {
+          const def  = _def(id);
+          const ui   = state.catalog.get(id).ui || {};
+          const chip = document.createElement('div');
+          chip.className = 'sbc-chip';
+          chip.dataset.drag = 'phys-component';
+          chip.dataset.component = id;
+          chip.textContent = ui.chip || (def.badge ? `${def.label} (${def.badge})` : def.label);
+          if (ui.tooltip) chip.title = ui.tooltip;
+          host.appendChild(chip);
+        }
+      }
       sidebarEl.querySelectorAll('[data-drag="phys-component"]').forEach(chip => {
+        if (chip.dataset.armed) return;
+        chip.dataset.armed = '1';
         chip.setAttribute('draggable', 'true');
         chip.addEventListener('dragstart', e => {
           setDrag(e, { source: 'sidebar', type: 'phys-component',

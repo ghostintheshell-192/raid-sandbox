@@ -98,7 +98,7 @@ simplifications, four dead artifacts.
 
 | finding | detail | disposition |
 |---|---|---|
-| `provides:`/`requires:` in component YAMLs | read by no code; pure documentation, including never-enforced claims (`os-linux requires: hba`) | **2026-09-02**: `provides` is now indexed by the catalogue (`engine/catalog.js`) and is the input of the next step, the capability-driven verdict; `requires` stays documentation until a rule reads it |
+| `provides:`/`requires:` in component YAMLs | read by no code; pure documentation, including never-enforced claims (`os-linux requires: hba`) | **2026-09-02**: `provides` is read — the `os` capability marks the sink (`index.yaml` `roles`), and each engine object / OS declares its own `verdict:` block, which the recognizer reads instead of naming components (`engine/physical.js`). `requires` stays documentation until a rule reads it |
 | `pcie-raid` port type | exists only inside `COMPATIBLE` (`physical-controller.js`); no port anywhere declares it | **removed 2026-09-02** — the relation now lives in `index.yaml` `portTypes`, and a type nobody declares fails `createCatalog` |
 | ports defined twice | hard-coded `COMPONENTS` (JS) + `ui.ports` (YAML), byte-identical today; browser silently prefers YAML, headless uses JS — a future divergence splits behaviour between the two environments with no error | **resolved 2026-09-02** — YAML is the only runtime source; the headless mirror is a test fixture checked by `components-data.test.js` (`tech-debt/ports-double-source-of-truth.md`) |
 | `raid-engine`'s `any` ports | the hole that makes cycles drawable (`tech-debt/control-path-tolerates-cycles.md`) | retiring the piece (ADR-001) removes the last `any` from the system; port typing becomes meaningful everywhere |
@@ -112,6 +112,9 @@ simplifications, four dead artifacts.
 - NVMe cannot reach `controller-hw` (incompatible ports), so NVMe hardware RAID is
   unbuildable. Tri-mode controllers (e.g. Broadcom 9600) do exist; acceptable omission
   for the consumer-hardware scope, recorded here.
+  **2026-09-02**: no longer an omission — `engine-roc-trimode.yaml` (provisional
+  naming) accepts NVMe drives directly and yields the hardware verdict; resolved in
+  `tech-debt/nvme-hardware-raid-unbuildable.md`.
 - `backplane-diversity` is dormant and says so in the code ("not faked") — correct
   discipline.
 - The v1 "no manual disk-wiring" simplification is declared in spec §2.

@@ -732,6 +732,73 @@ test('evaluate() is pure: the edge set is the same before and after', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[13e] the verdict is read off the catalogue, not off a component name');
+
+function nvmeRaid5(s) {
+  const a = CS.group(s, [CS.addDisk(s, 1, 'NVMe'), CS.addDisk(s, 1, 'NVMe'), CS.addDisk(s, 1, 'NVMe')]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity1');
+  return s;
+}
+
+test('a tri-mode engine added as a FILE makes NVMe hardware RAID buildable', () => {
+  // tech-debt/nvme-hardware-raid-unbuildable.md: no line of the recognizer
+  // names this component; its verdict and its NVMe acceptance are in its YAML.
+  const s   = nvmeRaid5(CS.createState({ catalog }));
+  const roc = CS.cpAddNode(s, 'engine-roc-trimode');
+  const bus = CS.cpAddNode(s, 'pcie');
+  const cpu = CS.cpAddNode(s, 'cpu');
+  const os  = CS.cpAddNode(s, 'os-linux');
+  CS.cpConnect(s, roc, 'out', bus, 'in');
+  CS.cpConnect(s, bus, 'out', cpu, 'in');
+  CS.cpConnect(s, cpu, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, 'hardware');
+  assert(/tri-mode/.test(r.controlPathReason), r.controlPathReason);
+  eq(r.engineNodeId, roc);
+  for (const e of s.cpEdges.values()) if (e.derived) eq(e.toNode, roc);   // the disks went to it
+});
+
+test('NVMe disks prefer the tri-mode controller even when the bus was placed first', () => {
+  // Acceptor priority is catalogue order, not placement order.
+  const s   = nvmeRaid5(CS.createState({ catalog }));
+  const bus = CS.cpAddNode(s, 'pcie');
+  for (const e of s.cpEdges.values()) eq(e.toNode, bus);
+  const roc = CS.cpAddNode(s, 'engine-roc-trimode');
+  for (const e of s.cpEdges.values()) eq(e.toNode, roc);
+});
+
+test('the Windows verdict text comes from its own file', () => {
+  const s   = withRaid5(CS.createState({ catalog }));
+  const bp  = backplane(s);
+  const hba = CS.cpAddNode(s, 'hba');
+  const cpu = CS.cpAddNode(s, 'cpu');
+  const os  = CS.cpAddNode(s, 'os-windows');
+  CS.cpConnect(s, bp, 'out', hba, 'in');
+  CS.cpConnect(s, hba, 'out', cpu, 'in');
+  CS.cpConnect(s, cpu, 'out', os, 'in');
+  const r = CS.evaluate(s);
+  eq(r.raidType, 'software');
+  eq(r.os, 'os-windows');
+  assert(/Windows/.test(r.controlPathReason), r.controlPathReason);
+});
+
+test('the first-hop advice names whatever accepts the disks', () => {
+  const s = nvmeRaid5(CS.createState({ catalog }));
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/PCIe bus/.test(r.controlPathIssue), r.controlPathIssue);
+  assert(/tri-mode/.test(r.controlPathIssue), r.controlPathIssue);   // both NVMe acceptors, no presumption
+});
+
+test('without a catalogue the verdict is undetermined, and says why', () => {
+  const s = withRaid5(CS.createState());
+  const r = CS.evaluate(s);
+  eq(r.raidType, null);
+  assert(/catalogue/.test(r.controlPathIssue), r.controlPathIssue);
+});
+
+// ---------------------------------------------------------------------------
 console.log('\n[13] reset() — master clear');
 
 test('reset wipes both axes and leaves an empty, evaluable state', () => {

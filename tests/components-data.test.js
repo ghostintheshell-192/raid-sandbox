@@ -39,6 +39,7 @@ try {
 }
 const { index, files } = data;
 const realManifest = {
+  roles:      index.roles,
   components: index.components.map((e) => files[e.file]),
   portTypes:  index.portTypes,
 };
@@ -82,8 +83,13 @@ for (const protocol of ['SATA', 'SAS', 'NVMe']) {
 // ---------------------------------------------------------------------------
 console.log('\n[3] the headless fixture mirrors the YAML');
 
+// The fields the engine reads (plus the two ui fields the recognizer names a
+// piece by). YAML folded scalars (`>-`) fold to one line, so a verdict reason
+// compares as a single string on both sides.
 const modelFields = (def) => JSON.stringify({
   id: def.id, provides: def.provides || [], ports: def.ports,
+  verdict: def.verdict || null,
+  ui: { label: (def.ui || {}).label, badge: (def.ui || {}).badge },
 });
 
 test('same component ids, same order', () => {
@@ -101,6 +107,29 @@ for (const real of realManifest.components) {
 
 test('portTypes match the YAML', () => {
   eq(JSON.stringify(fixture.portTypes), JSON.stringify(realManifest.portTypes));
+});
+
+test('roles match the YAML', () => {
+  eq(JSON.stringify(fixture.roles), JSON.stringify(realManifest.roles));
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[4] the verdict data is complete');
+
+test('every non-sink component with a verdict has an output port, and the sink capability exists', () => {
+  const sinkCap = realManifest.roles.sink.capability;
+  let sinks = 0;
+  for (const def of realManifest.components) {
+    const isSink = (def.provides || []).includes(sinkCap);
+    if (isSink) { sinks++; assert(def.verdict, `${def.id}: a sink must declare its verdict`); }
+    if (def.verdict && !isSink)
+      assert(def.ports.some((p) => p.dir === 'out'), `${def.id}: an engine object needs an output port`);
+    if (def.verdict) {
+      assert(typeof def.verdict.raidType === 'string', `${def.id}: verdict.raidType`);
+      assert(typeof def.verdict.reason === 'string' && def.verdict.reason.length > 20, `${def.id}: verdict.reason`);
+    }
+  }
+  assert(sinks >= 1, 'no component provides the sink capability');
 });
 
 finish();

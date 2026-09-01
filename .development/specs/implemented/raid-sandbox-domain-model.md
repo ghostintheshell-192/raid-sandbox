@@ -313,6 +313,13 @@ Sketch of the component set (granularity: **down to the HBA**, per author's inte
 > components that actually shipped are `engine-roc` and `engine-metadata`
 > (`data/components/`), told apart by identity, not by which capability they declare.
 
+> **Update 2026-09-02**: the promise of this section is now kept. The engine builds a
+> catalogue from these files (`src/engine/catalog.js`), validates every wire against
+> the declared ports and the `portTypes` relation in `index.yaml`, routes disks by
+> `accepts:`, and derives the hardware/fake/software verdict from each object's own
+> `verdict:` block (ADR-001, update of the same date) — no component is named in code.
+> Proof: `engine-roc-trimode.yaml` added NVMe hardware RAID as one file.
+
 ### 5b. Algorithm resource — schema (proposal)
 
 Carries the placement rule **and** the animation. Example, the default
