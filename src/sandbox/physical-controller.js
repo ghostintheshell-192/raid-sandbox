@@ -13,79 +13,25 @@
  *   controller.setupSidebar(sidebarEl)
  *   controller.render()
  *
- * Browser-only loader (spec §5a graceful-degradation pattern):
- *   PhysicalController.loadComponentDefs(basePath) → Promise<void>
- *   Fetches data/components/index.yaml and each component file, then merges
- *   the ui: section into the live COMPONENTS table. The hard-coded defaults
- *   remain active before the load completes and as fallback if load fails.
- *   Never called in Node (headless tests do not depend on COMPONENTS).
+ * What this file does NOT own any more: the component definitions and the port
+ * relation. Those are DATA (spec §5a) — data/components/index.yaml plus the
+ * component files — indexed into a catalogue by engine/catalog.js and held on
+ * the state (`state.catalog`). This controller only draws what the catalogue
+ * says and asks the state whether a wire may form (CanvasState.cpCanConnect).
+ *
+ * Browser-only loader:
+ *   PhysicalController.loadCatalog(basePath) → Promise<Catalog>
+ *   Fetches index.yaml and every listed component file, builds the catalogue.
+ *   Rejects on any failure — there is no hard-coded fallback: a physical layer
+ *   drawn from a stale table would disagree with the engine that reads the data.
+ *   Never called in Node (the headless suites use tests/fixtures/components.js).
  */
 
 (function (root) {
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // COMPONENT DEFINITIONS  (source of truth: data/components/*.yaml, ui: section)
-  //
-  // This table is the hard-coded fallback. loadComponentDefs() (browser-only)
-  // merges the ui: fields from YAML on top of these defaults at startup.
-  // The keys must match the componentId values used by CanvasState.cpAddNode().
-  //
-  // ports: array of { id, dir:'in'|'out', type, label }
-  // ---------------------------------------------------------------------------
-  const COMPONENTS = {
-    'backplane':     { label: 'Backplane',      icon: '📋', color: 'rgba(149,165,166,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'block-storage' },
-                               { id:'out', dir:'out', type:'routing' }] },
-    'hba':           { label: 'HBA',            icon: '🔌', color: 'rgba(149,165,166,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'routing' },
-                               { id:'out', dir:'out', type:'pcie' }] },
-    // Two distinct engine objects (ADR-001): identical badge prefix ("RAID Engine"),
-    // distinguished only by the tag naming which object it is — hardware and fake
-    // RAID look the same in the wiring, and the palette makes that literally true.
-    'engine-roc':      { label: 'RAID Engine',  icon: '🖥', color: 'rgba(52,152,219,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'routing' },
-                               { id:'out', dir:'out', type:'virtual-drive' }],
-                       badge: 'RoC' },
-    'engine-metadata': { label: 'RAID Engine',  icon: '🔲', color: 'rgba(231,76,60,.4)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
-                               { id:'out', dir:'out', type:'pcie' }],
-                       badge: 'metadata' },
-    'os-linux':      { label: 'Linux',          icon: '🐧', color: 'rgba(46,204,113,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
-    'os-windows':    { label: 'Windows',        icon: '🪟', color: 'rgba(46,204,113,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'cpu' }] },
-    'pcie':          { label: 'PCIe bus',       icon: '🔷', color: 'rgba(241,196,15,.5)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
-                               { id:'out', dir:'out', type:'pcie' }] },
-    'cpu':           { label: 'CPU',            icon: '⚡', color: 'rgba(241,196,15,.7)',
-                       ports: [{ id:'in',  dir:'in',  type:'pcie' },
-                               { id:'out', dir:'out', type:'cpu'  }] },
-  };
-
-  // Port compatibility: which output types can connect to which input types.
-  const COMPATIBLE = {
-    'block-storage': ['block-storage'],
-    'routing':       ['routing'],
-    'pcie':          ['pcie', 'pcie-raid'],
-    'pcie-raid':     ['pcie'],
-    'virtual-drive': ['pcie'],   // engine-roc → pcie bus → cpu
-    'cpu':           ['cpu'],
-  };
-
-  function portsCompatible(outType, inType) {
-    if (outType === 'any' || inType === 'any') return true;
-    return (COMPATIBLE[outType] || []).includes(inType) ||
-           (COMPATIBLE[inType]  || []).includes(outType);
-  }
-
-  // ---------------------------------------------------------------------------
-  // BROWSER-ONLY LOADER (spec §5a graceful-degradation, mirrors challenge.js pattern)
-  //
-  // Reads data/components/index.yaml, then each component file, and merges
-  // the `ui:` section into the live COMPONENTS table. The fallback table above
-  // is active the whole time; a partial or missing YAML is silently ignored so
-  // the physical layer never breaks. Never called in headless tests.
+  // BROWSER-ONLY CATALOGUE LOADER
   // ---------------------------------------------------------------------------
 
   function _loadYaml(path) {
@@ -98,38 +44,26 @@
   }
 
   /**
-   * Fetch component definitions from YAML and merge the ui: fields into the
-   * live COMPONENTS table. Call once at startup (fire-and-forget is fine).
-   * @param {string} basePath  Path to data/components/ (e.g. 'data/components')
-   * @returns {Promise<void>}
+   * Fetch the manifest and build the catalogue.
+   * @param {string} basePath  Path to data/components/ (default 'data/components')
+   * @returns {Promise<Catalog>}  rejects with a message naming the file at fault
    */
-  function loadComponentDefs(basePath) {
+  function loadCatalog(basePath) {
     const base = (basePath || 'data/components').replace(/\/$/, '');
-    return _loadYaml(`${base}/index.yaml`)
-      .then((index) => {
-        if (!Array.isArray(index)) return;
-        return Promise.all(
-          index.map((entry) => {
-            if (!entry || !entry.id || !entry.file) return Promise.resolve();
-            return _loadYaml(`${base}/${entry.file}`)
-              .then((def) => {
-                if (!def || !def.ui) return;    // no ui: section → keep hard-coded default
-                const existing = COMPONENTS[def.id];
-                if (!existing) return;           // unknown id → skip silently (safety net)
-                // Merge: YAML ui: fields override the hard-coded defaults.
-                if (def.ui.icon  !== undefined) existing.icon  = def.ui.icon;
-                if (def.ui.color !== undefined) existing.color = def.ui.color;
-                if (def.ui.badge !== undefined) existing.badge = def.ui.badge;
-                if (Array.isArray(def.ui.ports)) existing.ports = def.ui.ports;
-                // Keep label from the hard-coded table (shorter display names)
-                // unless the YAML name is shorter or the hard-coded label is missing.
-                if (!existing.label && def.name) existing.label = def.name;
-              })
-              .catch(() => { /* individual file load failure → keep fallback */ });
-          })
-        );
-      })
-      .catch(() => { /* index load failure → keep all fallbacks */ });
+    return _loadYaml(`${base}/index.yaml`).then((index) => {
+      if (!index || !Array.isArray(index.components))
+        throw new Error(`${base}/index.yaml: expected a "components" list`);
+      return Promise.all(index.components.map((entry) => {
+        if (!entry || !entry.id || !entry.file)
+          throw new Error(`${base}/index.yaml: every entry needs an id and a file`);
+        return _loadYaml(`${base}/${entry.file}`).then((def) => {
+          if (!def || def.id !== entry.id)
+            throw new Error(`${base}/${entry.file}: id "${def && def.id}" does not match the index entry "${entry.id}"`);
+          return def;
+        });
+      })).then((components) =>
+        root.RaidCatalog.createCatalog({ components, portTypes: index.portTypes }));
+    });
   }
 
   const { setDrag, getDrag } = root.DragUtil;
@@ -144,6 +78,20 @@
     // Pending connection: started from an output port, follows the cursor.
     let _pendingFrom = null;   // { nodeId, portId, portType, el }
     let _pendingLine = null;   // SVG line element
+
+    /**
+     * What the canvas needs to draw a component, read off the catalogue:
+     * the ui: block (label, icon, colour, badge) plus the model's ports. Null
+     * until the catalogue has loaded, or for an id it does not know.
+     */
+    function _def(componentId) {
+      const cat = state.catalog;
+      const def = cat && cat.get(componentId);
+      if (!def) return null;
+      const ui = def.ui || {};
+      return { label: ui.label || def.name || componentId, icon: ui.icon || '', color: ui.color || '',
+               badge: ui.badge || null, ports: def.ports };
+    }
 
     // ---- sidebar setup (called once) ----------------------------------------
 
@@ -165,7 +113,12 @@
         e.preventDefault();
         const payload = getDrag(e);
         if (!payload || payload.source !== 'sidebar' || payload.type !== 'phys-component') return;
-        if (!COMPONENTS[payload.componentId]) return; // unknown component — ignore silently
+        if (!_def(payload.componentId)) {
+          // No catalogue yet, or a chip naming a component the data does not
+          // define: nothing to place. Said out loud rather than swallowed.
+          console.warn(`physical layer: cannot place "${payload.componentId}" — not in the catalogue`);
+          return;
+        }
         const rect = canvasEl.getBoundingClientRect();
         const pos  = { x: e.clientX - rect.left - 40, y: e.clientY - rect.top - 20 };
         CS.cpAddNode(state, payload.componentId, pos);
@@ -263,7 +216,7 @@
     // ---- node element -------------------------------------------------------
 
     function _makeNodeEl(node) {
-      const def = COMPONENTS[node.componentId];
+      const def = _def(node.componentId);
       if (!def) return document.createElement('div');
 
       const el = document.createElement('div');
@@ -360,8 +313,9 @@
           dot.classList.remove('pln-port--over');
           const payload = getDrag(e);
           if (!payload || payload.type !== 'port-connect') return;
-          if (payload.fromNode === nodeId) return; // no self-loop
-          if (!portsCompatible(payload.fromType, portDef.type)) return;
+          // The state decides whether the wire may form (port types, direction,
+          // self-loops) from the catalogue; the canvas just declines to draw it.
+          if (!CS.cpCanConnect(state, payload.fromNode, payload.fromPort, nodeId, portDef.id).ok) return;
           CS.cpConnect(state, payload.fromNode, payload.fromPort, nodeId, portDef.id);
           render();
           if (typeof onEvaluate === 'function') onEvaluate(CS.evaluate(state));
@@ -428,14 +382,18 @@
       path.setAttribute('stroke-width', '2');
       path.setAttribute('fill', 'none');
       path.setAttribute('marker-end', 'url(#arrow)');
-      // Click to remove.
-      path.style.cursor = 'pointer';
-      path.style.pointerEvents = 'stroke';
-      path.addEventListener('click', () => {
-        CS.cpDisconnect(state, edge.id);
-        render();
-        if (typeof onEvaluate === 'function') onEvaluate(CS.evaluate(state));
-      });
+      // Click to remove — hand-drawn wires only. A derived edge (disk → the
+      // component that accepts its protocol) is domain truth, not a drawing:
+      // the state refuses to drop it, so the canvas does not offer to.
+      if (!edge.derived) {
+        path.style.cursor = 'pointer';
+        path.style.pointerEvents = 'stroke';
+        path.addEventListener('click', () => {
+          CS.cpDisconnect(state, edge.id);
+          render();
+          if (typeof onEvaluate === 'function') onEvaluate(CS.evaluate(state));
+        });
+      }
       svgEl.appendChild(path);
     }
 
@@ -465,7 +423,7 @@
   // EXPORT
   // ---------------------------------------------------------------------------
 
-  const PhysicalController = { createPhysicalController, COMPONENTS, loadComponentDefs };
+  const PhysicalController = { createPhysicalController, loadCatalog };
   if (typeof module !== 'undefined' && module.exports) module.exports = PhysicalController;
   else root.PhysicalController = PhysicalController;
 

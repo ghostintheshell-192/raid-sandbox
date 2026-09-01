@@ -26,9 +26,13 @@ note: >
   as a warning in the game.
 
 ui:
+  label: "Linux"
   icon: "🐧"
   color: "rgba(46,204,113,.7)"
-  ports:
-    - id: in
-      dir: in
-      type: cpu
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+ports:
+  - id: in
+    dir: in
+    type: cpu

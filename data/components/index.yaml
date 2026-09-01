@@ -1,21 +1,51 @@
-# index.yaml — physical component resource family
-# Lists all components available in the physical layer sidebar.
-# Each entry: { id, file }  — id must match the file's own `id` field.
-# Only components listed here are loaded at startup.
+# index.yaml — the physical component catalogue MANIFEST (spec §5a).
+#
+# Read by the browser (physical-controller.js: loadCatalog) and mirrored by the
+# headless fixture tests/fixtures/components.js, which components-data.test.js
+# keeps aligned with these files. The engine never reads files itself: it is
+# handed the parsed manifest and builds a catalogue from it (engine/catalog.js).
+#
+# Two sections:
+#   components — every component available in the physical sidebar.
+#                { id, file }: id must equal the file's own `id` field.
+#   portTypes  — the port-type relation: which OUTPUT type may feed which INPUT
+#                types. Directional, and complete: a type not listed here is a
+#                malformed catalogue (createCatalog fails fast), so a typo in a
+#                component's port cannot ship as a silently unwirable piece.
 
-- id: backplane
-  file: backplane.yaml
-- id: hba
-  file: hba.yaml
-- id: engine-roc
-  file: engine-roc.yaml
-- id: engine-metadata
-  file: engine-metadata.yaml
-- id: os-linux
-  file: os-linux.yaml
-- id: os-windows
-  file: os-windows.yaml
-- id: pcie
-  file: pcie-bus.yaml
-- id: cpu
-  file: cpu.yaml
+components:
+  - id: backplane
+    file: backplane.yaml
+  - id: hba
+    file: hba.yaml
+  - id: engine-roc
+    file: engine-roc.yaml
+  - id: engine-metadata
+    file: engine-metadata.yaml
+  - id: os-linux
+    file: os-linux.yaml
+  - id: os-windows
+    file: os-windows.yaml
+  - id: pcie
+    file: pcie-bus.yaml
+  - id: cpu
+    file: cpu.yaml
+
+portTypes:
+  # A disk-facing input. Disks are never wired by hand (spec §2, v1): they route
+  # to the input port whose `accepts` lists their protocol, so nothing feeds this
+  # type through a drawn wire.
+  block-storage:
+    connectsTo: []
+  # Raw SATA/SAS routing, backplane → HBA or RAID-on-Chip.
+  routing:
+    connectsTo: [routing]
+  # PCIe: HBA / metadata chip / bus → bus / metadata chip / CPU.
+  pcie:
+    connectsTo: [pcie]
+  # What a RAID-on-Chip exposes: the OS sees one virtual drive over PCIe.
+  virtual-drive:
+    connectsTo: [pcie]
+  # CPU → OS.
+  cpu:
+    connectsTo: [cpu]

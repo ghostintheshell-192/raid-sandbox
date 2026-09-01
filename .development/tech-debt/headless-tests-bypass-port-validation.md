@@ -1,11 +1,14 @@
 ---
 type: testing
 priority: medium
-status: open
+status: resolved
 discovered: 2026-07-31
-related: []
+related: [ports-double-source-of-truth.md]
 related_decision: null
 ---
+
+> **Resolved 2026-09-02** on `refactor/physical-model-in-engine` (Option C: A for
+> the future, the audit once) — see the resolution sections at the end.
 
 # `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
 
@@ -97,6 +100,44 @@ handoff.
 - **Code Locations**: `src/sandbox/canvas-state.js` (`cpConnect`, `cpAutoRoute`),
   `src/sandbox/physical-controller.js` (`portsCompatible`, `COMPATIBLE`),
   `tests/canvas-state.test.js` (lines 392, 470, 482-483, 506, 540, 566)
+
+## Solution Implemented
+
+**Option C.** For the future (Option A): `CanvasState.cpConnect` now asks
+`cpCanConnect`, which answers from the component catalogue (`engine/catalog.js`,
+built from `data/components/*.yaml`: port direction and the directional port-type
+relation) plus the state's own two rules (no self-loop; disks are never wired by
+hand), and **throws** when the answer is no. The browser asks `cpCanConnect` before
+drawing, so it never hits the throw; a test that wires an impossible canvas now
+fails loudly at the wire, not silently at the assertion. Disk → acceptor edges are
+created by `cpAutoRoute` alone, marked `derived: true`, and `cpDisconnect` refuses
+them — so `cpAutoRoute` no longer needs the permissive primitive the Analysis
+worried about.
+
+Once (Option B): every physical-layer test in `canvas-state.test.js` was rewired
+onto a path a player can draw — RoC → PCIe bus → CPU → OS for the hardware happy
+path (was RoC → OS direct), CPU inserted wherever an engine fed the OS directly,
+the cycle test now loops through a PCIe bus (`pcie → pcie` is a legal pair, so
+that cycle remains drawable and the walk must still tolerate it).
+
+The design call the Analysis deferred is taken: **`hbaIsDownstream` is gone, with
+its test.** With typed ports nothing but a backplane outputs `routing` and no
+engine feeds a backplane, so "the HBA sits after the engine" described a canvas no
+player will ever see. (Flagged for Valentina at the step-1 checkpoint; reversible.)
+
+## Testing
+
+`tests/canvas-state.test.js` (55, including a new section: incompatible wire
+refused with a reason naming the types; self-loop and hand-wired disk refused;
+no catalogue → nothing wires; disks route when the acceptor appears, before any
+`evaluate()`; derived edge cannot be disconnected; removing the acceptor drops the
+edges and a new one re-routes them; `evaluate()` leaves the edge set unchanged).
+
+## Impact
+
+The headless suite can no longer assert on a canvas the UI would refuse, and
+`evaluate()` is pure — routing became a mutation (add/remove disk or component),
+which is what makes the verdict reproducible from the state alone.
 
 ---
 

@@ -1,11 +1,14 @@
 ---
 type: code-quality
 priority: low
-status: open
+status: resolved
 discovered: 2026-07-30
-related: []
+related: [headless-tests-bypass-port-validation.md]
 related_decision: null
 ---
+
+> **Resolved 2026-09-02** on `refactor/physical-model-in-engine` — see the
+> resolution sections at the end.
 
 # Component ports are defined twice, and the two environments read different copies
 
@@ -59,3 +62,36 @@ orphaned `pcie-raid` entry in `COMPATIBLE` — remove it in the same pass.
 - **Code Locations**: `src/sandbox/physical-controller.js` (`COMPONENTS`,
   `loadComponentDefs`, `COMPATIBLE`), `data/components/*.yaml` (`ui.ports`),
   `tests/challenge-data.test.js` (the YAML-reading test pattern to copy)
+
+## Solution Implemented
+
+Neither Option A nor B as written: the JS table left `src/` altogether. The
+component definitions and the port-type relation are now DATA only —
+`data/components/index.yaml` (a `components` list plus a directional `portTypes`
+relation, `pcie-raid` gone) and each component's top-level `ports:` block (moved
+out of `ui:`, because ports are model, not presentation). `src/engine/catalog.js`
+indexes a parsed manifest into a catalogue; the browser builds it from the YAML
+(`PhysicalController.loadCatalog`) and hands it to the state; the renderer and
+the wiring check read the catalogue and nothing else.
+
+The zero-dependency headless suites still cannot parse YAML, so they get a JS
+mirror — but as a **test fixture** (`tests/fixtures/components.js`), not a second
+runtime copy, and `tests/components-data.test.js` (python3 + pyyaml, the pattern
+Option A pointed at) asserts fixture and YAML agree on every model field: ids and
+order, `provides`, `ports` (dir, type, `accepts`), `portTypes`. A divergence is a
+red test, never a silent split between the two environments.
+
+## Testing
+
+`node tests/components-data.test.js` (31), `node tests/catalog.test.js` (13);
+the whole suite via `.development/automation/test.sh` (13 suites green,
+2026-09-02).
+
+## Impact
+
+The physical layer has one source of truth and the engine can read it, which is
+what lets `cpConnect` validate at all (`headless-tests-bypass-port-validation.md`,
+resolved in the same pass) and what the next step — deriving the hardware/fake/
+software verdict from declared capabilities instead of hard-coded ids — builds on.
+There is no hard-coded fallback any more: if the catalogue fails to load, the
+physical panel says so instead of drawing from a stale table.

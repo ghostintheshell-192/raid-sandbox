@@ -9,9 +9,27 @@
  *
  * Positions are kept in a separate map so the drag fast-path (requestAnimationFrame)
  * can update pixel coordinates without touching domain state or triggering evaluate().
- * evaluate() is called once per gesture (on drop), never during drag.
+ * evaluate() is called once per gesture (on drop), never during drag — and it is
+ * PURE: every derivation lives in src/engine/, and routing the disks is a
+ * mutation (it happens when a disk or a component is added or removed), not a
+ * side effect of asking for a verdict.
  *
- * Depends on: model.js (RaidModel), layout.js (RaidLayout), graph.js (RaidGraph)
+ * This file owns the mutable state and nothing else: no rule about RAID is
+ * decided here. The physical verdict is engine/physical.js; what may be wired
+ * to what is the component catalogue (engine/catalog.js), built from
+ * data/components/*.yaml and handed in via createState({ catalog }) or
+ * setCatalog(). Without a catalogue nothing physical can be placed or routed.
+ *
+ * Depends on: model.js (RaidModel), layout.js (RaidLayout), validator.js
+ * (RaidValidator), physical.js (RaidPhysical)
+ *
+ * Axis A mutations:
+ *   CanvasState.cpAddNode(state, componentId, pos)        → id   (re-routes the disks)
+ *   CanvasState.cpRemoveNode(state, nodeId)               → void (re-routes the disks)
+ *   CanvasState.cpCanConnect(state, from, fromPort, to, toPort) → { ok, reason? }
+ *   CanvasState.cpConnect(state, from, fromPort, to, toPort)    → id, or THROWS if not ok
+ *   CanvasState.cpDisconnect(state, edgeId)               → bool (false for a derived disk edge)
+ *   CanvasState.cpAutoRoute(state)                        → void (idempotent; called by the above)
  *
  * Axis B mutations:
  *   CanvasState.addDisk(state, sizeGB, protocol, pos)     → id
@@ -33,7 +51,7 @@
   const Model     = (typeof require !== 'undefined') ? require('../engine/model.js')     : root.RaidModel;
   const Layout    = (typeof require !== 'undefined') ? require('../engine/layout.js')    : root.RaidLayout;
   const Validator = (typeof require !== 'undefined') ? require('../engine/validator.js') : root.RaidValidator;
-  const Graph     = (typeof require !== 'undefined') ? require('../engine/graph.js')     : root.RaidGraph;
+  const Physical  = (typeof require !== 'undefined') ? require('../engine/physical.js')  : root.RaidPhysical;
 
   // ---------------------------------------------------------------------------
   // ID GENERATION
@@ -53,9 +71,12 @@
    * roots     — top-level node ids (not a member of any array)
    * positions — disk pixel positions; updated at 60 fps during drag (fast path)
    * selected  — currently selected node ids
+   * catalog   — the component catalogue (engine/catalog.js), or null until one is
+   *             set; it is DATA, not build state, so reset() leaves it alone
    */
-  function createState() {
+  function createState(opts = {}) {
     return {
+      catalog:   opts.catalog || null,
       // Axis B — data layout
       nodes:     new Map(),
       roots:     new Set(),
@@ -86,6 +107,16 @@
     state.cpDiskPositions.clear();
   }
 
+  /**
+   * Hand the state its component catalogue (the browser does this once the
+   * YAML has loaded). Disks that were waiting for somewhere to route to are
+   * routed now.
+   */
+  function setCatalog(state, catalog) {
+    state.catalog = catalog || null;
+    cpAutoRoute(state);
+  }
+
   // ---------------------------------------------------------------------------
   // MUTATIONS
   // Called by CanvasController in response to gestures. Fast + synchronous.
@@ -97,6 +128,7 @@
     state.nodes.set(id, { kind: 'disk', id, sizeGB, protocol });
     state.positions.set(id, pos);
     state.roots.add(id);
+    cpAutoRoute(state);   // the shared atom appears in the physical view too, routed
     return id;
   }
 
@@ -227,10 +259,16 @@
   // AXIS A MUTATIONS — physical layer graph
   // ---------------------------------------------------------------------------
 
-  /** Add a physical component node. Returns the new node id. */
+  /**
+   * Add a physical component node. Returns the new node id. The id is not
+   * checked against the catalogue here: a node of unknown type is inert (it has
+   * no ports, so nothing can be wired to it) and the canvas refuses to place
+   * one in the first place.
+   */
   function cpAddNode(state, componentId, pos = { x: 0, y: 0 }) {
     const id = nextId('cpn');
     state.cpNodes.set(id, { id, componentId, pos });
+    cpAutoRoute(state);   // it may be the piece the disks were waiting for
     return id;
   }
 
@@ -246,18 +284,59 @@
     for (const [id, e] of state.cpEdges) {
       if (e.fromNode === nodeId || e.toNode === nodeId) state.cpEdges.delete(id);
     }
+    cpAutoRoute(state);   // another acceptor may take the disks this one had
   }
 
-  /** Connect two physical nodes via their ports. Returns edge id. */
+  /**
+   * May `fromNode.fromPort` be wired into `toNode.toPort` by hand?
+   * Answers from the catalogue (port direction and the port-type relation) plus
+   * the two rules that are the state's own: no self-loops, and disks are never
+   * wired by hand — they route themselves by protocol (spec §2, v1).
+   * The reason is for a developer or a test; the canvas simply does not draw
+   * a wire it is told no about.
+   */
+  function cpCanConnect(state, fromNode, fromPort, toNode, toPort) {
+    const no = (reason) => ({ ok: false, reason });
+    if (!state.catalog) return no('no catalogue loaded — nothing can be wired yet');
+    if (fromNode === toNode) return no('a component cannot be wired to itself');
+    const from = state.cpNodes.get(fromNode);
+    const to   = state.cpNodes.get(toNode);
+    if (!from) return no(state.nodes.has(fromNode)
+      ? 'disks are not wired by hand — they route by protocol'
+      : `unknown node "${fromNode}"`);
+    if (!to) return no(`unknown node "${toNode}"`);
+    return state.catalog.canConnect(from.componentId, fromPort, to.componentId, toPort);
+  }
+
+  /**
+   * Connect two physical nodes via their ports. Returns the edge id.
+   * THROWS when cpCanConnect says no: a wire the catalogue forbids must never
+   * exist in the state, in the browser (which asks first) or in a test (which
+   * would otherwise assert on a canvas no player can draw —
+   * tech-debt/headless-tests-bypass-port-validation.md).
+   */
   function cpConnect(state, fromNode, fromPort, toNode, toPort) {
+    const can = cpCanConnect(state, fromNode, fromPort, toNode, toPort);
+    if (!can.ok) throw new Error(`cannot connect ${fromNode}.${fromPort} → ${toNode}.${toPort}: ${can.reason}`);
+    return _addEdge(state, fromNode, fromPort, toNode, toPort, false);
+  }
+
+  function _addEdge(state, fromNode, fromPort, toNode, toPort, derived) {
     const id = nextId('cpe');
-    state.cpEdges.set(id, { id, fromNode, fromPort, toNode, toPort });
+    state.cpEdges.set(id, { id, fromNode, fromPort, toNode, toPort, derived });
     return id;
   }
 
-  /** Remove a connection edge. */
+  /**
+   * Remove a hand-drawn connection edge. Returns true when it did. A DERIVED
+   * edge (disk → acceptor, created by cpAutoRoute) is domain truth, not a
+   * drawing: it cannot be removed, and the call returns false.
+   */
   function cpDisconnect(state, edgeId) {
+    const e = state.cpEdges.get(edgeId);
+    if (!e || e.derived) return false;
     state.cpEdges.delete(edgeId);
+    return true;
   }
 
   /** Set a disk's position in the physical view (fast path, like move()). */
@@ -266,42 +345,51 @@
   }
 
   /**
-   * The physical component a disk routes into, by protocol (spec §2, v1 rule):
-   *   SATA/SAS → backplane · NVMe → PCIe bus (bypasses the backplane).
-   */
-  function _diskTargetComponent(protocol) {
-    return protocol === 'NVMe' ? 'pcie' : 'backplane';
-  }
-
-  /**
-   * Auto-route every disk to its protocol-determined target node, idempotently.
-   * v1 has no manual disk-wiring: the disk's protocol decides where it connects
-   * (NVMe-bypass made visible). Re-asserts exactly one edge disk→target when the
-   * target exists, and clears stale disk edges when it does not. Components wire
-   * to each other manually as before — this only manages disk→target edges.
+   * Auto-route every disk to a node that ACCEPTS its protocol, idempotently.
+   * v1 has no manual disk-wiring (spec §2): which component takes a disk is
+   * declared by the component itself (`accepts:` on an input port in
+   * data/components/*.yaml — the backplane takes SATA/SAS, the PCIe bus takes
+   * NVMe, and this file knows neither name). Re-asserts exactly one derived edge
+   * disk → acceptor when one exists on the canvas, and clears stale disk edges
+   * when it does not. Hand-drawn edges are never touched.
+   *
+   * Two nodes of the same accepting type is an ambiguity the v1 model cannot
+   * express (disks cannot be assigned by hand yet): the first placed wins,
+   * deterministically, and the verdict's "chain breaks" diagnostics take over
+   * if that one is not cabled onward. Manual assignment arrives with the
+   * backplane-diversity module (§9.4).
    */
   function cpAutoRoute(state) {
     for (const node of state.nodes.values()) {
       if (node.kind !== 'disk') continue;
 
-      const targetComp = _diskTargetComponent(node.protocol);
-      const targetNode = Array.from(state.cpNodes.values())
-        .find((n) => n.componentId === targetComp);
-
       const diskEdges = Array.from(state.cpEdges.values())
         .filter((e) => e.fromNode === node.id);
 
-      if (!targetNode) {
-        // No target on the canvas yet → the disk routes nowhere; drop stale edges.
+      const target = _acceptorNodeFor(state, node.protocol);
+      if (!target) {
+        // Nothing on the canvas takes this protocol (or no catalogue yet) →
+        // the disk routes nowhere; drop stale edges.
         diskEdges.forEach((e) => state.cpEdges.delete(e.id));
         continue;
       }
 
-      const correct = diskEdges.find((e) => e.toNode === targetNode.id);
-      // Remove any edge pointing at the wrong target (e.g. protocol changed).
+      const correct = diskEdges.find((e) => e.toNode === target.node.id && e.toPort === target.portId);
       diskEdges.forEach((e) => { if (e !== correct) state.cpEdges.delete(e.id); });
-      if (!correct) cpConnect(state, node.id, 'out', targetNode.id, 'in');
+      if (!correct) _addEdge(state, node.id, 'out', target.node.id, target.portId, true);
     }
+  }
+
+  /** The first placed node whose catalogue entry accepts `protocol`, with the port. */
+  function _acceptorNodeFor(state, protocol) {
+    if (!state.catalog) return null;
+    const acceptors = state.catalog.acceptorsOf(protocol);
+    if (acceptors.length === 0) return null;
+    for (const node of state.cpNodes.values()) {
+      const a = acceptors.find((x) => x.componentId === node.componentId);
+      if (a) return { node, portId: a.portId };
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -413,16 +501,16 @@
 
     const analysis  = Model.analyze(tree);
     const placement = Layout.computePlacement(tree, opts);
-    // Disk edges are protocol-derived, not player-drawn, so they are domain
-    // truth — but the only caller was the physical view's render(). Now that the
-    // verdict is a walk from the disks, a recognizer that ran before a render
-    // would see a graph with no sources at all. Idempotent by construction.
-    cpAutoRoute(state);
-    const cp = _recognizePhysicalLayer(state.cpNodes, state.cpEdges, _diskIds(state));
+
+    // Axis A: the disks are already routed (routing is a mutation, see
+    // cpAutoRoute), so the recognizer sees the graph exactly as the canvas
+    // draws it. Nothing here writes to the state.
+    const disks = _diskIds(state);
+    const cp    = Physical.recognize(state.cpNodes, state.cpEdges, disks);
 
     // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
-    // its output here (same loose bolt-on pattern as _recognizePhysicalLayer).
-    const violations = Validator.validate(tree, _buildPhysicalAdapter(state, cp));
+    // its output here (same loose bolt-on pattern as the physical recognizer).
+    const violations = Validator.validate(tree, Physical.buildView(state.cpNodes, state.cpEdges, disks, cp));
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,
@@ -446,214 +534,6 @@
     return Array.from(state.nodes.values())
       .filter((n) => n.kind === 'disk')
       .map((n) => ({ id: n.id, protocol: n.protocol }));
-  }
-
-  /**
-   * Build the derived physical view the validator consumes (never the raw cp* Maps).
-   *   engineCount — RAID-engine-bearing nodes (engine-roc or engine-metadata); >1 is illegal
-   *   diskRoutes  — each disk's protocol + the component it actually wires into
-   */
-  function _buildPhysicalAdapter(state, cp) {
-    const engineCount = Array.from(state.cpNodes.values())
-      .filter((n) => n.componentId === 'engine-roc' || n.componentId === 'engine-metadata').length;
-
-    const diskRoutes = [];
-    for (const node of state.nodes.values()) {
-      if (node.kind !== 'disk') continue;
-      const edge   = Array.from(state.cpEdges.values()).find((e) => e.fromNode === node.id);
-      const target = edge ? (state.cpNodes.get(edge.toNode)?.componentId ?? null) : null;
-      diskRoutes.push({ id: node.id, protocol: node.protocol, target });
-    }
-    return { raidType: cp.raidType, os: cp.os, engineCount, diskRoutes };
-  }
-
-  /**
-   * Derive hardware/fake/software from the physical layer graph.
-   *
-   * Rules (ADR-001 — identity, not position):
-   *   A node with componentId 'engine-roc'      on the path → Hardware RAID
-   *   A node with componentId 'engine-metadata' on the path → Fake RAID
-   *   Neither object anywhere, OS reached directly           → Software RAID
-   *     (the OS itself is the engine: `provides: raid-engine`, os-linux.yaml /
-   *     os-windows.yaml)
-   *
-   * The verdict is a claim about a PATH, so it is derived by walking one
-   * (`engine/graph.js`). A component is on the path only if a disk reaches it
-   * AND it reaches an OS — presence alone (a floating node) does not count.
-   *
-   * The HBA-in-path requirement is scoped to SATA/SAS disks (checked via each
-   * disk's protocol, carried in `disks`): NVMe disks reach the PCIe bus
-   * directly and were wrongly blocked by an unconditional HBA gate before
-   * (tech-debt/nvme-software-raid-unbuildable.md).
-   *
-   * Every determined verdict also carries `reason` and `engineNodeId`. The panel
-   * used to show the verdict alone, which hides the one insight axis A exists to
-   * teach (§2): hardware/software/fake are the SAME path, told apart by which
-   * engine object sits on it (or none). The explanation belongs here, with the
-   * derivation — a view that re-derives it could disagree with the badge above it.
-   */
-  function _recognizePhysicalLayer(cpNodes, cpEdges, disks) {
-    const g     = Graph.build(cpNodes, cpEdges);
-    disks       = disks || [];
-
-    const osIds  = Graph.nodesWith(g, 'os-linux').concat(Graph.nodesWith(g, 'os-windows'));
-    const os     = osIds.length ? g.nodes.get(osIds[0]).componentId : null;
-    const osName = os === 'os-windows' ? 'Windows' : 'Linux';
-
-    const undetermined = (issue) => ({ raidType: null, os: null, complete: false, issue });
-
-    // The two halves of "on the path", kept separate because they fail with
-    // different advice: nothing feeds this, versus this feeds nothing.
-    const fedByDisk = (id) => disks.some((d) => Graph.reaches(g, d.id, id));
-    const reachesOS = (id) => osIds.some((o) => Graph.reaches(g, id, o));
-    const onPath    = (id) => fedByDisk(id) && reachesOS(id);
-
-    const rocIds  = Graph.nodesWith(g, 'engine-roc');
-    const chipIds = Graph.nodesWith(g, 'engine-metadata');
-
-    /**
-     * Shared gate for "does a disk reach this id, and does it reach an OS":
-     * the same questions, asked in the order the player can act on them.
-     * Returns an issue string, or null when the node genuinely sits on a
-     * disks→OS path. Used both for an engine object and, when there is none,
-     * for the OS node itself (the software verdict).
-     */
-    function pathIssueFor(id, label) {
-      if (g.out.get(id).length === 0)
-        return `Connect the ${label} output — until it is wired, nothing can be `
-             + 'said about which RAID you are building.';
-      if (!os)
-        return 'Add an OS node to complete the path.';
-      if (!fedByDisk(id)) {
-        // Two different builds land here and they need different advice. Nothing
-        // wired at all is "start at the disks"; disks wired into a chain that
-        // dead-ends is the opposite problem, and telling that player to start at
-        // the disks describes something they can see they already did. Found
-        // in-browser with two backplanes, the disks auto-routed to the one that
-        // was not cabled onward.
-        const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
-        return anyDiskWired
-          ? `The disks are wired, but the chain breaks before the ${label} — `
-            + 'follow the cables forward from them to find the gap.'
-          : `No disk reaches the ${label} yet — the path has to start at the disks.`;
-      }
-      if (!reachesOS(id))
-        return `The ${label} does not reach the OS — the path stops before it.`;
-      return null;
-    }
-
-    /**
-     * SATA/SAS disks need an HBA between them and `id`; NVMe disks reach PCIe
-     * directly and need none (tech-debt/nvme-software-raid-unbuildable.md).
-     * `id` is either an engine object or, for the software verdict, the OS
-     * node — the sentence reads naturally either way.
-     */
-    function hbaGateFor(id, label) {
-      const feeding  = disks.filter((d) => Graph.reaches(g, d.id, id));
-      const needsHba = feeding.some((d) => d.protocol !== 'NVMe');
-      if (!needsHba) return null;
-
-      const hbas      = Graph.nodesWith(g, 'hba');
-      const hbaOnPath = hbas.some((h) => fedByDisk(h) && Graph.reaches(g, h, id));
-      if (hbaOnPath) return null;
-
-      // An HBA wired downstream is present AND connected, so "without it"
-      // would be describing a canvas the player is not looking at.
-      const hbaIsDownstream = hbas.some((h) => Graph.reaches(g, id, h));
-      return hbaIsDownstream
-        ? `The HBA sits after the ${label} — SATA/SAS disks need it in front, `
-        + 'so it belongs between the disks and it.'
-        : `Route the SATA/SAS disks through an HBA before the ${label} — `
-        + 'without it nothing carries them there.';
-    }
-
-    // A RAID-on-Chip dropped on the canvas is not yet ON the path. Presence
-    // alone used to be enough to declare hardware RAID — the verdict came out
-    // before a single cable existed. It already includes protocol translation
-    // (provides: protocol-translation), so no separate HBA gate applies.
-    if (rocIds.length) {
-      const rocId = rocIds.find(onPath) ?? rocIds[0];
-      const issue = pathIssueFor(rocId, 'RAID Engine (RoC)');
-      if (issue) return undetermined(issue);
-
-      return { raidType: 'hardware', os: null, complete: true, issue: null,
-               engineNodeId: rocId,
-               // Names the piece exactly as the canvas labels it. A sentence
-               // that says "the controller card" points at something the
-               // player cannot find: that name exists nowhere in the game.
-               reason: 'The RAID engine is a RAID-on-Chip — it sits before the '
-                     + 'PCIe bus, builds the array itself, and the OS sees one virtual drive.' };
-    }
-
-    if (chipIds.length) {
-      const chipId = chipIds.find(onPath) ?? chipIds[0];
-      const issue  = pathIssueFor(chipId, 'RAID Engine (metadata)');
-      if (issue) return undetermined(issue);
-
-      const hbaIssue = hbaGateFor(chipId, 'RAID Engine (metadata)');
-      if (hbaIssue) return undetermined(hbaIssue);
-
-      return { raidType: 'fake', os, complete: true, issue: null,
-        engineNodeId: chipId,
-        reason: 'The RAID engine is a metadata-only chip — it owns the array '
-              + 'metadata, but the CPU still computes the parity, not the chip.' };
-    }
-
-    // Software RAID: neither engine object is anywhere on the canvas, so the
-    // OS itself is the engine (`provides: raid-engine`). Only the FIRST hop
-    // (routing the disks somewhere) is common to all three verdicts, so it
-    // is the only one advised unconditionally; past it, hardware and fake
-    // stay open for a while (see hardwareOpen/fakeOpen below) and nothing
-    // is said until only software remains possible.
-    const anyDiskWired = disks.some((d) => (g.out.get(d.id) || []).length > 0);
-    if (!anyDiskWired) {
-      const allNvme = disks.length > 0 && disks.every((d) => d.protocol === 'NVMe');
-      return undetermined(allNvme
-        ? 'Nothing carries the disks anywhere yet — add a PCIe bus so they have somewhere to go.'
-        : 'Nothing carries the disks anywhere yet — add a Backplane so they have somewhere to go.');
-    }
-
-    // Past this point, do NOT name a specific next component unless it is
-    // required by EVERY verdict still reachable from here — naming one that
-    // only some remaining verdicts need presumes the direction the player
-    // has not chosen yet (the same "derive, don't select" principle the
-    // level recognizer already follows for axis B).
-    const hbas = Graph.nodesWith(g, 'hba');
-
-    // Hardware is open until an HBA actually intercepts the disk flow: a RoC
-    // wired straight from the Backplane skips the HBA entirely (it already
-    // provides protocol-translation). NVMe disks never reach a RoC at all
-    // (its input is routing-typed, NVMe disks auto-route to PCIe) — hardware
-    // was never open for them, so it can't be what's still blocking software.
-    const hardwareOpen = disks.some((d) => d.protocol !== 'NVMe') && !hbas.some(fedByDisk);
-    if (hardwareOpen) return undetermined(null);
-
-    // Past the HBA, hardware is foreclosed (its pcie-typed output cannot
-    // reach the RoC's routing-typed input), but fake is still open — a
-    // metadata chip could still be wired in before the CPU — until a CPU is
-    // actually reached with no chip node on the canvas to have gone through.
-    const cpuIds  = Graph.nodesWith(g, 'cpu');
-    const fakeOpen = !cpuIds.some(fedByDisk);
-    if (fakeOpen) return undetermined(null);
-
-    if (!os)
-      return undetermined('Add an OS node to complete the path.');
-
-    // The OS is a sink (no output port), so the question is just "does a
-    // disk reach it" — not the "is its own output wired" question
-    // pathIssueFor asks for engine nodes.
-    const osId = osIds[0];
-    if (!fedByDisk(osId))
-      return undetermined('The disks are wired, but the chain breaks before the OS — '
-        + 'follow the cables forward from them to find the gap.');
-
-    const hbaIssue = hbaGateFor(osId, 'OS');
-    if (hbaIssue) return undetermined(hbaIssue);
-
-    return { raidType: 'software', os, complete: true, issue: null,
-      engineNodeId: null,
-      reason: `No RAID engine sits on the path — ${osName} and the CPU compute `
-            + 'the layout themselves, with no RAID hardware involved.' };
   }
 
   // Derive the first actionable hint from the current state.
@@ -691,14 +571,14 @@
   // ---------------------------------------------------------------------------
 
   const CanvasState = {
-    createState, reset,
+    createState, reset, setCatalog,
     // Axis B
     addDisk, group, addToArray,
     setSegmentation, setRedundancy, setAlgorithm,
     dissolve, remove, move,
     compile,
     // Axis A
-    cpAddNode, cpMoveNode, cpRemoveNode, cpConnect, cpDisconnect,
+    cpAddNode, cpMoveNode, cpRemoveNode, cpCanConnect, cpConnect, cpDisconnect,
     cpSetDiskPos, cpAutoRoute,
     // pipeline
     evaluate,

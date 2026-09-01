@@ -22,12 +22,16 @@ constraints:
       either by the OS (software RAID) or by a separate metadata-only chip near the CPU.
 
 ui:
+  label: "HBA"
   icon: "🔌"
   color: "rgba(149,165,166,.7)"
-  ports:
-    - id: in
-      dir: in
-      type: routing
-    - id: out
-      dir: out
-      type: pcie
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+ports:
+  - id: in
+    dir: in
+    type: routing
+  - id: out
+    dir: out
+    type: pcie
