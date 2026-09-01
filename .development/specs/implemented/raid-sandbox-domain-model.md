@@ -389,6 +389,30 @@ defaultAlgorithm: left-symmetric
 
 ---
 
+### 5d. Update 2026-09-02 — back on these rails: the engine reads the resource files
+
+The §5 promise — *adding capability = adding a file, ideally with no engine change* —
+was kept for the derivations and broken for the facts: the recognizer, the disk
+minimums, the port table and the hardware/fake/software verdict are hard-coded, while
+`raid-levels/*.yaml` (`shape:`, `minDisks`), `components/*.yaml` (`provides:`, ports)
+are read by nobody (`reference/physical-model-fidelity.md` §3, `informative-ui.md`).
+The audit `reference/engine-robustness-and-extraction.md` (2026-09-01) lists the gaps;
+Valentina's decision (2026-09-02) is to close them all, in order, before any extraction
+of the engine into a project of its own:
+
+1. the physical model (ports, compatibility, verdict) moves into `src/engine/` and is
+   fed by a **catalogue** built from `components/*.yaml` — §5a becomes true;
+2. the verdict reads capabilities (`provides: raid-engine`, `protocol-translation`)
+   and each engine object declares its own verdict, per ADR-001; the tri-mode controller
+   then arrives as one file — the §5 acceptance test;
+3. the recognizer reads `shape:` from `raid-levels/*.yaml` — §5c becomes true;
+4. a build becomes a document (serialize/deserialize; the shareable URL);
+5. `@ts-check` on the engine's interfaces.
+
+The living plan, with the checkpoint protocol, is the handoff
+`.memory-bank/2026-09-02-0045-agnostic-engine-refactor-plan.md` (local). §5b's
+parametric algorithm registry stays deferred: it is placement, not agnosticity.
+
 ## 6. Constraint vocabulary (from the notes)
 
 The constraint engine evaluates these over the tree/graph. Each lives **on a resource**, not in
