@@ -11,8 +11,8 @@ related_decision: ../reference/decisions/001-engine-identity-not-position.md
 
 > **Resolved 2026-09-02** on `refactor/verdict-from-capabilities`, by Option C as
 > decided — and as a single YAML file, because the verdict is now read off the
-> catalogue. See the resolution sections at the end. The id, badge and wording of
-> that file are **provisional** (marked in the file) until Valentina settles them.
+> catalogue. See the resolution sections at the end. Id, badge and wording of that
+> file confirmed by Valentina the same day.
 
 ## Problem
 
@@ -130,10 +130,10 @@ Because both the PCIe bus and the tri-mode controller accept NVMe, acceptor prio
 had to be defined: catalogue order (`index.yaml`), so when both are on the canvas the
 disks take the controller. The first-hop advice for NVMe disks now names both.
 
-The three details the Recommended Approach left open are answered provisionally:
-id `engine-roc-trimode`, badge `RoC tri-mode` (explicit — the verdict word "hardware"
-is still not on the chip, only the device family), reason text in the file. All three
-are one-line edits in that file.
+The three details the Recommended Approach left open are settled (Valentina,
+2026-09-02): id `engine-roc-trimode`, badge `RoC tri-mode` (explicit — the verdict
+word "hardware" is still not on the chip, only the device family), reason text in the
+file.
 
 ## Testing
 

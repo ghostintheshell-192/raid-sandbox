@@ -3,12 +3,11 @@ name: RAID Engine (RoC, tri-mode)
 category: engine
 pathSlot: engine
 
-# PROVISIONAL (2026-09-02): id, badge and wording are placeholders until
-# Valentina settles them (handoff 2026-07-31, "Opzione C": a third distinct
-# engine object for tri-mode controllers, not a wider engine-roc). This file is
-# the acceptance test of the data-driven verdict: adding it added a buildable
-# NVMe hardware RAID without touching the engine
-# (tech-debt/nvme-hardware-raid-unbuildable.md).
+# The third engine object (handoff 2026-07-31, "Opzione C": a distinct piece for
+# tri-mode controllers, not a wider engine-roc). Id, badge and wording confirmed
+# by Valentina 2026-09-02. This file is the acceptance test of the data-driven
+# verdict: adding it added a buildable NVMe hardware RAID without touching the
+# engine (tech-debt/nvme-hardware-raid-unbuildable.md).
 
 description: >
   A RAID-on-Chip controller whose ports speak SAS, SATA and NVMe alike
