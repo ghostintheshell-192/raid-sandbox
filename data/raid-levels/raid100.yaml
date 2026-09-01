@@ -1,6 +1,7 @@
 id: raid100
 name: RAID 100
 notRaid: false
+reason: "striping over RAID 10 spans (1+0+0)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 # A stripe (striped+none) over flat RAID-10 spans (striped+mirror over disks).
@@ -12,6 +13,7 @@ shape:
     segmentation: striped
     redundancy: mirror
     members: disks
+    constraint: even-disk-count   # a RAID 10 span, not a RAID 1E one (odd → no canonical name)
 
 minDisks: 8   # 2 spans × 4-disk RAID 10 minimum
 faultTolerance: 1   # per span (each RAID 10 span survives one disk)

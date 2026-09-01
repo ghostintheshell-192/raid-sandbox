@@ -16,7 +16,9 @@ const { test, assert, eq, finish } = require('./test-helpers.js');
 const disks = (k, size = 2) => Array.from({ length: k }, (_, i) => M.disk(`d${k}_${i}_${size}`, size));
 const arr   = (seg, red, members) => M.array(seg, red, members);
 
-const level = (n) => M.recognize(n).level;
+const levels = require('../src/engine/levels.js')
+  .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
+const level = (n) => M.recognize(n, levels).level;
 const cap   = (n) => M.capacityGB(n);
 const ft    = (n) => M.faultTolerance(n);
 

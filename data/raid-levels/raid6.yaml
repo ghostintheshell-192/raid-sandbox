@@ -1,6 +1,7 @@
 id: raid6
 name: RAID 6
 notRaid: false
+reason: "striping with double distributed parity"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 shape:

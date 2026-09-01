@@ -1,6 +1,7 @@
 id: raid50
 name: RAID 50
 notRaid: false
+reason: "striping over RAID-5 spans (5+0)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 # A stripe (striped+none) over RAID-5 spans (striped+parity1 over disks).

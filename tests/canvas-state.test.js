@@ -15,13 +15,15 @@ const { createCatalog } = require('../src/engine/catalog.js');
 // The component catalogue is data; the headless mirror of data/components/*.yaml
 // (kept aligned by components-data.test.js) feeds every state this suite builds.
 const catalog = createCatalog(require('./fixtures/components.js'));
+const levels = require('../src/engine/levels.js')
+  .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] State factory');
 
 test('createState returns empty state', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   eq(s.nodes.size, 0);
   eq(s.roots.size, 0);
   eq(s.positions.size, 0);
@@ -32,7 +34,7 @@ test('createState returns empty state', () => {
 console.log('\n[2] Mutations — addDisk');
 
 test('addDisk adds disk to nodes and roots', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const id = CS.addDisk(s, 2, 'SATA', { x: 10, y: 20 });
   assert(id.startsWith('disk-'), `id prefix: ${id}`);
   assert(s.nodes.has(id));
@@ -43,7 +45,7 @@ test('addDisk adds disk to nodes and roots', () => {
 });
 
 test('addDisk defaults protocol to SATA', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const id = CS.addDisk(s, 4);
   eq(s.nodes.get(id).protocol, 'SATA');
 });
@@ -52,7 +54,7 @@ test('addDisk defaults protocol to SATA', () => {
 console.log('\n[3] Mutations — group');
 
 test('group creates incomplete array, removes members from roots', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2);
   const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
@@ -70,7 +72,7 @@ test('group creates incomplete array, removes members from roots', () => {
 console.log('\n[4] Mutations — addToArray');
 
 test('addToArray moves disk from roots into array', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2);
   const d2 = CS.addDisk(s, 2);
   const d3 = CS.addDisk(s, 2);
@@ -81,7 +83,7 @@ test('addToArray moves disk from roots into array', () => {
 });
 
 test('addToArray moves disk from one array to another — no duplicate membership', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2);
   const d2 = CS.addDisk(s, 2);
   const d3 = CS.addDisk(s, 2);
@@ -100,7 +102,7 @@ test('addToArray moves disk from one array to another — no duplicate membershi
 console.log('\n[5] Mutations — setSegmentation / setRedundancy');
 
 test('setSegmentation updates array node', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, aid, 'striped');
@@ -108,7 +110,7 @@ test('setSegmentation updates array node', () => {
 });
 
 test('setRedundancy updates array node', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.setRedundancy(s, aid, 'none');
@@ -119,7 +121,7 @@ test('setRedundancy updates array node', () => {
 console.log('\n[6] Mutations — dissolve');
 
 test('dissolve returns members to roots and removes array', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.dissolve(s, aid);
@@ -132,7 +134,7 @@ test('dissolve returns members to roots and removes array', () => {
 console.log('\n[7] Mutations — remove');
 
 test('remove disk deletes node, position, root entry', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const id = CS.addDisk(s, 2);
   CS.remove(s, id);
   assert(!s.nodes.has(id));
@@ -141,7 +143,7 @@ test('remove disk deletes node, position, root entry', () => {
 });
 
 test('remove array dissolves members first', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.remove(s, aid);
@@ -154,7 +156,7 @@ test('remove array dissolves members first', () => {
 console.log('\n[8] Mutations — move (fast path)');
 
 test('move updates position without touching nodes', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const id = CS.addDisk(s, 2, 'SATA', { x: 0, y: 0 });
   CS.move(s, id, { x: 99, y: 88 });
   eq(s.positions.get(id).x, 99);
@@ -165,7 +167,7 @@ test('move updates position without touching nodes', () => {
 console.log('\n[9] evaluate() — incomplete and disconnected states');
 
 test('empty canvas → firstIssue, no analysis', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const r = CS.evaluate(s);
   assert(r.firstIssue !== null);
   assert(r.analysis === null);
@@ -173,7 +175,7 @@ test('empty canvas → firstIssue, no analysis', () => {
 });
 
 test('two loose disks → firstIssue about creating array', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   CS.addDisk(s, 2); CS.addDisk(s, 2);
   const r = CS.evaluate(s);
   assert(r.firstIssue !== null);
@@ -181,7 +183,7 @@ test('two loose disks → firstIssue about creating array', () => {
 });
 
 test('array missing segmentation → firstIssue about segmentation', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   CS.group(s, [d1, d2]);
   const r = CS.evaluate(s);
@@ -190,7 +192,7 @@ test('array missing segmentation → firstIssue about segmentation', () => {
 });
 
 test('array missing redundancy → firstIssue about redundancy', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, aid, 'striped');
@@ -200,7 +202,7 @@ test('array missing redundancy → firstIssue about redundancy', () => {
 });
 
 test('disconnected array + loose disk → firstIssue about connecting', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const d3 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
@@ -217,7 +219,7 @@ test('disconnected array + loose disk → firstIssue about connecting', () => {
 console.log('\n[10] evaluate() — valid builds');
 
 test('RAID 0 (striped + none, 4 disks) → analysis + placement', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const ids = [0,1,2,3].map(() => CS.addDisk(s, 2));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
@@ -231,7 +233,7 @@ test('RAID 0 (striped + none, 4 disks) → analysis + placement', () => {
 });
 
 test('RAID 1 (linear + mirror, 2 disks) → analysis + placement', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 4); const d2 = CS.addDisk(s, 4);
   const aid = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, aid, 'linear');
@@ -245,7 +247,7 @@ test('RAID 1 (linear + mirror, 2 disks) → analysis + placement', () => {
 });
 
 test('RAID 5 (striped + parity1, 3 disks) → analysis + placement', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const ids = [0,1,2].map(() => CS.addDisk(s, 3));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
@@ -259,7 +261,7 @@ test('RAID 5 (striped + parity1, 3 disks) → analysis + placement', () => {
 });
 
 test('RAID 6 (striped + parity2, 4 disks) → analysis + placement', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const ids = [0,1,2,3].map(() => CS.addDisk(s, 2));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
@@ -273,7 +275,7 @@ test('RAID 6 (striped + parity2, 4 disks) → analysis + placement', () => {
 });
 
 test('flat RAID 10 (striped + mirror, even) → RAID 10, placement near', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const ids = [0, 1, 2, 3].map(() => CS.addDisk(s, 2));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
@@ -285,7 +287,7 @@ test('flat RAID 10 (striped + mirror, even) → RAID 10, placement near', () => 
 });
 
 test('striped + mirror, odd disks → RAID 1E, interleaved near placement', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const ids = [0, 1, 2].map(() => CS.addDisk(s, 2));
   const aid = CS.group(s, ids);
   CS.setSegmentation(s, aid, 'striped');
@@ -301,7 +303,7 @@ test('striped + mirror, odd disks → RAID 1E, interleaved near placement', () =
 console.log('\n[11] compile() edge cases');
 
 test('compile returns null for incomplete array', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2); const d2 = CS.addDisk(s, 2);
   const aid = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, aid, 'striped');
@@ -310,12 +312,12 @@ test('compile returns null for incomplete array', () => {
 });
 
 test('compile returns null for unknown id', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   eq(CS.compile(s, 'nonexistent'), null);
 });
 
 test('compile carries the canvas id onto every array node, nested spans included', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const span = (n) => {
     const ds  = Array.from({ length: n }, () => CS.addDisk(s, 2));
     const aid = CS.group(s, ds);
@@ -341,7 +343,7 @@ test('compile carries the canvas id onto every array node, nested spans included
 console.log('\n[12] evaluate() reconciles a corrupted root/member history');
 
 function raid6of6() {
-  const s  = CS.createState({ catalog });
+  const s  = CS.createState({ catalog, levels });
   const ds = Array.from({ length: 6 }, () => CS.addDisk(s, 4));
   const a  = CS.group(s, ds);
   CS.setSegmentation(s, a, 'striped');
@@ -359,7 +361,7 @@ test('a phantom root id (leftover from a deleted node) does not block recognitio
 });
 
 test('a dangling member reference is pruned so the array still compiles', () => {
-  const s  = CS.createState({ catalog });
+  const s  = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
   const a  = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
@@ -368,7 +370,7 @@ test('a dangling member reference is pruned so the array still compiles', () => 
 });
 
 test('a node that is both a root and a member counts only as a member', () => {
-  const s  = CS.createState({ catalog });
+  const s  = CS.createState({ catalog, levels });
   const d1 = CS.addDisk(s, 2), d2 = CS.addDisk(s, 2);
   const a  = CS.group(s, [d1, d2]);
   CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'none');
@@ -394,7 +396,7 @@ function withRaid5(s) {
 function backplane(s) { return CS.cpAddNode(s, 'backplane'); }
 
 test('hardware: the reason names the RAID-on-Chip, and points at it', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp   = backplane(s);
   const ctrl = CS.cpAddNode(s, 'engine-roc');
   const pcie = CS.cpAddNode(s, 'pcie');
@@ -414,7 +416,7 @@ test('hardware: the reason names the RAID-on-Chip, and points at it', () => {
 test('a controller sitting unconnected decides nothing', () => {
   // Reported in-browser: dropping the controller printed "Hardware RAID" plus
   // its explanation, with not one cable drawn.
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   CS.cpAddNode(s, 'engine-roc');
   const r = CS.evaluate(s);
   eq(r.raidType, null);
@@ -423,7 +425,7 @@ test('a controller sitting unconnected decides nothing', () => {
 });
 
 test('a wired controller with no OS is still undetermined', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const ctrl = CS.cpAddNode(s, 'engine-roc');
   const pcie = CS.cpAddNode(s, 'pcie');
   CS.cpConnect(s, ctrl, 'out', pcie, 'in');
@@ -434,7 +436,7 @@ test('a wired controller with no OS is still undetermined', () => {
 
 test('software: the reason names the OS and the CPU that compute it', () => {
   // No engine object anywhere (ADR-001): the OS itself is the engine.
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   const cpu = CS.cpAddNode(s, 'cpu');
@@ -450,7 +452,7 @@ test('software: the reason names the OS and the CPU that compute it', () => {
 });
 
 test('fake: the reason says the CPU still does the work', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   const eng = CS.cpAddNode(s, 'engine-metadata');
@@ -472,7 +474,7 @@ console.log('\n[13c] the verdict is a claim about a path, and walks it');
 test('a complete-looking path with the disks wired nowhere decides nothing', () => {
   // Every component present and correctly chained — but no backplane, so the
   // disks route into thin air. The old recognizer said "Hardware RAID".
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const ctrl = CS.cpAddNode(s, 'engine-roc');
   const cpu  = CS.cpAddNode(s, 'cpu');
   const os   = CS.cpAddNode(s, 'os-linux');
@@ -484,7 +486,7 @@ test('a complete-looking path with the disks wired nowhere decides nothing', () 
 });
 
 test('a gap between the disks and the engine is caught', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   const eng = CS.cpAddNode(s, 'engine-metadata');
@@ -503,14 +505,14 @@ test('a gap between the disks and the engine is caught', () => {
 
 test('disks wired nowhere and disks wired into a dead end read differently', () => {
   // Found in-browser: two backplanes, disks auto-routed to the one not cabled on.
-  const wiredNowhere = withRaid5(CS.createState({ catalog }));
+  const wiredNowhere = withRaid5(CS.createState({ catalog, levels }));
   const ctrlA = CS.cpAddNode(wiredNowhere, 'engine-roc');
   const cpuA  = CS.cpAddNode(wiredNowhere, 'cpu');
   CS.cpConnect(wiredNowhere, ctrlA, 'out', cpuA, 'in');
   CS.cpConnect(wiredNowhere, cpuA, 'out', CS.cpAddNode(wiredNowhere, 'os-linux'), 'in');
   assert(/has to start at the disks/i.test(CS.evaluate(wiredNowhere).controlPathIssue));
 
-  const deadEnd = withRaid5(CS.createState({ catalog }));
+  const deadEnd = withRaid5(CS.createState({ catalog, levels }));
   backplane(deadEnd);                       // disks auto-route here…
   const bp2  = CS.cpAddNode(deadEnd, 'backplane');
   const ctrl = CS.cpAddNode(deadEnd, 'engine-roc');
@@ -523,7 +525,7 @@ test('disks wired nowhere and disks wired into a dead end read differently', () 
 });
 
 test('an engine that reaches no OS decides nothing', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp   = backplane(s);
   const hba  = CS.cpAddNode(s, 'hba');
   const eng  = CS.cpAddNode(s, 'engine-metadata');
@@ -542,7 +544,7 @@ test('a floating HBA does not foreclose hardware', () => {
   // presence of an HBA was read as participation. A disconnected HBA must
   // not count as "hardware is foreclosed" — only one the disks actually
   // reach does (see the previous test).
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   backplane(s);                             // the disks route here; nothing goes onward
   CS.cpAddNode(s, 'os-linux');              // dropped, nothing reaches it
   CS.cpAddNode(s, 'hba');                   // dropped, wired to nothing
@@ -554,7 +556,7 @@ test('a floating HBA does not foreclose hardware', () => {
 test('junk the verdict does not depend on is tolerated', () => {
   // Over-strictness guard: a stray PCIe bus lying around must not veto a path
   // that genuinely runs end to end.
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp   = backplane(s);
   const ctrl = CS.cpAddNode(s, 'engine-roc');
   const cpu  = CS.cpAddNode(s, 'cpu');
@@ -570,7 +572,7 @@ test('a cycle in the control path does not hang the evaluation', () => {
   // Port typing forbids most loops, but pcie → pcie is a legal pair, so a bus
   // wired back into the chip that feeds it is still drawable. The graph walk
   // must tolerate it (tech-debt/control-path-tolerates-cycles.md).
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   const eng = CS.cpAddNode(s, 'engine-metadata');
@@ -590,7 +592,7 @@ test('NVMe-only software RAID no longer requires an HBA', () => {
   // tech-debt/nvme-software-raid-unbuildable.md: the HBA gate is scoped to
   // SATA/SAS disks. NVMe disks auto-route straight to the PCIe bus (§2), so a
   // software build with no HBA at all must resolve, not be rejected.
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const a = CS.group(s, [CS.addDisk(s, 2, 'NVMe'), CS.addDisk(s, 2, 'NVMe'),
                          CS.addDisk(s, 2, 'NVMe')]);
   CS.setSegmentation(s, a, 'striped');
@@ -604,7 +606,7 @@ test('NVMe-only software RAID no longer requires an HBA', () => {
 });
 
 test('an undetermined path has no reason to give', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const r = CS.evaluate(s);
   eq(r.raidType, null);
   eq(r.controlPathReason, null);
@@ -616,7 +618,7 @@ test('a bare physical layer talks about the disks first, not the OS', () => {
   // Reported in-browser: with nothing dropped at all, the software branch
   // checked `!os` before checking the disks were wired anywhere, so an empty
   // canvas said "Add an OS node" before a single component existed.
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const r = CS.evaluate(s);
   assert(/Backplane/.test(r.controlPathIssue), r.controlPathIssue);
   assert(!/OS node/.test(r.controlPathIssue), r.controlPathIssue);
@@ -626,7 +628,7 @@ test('a backplane and nothing else says nothing — hardware is still an open ch
   // Reported in-browser: naming the HBA here presumes fake/software over
   // hardware, which can still be built directly from the Backplane (a RoC
   // already provides protocol-translation, so it needs no HBA at all).
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   backplane(s);
   const r = CS.evaluate(s);
   eq(r.raidType, null);
@@ -634,7 +636,7 @@ test('a backplane and nothing else says nothing — hardware is still an open ch
 });
 
 test('an OS dropped early changes nothing — hardware is still open, still silent', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   backplane(s);
   CS.cpAddNode(s, 'os-linux');   // dropped, but nothing routes to it yet
   const r = CS.evaluate(s);
@@ -648,7 +650,7 @@ test('an HBA reached says nothing — hardware is foreclosed but fake is still o
   // cannot reach the RoC's routing-typed input) but fake is not — a
   // metadata chip could still be wired in before a CPU — so naming the CPU
   // would presume software over fake.
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   CS.cpConnect(s, bp, 'out', hba, 'in');
@@ -661,7 +663,7 @@ test('an HBA reached says nothing — hardware is foreclosed but fake is still o
 console.log('\n[13d] the catalogue decides what can be wired, and routing is a mutation');
 
 test('an incompatible wire is refused with a reason that names the types', () => {
-  const s   = CS.createState({ catalog });
+  const s   = CS.createState({ catalog, levels });
   const bp  = CS.cpAddNode(s, 'backplane');
   const eng = CS.cpAddNode(s, 'engine-metadata');
   const can = CS.cpCanConnect(s, bp, 'out', eng, 'in');
@@ -674,7 +676,7 @@ test('an incompatible wire is refused with a reason that names the types', () =>
 });
 
 test('a self-loop and a hand-wired disk are refused', () => {
-  const s   = CS.createState({ catalog });
+  const s   = CS.createState({ catalog, levels });
   const bus = CS.cpAddNode(s, 'pcie');
   const d   = CS.addDisk(s, 2, 'NVMe');
   eq(CS.cpCanConnect(s, bus, 'out', bus, 'in').ok, false);
@@ -691,7 +693,7 @@ test('without a catalogue nothing can be wired, and it says so', () => {
 });
 
 test('disks route when the acceptor appears, before any evaluate()', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const d = CS.addDisk(s, 2, 'SATA');
   eq(s.cpEdges.size, 0);                    // nothing accepts SATA yet
   const bp = CS.cpAddNode(s, 'backplane');
@@ -703,7 +705,7 @@ test('disks route when the acceptor appears, before any evaluate()', () => {
 });
 
 test('a derived disk edge cannot be disconnected by hand', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   CS.addDisk(s, 2, 'SATA');
   CS.cpAddNode(s, 'backplane');
   const edge = Array.from(s.cpEdges.values())[0];
@@ -712,7 +714,7 @@ test('a derived disk edge cannot be disconnected by hand', () => {
 });
 
 test('removing the acceptor drops the disk edges; a new acceptor re-routes them', () => {
-  const s  = CS.createState({ catalog });
+  const s  = CS.createState({ catalog, levels });
   CS.addDisk(s, 1, 'NVMe');
   const bus = CS.cpAddNode(s, 'pcie');
   eq(s.cpEdges.size, 1);
@@ -723,7 +725,7 @@ test('removing the acceptor drops the disk edges; a new acceptor re-routes them'
 });
 
 test('evaluate() is pure: the edge set is the same before and after', () => {
-  const s = withRaid5(CS.createState({ catalog }));
+  const s = withRaid5(CS.createState({ catalog, levels }));
   backplane(s);
   const before = JSON.stringify(Array.from(s.cpEdges.values()));
   CS.evaluate(s);
@@ -744,7 +746,7 @@ function nvmeRaid5(s) {
 test('a tri-mode engine added as a FILE makes NVMe hardware RAID buildable', () => {
   // tech-debt/nvme-hardware-raid-unbuildable.md: no line of the recognizer
   // names this component; its verdict and its NVMe acceptance are in its YAML.
-  const s   = nvmeRaid5(CS.createState({ catalog }));
+  const s   = nvmeRaid5(CS.createState({ catalog, levels }));
   const roc = CS.cpAddNode(s, 'engine-roc-trimode');
   const bus = CS.cpAddNode(s, 'pcie');
   const cpu = CS.cpAddNode(s, 'cpu');
@@ -761,7 +763,7 @@ test('a tri-mode engine added as a FILE makes NVMe hardware RAID buildable', () 
 
 test('NVMe disks prefer the tri-mode controller even when the bus was placed first', () => {
   // Acceptor priority is catalogue order, not placement order.
-  const s   = nvmeRaid5(CS.createState({ catalog }));
+  const s   = nvmeRaid5(CS.createState({ catalog, levels }));
   const bus = CS.cpAddNode(s, 'pcie');
   for (const e of s.cpEdges.values()) eq(e.toNode, bus);
   const roc = CS.cpAddNode(s, 'engine-roc-trimode');
@@ -769,7 +771,7 @@ test('NVMe disks prefer the tri-mode controller even when the bus was placed fir
 });
 
 test('the Windows verdict text comes from its own file', () => {
-  const s   = withRaid5(CS.createState({ catalog }));
+  const s   = withRaid5(CS.createState({ catalog, levels }));
   const bp  = backplane(s);
   const hba = CS.cpAddNode(s, 'hba');
   const cpu = CS.cpAddNode(s, 'cpu');
@@ -784,7 +786,7 @@ test('the Windows verdict text comes from its own file', () => {
 });
 
 test('the first-hop advice names whatever accepts the disks', () => {
-  const s = nvmeRaid5(CS.createState({ catalog }));
+  const s = nvmeRaid5(CS.createState({ catalog, levels }));
   const r = CS.evaluate(s);
   eq(r.raidType, null);
   assert(/PCIe bus/.test(r.controlPathIssue), r.controlPathIssue);
@@ -802,7 +804,7 @@ test('without a catalogue the verdict is undetermined, and says why', () => {
 console.log('\n[13] reset() — master clear');
 
 test('reset wipes both axes and leaves an empty, evaluable state', () => {
-  const s = CS.createState({ catalog });
+  const s = CS.createState({ catalog, levels });
   const a = CS.group(s, [CS.addDisk(s, 4), CS.addDisk(s, 4)]);
   CS.setSegmentation(s, a, 'striped'); CS.setRedundancy(s, a, 'parity1');
   CS.cpAddNode(s, 'hba');

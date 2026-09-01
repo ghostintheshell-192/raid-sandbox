@@ -1,6 +1,7 @@
 id: raid61
 name: RAID 61
 notRaid: false
+reason: "mirror over RAID-6 spans (6+1)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 # A mirror over RAID-6 spans (striped+parity2 over disks). Mirror parent modelled

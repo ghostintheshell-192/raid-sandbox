@@ -1,6 +1,7 @@
 id: raid60
 name: RAID 60
 notRaid: false
+reason: "striping over RAID-6 spans (6+0)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 # A stripe (striped+none) over RAID-6 spans (striped+parity2 over disks).

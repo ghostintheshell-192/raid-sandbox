@@ -34,35 +34,18 @@
   // BROWSER-ONLY CATALOGUE LOADER
   // ---------------------------------------------------------------------------
 
-  function _loadYaml(path) {
-    return fetch(path)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
-        return res.text();
-      })
-      .then((txt) => root.jsyaml.load(txt));
-  }
-
   /**
-   * Fetch the manifest and build the catalogue.
+   * Fetch the manifest and build the catalogue (DataLoader + RaidCatalog.assemble:
+   * this file decides nothing about the manifest's shape).
    * @param {string} basePath  Path to data/components/ (default 'data/components')
    * @returns {Promise<Catalog>}  rejects with a message naming the file at fault
    */
   function loadCatalog(basePath) {
-    const base = (basePath || 'data/components').replace(/\/$/, '');
-    // Fetch, then hand everything to the engine's own assembler: this file
-    // decides nothing about the manifest's shape (see RaidCatalog.assemble).
-    return _loadYaml(`${base}/index.yaml`).then((index) => {
-      if (!index || !Array.isArray(index.components))
-        throw new Error(`${base}/index.yaml: expected a "components" list`);
-      return Promise.all(index.components.map((entry) =>
-        _loadYaml(`${base}/${entry.file}`).then((def) => [entry.file, def])
-      )).then((pairs) => {
-        const files = {};
-        for (const [name, def] of pairs) files[name] = def;
-        return root.RaidCatalog.createCatalog(root.RaidCatalog.assemble(index, files));
-      });
-    });
+    const filesOf = (index) =>
+      (index && Array.isArray(index.components) ? index.components : [])
+        .map((entry) => ({ key: entry.file, file: entry.file }));
+    return root.DataLoader.loadIndexed(basePath || 'data/components', filesOf, root.RaidCatalog.assemble)
+      .then((manifest) => root.RaidCatalog.createCatalog(manifest));
   }
 
   const { setDrag, getDrag } = root.DragUtil;

@@ -5,7 +5,9 @@
  * physical view), returns the §6 constraint violations. No DOM, no canvas state.
  * This is what makes it testable in Node and reusable by checkChallenge (Stage D).
  *
- *   validate(tree, physical) → { hard: Violation[], soft: Violation[] }   // never null
+ *   validate(tree, physical, { levels }) → { hard: Violation[], soft: Violation[] }   // never null
+ *   `levels` is the level catalogue (levels.js): the rules that need a level's
+ *   name or minimum read it there instead of carrying a table of their own.
  *
  *   Violation = {
  *     code,                       // stable id, e.g. 'min-disks'
@@ -68,38 +70,22 @@
   // Code, severity, layer and source come from the registry entry, not from here.
   // ---------------------------------------------------------------------------
 
-  // Level-specific disk minimums (RAID 0/JBOD's ≥2 is structural → _firstIssue).
-  // striped|mirror splits by parity of the disk count: EVEN is RAID 10 (≥4), ODD is
-  // RAID 1E (≥3) — both valid, just different minimums. (An odd striped mirror used
-  // to be flagged as an error; it is now the recognized RAID 1E level.)
-  const MIN_DISKS = {
-    'striped|parity1': 3,   // RAID 5
-    'striped|parity2': 4,   // RAID 6
-    'linear|mirror':   2,   // RAID 1
-  };
-  const LEVEL_NAME = {
-    'striped|parity1': 'RAID 5',
-    'striped|parity2': 'RAID 6',
-    'linear|mirror':   'RAID 1',
-  };
-
+  // Level-specific disk minimums, read off the level catalogue: a leaf span is
+  // matched to its level (RAID 10 vs RAID 1E is the even/odd constraint in the
+  // level files, not a rule here) and compared to that level's `minDisks`. The
+  // universal ≥2 is STRUCTURAL and stays with canvas-state's _firstIssue, so a
+  // level whose minimum is 2 never fires here — the panel would otherwise say
+  // the same thing twice.
   function checkMinDisks(tree, physical, ctx) {
+    if (!ctx.levels) return null;
     const out = [];
     for (const { node: a, label } of ctx.arrays) {
       if (!allDisks(a)) continue;                     // nested levels checked via their leaf spans
-      let min, name;
-      if (a.segmentation === 'striped' && a.redundancy === 'mirror') {
-        const odd = a.members.length % 2 !== 0;
-        min  = odd ? 3 : 4;                            // RAID 1E (odd) vs RAID 10 (even)
-        name = odd ? 'RAID 1E' : 'RAID 10';
-      } else {
-        const key = `${a.segmentation}|${a.redundancy}`;
-        min = MIN_DISKS[key];
-        name = LEVEL_NAME[key];
-      }
-      if (min && a.members.length < min)
+      const level = ctx.levels.match(a);
+      if (!level || !(level.minDisks > 2)) continue;
+      if (a.members.length < level.minDisks)
         out.push({
-          message: `${label} is a ${name} — it needs at least ${min} disks and has ${a.members.length}.`,
+          message: `${label} is a ${level.name} — it needs at least ${level.minDisks} disks and has ${a.members.length}.`,
           nodeId: a.id,
         });
     }
@@ -263,13 +249,15 @@
    * different nodes stay two violations — which is why the compiled tree
    * carries the canvas id (see Model.array).
    */
-  function validate(tree, physical = {}) {
+  function validate(tree, physical = {}, opts = {}) {
+    const levels = opts.levels || null;
     const ctx = {
       arrays: tree ? walkArrays(tree, [], []) : [],   // [{ node, label }]
+      levels,                                          // the level catalogue (minimums, names)
       // Recognized once here rather than per rule: the phase-2b physical rules
       // (fake RAID is limited to 0/1/5/10, …) all need the level, and a rule
       // deriving it on its own could disagree with the panel.
-      level: tree ? Model.recognize(tree) : null,
+      level: tree ? Model.recognize(tree, levels) : null,
     };
 
     const seen = new Set();

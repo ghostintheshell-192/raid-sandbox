@@ -1,6 +1,7 @@
 id: raid51
 name: RAID 51
 notRaid: false
+reason: "mirror over RAID-5 spans (5+1)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 # A mirror over RAID-5 spans (striped+parity1 over disks). The mirror parent is

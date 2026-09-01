@@ -1,6 +1,7 @@
 id: raid10
 name: RAID 10
 notRaid: false
+reason: "striped mirroring, 2 copies (flat RAID 10)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule — §3a: flat, NOT nested)
 # A single array: striped + mirror + even disk count, copies=2.
