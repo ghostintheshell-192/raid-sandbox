@@ -17,12 +17,16 @@ requires:
   - pcie-connection
 
 ui:
+  label: "CPU"
   icon: "⚡"
   color: "rgba(241,196,15,.7)"
-  ports:
-    - id: in
-      dir: in
-      type: pcie
-    - id: out
-      dir: out
-      type: cpu
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+ports:
+  - id: in
+    dir: in
+    type: pcie
+  - id: out
+    dir: out
+    type: cpu

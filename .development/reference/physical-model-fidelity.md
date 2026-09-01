@@ -98,9 +98,9 @@ simplifications, four dead artifacts.
 
 | finding | detail | disposition |
 |---|---|---|
-| `provides:`/`requires:` in component YAMLs | read by no code; pure documentation, including never-enforced claims (`os-linux requires: hba`) | declared documentation for now; wire-or-remove decision on the implementation branch |
-| `pcie-raid` port type | exists only inside `COMPATIBLE` (`physical-controller.js`); no port anywhere declares it | remove during the rework |
-| ports defined twice | hard-coded `COMPONENTS` (JS) + `ui.ports` (YAML), byte-identical today; browser silently prefers YAML, headless uses JS — a future divergence splits behaviour between the two environments with no error | `tech-debt/ports-double-source-of-truth.md` |
+| `provides:`/`requires:` in component YAMLs | read by no code; pure documentation, including never-enforced claims (`os-linux requires: hba`) | **2026-09-02**: `provides` is now indexed by the catalogue (`engine/catalog.js`) and is the input of the next step, the capability-driven verdict; `requires` stays documentation until a rule reads it |
+| `pcie-raid` port type | exists only inside `COMPATIBLE` (`physical-controller.js`); no port anywhere declares it | **removed 2026-09-02** — the relation now lives in `index.yaml` `portTypes`, and a type nobody declares fails `createCatalog` |
+| ports defined twice | hard-coded `COMPONENTS` (JS) + `ui.ports` (YAML), byte-identical today; browser silently prefers YAML, headless uses JS — a future divergence splits behaviour between the two environments with no error | **resolved 2026-09-02** — YAML is the only runtime source; the headless mirror is a test fixture checked by `components-data.test.js` (`tech-debt/ports-double-source-of-truth.md`) |
 | `raid-engine`'s `any` ports | the hole that makes cycles drawable (`tech-debt/control-path-tolerates-cycles.md`) | retiring the piece (ADR-001) removes the last `any` from the system; port typing becomes meaningful everywhere |
 
 ## 4. Verified and holding — no action

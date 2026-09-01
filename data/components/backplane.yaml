@@ -5,15 +5,9 @@ pathSlot: backplane
 required: false
 
 ui:
+  label: "Backplane"
   icon: "📋"
   color: "rgba(149,165,166,.7)"
-  ports:
-    - id: in
-      dir: in
-      type: block-storage
-    - id: out
-      dir: out
-      type: routing
 
 description: >
   Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller.
@@ -35,3 +29,14 @@ note: >
   Best practice: members of one RAID span should be on different backplanes when
   possible (soft constraint — improves physical fault isolation). This rule is
   deferred to a later phase.
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+ports:
+  - id: in
+    dir: in
+    type: block-storage
+    accepts: [SATA, SAS]
+  - id: out
+    dir: out
+    type: routing

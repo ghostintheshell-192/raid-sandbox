@@ -26,13 +26,17 @@ note: >
   array cannot be accessed — unlike hardware RAID which is driver-independent.
 
 ui:
+  label: "RAID Engine"
   icon: "🔲"
   color: "rgba(231,76,60,.4)"
   badge: "metadata"
-  ports:
-    - id: in
-      dir: in
-      type: pcie
-    - id: out
-      dir: out
-      type: pcie
+
+# Ports are model, not UI: the engine reads them to validate every connection
+# and to route disks (`accepts`). The port-type relation is in index.yaml.
+ports:
+  - id: in
+    dir: in
+    type: pcie
+  - id: out
+    dir: out
+    type: pcie
