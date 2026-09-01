@@ -48,8 +48,9 @@
 - [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
 - [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
 
-### reference/ (1 files)
+### reference/ (2 files)
 
+- [engine-robustness-and-extraction.md](reference/engine-robustness-and-extraction.md) — The composition engine — robustness audit and extraction map
 - [physical-model-fidelity.md](reference/physical-model-fidelity.md) — Physical model vs. physical reality — fidelity audit
 
 ### reference/decisions/ (1 files)
