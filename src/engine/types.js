@@ -1,4 +1,5 @@
 // @ts-check
+/// <reference path="../../types/ambient.d.ts" />
 /**
  * types.js — RAID Sandbox: the engine's shapes, as JSDoc typedefs.
  *
