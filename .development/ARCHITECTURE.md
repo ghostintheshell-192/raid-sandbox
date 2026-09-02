@@ -56,6 +56,7 @@ kernel rules and never regenerated from the engine.
 - `validator.js` — RAID Sandbox: the constraint engine (Phase 5, Stage C).
 
 ### src/sandbox
+- `build-document.js` — RAID Sandbox: a build as a DOCUMENT (save, load, share).
 - `canvas-controller.js` — RAID Sandbox: drag-and-drop controller (Phase 3).
 - `canvas-state.js` — RAID Sandbox: mutable canvas state + evaluation pipeline.
 - `data-loader.js` — RAID Sandbox: fetch an indexed resource family (browser-only).
@@ -67,6 +68,7 @@ kernel rules and never regenerated from the engine.
 - `touch-dnd.js` — touch shim for the HTML5 drag-and-drop API.
 
 ### tests
+- `build-document.test.js` — headless tests for the build document (save / load / share). Run with: node build-document.test.js
 - `canvas-algo-integration.test.js` —  End-to-end: canvas state → algorithm chip → computePlacement → different grids. Run: node canvas-algo-integration.test.js
 - `canvas-state.fuzz.test.js` — deterministic gesture-workflow fuzz test. Run with: node canvas-state.fuzz.test.js
 - `canvas-state.test.js` — headless tests for canvas-state.js Run with: node canvas-state.test.js

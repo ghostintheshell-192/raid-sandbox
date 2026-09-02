@@ -57,8 +57,10 @@
   // ID GENERATION
   // ---------------------------------------------------------------------------
 
-  let _seq = 0;
-  const nextId = (prefix) => `${prefix}-${++_seq}`;
+  // Ids are PER STATE, not per process: two states in one process (tests, a
+  // future side-by-side view) must not interleave, and a document loaded into
+  // a state continues its counter past the ids it carries (build-document.js).
+  const nextId = (state, prefix) => `${prefix}-${++state._seq}`;
 
   // ---------------------------------------------------------------------------
   // STATE FACTORY
@@ -78,6 +80,7 @@
     return {
       catalog:   opts.catalog || null,
       levels:    opts.levels  || null,   // the level catalogue (engine/levels.js) — data, like catalog
+      _seq:      0,                      // id counter (see nextId)
       // Axis B — data layout
       nodes:     new Map(),
       roots:     new Set(),
@@ -130,7 +133,7 @@
 
   /** Add a disk to the canvas. Returns the new disk id. */
   function addDisk(state, sizeGB, protocol = 'SATA', pos = { x: 0, y: 0 }) {
-    const id = nextId('disk');
+    const id = nextId(state, 'disk');
     state.nodes.set(id, { kind: 'disk', id, sizeGB, protocol });
     state.positions.set(id, pos);
     state.roots.add(id);
@@ -145,7 +148,7 @@
    * Returns the new array id.
    */
   function group(state, memberIds) {
-    const id = nextId('array');
+    const id = nextId(state, 'array');
     state.nodes.set(id, {
       kind:         'array',
       id,
@@ -296,7 +299,7 @@
    * one in the first place.
    */
   function cpAddNode(state, componentId, pos = { x: 0, y: 0 }) {
-    const id = nextId('cpn');
+    const id = nextId(state, 'cpn');
     state.cpNodes.set(id, { id, componentId, pos });
     cpAutoRoute(state);   // it may be the piece the disks were waiting for
     return id;
@@ -352,7 +355,7 @@
   }
 
   function _addEdge(state, fromNode, fromPort, toNode, toPort, derived) {
-    const id = nextId('cpe');
+    const id = nextId(state, 'cpe');
     state.cpEdges.set(id, { id, fromNode, fromPort, toNode, toPort, derived });
     return id;
   }

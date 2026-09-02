@@ -72,6 +72,7 @@
       </select>
     </label>
     <button id="btn-clear" class="sbc-clear-btn" type="button" title="Clear the whole canvas">⟲ Clear</button>
+    <button id="btn-share" class="sbc-clear-btn" type="button" title="Copy a link to this build">⧉ Share</button>
     <span class="sbc-header-hint" style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
     <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
   </header>
@@ -221,6 +222,7 @@
 <script src="src/engine/physical.js"></script>
 <script src="src/sandbox/canvas-state.js"></script>
 <script src="src/sandbox/data-loader.js"></script>
+<script src="src/sandbox/build-document.js"></script>
 <script src="src/sandbox/drag-util.js"></script>
 <script src="src/sandbox/highlight.js"></script>
 <script src="src/sandbox/touch-dnd.js"></script>
@@ -287,7 +289,31 @@
     RaidHighlight.attach(elRaidWhy, r.controlPathReason ? [r.engineNodeId] : []);
   }
 
+  // The URL carries the build (build-document.js): every evaluation rewrites the
+  // fragment, so the address bar is always a link to what is on the canvas, and
+  // "Share" just copies it. An empty canvas clears the fragment. replaceState
+  // adds no history entries, so Back still leaves the page, not the last drop.
+  const BUILD_KEY = '#build=';
+  function syncBuildUrl() {
+    const doc   = BuildDocument.toDocument(state);
+    const empty = doc.disks.length + doc.arrays.length + doc.components.length === 0;
+    const url   = location.pathname + location.search + (empty ? '' : BUILD_KEY + BuildDocument.encode(doc));
+    history.replaceState(null, '', url);
+  }
+  function loadBuildFromUrl() {
+    if (!location.hash.startsWith(BUILD_KEY)) return false;
+    try {
+      BuildDocument.loadDocument(state, BuildDocument.decode(location.hash.slice(BUILD_KEY.length)));
+      return true;
+    } catch (err) {
+      console.error('the build in the URL could not be loaded:', err);
+      statusBar.textContent = `⚠ The build in this link could not be loaded — ${err.message}`;
+      return false;
+    }
+  }
+
   function onEvaluate(r) {
+    syncBuildUrl();
     // Data layer results
     if (r.analysis) {
       const a = r.analysis;
@@ -370,6 +396,9 @@
       CanvasState.setCatalog(state, catalog);
       CanvasState.setLevels(state, levels);
       physCtrl.setupSidebar(sidebarEl);          // the physical palette is drawn from the data
+      // A shared link: load its build now that the catalogues can validate it,
+      // then draw both views. Whatever the outcome, evaluate what is there.
+      if (loadBuildFromUrl()) { ctrl.render(); physCtrl.render(); }
       onEvaluate(CanvasState.evaluate(state));
     })
     .catch((err) => {
@@ -408,6 +437,21 @@
 
   // Master clear — wipes the build in both views; keeps the current mode/challenge.
   document.getElementById('btn-clear').addEventListener('click', () => ctrl.clear());
+
+  // Share — the address bar already IS the link; copy it and say so.
+  document.getElementById('btn-share').addEventListener('click', () => {
+    syncBuildUrl();
+    const link = location.href;
+    const say  = (msg) => { statusBar.textContent = msg; };
+    if (!location.hash.startsWith(BUILD_KEY)) { say('Nothing to share yet — build something first.'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link)
+        .then(() => say('✓ Link copied — anyone opening it sees this build.'))
+        .catch(() => say(`Copy this link: ${link}`));
+    } else {
+      say(`Copy this link: ${link}`);
+    }
+  });
 
   // The physical layer is secondary: on narrow screens it starts collapsed so the
   // data layer and the results panel below stay discoverable. Expanding re-renders
