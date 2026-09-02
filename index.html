@@ -308,29 +308,32 @@
     _writtenHash = hash;
     history.replaceState(null, '', location.pathname + query + hash);
   }
-  function loadBuildFromUrl() {
-    if (!location.hash.startsWith(BUILD_KEY)) return false;
+  /**
+   * Load the build the URL carries, if any, then draw and evaluate what is there.
+   * One path for the page load and for a fragment edited in the address bar:
+   * a link that cannot be honoured leaves an empty canvas and its reason in the
+   * status bar — kept over the routine status line onEvaluate would write.
+   */
+  function applyUrlBuild() {
+    if (!location.hash.startsWith(BUILD_KEY)) return;
+    let error = null;
     try {
       BuildDocument.loadDocument(state, BuildDocument.decode(location.hash.slice(BUILD_KEY.length)));
-      return true;
     } catch (err) {
       console.error('the build in the URL could not be loaded:', err);
-      statusBar.textContent = `⚠ The build in this link could not be loaded — ${err.message}`;
-      return false;
+      error = `⚠ The build in this link could not be loaded — ${err.message}`;
+      CanvasState.reset(state);
     }
+    ctrl.render(); physCtrl.render();
+    onEvaluate(CanvasState.evaluate(state));
+    if (error) statusBar.textContent = error;
   }
-  // Editing the fragment in the address bar does not reload the page; it fires
-  // hashchange. Treat a fragment we did not write as a link being opened.
+  // Editing the fragment in the address bar does not always reload the page; in
+  // a normal browser it fires hashchange. A fragment we did not write is a link
+  // being opened.
   window.addEventListener('hashchange', () => {
     if (location.hash === _writtenHash) return;
-    if (!location.hash.startsWith(BUILD_KEY)) return;
-    const loaded = loadBuildFromUrl();
-    if (!loaded) CanvasState.reset(state);
-    ctrl.render(); physCtrl.render();
-    const r = CanvasState.evaluate(state);
-    const msg = loaded ? null : statusBar.textContent;
-    onEvaluate(r);
-    if (msg) statusBar.textContent = msg;   // keep the load error over the routine status line
+    applyUrlBuild();
   });
 
   function onEvaluate(r) {
@@ -417,10 +420,10 @@
       CanvasState.setCatalog(state, catalog);
       CanvasState.setLevels(state, levels);
       physCtrl.setupSidebar(sidebarEl);          // the physical palette is drawn from the data
-      // A shared link: load its build now that the catalogues can validate it,
-      // then draw both views. Whatever the outcome, evaluate what is there.
-      if (loadBuildFromUrl()) { ctrl.render(); physCtrl.render(); }
-      onEvaluate(CanvasState.evaluate(state));
+      // A shared link: load its build now that the catalogues can validate it.
+      // Either way, draw and evaluate what is there.
+      if (location.hash.startsWith(BUILD_KEY)) applyUrlBuild();
+      else onEvaluate(CanvasState.evaluate(state));
     })
     .catch((err) => {
       console.error('data files failed to load:', err);
