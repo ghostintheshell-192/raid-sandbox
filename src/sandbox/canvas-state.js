@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * canvas-state.js — RAID Sandbox: mutable canvas state + evaluation pipeline.
  *
@@ -45,7 +46,7 @@
  *   CanvasState.evaluate(state, opts)                     → EvalResult
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const Model     = (typeof require !== 'undefined') ? require('../engine/model.js')     : root.RaidModel;
@@ -75,6 +76,8 @@
    * selected  — currently selected node ids
    * catalog   — the component catalogue (engine/catalog.js), or null until one is
    *             set; it is DATA, not build state, so reset() leaves it alone
+   * @param {{ catalog?: Catalog | null, levels?: Levels | null }} [opts]
+   * @returns {SandboxState}
    */
   function createState(opts = {}) {
     return {
@@ -327,9 +330,11 @@
    * wired by hand — they route themselves by protocol (spec §2, v1).
    * The reason is for a developer or a test; the canvas simply does not draw
    * a wire it is told no about.
+   * @param {SandboxState} state @param {string} fromNode @param {string} fromPort @param {string} toNode @param {string} toPort
+   * @returns {CanConnect}
    */
   function cpCanConnect(state, fromNode, fromPort, toNode, toPort) {
-    const no = (reason) => ({ ok: false, reason });
+    const no = (reason) => /** @type {CanConnect} */ ({ ok: false, reason });
     if (!state.catalog) return no('no catalogue loaded — nothing can be wired yet');
     if (fromNode === toNode) return no('a component cannot be wired to itself');
     const from = state.cpNodes.get(fromNode);
@@ -350,7 +355,7 @@
    */
   function cpConnect(state, fromNode, fromPort, toNode, toPort) {
     const can = cpCanConnect(state, fromNode, fromPort, toNode, toPort);
-    if (!can.ok) throw new Error(`cannot connect ${fromNode}.${fromPort} → ${toNode}.${toPort}: ${can.reason}`);
+    if (can.ok === false) throw new Error(`cannot connect ${fromNode}.${fromPort} → ${toNode}.${toPort}: ${can.reason}`);
     return _addEdge(state, fromNode, fromPort, toNode, toPort, false);
   }
 
@@ -502,6 +507,8 @@
    *   rootCount  — number of top-level nodes (1 = evaluable, >1 = disconnected build)
    *   incomplete — true if any array is missing segmentation, redundancy, or members
    *   firstIssue — first actionable hint for the help message, or null if build is valid
+   * @param {SandboxState} state @param {{ stripes?: number }} [opts]
+   * @returns {EvalResult}
    */
   function evaluate(state, opts = {}) {
     _reconcile(state);   // tolerate any group/dissolve/remove/re-add history

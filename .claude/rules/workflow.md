@@ -65,6 +65,9 @@ no build step (static site); Vercel just serves the files.
 ## Testing
 
 - Headless suites: `node tests/<file>.test.js` — **run one at a time** (each is standalone).
+- Type check: `bash .development/automation/typecheck.sh` (npx-fetched TypeScript over
+  `jsconfig.json`; the files that opt in carry `// @ts-check`, the shapes are JSDoc
+  typedefs in `src/engine/types.js`). VS Code shows the same diagnostics inline.
 - Browser test pages: `tests/*.test.html` (open in a browser); demos likewise.
 - Layout ground truth is hand-derived from the Linux `md` source — never regenerate
   golden tables from the engine (see `principles.md` / the golden-tables discipline).

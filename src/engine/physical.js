@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * physical.js — RAID Sandbox: the physical-layer recognizer (axis A, ADR-001).
  *
@@ -42,7 +43,7 @@
  * Depends on: graph.js (RaidGraph).
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const Graph = (typeof require !== 'undefined') ? require('./graph.js') : root.RaidGraph;
@@ -79,6 +80,11 @@
   // RECOGNIZE
   // ---------------------------------------------------------------------------
 
+  /**
+   * @param {Map<string, CpNode>} cpNodes @param {Map<string, CpEdge>} cpEdges
+   * @param {DiskRef[]} disks @param {Catalog | null} catalog
+   * @returns {Verdict}
+   */
   function recognize(cpNodes, cpEdges, disks, catalog) {
     disks = disks || [];
     const undetermined = (issue) =>
@@ -194,6 +200,11 @@
    * Build the derived physical view the validator consumes.
    *   engineCount — engine objects on the canvas (verdict-bearing, non-sink); >1 is illegal
    *   diskRoutes  — each disk's protocol + the component it actually wires into
+   */
+  /**
+   * @param {Map<string, CpNode>} cpNodes @param {Map<string, CpEdge>} cpEdges
+   * @param {DiskRef[]} disks @param {Verdict} cp @param {Catalog | null} catalog
+   * @returns {PhysicalView}
    */
   function buildView(cpNodes, cpEdges, disks, cp, catalog) {
     let engineCount = 0;

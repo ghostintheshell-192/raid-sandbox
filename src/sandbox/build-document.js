@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * build-document.js — RAID Sandbox: a build as a DOCUMENT (save, load, share).
  *
@@ -42,7 +43,7 @@
  * Depends on: canvas-state.js (CanvasState), model.js (the attribute vocabulary).
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const CS    = (typeof require !== 'undefined') ? require('./canvas-state.js')  : root.CanvasState;
@@ -57,6 +58,7 @@
 
   const copyPos = (p) => (p ? { x: p.x, y: p.y } : undefined);
 
+  /** @param {SandboxState} state @returns {BuildDoc} */
   function toDocument(state) {
     const disks = [], arrays = [];
     for (const n of state.nodes.values()) {
@@ -147,6 +149,7 @@
    * so a bad document leaves the state untouched; wires go through cpConnect,
    * so one the catalogue forbids fails loudly (and the state is then reset,
    * not half-loaded).
+   * @param {SandboxState} state @param {BuildDoc} doc
    */
   function loadDocument(state, doc) {
     validate(doc);
@@ -262,6 +265,7 @@
   const toUrlSafe   = (b64) => b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const fromUrlSafe = (s)   => s.replace(/-/g, '+').replace(/_/g, '/');
 
+  /** @param {BuildDoc} doc @returns {string} */
   function encode(doc) {
     validate(doc);
     return compactable(doc)
@@ -269,6 +273,7 @@
       : 'j' + toUrlSafe(toBase64(JSON.stringify(doc)));
   }
 
+  /** @param {string} str @returns {BuildDoc} */
   function decode(str) {
     if (typeof str !== 'string' || str.length < 2) fail('nothing to decode');
     const form = str[0];

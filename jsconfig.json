@@ -1,0 +1,23 @@
+{
+  "//": [
+    "Editor-level type checking, the one sanctioned upgrade path (.claude/rules/overview.md):",
+    "no build step, no runtime change. checkJs is OFF here on purpose — a file opts in",
+    "with `// @ts-check` at its top (the engine files do), so the migration stays",
+    "incremental. VS Code reads this file directly; from a terminal:",
+    "  npx -p typescript tsc -p jsconfig.json",
+    "The types live in JSDoc: src/engine/types.js holds the shared shapes."
+  ],
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "lib": ["es2020", "dom"],
+    "checkJs": false,
+    "allowJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.js", "types/*.d.ts"],
+  "exclude": ["vendor", "node_modules"]
+}
