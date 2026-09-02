@@ -2,20 +2,51 @@
 
 ## Project State
 
-**Last Updated**: 2026-07-24
+**Last Updated**: 2026-09-02
 
 **Current Phase**: Live in its own repo. Extracted from the personal-site repo and
 deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-deploy from
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: `refactor/validator-registry` — validator phase 2 (data layer) done in
-three commits, headless gate green (10 suites), **not yet verified in-browser**. PRs #3,
-#4 and #5 are merged and live. Next: the physical half of phase 2; the open SEO ceiling
-(content not in the served HTML) is the other substantial one.
+**Active Work**: none open. The **agnostic-engine plan** (2026-09-02, five steps, all
+merged) is complete: the engine reads its domain facts from `data/` instead of
+carrying them as code, a build is a document with a shareable link, and the engine is
+type-checked via `@ts-check`. What comes next is a decision, not a task — whether and
+how to extract the engine into a project of its own (see
+`reference/engine-robustness-and-extraction.md` §8). The queue of small items found
+during the plan's browser checkpoints is in the plan handoff
+(`.memory-bank/2026-09-02-0045-agnostic-engine-refactor-plan.md`, local).
 
 ## Recent Milestones
 
+- **Agnostic engine — the §5 promise kept** (five branches, all merged 2026-09-02):
+  (1) the physical model lives in `src/engine/` (`catalog.js`, `physical.js`) and is fed
+  by `data/components/*.yaml` — ports, the port-type relation, disk routing by
+  `accepts:`; `cpConnect` refuses what the catalogue forbids; `evaluate()` is pure;
+  (2) the hardware/fake/software verdict is read off each engine object's own
+  `verdict:` block and the `roles` in `index.yaml` — no component is named in code;
+  proof: the tri-mode controller (`engine-roc-trimode.yaml`) arrived as one file and
+  made NVMe hardware RAID buildable; the physical palette is generated from the
+  catalogue; (3) the recognizer matches `shape:` blocks from `data/raid-levels/*.yaml`
+  (`levels.js`), the old function survives as the oracle over 849 enumerated trees,
+  two intended strictnesses confirmed; RAID 0+1 got its file; (4) a build is a
+  document (`build-document.js`): `#build=` in the URL, **⧉ Share**, ~500-char
+  links, per-state ids; (5) `@ts-check` + JSDoc typedefs (`src/engine/types.js`,
+  `jsconfig.json`, `typecheck.sh`, a non-required CI job). 16 headless suites.
+  Six tech-debts closed, one filed (`algorithm-drop-ignores-class`) - 2026-09-02
+- **Engine audit + extraction map** (`reference/engine-robustness-and-extraction.md`):
+  robustness findings F1–F7 (all closed by the plan above), a landscape survey (no
+  packaged precedent for compose → recognise → validate → explain), the seam map and
+  the extraction path; the decision is Valentina's - 2026-09-01
+- **Derived-docs pipeline aligned with dev-dash**: `INDEX.md` and `tech-debt/README.md`
+  tracked again (deterministic generators), `post-merge` hook, `merge=generated`
+  driver, `04-docs-update` stages everything it regenerates; the hand-written
+  tech-debt README prose restored - 2026-08-29/30
+- **ADR-001 — engine identity, not position** (PRs #13, #14): hardware vs fake RAID is
+  decided by which engine object sits on the path (`engine-roc` / `engine-metadata`),
+  software is the case where neither does; the recognizer walks the path
+  (`graph.js`); NVMe software RAID buildable; in-browser hardware/fake pass - 2026-07-30/31
 - **Scaffold alignment** (`chore/scaffold-alignment`): the project config was a partial,
   older-generation copy of the dev-dash scaffold. Restored the root `CLAUDE.md` entry
   point and — the actual gap — the **Session Start** directive that makes the latest
@@ -64,9 +95,12 @@ three commits, headless gate green (10 suites), **not yet verified in-browser**.
       verified against `raid0.c`), `uneven-spans` says capacity is lost under a mirror parent
       and only throughput under a striped one. Both rows added to the §6 spec table.
 - [ ] **Validator phase 2 part 2 — physical layer** (deferred from the 2026-06-14 plan):
-      fake RAID limited to 0/1/5/10 (no 6/50/60); SATA/SAS need an HBA/controller in the path;
-      mixed-protocol arrays; Windows Storage Spaces specifics. The registry is the base, and
-      `ctx.level` is already computed once for exactly these rules.
+      fake RAID limited to 0/1/5/10 (no 6/50/60); mixed-protocol arrays; Windows Storage
+      Spaces specifics. The registry is the base, and `ctx.level` is already computed once
+      for exactly these rules. *"SATA/SAS need an HBA in the path" is now structural: the
+      typed ports refuse the wire (2026-09-02).* Related: the validator still names
+      `'os-linux'`, `'backplane'`, `'NVMe'` in code — the one place left; a data-driven
+      registry would be the plan's step 3b.
 - [x] **Vendor js-yaml locally** — DONE (PR #4, merged). `vendor/js-yaml/js-yaml.min.js`
       (4.1.0, MIT, fetched from the GitHub tag, checksum recorded in `vendor/README.md`)
       replaces the blocking `cdn.jsdelivr.net` script in **both** `index.html` and
@@ -100,7 +134,16 @@ three commits, headless gate green (10 suites), **not yet verified in-browser**.
       justified vendoring js-yaml, and now the last external host on the critical path of
       both pages. Self-hosting JetBrains Mono would close it (KaTeX in `kb.html` is a
       separate, heavier case: it ships web fonts of its own).
-- [ ] **TypeScript via `@ts-check`** — incremental, zero runtime change.
+- [x] **TypeScript via `@ts-check`** — DONE (2026-09-02, plan step 5): the engine files,
+      `canvas-state.js` and `build-document.js` opt in; shapes in `src/engine/types.js`;
+      `jsconfig.json` (checkJs off, incremental); `bash .development/automation/typecheck.sh`.
+- [ ] **Small items from the plan's browser checkpoints**: show the level's `reason`
+      in the results panel on success too (today only on failure —
+      `informative-ui.md` D); RAID 0+1 reads "medium" because a linear mirror's read
+      class counts legs, not the stripe width inside them; `tech-debt/algorithm-drop-ignores-class.md`.
+- [ ] **Extraction of the engine** — a decision, not a task: second domain (Valentina's
+      candidates: datacenter, network topologies, motor workbench), data-driven core is
+      now done here, name and scope. `reference/engine-robustness-and-extraction.md` §8.
 - [x] **CI** — DONE (PR #2, merged). `.github/workflows/tests.yml` runs the 10 headless
       suites (one at a time, zero deps) on every push to main and every PR. `main` is now
       branch-protected (lightweight): the `headless` check is **required to merge a PR**;
@@ -116,6 +159,8 @@ three commits, headless gate green (10 suites), **not yet verified in-browser**.
 
 See `.development/tech-debt/`:
 
+- `algorithm-drop-ignores-class.md` — open (low): the drag path accepts an algorithm
+  the array's class does not have; the picker already filters. One predicate, two drops.
 - `nested-data-allocation-order.md` — **mostly RESOLVED**. Per-span order is
   Linux-verified (write-order bug fixed, golden hand-derived); only the cross-span
   stacking order remains a documented convention, by design.
@@ -124,7 +169,8 @@ See `.development/tech-debt/`:
 
 ## Notes
 
-- **Test suite**: headless node files in `tests/` — run each with `node <file>`; plus
+- **Test suite**: 16 headless node files in `tests/` — run each with `node <file>`, or all
+  via `bash .development/automation/test.sh`; type check via `typecheck.sh`; plus
   browser test pages (`*.test.html`) and demos. Responsive/touch/accordion work is
   browser-only (guarded), does not touch the headless suite.
 - **Zero-dependency**: YAML parsed in-browser via js-yaml; node tests must not require

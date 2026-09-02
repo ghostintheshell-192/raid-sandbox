@@ -1,6 +1,28 @@
 # The composition engine — robustness audit and extraction map
 
-**Date**: 2026-09-01
+**Date**: 2026-09-01 · **Status 2026-09-02**: findings F1–F7 all closed by the
+five-step plan that followed (see the box below); §3–§8 stand; the decisions in §8
+are still open.
+
+> **What closed what (2026-09-02, all on `main`)**
+> - F1, F3, F5 → `refactor/physical-model-in-engine`: `engine/catalog.js`,
+>   `engine/physical.js`, ports and the port-type relation in `data/components/`,
+>   `cpConnect` validates, routing is a mutation, `evaluate()` is pure.
+> - F2 → `refactor/verdict-from-capabilities`: each engine object declares its
+>   `verdict:`; `roles.sink` in `index.yaml`; "open verdicts" derived from port types;
+>   the palette is generated from the catalogue; the tri-mode controller is one file.
+> - F4 → `refactor/recognizer-from-shapes`: `engine/levels.js` matches `shape:` blocks
+>   from `data/raid-levels/`; `reason:` and `minDisks` read there; the old recognizer is
+>   the oracle (`tests/levels-oracle.test.js`, 849 trees, two intended strictnesses).
+> - F6 → `feature/build-document`: `sandbox/build-document.js`, per-state ids,
+>   `#build=` links, ⧉ Share.
+> - F7 → `chore/ts-check`: `src/engine/types.js`, `jsconfig.json`, `typecheck.sh`.
+> The seam map in §5 is now mostly *done in place*: what §5 lists as "core" already sits
+> in `src/engine/` with no RAID name in it, and what it lists as "RAID" sits in `data/`.
+> The remaining code-side domain facts are in `validator.js` (`'os-linux'`,
+> `'backplane'`, `'NVMe'`) and the derivation folds in `model.js`, which are
+> arithmetic by design. Phase 3 (the split, with history) can start when §8 is decided.
+
 **Scope**: `src/engine/` (`model.js`, `layout.js`, `validator.js`, `graph.js`), the
 headless half of `src/sandbox/canvas-state.js`, `src/challenge/challenge.js`, the
 port model in `src/sandbox/physical-controller.js`, and the eleven headless suites.
