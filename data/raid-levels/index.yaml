@@ -28,3 +28,5 @@
   name: RAID 51
 - id: raid61
   name: RAID 61
+- id: raid0plus1
+  name: RAID 0+1

@@ -41,7 +41,10 @@
     <tbody id="rows"></tbody>
   </table>
 
+  <script src="../vendor/js-yaml/js-yaml.min.js"></script>
   <script src="../src/engine/model.js"></script>
+  <script src="../src/engine/levels.js"></script>
+  <script src="../src/sandbox/data-loader.js"></script>
   <script>
     const { disk, array, analyze } = RaidModel;
     const d = (id) => disk(id, 100, 'SATA');   // uniform 100 GB disks
@@ -112,12 +115,20 @@
       return `${seg}${red}[${node.members.map(describe).join(',')}]`;
     }
 
-    // --- Run ---
+    // --- Run (once the level catalogue has loaded) ---
+    const levelFilesOf = (index) => (Array.isArray(index) ? index : []).map((e) => ({ key: e.id, file: `${e.id}.yaml` }));
+    // The level names are DATA (data/raid-levels/*.yaml): fetched, so serve this page over http.
+    DataLoader.loadIndexed('../data/raid-levels', levelFilesOf, RaidLevels.assemble)
+      .then((manifest) => RaidLevels.createLevels(manifest))
+      .then((levels) => run(levels))
+      .catch((err) => { document.getElementById('summary').textContent = 'data files failed to load: ' + err.message; });
+
+    function run(levels) {
     let passed = 0;
     const rowsEl = document.getElementById('rows');
 
     CASES.forEach(([name, tree, exp]) => {
-      const got = analyze(tree);
+      const got = analyze(tree, levels);
       const ok =
         got.level === exp.level &&
         got.capacityGB === exp.capacityGB &&
@@ -148,6 +159,7 @@
     const all = CASES.length;
     summary.textContent = `${passed} / ${all} passed`;
     summary.className = 'summary ' + (passed === all ? 'ok' : 'bad');
+    }
   </script>
 </body>
 </html>

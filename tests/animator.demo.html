@@ -81,11 +81,15 @@
   <div class="analysis" id="analysis"></div>
   <div id="viz"></div>
 
+  <script src="../vendor/js-yaml/js-yaml.min.js"></script>
   <script src="../src/engine/model.js"></script>
+  <script src="../src/engine/levels.js"></script>
   <script src="../src/engine/layout.js"></script>
+  <script src="../src/sandbox/data-loader.js"></script>
   <script src="../src/sandbox/render.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
+    let levels = null;   // the level catalogue, loaded below; names are data
 
     function buildNode() {
       const seg   = $('seg').value;
@@ -98,7 +102,7 @@
 
     function refresh(animateIt) {
       const node = buildNode();
-      const a = RaidModel.analyze(node);
+      const a = RaidModel.analyze(node, levels);
 
       const levelHtml = a.level
         ? `<span class="level">${a.level}</span>`
@@ -129,7 +133,12 @@
       $(id).addEventListener('change', () => refresh(false)));
     $('go').addEventListener('click', () => refresh(true));
 
-    refresh(false);   // initial static render
+    const levelFilesOf = (index) => (Array.isArray(index) ? index : []).map((e) => ({ key: e.id, file: `${e.id}.yaml` }));
+    // The level names are DATA (data/raid-levels/*.yaml): fetched, so serve this page over http.
+    DataLoader.loadIndexed('../data/raid-levels', levelFilesOf, RaidLevels.assemble)
+      .then((manifest) => RaidLevels.createLevels(manifest))
+      .then((lv) => { levels = lv; refresh(false); })   // initial static render, named
+      .catch((err) => { $('analysis').textContent = 'data files failed to load: ' + err.message; });
   </script>
 </body>
 </html>

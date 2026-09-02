@@ -9,10 +9,12 @@ global.RaidLayout = require('../src/engine/layout.js');
 global.CanvasState = require('../src/sandbox/canvas-state.js');
 const CS = global.CanvasState;
 const { test, assert, finish } = require('./test-helpers.js');
+const levels = require('../src/engine/levels.js')
+  .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
 
 // Build a 4-disk RAID5 in canvas state and evaluate with a given algorithm.
 function buildAndEval(algo) {
-  const s = CS.createState();
+  const s = CS.createState({ levels });
   const disks = [0,1,2,3].map(() => CS.addDisk(s, 2, 'SATA'));
   const aid = CS.group(s, disks);
   CS.setSegmentation(s, aid, 'striped');
@@ -90,7 +92,7 @@ test('right-symmetric parity column is mirror of left-symmetric', () => {
 });
 
 test('setAlgorithm on RAID6 (parity2) also works', () => {
-  const s = CS.createState();
+  const s = CS.createState({ levels });
   const disks = [0,1,2,3,4].map(() => CS.addDisk(s, 2, 'SATA'));
   const aid = CS.group(s, disks);
   CS.setSegmentation(s, aid, 'striped');

@@ -396,6 +396,17 @@ defaultAlgorithm: left-symmetric
 
 ---
 
+> **Update 2026-09-02**: §5c is now kept. `src/engine/levels.js` builds a level
+> catalogue from these files and `RaidModel.recognize(node, levels)` matches the tree
+> against their `shape:` blocks (grammar: the two attributes, `members: disks | arrays`,
+> `constraint: even-disk-count | odd-disk-count`, and `childShape` for the nested
+> levels — every span must match it). Each file also carries the recognizer's
+> one-line `reason:`, and the validator reads `minDisks` there. The hand-written
+> recognizer survives as the ORACLE in `tests/levels-oracle.test.js` (849 trees); the
+> data is stricter in two places, on purpose: a striped mirror over spans and a
+> nesting over unnamed spans (`linear + parity`) no longer get a name. RAID 0+1,
+> recognized in code since the combinations phase, got its file.
+
 ### 5d. Update 2026-09-02 — back on these rails: the engine reads the resource files
 
 The §5 promise — *adding capability = adding a file, ideally with no engine change* —

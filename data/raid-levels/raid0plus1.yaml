@@ -1,0 +1,42 @@
+id: raid0plus1
+name: RAID 0+1
+notRaid: false
+reason: "mirror over RAID-0 spans (0+1)"   # the recognizer's one-line "why"
+
+# Topology shape (matched by the recognizer, spec §4): a mirror of two or more
+# RAID-0 legs. The inverse nesting of RAID 1+0 — and the weaker one: a single
+# disk failure takes a whole leg down, so the mirror is left with one copy.
+shape:
+  segmentation: linear
+  redundancy: mirror
+  members: arrays
+  childShape:
+    segmentation: striped
+    redundancy: none
+    members: disks
+
+minDisks: 4   # 2 mirrored legs × 2-disk RAID 0
+faultTolerance: 1   # guaranteed: one failure kills a leg, the other leg survives
+capacityFormula: "one RAID-0 leg  =  N/2 × disk size (for uniform legs)"
+defaultAlgorithm: null
+
+description: >
+  Two or more RAID 0 stripes mirrored onto each other. Same capacity and same
+  guaranteed fault tolerance as RAID 1+0, but a worse failure profile: one disk
+  loss disables its entire stripe, so a second loss on the OTHER leg is fatal,
+  whereas RAID 1+0 survives any second failure outside the affected pair.
+
+pros:
+  - Read throughput of a stripe, protection of a mirror
+  - Simple to reason about (two identical legs)
+
+cons:
+  - A single disk failure degrades a whole leg; rebuild re-copies the entire stripe
+  - Strictly worse than RAID 1+0 at the same cost — recognized so the sandbox can say so
+
+useCases:
+  - Legacy controllers that mirror volumes rather than disks
+
+note: >
+  Recognized separately from RAID 1+0 because the two are often conflated and the
+  difference (what a single failure takes down) is exactly what the sandbox teaches.

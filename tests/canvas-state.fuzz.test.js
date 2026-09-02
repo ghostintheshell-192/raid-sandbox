@@ -23,6 +23,8 @@ global.RaidLayout = RaidLayout;
 global.RaidValidator = require('../src/engine/validator.js');
 const CS = require('../src/sandbox/canvas-state.js');
 const { test, assert, finish } = require('./test-helpers.js');
+const levels = require('../src/engine/levels.js')
+  .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
 
 // Deterministic PRNG (mulberry32) so failures are reproducible.
 function rng(seed) {
@@ -73,7 +75,7 @@ console.log('\n[fuzz] random gesture workflows hold all invariants');
 for (const seed of [1, 7, 42, 1337, 90210]) {
   test(`seed ${seed}: 1200 random gestures stay well-formed`, () => {
     const rnd = rng(seed);
-    const state = CS.createState();
+    const state = CS.createState({ levels });
 
     for (let step = 0; step < 1200; step++) {
       const arrs  = arrayIds(state);
@@ -116,7 +118,7 @@ for (const seed of [1, 7, 42, 1337, 90210]) {
 console.log('\n[scenario] the reported flow: two arrays → merge → delete → re-add');
 
 test('after merging, deleting and re-adding, a valid RAID 6 is recognized again', () => {
-  const s = CS.createState();
+  const s = CS.createState({ levels });
   // Two separate arrays.
   const A = CS.group(s, [CS.addDisk(s, 4), CS.addDisk(s, 4), CS.addDisk(s, 4)]);
   const B = CS.group(s, [CS.addDisk(s, 4), CS.addDisk(s, 4), CS.addDisk(s, 4)]);

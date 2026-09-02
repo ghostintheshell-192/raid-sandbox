@@ -22,6 +22,11 @@
  *     | Disk  { kind:'disk',  id, sizeGB, protocol }
  *     | Array { kind:'array', segmentation, redundancy, members:[Node], algorithm? }
  *
+ * The NAME of a shape is data: `recognize(node, levels)` matches the tree against
+ * the level catalogue (levels.js, built from data/raid-levels/*.yaml). The
+ * derivations below — capacity, fault tolerance, performance — are folds over the
+ * same tree and stay here: they are the domain's arithmetic, not its vocabulary.
+ *
  * Exposed as the global `RaidModel` in the browser, and via module.exports under Node.
  */
 
@@ -69,25 +74,6 @@
     isArray(n) && n.segmentation === 'striped' && n.redundancy === 'mirror' && allDisks(n);
   const copiesOf = (n) => n.copies || 2;
 
-  // Classify a child array by its SHAPE (never its algorithm) for nesting rules.
-  // A leaf child reduces to a span token; a child that is itself nested is '∗'
-  // (deeper nesting has no canonical name here). The token distinguishes a flat
-  // RAID 10 ('r10') from a plain mirror pair ('mirror') — the fix that lets a
-  // stripe-over-RAID10 be RAID 100 instead of collapsing into RAID 1+0.
-  const childToken = (m) => {
-    if (!allDisks(m)) return '∗';
-    if (m.redundancy === 'none')   return m.segmentation === 'striped' ? 'r0' : 'jbod';
-    if (m.redundancy === 'mirror') {
-      if (!isStripedDiskMirror(m)) return 'mirror';            // linear mirror = RAID 1
-      return m.members.length % 2 === 0 ? 'r10' : 'r1e';       // even = RAID 10, odd = RAID 1E
-    }
-    return m.redundancy;   // 'parity1' | 'parity2'
-  };
-  const uniformToken = (members) => {
-    const tokens = members.map(childToken);
-    return tokens.every((t) => t === tokens[0]) ? tokens[0] : null;
-  };
-
   /** Total number of physical disks under a node (recursive). */
   function countDisks(node) {
     if (isDisk(node)) return 1;
@@ -95,78 +81,31 @@
   }
 
   // ---------------------------------------------------------------------------
-  // RECOGNIZER (§4) — derive the RAID level by pattern-matching the tree shape.
-  // Recognition is SEPARATE from validation: a build can be perfectly valid and
-  // still have no canonical name → flag 'non-standard-config'.
-  //
-  // Naming needs BOTH axes: e.g. (striped, none) is RAID 0 but (linear, none) is JBOD.
+  // RECOGNIZER (§4) — derive the RAID level by matching the tree's SHAPE against
+  // the level catalogue (data/raid-levels/*.yaml, indexed by levels.js). The
+  // shapes are data; what stays here is the contract of the answer:
+  // recognition is SEPARATE from validation — a build can be perfectly valid
+  // and still have no canonical name → flag 'non-standard-config', a first-class
+  // result, not an error.
   // ---------------------------------------------------------------------------
 
   /**
+   * @param node    the tree to name
+   * @param levels  the level catalogue (RaidLevels.createLevels); without one no
+   *                shape can be named, and the result says so
    * @returns {{level:string|null, recognized:boolean, notRaid:boolean, flag:string|null, reason:string}}
    */
-  function recognize(node) {
-    if (isDisk(node)) return mk(null, false, 'A single disk is not an array.');
-    const { segmentation: seg, redundancy: red } = node;
+  function recognize(node, levels) {
+    const unnamed = (reason) =>
+      ({ level: null, recognized: false, notRaid: false, flag: 'non-standard-config', reason });
 
-    // Leaf arrays — members are all disks.
-    if (allDisks(node)) {
-      if (red === 'none')    return seg === 'striped'
-        ? mk('RAID 0', true, 'striping, no redundancy')
-        : mk('JBOD / spanned', true, 'concatenation of disks (no RAID)', true);
-      if (red === 'mirror') {
-        if (seg === 'linear')
-          return mk('RAID 1', true, node.members.length > 2
-            ? `${node.members.length}-way mirroring (RAID 1, ${node.members.length} copies)`
-            : 'mirroring');
-        // striped + mirror = flat RAID 10 (copies 2) for an even disk count;
-        // an odd count cannot pair into 2 copies → RAID 1E, the interleaved
-        // striped mirror (niche but real: md raid10 near with odd disks). §3a
-        return node.members.length % 2 === 0
-          ? mk('RAID 10', true, 'striped mirroring, 2 copies (flat RAID 10)')
-          : mk('RAID 1E', true, 'interleaved striped mirroring, odd disk count');
-      }
-      if (red === 'parity1') return seg === 'striped'
-        ? mk('RAID 5', true, 'striping with single distributed parity')
-        : mk(null, false, 'parity without striping (non-standard)');
-      if (red === 'parity2') return seg === 'striped'
-        ? mk('RAID 6', true, 'striping with double distributed parity')
-        : mk(null, false, 'double parity without striping (non-standard)');
-    }
+    if (isDisk(node)) return unnamed('A single disk is not an array.');
+    if (!levels)      return unnamed('no level catalogue loaded — the shape cannot be named');
 
-    // Nesting: a pure stripe (RAID 0) over uniform child arrays. The child token
-    // is shape-derived (never the algorithm), so 'mirror' pairs → 1+0 while flat
-    // RAID 10 spans → RAID 100.
-    if (seg === 'striped' && red === 'none' && allArrays(node)) {
-      switch (uniformToken(node.members)) {
-        case 'mirror':  return mk('RAID 1+0', true, 'striping over mirror spans (nested 1+0)');
-        case 'r10':     return mk('RAID 100', true, 'striping over RAID 10 spans (1+0+0)');
-        case 'parity1': return mk('RAID 50',  true, 'striping over RAID-5 spans (5+0)');
-        case 'parity2': return mk('RAID 60',  true, 'striping over RAID-6 spans (6+0)');
-      }
-    }
-
-    // Nesting: a mirror over uniform child arrays (the "x1" family).
-    if (red === 'mirror' && allArrays(node)) {
-      switch (uniformToken(node.members)) {
-        case 'r0':      return mk('RAID 0+1', true, 'mirror over RAID-0 spans (0+1)');
-        case 'parity1': return mk('RAID 51',  true, 'mirror over RAID-5 spans (5+1)');
-        case 'parity2': return mk('RAID 61',  true, 'mirror over RAID-6 spans (6+1)');
-      }
-    }
-
-    // Valid shape, no canonical name.
-    return mk(null, false, 'valid composition with no standard RAID name');
-
-    function mk(level, recognized, reason, notRaid = false) {
-      return {
-        level,
-        recognized,
-        notRaid: !!notRaid,
-        flag: recognized ? null : 'non-standard-config',
-        reason,
-      };
-    }
+    const hit = levels.match(node);
+    if (!hit) return unnamed('valid composition with no standard RAID name');
+    return { level: hit.name, recognized: true, notRaid: !!hit.notRaid, flag: null,
+             reason: levels.reasonFor(hit, node) };
   }
 
   // ---------------------------------------------------------------------------
@@ -336,10 +275,10 @@
   // ANALYZE — one call that returns the full picture for a build.
   // ---------------------------------------------------------------------------
 
-  function analyze(node) {
+  function analyze(node, levels) {
     const perf = performance(node);
     return {
-      ...recognize(node),
+      ...recognize(node, levels),
       diskCount:      countDisks(node),
       capacityGB:     capacityGB(node),
       rawCapacityGB:  rawCapacityGB(node),

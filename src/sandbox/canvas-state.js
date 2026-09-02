@@ -77,6 +77,7 @@
   function createState(opts = {}) {
     return {
       catalog:   opts.catalog || null,
+      levels:    opts.levels  || null,   // the level catalogue (engine/levels.js) — data, like catalog
       // Axis B — data layout
       nodes:     new Map(),
       roots:     new Set(),
@@ -115,6 +116,11 @@
   function setCatalog(state, catalog) {
     state.catalog = catalog || null;
     cpAutoRoute(state);
+  }
+
+  /** Hand the state its level catalogue (the browser does this once the YAML has loaded). */
+  function setLevels(state, levels) {
+    state.levels = levels || null;
   }
 
   // ---------------------------------------------------------------------------
@@ -502,7 +508,7 @@
                violations: noViolations };
     }
 
-    const analysis  = Model.analyze(tree);
+    const analysis  = Model.analyze(tree, state.levels);
     const placement = Layout.computePlacement(tree, opts);
 
     // Axis A: the disks are already routed (routing is a mutation, see
@@ -514,7 +520,8 @@
     // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
     // its output here (same loose bolt-on pattern as the physical recognizer).
     const violations = Validator.validate(tree,
-      Physical.buildView(state.cpNodes, state.cpEdges, disks, cp, state.catalog));
+      Physical.buildView(state.cpNodes, state.cpEdges, disks, cp, state.catalog),
+      { levels: state.levels });
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,
@@ -575,7 +582,7 @@
   // ---------------------------------------------------------------------------
 
   const CanvasState = {
-    createState, reset, setCatalog,
+    createState, reset, setCatalog, setLevels,
     // Axis B
     addDisk, group, addToArray,
     setSegmentation, setRedundancy, setAlgorithm,

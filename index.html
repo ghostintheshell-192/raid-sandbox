@@ -212,6 +212,7 @@
 <!-- js-yaml: vendored, not from a CDN — see vendor/README.md -->
 <script src="vendor/js-yaml/js-yaml.min.js"></script>
 <script src="src/engine/model.js"></script>
+<script src="src/engine/levels.js"></script>
 <script src="src/engine/layout.js"></script>
 <script src="src/sandbox/render.js"></script>
 <script src="src/engine/validator.js"></script>
@@ -219,6 +220,7 @@
 <script src="src/engine/catalog.js"></script>
 <script src="src/engine/physical.js"></script>
 <script src="src/sandbox/canvas-state.js"></script>
+<script src="src/sandbox/data-loader.js"></script>
 <script src="src/sandbox/drag-util.js"></script>
 <script src="src/sandbox/highlight.js"></script>
 <script src="src/sandbox/touch-dnd.js"></script>
@@ -352,23 +354,31 @@
     if (physCtrl) physCtrl.render();
   }
 
-  // The component catalogue is DATA (spec §5a): fetch data/components/*.yaml,
-  // build the catalogue, hand it to the state. Until it arrives the physical
-  // palette can neither place nor wire anything, and the disks route nowhere;
-  // if it fails, say so where the player is looking — there is no hard-coded
-  // table to fall back on in silence any more.
-  PhysicalController.loadCatalog('data/components')
-    .then((catalog) => {
+  // The catalogues are DATA (spec §5): the physical components (§5a) and the
+  // RAID levels (§5c) are fetched from data/, assembled by the engine's own
+  // functions, and handed to the state. Until they arrive nothing physical can
+  // be placed and no shape can be named; if either fails, say so where the
+  // player is looking — there is no hard-coded table to fall back on in silence.
+  const levelFilesOf = (index) =>
+    (Array.isArray(index) ? index : []).map((e) => ({ key: e.id, file: `${e.id}.yaml` }));
+  Promise.all([
+    PhysicalController.loadCatalog('data/components'),
+    DataLoader.loadIndexed('data/raid-levels', levelFilesOf, RaidLevels.assemble)
+      .then((manifest) => RaidLevels.createLevels(manifest)),
+  ])
+    .then(([catalog, levels]) => {
       CanvasState.setCatalog(state, catalog);
-      physCtrl.setupSidebar(sidebarEl);          // the palette is drawn from the data
+      CanvasState.setLevels(state, levels);
+      physCtrl.setupSidebar(sidebarEl);          // the physical palette is drawn from the data
       onEvaluate(CanvasState.evaluate(state));
     })
     .catch((err) => {
-      console.error('component catalogue failed to load:', err);
+      console.error('data files failed to load:', err);
+      statusBar.textContent = `⚠ Data files failed to load — ${err.message}`;
       const msg = document.createElement('div');
       msg.className = 'pln-error';
       msg.style.cssText = 'position:absolute;left:12px;top:12px;color:#e74c3c;font-size:.85rem';
-      msg.textContent = `Physical layer unavailable — the component catalogue failed to load (${err.message}).`;
+      msg.textContent = `Unavailable — the data files failed to load (${err.message}).`;
       physEl.appendChild(msg);
     });
 

@@ -1,6 +1,7 @@
 id: raid1
 name: RAID 1
 notRaid: false
+reason: "mirroring, {n} copies"   # the recognizer's one-line "why"; {n} = member count
 
 # Topology shape (matches the recognizer §4 rule)
 shape:

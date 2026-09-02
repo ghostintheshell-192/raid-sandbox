@@ -101,6 +101,11 @@ unchanged.
    are unread. Turning them on makes divergence possible, and a caption contradicting the
    panel is worse than no caption. See `tech-debt/capacity-approximate-on-mixed-disks.md`
    for the shape of that failure.
+   **Update 2026-09-02**: settled for three concepts — `raid-levels/*.yaml` is now the
+   authority for a level's *shape*, *name*, *minimum disk count* and the recognizer's
+   one-line *reason*, because the engine reads them there (spec §5c). Prose fields
+   (description, pros/cons, formulas) are still unread, and the open question stands
+   for them and for `raid-types.yaml` / `intro.yaml`.
 
 ## Decided so far
 

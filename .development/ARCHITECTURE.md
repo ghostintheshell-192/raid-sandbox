@@ -50,6 +50,7 @@ kernel rules and never regenerated from the engine.
 - `catalog.js` — RAID Sandbox: the component catalogue (physical-model data, indexed).
 - `graph.js` — RAID Sandbox: the control-path graph, as a graph (Phase 5, Stage E).
 - `layout.js` — RAID Sandbox: headless data-placement engine (Phase 2a).
+- `levels.js` — RAID Sandbox: the level catalogue and the SHAPE matcher (spec §4, §5c).
 - `model.js` — RAID Sandbox: the recursive domain model + level recognizer.
 - `physical.js` — RAID Sandbox: the physical-layer recognizer (axis A, ADR-001).
 - `validator.js` — RAID Sandbox: the constraint engine (Phase 5, Stage C).
@@ -57,6 +58,7 @@ kernel rules and never regenerated from the engine.
 ### src/sandbox
 - `canvas-controller.js` — RAID Sandbox: drag-and-drop controller (Phase 3).
 - `canvas-state.js` — RAID Sandbox: mutable canvas state + evaluation pipeline.
+- `data-loader.js` — RAID Sandbox: fetch an indexed resource family (browser-only).
 - `drag-util.js` — shared drag-and-drop helpers for canvas-controller and physical-controller.
 - `highlight.js` — RAID Sandbox: "what I am talking about is THAT one".
 - `physical-controller.js` — RAID Sandbox: physical layer (axis A) canvas controller.
@@ -74,14 +76,17 @@ kernel rules and never regenerated from the engine.
 - `components-data.test.js` — validates the REAL component YAML files and keeps the headless fixture aligned with them. Run with: node components-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and...
 - `graph.test.js` — headless tests for the control-path graph module. Run with: node graph.test.js
 - `layout-golden.test.js` — golden-table verification for all parity algorithms. Run with: node layout-golden.test.js
+- `levels-oracle.test.js` — the hand-written recognizer as ORACLE for the data-driven one. Run with: node levels-oracle.test.js
+- `levels.test.js` — headless tests for the level catalogue and the shape matcher (engine/levels.js). Run with: node levels.test.js
 - `model-perf.test.js` — headless tests for the performance derivation (§4b). Run with: node model-perf.test.js
 - `model-recognize.test.js` — headless tests for the level RECOGNIZER (§4). Run with: node model-recognize.test.js
-- `raid-levels-data.test.js` — validates the REAL raid-levels YAML files. Run with: node raid-levels-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so python is the rea...
+- `raid-levels-data.test.js` — validates the REAL raid-levels YAML files and keeps the headless fixture aligned with them. Run with: node raid-levels-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency ...
 - `test-helpers.js` — shared test harness for all Node-runnable test files. Usage: const { test, assert, eq, finish } = require('./test-helpers.js');
 - `validator.test.js` — headless tests for the §6 constraint engine. Run with: node validator.test.js
 
 ### tests/fixtures
 - `components.js` — fixtures/components.js — the component catalogue MANIFEST, as the headless tests see it.
+- `raid-levels.js` — fixtures/raid-levels.js — the level catalogue MANIFEST, as the headless tests see it.
 
 ---
 

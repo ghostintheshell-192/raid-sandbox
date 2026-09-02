@@ -1,6 +1,7 @@
 id: jbod
 name: JBOD / spanned
 notRaid: true
+reason: "concatenation of disks (no RAID)"   # the recognizer's one-line "why"
 
 # Topology shape (matches the recognizer §4 rule)
 shape:

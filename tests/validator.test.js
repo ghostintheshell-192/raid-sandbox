@@ -4,7 +4,12 @@
  */
 
 const M = require('../src/engine/model.js');
-const V = require('../src/engine/validator.js');
+const levels = require('../src/engine/levels.js')
+  .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
+// validate() takes the level catalogue as its third argument; the shim passes it
+// so every call below reads as before.
+const V0 = require('../src/engine/validator.js');
+const V  = { ...V0, validate: (tree, physical) => V0.validate(tree, physical, { levels }) };
 const { test, assert, eq, finish } = require('./test-helpers.js');
 const hasCode = (list, code) => list.some((v) => v.code === code);
 
