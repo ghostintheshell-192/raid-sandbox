@@ -178,16 +178,40 @@
     state.roots.delete(diskId);
   }
 
+  /**
+   * The family of placement algorithms an array can carry: 'parity' (the
+   * left/right × symmetric/asymmetric rotations), 'mirror' (near/far/offset,
+   * flat RAID 10 / 1E only), or null. Mirrors layout.js and the UI's slot rule.
+   */
+  function _algorithmClass(arr) {
+    if (arr.redundancy === 'parity1' || arr.redundancy === 'parity2') return 'parity';
+    if (arr.segmentation === 'striped' && arr.redundancy === 'mirror') return 'mirror';
+    return null;
+  }
+
+  /**
+   * Apply an attribute change and drop the algorithm when it no longer belongs.
+   * Found in-browser (2026-09-02): a mirror array with `near` turned into a parity
+   * array still carried `near`, so the slot showed a layout that class does not
+   * have and layout.js fell back on every evaluation. An algorithm is a choice
+   * WITHIN a class; a change of class makes the old choice meaningless.
+   */
+  function _setAttribute(state, arrayId, key, value) {
+    const arr = state.nodes.get(arrayId);
+    if (!arr || arr.kind !== 'array') return;
+    const before = _algorithmClass(arr);
+    arr[key] = value;
+    if (_algorithmClass(arr) !== before) arr.algorithm = null;
+  }
+
   /** Set the segmentation of an array (drag segmentation chip onto array). */
   function setSegmentation(state, arrayId, value) {
-    const arr = state.nodes.get(arrayId);
-    if (arr && arr.kind === 'array') arr.segmentation = value;
+    _setAttribute(state, arrayId, 'segmentation', value);
   }
 
   /** Set the redundancy of an array (drag redundancy chip onto array). */
   function setRedundancy(state, arrayId, value) {
-    const arr = state.nodes.get(arrayId);
-    if (arr && arr.kind === 'array') arr.redundancy = value;
+    _setAttribute(state, arrayId, 'redundancy', value);
   }
 
   /**
