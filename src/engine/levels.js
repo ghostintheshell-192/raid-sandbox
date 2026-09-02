@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * levels.js — RAID Sandbox: the level catalogue and the SHAPE matcher (spec §4, §5c).
  *
@@ -33,7 +34,7 @@
  * Depends on: model.js (the attribute vocabulary, for validation only).
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const Model = (typeof require !== 'undefined') ? require('./model.js') : root.RaidModel;
@@ -47,6 +48,11 @@
   // ASSEMBLY — index.yaml + level files → manifest (the ONE path, browser + tests)
   // ---------------------------------------------------------------------------
 
+  /**
+   * @param {{ id: string, name: string }[]} index
+   * @param {Record<string, LevelDef>} filesById
+   * @returns {{ levels: LevelDef[] }}
+   */
   function assemble(index, filesById) {
     if (!Array.isArray(index)) fail('index: expected a list of { id, name }');
     const levels = index.map((entry) => {
@@ -111,19 +117,28 @@
     return true;
   }
 
-  /** Does `node` have `shape`? Recursive through childShape; uniform members. */
+  /**
+   * Does `node` have `shape`? Recursive through childShape; uniform members.
+   * @param {TreeNode} node @param {Shape} shape
+   * @returns {boolean}
+   */
   function matchShape(node, shape) {
     if (!isArray(node)) return false;
-    if (node.segmentation !== shape.segmentation || node.redundancy !== shape.redundancy) return false;
+    const arr = /** @type {ArrayNode} */ (node);
+    if (arr.segmentation !== shape.segmentation || arr.redundancy !== shape.redundancy) return false;
     if (shape.members === 'disks')
-      return allDisks(node) && constraintHolds(shape.constraint, node.members.length);
-    return allArrays(node) && node.members.every((m) => matchShape(m, shape.childShape));
+      return allDisks(arr) && constraintHolds(shape.constraint, arr.members.length);
+    return allArrays(arr) && arr.members.every((m) => matchShape(m, shape.childShape));
   }
 
   // ---------------------------------------------------------------------------
   // CATALOGUE
   // ---------------------------------------------------------------------------
 
+  /**
+   * @param {{ levels: LevelDef[] }} manifest
+   * @returns {Levels}
+   */
   function createLevels(manifest) {
     validate(manifest);
     const order = manifest.levels.slice();

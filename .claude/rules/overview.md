@@ -49,7 +49,9 @@ Spec-driven and incremental:
 
 - **No stack change**: the bottleneck is *interaction* (touch gestures), not rendering.
   Canvas/WebGL/WASM would be a regression here; the shareable URL is the goal. Only
-  sanctioned upgrade path is incremental **TypeScript via `@ts-check`** (zero runtime change).
+  sanctioned upgrade path is incremental **TypeScript via `@ts-check`** (zero runtime change) —
+  in place since 2026-09-02 on the engine files (`jsconfig.json`, `src/engine/types.js`,
+  `.development/automation/typecheck.sh`).
 - **Mobile flow inverted**: on touch, "tap a slot → it offers the pieces that fit"
   (inline), not "pick a piece, find it a home" — drag and scroll compete for the same gesture.
 - **License**: deliberately none for now (= full copyright). If revisited: AGPL-3.0 for

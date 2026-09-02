@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * validator.js — RAID Sandbox: the constraint engine (Phase 5, Stage C).
  *
@@ -34,7 +35,7 @@
  *   { raidType: 'hardware'|'software'|'fake'|null, os, engineCount, diskRoutes:[{id,protocol,target}] }
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const Model = (typeof require !== 'undefined') ? require('./model.js') : root.RaidModel;
@@ -214,6 +215,8 @@
   // Rules that read the tree are skipped outright when there is no tree.
   // ---------------------------------------------------------------------------
 
+  /** @type {{ code: string, severity: 'hard' | 'soft', layer: 'data' | 'physical' | 'cross', source: string,
+   *             run: (tree: any, physical: any, ctx: any) => any }[]} */
   const RULES = [
     { code: 'min-disks',                 severity: 'hard', layer: 'data',
       source: 'raid-types §6',           run: checkMinDisks },
@@ -249,6 +252,12 @@
    * different nodes stay two violations — which is why the compiled tree
    * carries the canvas id (see Model.array).
    */
+  /**
+   * @param {ArrayNode | null} tree      the compiled build, or null (physical rules still run)
+   * @param {Partial<PhysicalView>} [physical]  the derived physical view (physical.js buildView)
+   * @param {{ levels?: Levels | null }} [opts]
+   * @returns {Violations}
+   */
   function validate(tree, physical = {}, opts = {}) {
     const levels = opts.levels || null;
     const ctx = {
@@ -261,7 +270,7 @@
     };
 
     const seen = new Set();
-    const flat = [];
+    const flat = /** @type {Violation[]} */ ([]);
 
     for (const rule of RULES) {
       if (rule.layer !== 'physical' && !tree) continue;

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * graph.js — RAID Sandbox: the control-path graph, as a graph (Phase 5, Stage E).
  *
@@ -32,7 +33,7 @@
  *     here as a node with `componentId: null` — an endpoint that exists but
  *     carries no physical type.
  */
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   // ---------------------------------------------------------------------------
@@ -46,9 +47,9 @@
    * "what sits upstream of the OS" are the same walk in the other direction,
    * and building it costs one more push per edge.
    *
-   * @param {Map} cpNodes  id → { id, componentId, ... }
-   * @param {Map} cpEdges  id → { id, fromNode, toNode, ... }
-   * @returns {{nodes: Map, out: Map, in: Map}}
+   * @param {Map<string, CpNode> | null | undefined} cpNodes  id → { id, componentId, ... }
+   * @param {Map<string, CpEdge> | null | undefined} cpEdges  id → { id, fromNode, toNode, ... }
+   * @returns {Graph}
    */
   function build(cpNodes, cpEdges) {
     const nodes = new Map();
@@ -88,6 +89,7 @@
    * exactly what the caller wants to know when it happens. `opts.direction`
    * is 'out' (downstream, the default) or 'in' (upstream).
    *
+   * @param {Graph} g @param {string} startId @param {{ direction?: 'out' | 'in' }} [opts]
    * @returns {Set<string>} empty when the start is unknown to the graph
    */
   function reachableFrom(g, startId, opts) {
@@ -106,7 +108,11 @@
     return seen;
   }
 
-  /** Does a directed path of one or more edges run from `fromId` to `toId`? */
+  /**
+   * Does a directed path of one or more edges run from `fromId` to `toId`?
+   * @param {Graph} g @param {string} fromId @param {string} toId @param {{ direction?: 'out' | 'in' }} [opts]
+   * @returns {boolean}
+   */
   function reaches(g, fromId, toId, opts) {
     return reachableFrom(g, fromId, opts).has(toId);
   }
@@ -121,6 +127,8 @@
    * Callers historically reached for `.find()` and silently took the first
    * match; with two backplanes on the canvas that is a coin toss. Returning the
    * list makes the ambiguity the caller's to handle instead of hiding it.
+   * @param {Graph} g @param {string} componentId
+   * @returns {string[]}
    */
   function nodesWith(g, componentId) {
     const ids = [];

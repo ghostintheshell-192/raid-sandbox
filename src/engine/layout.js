@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * layout.js — RAID Sandbox: headless data-placement engine (Phase 2a).
  *
@@ -31,7 +32,7 @@
  * RAID-6 Q-right convention (we use the DDF Q-left).
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   // Known parity placement algorithms. Only algorithms with a golden table in
@@ -57,8 +58,9 @@
   const mod = (x, n) => ((x % n) + n) % n;
 
   /**
-   * @param node  a leaf array (segmentation, redundancy, members:[disk])
-   * @param opts  { stripes?:number } number of stripe rows to render
+   * @param {ArrayNode} node  the array to lay out (a leaf, or a stripe over spans)
+   * @param {{ stripes?: number, chunks?: number }} [opts]  stripe rows to render; chunks for RAID 10
+   * @returns {Placement}
    */
   function computePlacement(node, opts = {}) {
     if (!node || node.kind !== 'array') return unsupported('placement needs an array');
@@ -102,7 +104,8 @@
     }
   }
 
-  const unsupported = (reason) => ({ unsupported: true, reason });
+  /** @param {string} reason @returns {Placement} */
+  const unsupported = (reason) => ({ unsupported: /** @type {true} */ (true), reason });
 
   // --- striped + none → RAID 0: segments fill left→right, row by row ----------
   function placeStripe(n, rows) {
@@ -110,14 +113,14 @@
     const stripes = Array.from({ length: rows }, () =>
       Array.from({ length: n }, () => ({ role: 'data', seg: seg++, seq: t++ }))
     );
-    return { columns: n, stripes, algorithm: null, fallback: null };
+    return /** @type {Placement} */ ({ columns: n, stripes, algorithm: null, fallback: null });
   }
 
   // --- linear + none → JBOD/concat: one segment per disk, filled in order -----
   function placeLinear(n, rows) {
     // Concatenation has no stripes; we show one row where disk d holds segment d.
     const stripes = [Array.from({ length: n }, (_, d) => ({ role: 'data', seg: d, seq: d }))];
-    return { columns: n, stripes, algorithm: null, fallback: null };
+    return /** @type {Placement} */ ({ columns: n, stripes, algorithm: null, fallback: null });
   }
 
   // --- mirror → RAID 1: each segment copied to every disk ---------------------
@@ -126,7 +129,7 @@
     const stripes = Array.from({ length: rows }, (_, s) =>
       Array.from({ length: n }, (_, d) => ({ role: d === 0 ? 'data' : 'mirror', seg: s, seq: s }))
     );
-    return { columns: n, stripes, algorithm: null, fallback: null };
+    return /** @type {Placement} */ ({ columns: n, stripes, algorithm: null, fallback: null });
   }
 
   // --- striped + mirror → flat RAID 10 (copies 2): near / far / offset --------
@@ -189,7 +192,7 @@
     const { algoName, fallback } = resolveRaid10Layout(requested);
     const chunks = opts.chunks ?? 2 * n;   // 2n chunks → 4 rows at n=4 (matches golden tables)
     const stripes = RAID10_LAYOUTS[algoName](n, chunks);
-    return { columns: n, stripes, algorithm: algoName, fallback };
+    return /** @type {Placement} */ ({ columns: n, stripes, algorithm: algoName, fallback });
   }
 
   // --- striped(none) over sub-arrays → nested RAID (1+0 / 1+0+0 / 5+0 / 6+0) --
@@ -250,7 +253,7 @@
       stripes.push(row);
     }
     const columns = grids.reduce((s, g) => s + g.columns, 0);
-    return { columns, stripes, algorithm: nestedLabel(children), fallback: null };
+    return /** @type {Placement} */ ({ columns, stripes, algorithm: nestedLabel(children), fallback: null });
   }
 
   function nestedLabel(children) {
@@ -300,7 +303,7 @@
 
       stripes.push(row);
     }
-    return { columns: n, stripes, algorithm: algoName, fallback };
+    return /** @type {Placement} */ ({ columns: n, stripes, algorithm: algoName, fallback });
   }
 
   function resolveParityAlgo(requested) {

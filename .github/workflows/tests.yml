@@ -21,3 +21,16 @@ jobs:
       # stay `headless`: it is the required status check on main.
       - name: Run headless suites (one at a time)
         run: bash .development/automation/test.sh
+
+  # Editor-level type check, run the same way from the terminal. Not a required
+  # status check (headless is): types are advisory on a vanilla-JS repo, and
+  # this job also needs the network to fetch TypeScript through npx.
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Type check the engine (jsconfig.json, @ts-check files)
+        run: bash .development/automation/typecheck.sh

@@ -47,18 +47,19 @@ kernel rules and never regenerated from the engine.
 - `challenge-ui.js` — Challenge mode UI for the RAID Sandbox.
 
 ### src/engine
-- `catalog.js` — RAID Sandbox: the component catalogue (physical-model data, indexed).
-- `graph.js` — RAID Sandbox: the control-path graph, as a graph (Phase 5, Stage E).
-- `layout.js` — RAID Sandbox: headless data-placement engine (Phase 2a).
-- `levels.js` — RAID Sandbox: the level catalogue and the SHAPE matcher (spec §4, §5c).
-- `model.js` — RAID Sandbox: the recursive domain model + level recognizer.
-- `physical.js` — RAID Sandbox: the physical-layer recognizer (axis A, ADR-001).
-- `validator.js` — RAID Sandbox: the constraint engine (Phase 5, Stage C).
+- `catalog.js`
+- `graph.js`
+- `layout.js`
+- `levels.js`
+- `model.js`
+- `physical.js`
+- `types.js`
+- `validator.js`
 
 ### src/sandbox
-- `build-document.js` — RAID Sandbox: a build as a DOCUMENT (save, load, share).
+- `build-document.js`
 - `canvas-controller.js` — RAID Sandbox: drag-and-drop controller (Phase 3).
-- `canvas-state.js` — RAID Sandbox: mutable canvas state + evaluation pipeline.
+- `canvas-state.js`
 - `data-loader.js` — RAID Sandbox: fetch an indexed resource family (browser-only).
 - `drag-util.js` — shared drag-and-drop helpers for canvas-controller and physical-controller.
 - `highlight.js` — RAID Sandbox: "what I am talking about is THAT one".

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * catalog.js — RAID Sandbox: the component catalogue (physical-model data, indexed).
  *
@@ -33,7 +34,7 @@
  * data flow does not describe.
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   const fail = (msg) => { throw new Error(`catalog: ${msg}`); };
@@ -100,6 +101,11 @@
    * assembled by hand and forgot `roles`; the suites were green and the game
    * threw on every completed build — 2026-09-02.)
    */
+  /**
+   * @param {{ components: { id: string, file: string }[], portTypes: CatalogManifest['portTypes'], roles?: Roles }} index
+   * @param {Record<string, ComponentDef>} filesByName
+   * @returns {CatalogManifest}
+   */
   function assemble(index, filesByName) {
     if (!index || !Array.isArray(index.components)) fail('index: expected a "components" list');
     const components = index.components.map((entry) => {
@@ -119,6 +125,8 @@
   /**
    * Index a validated manifest. The returned object is read-only in intent: the
    * engine and the canvas ask it questions, nobody writes to it.
+   * @param {CatalogManifest} manifest
+   * @returns {Catalog}
    */
   function createCatalog(manifest) {
     validate(manifest);
@@ -156,9 +164,11 @@
      * Returns { ok: true } or { ok: false, reason } — the reason is written for a
      * developer or a test, not for the player (the canvas simply does not let
      * an impossible wire form).
+     * @param {string} fromId @param {string} fromPort @param {string} toId @param {string} toPort
+     * @returns {CanConnect}
      */
     function canConnect(fromId, fromPort, toId, toPort) {
-      const no = (reason) => ({ ok: false, reason });
+      const no = (reason) => /** @type {CanConnect} */ ({ ok: false, reason });
       if (!has(fromId)) return no(`unknown component "${fromId}"`);
       if (!has(toId))   return no(`unknown component "${toId}"`);
       const a = portOf(fromId, fromPort);

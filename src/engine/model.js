@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * model.js — RAID Sandbox: the recursive domain model + level recognizer.
  *
@@ -30,7 +31,7 @@
  * Exposed as the global `RaidModel` in the browser, and via module.exports under Node.
  */
 
-(function (root) {
+(function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
   'use strict';
 
   // ---------------------------------------------------------------------------
@@ -40,20 +41,27 @@
   const SEGMENTATIONS = ['striped', 'linear'];
   const REDUNDANCIES  = ['none', 'mirror', 'parity1', 'parity2'];
 
-  /** Build a disk leaf. */
+  /**
+   * Build a disk leaf.
+   * @param {string} id @param {number} sizeGB @param {string} [protocol]
+   * @returns {Disk}
+   */
   function disk(id, sizeGB, protocol = 'SATA') {
     return { kind: 'disk', id, sizeGB, protocol };
   }
 
   /**
    * Build an array node over a list of member nodes (disks or arrays).
-   * @param segmentation 'striped' | 'linear'
-   * @param redundancy   'none' | 'mirror' | 'parity1' | 'parity2'
-   * @param id           the canvas node this array was compiled from, when there is
+   * @param {Segmentation} segmentation
+   * @param {Redundancy} redundancy
+   * @param {TreeNode[]} members
+   * @param {string | null} [algorithm]
+   * @param {string | null} [id]  the canvas node this array was compiled from, when there is
    *                     one. Carried so a per-node consumer (the validator's
    *                     (code, nodeId) dedup, UI highlighting) can tell two arrays
    *                     apart; a hand-built tree has no canvas behind it and passes
    *                     nothing. The model itself never reads it.
+   * @returns {ArrayNode}
    */
   function array(segmentation, redundancy, members, algorithm = null, id = null) {
     if (!SEGMENTATIONS.includes(segmentation)) throw new Error(`Unknown segmentation: ${segmentation}`);
@@ -90,12 +98,13 @@
   // ---------------------------------------------------------------------------
 
   /**
-   * @param node    the tree to name
-   * @param levels  the level catalogue (RaidLevels.createLevels); without one no
+   * @param {TreeNode} node    the tree to name
+   * @param {Levels | null} [levels]  the level catalogue (RaidLevels.createLevels); without one no
    *                shape can be named, and the result says so
-   * @returns {{level:string|null, recognized:boolean, notRaid:boolean, flag:string|null, reason:string}}
+   * @returns {Recognition}
    */
   function recognize(node, levels) {
+    /** @param {string} reason @returns {Recognition} */
     const unnamed = (reason) =>
       ({ level: null, recognized: false, notRaid: false, flag: 'non-standard-config', reason });
 
@@ -226,6 +235,7 @@
 
   // Buckets quantize the formula (the formula is authoritative, the bucket is
   // presentation). writeClass keys on striping first (parallelism), then penalty.
+  /** @returns {PerfClass} */
   function readClass(node) {
     if (isDisk(node)) return 'high';
     if (topIsStriped(node)) return 'high';                          // RAID 0/5/6/10/50/60
@@ -233,6 +243,7 @@
     return 'low';                                                  // JBOD
   }
 
+  /** @returns {PerfClass} */
   function writeClass(node, mode = 'random') {
     if (isDisk(node)) return 'high';
     if (!topIsStriped(node))                                       // linear: single-disk write path
@@ -245,6 +256,7 @@
 
   const round2 = (x) => Math.round(x * 100) / 100;
 
+  /** @returns {PerfProfile} */
   function characterize(node, mode) {
     return {
       readMult:   readParallelism(node),
@@ -275,6 +287,11 @@
   // ANALYZE — one call that returns the full picture for a build.
   // ---------------------------------------------------------------------------
 
+  /**
+   * One call that returns the full picture for a build.
+   * @param {TreeNode} node @param {Levels | null} [levels]
+   * @returns {Analysis}
+   */
   function analyze(node, levels) {
     const perf = performance(node);
     return {
