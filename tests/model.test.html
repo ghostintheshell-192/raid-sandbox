@@ -103,8 +103,9 @@
       ['RAID 10 (flat)', array('striped', 'mirror', [d(0), d(1), d(2), d(3)]),
         { level: 'RAID 10', capacityGB: 200, faultTolerance: 1 }],
 
-      ['non-standard: striped mirror odd (1E)', array('striped', 'mirror', [d(0), d(1), d(2)]),
-        { level: null, capacityGB: 150, faultTolerance: 1 }],
+      // Recognized since 2026-06-14 (combinations phase): odd striped mirror = RAID 1E.
+      ['RAID 1E (odd striped mirror)', array('striped', 'mirror', [d(0), d(1), d(2)]),
+        { level: 'RAID 1E', capacityGB: 150, faultTolerance: 1 }],
     ];
 
     // --- Render a compact one-line description of a tree ---
