@@ -326,7 +326,7 @@
     }
     ctrl.render(); physCtrl.render();
     onEvaluate(CanvasState.evaluate(state));
-    if (error) statusBar.textContent = error;
+    if (error) { statusBar.textContent = error; statusBar.classList.add('sbc-status--error'); }
   }
   // Editing the fragment in the address bar does not always reload the page; in
   // a normal browser it fires hashchange. A fragment we did not write is a link
@@ -396,6 +396,7 @@
     renderViolations(r);
     challengeUI.update(r);
 
+    statusBar.classList.remove('sbc-status--error');   // a routine line is never an error
     statusBar.textContent = r.firstIssue
       ? `⚠ ${r.firstIssue}`
       : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
@@ -428,6 +429,7 @@
     .catch((err) => {
       console.error('data files failed to load:', err);
       statusBar.textContent = `⚠ Data files failed to load — ${err.message}`;
+      statusBar.classList.add('sbc-status--error');
       const msg = document.createElement('div');
       msg.className = 'pln-error';
       msg.style.cssText = 'position:absolute;left:12px;top:12px;color:#e74c3c;font-size:.85rem';
