@@ -32,10 +32,11 @@
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 
-### tech-debt/ (13 files)
+### tech-debt/ (14 files)
 
 - [README.md](tech-debt/README.md) — Tech Debt Issues
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
+- [algorithm-drop-ignores-class.md](tech-debt/algorithm-drop-ignores-class.md) — Dragging an algorithm chip onto an array ignores the array's class
 - [automation-not-checked-on-windows.md](tech-debt/automation-not-checked-on-windows.md) — The hooks and dev scripts are authored and tested only on the Linux workstation
 - [canvas-nodes-are-unnamed.md](tech-debt/canvas-nodes-are-unnamed.md) — The canvas does not name the things the player builds
 - [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) — Usable capacity is approximate when an array mixes disk sizes
