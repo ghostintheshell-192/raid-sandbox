@@ -62,6 +62,7 @@ of issues, git history is a better record than a second directory.
 - `physical-recognizer-does-not-walk-the-path.md` - The physical recognizer checks presence and one edge, not the path
 
 **Low Priority:**
+- `algorithm-drop-ignores-class.md` - Dragging an algorithm chip onto an array ignores the array's class
 - `automation-not-checked-on-windows.md` - The hooks and dev scripts are authored and tested only on the Linux workstation
 - `control-path-tolerates-cycles.md` - A control path that loops back on itself is accepted in silence
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order

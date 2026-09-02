@@ -801,6 +801,40 @@ test('without a catalogue the verdict is undetermined, and says why', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[13f] an algorithm does not survive a change of class');
+
+test('mirror + near turned into parity drops the mirror layout', () => {
+  const s = CS.createState({ catalog, levels });
+  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2), CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'mirror');
+  CS.setAlgorithm(s, a, 'near');
+  CS.setRedundancy(s, a, 'parity1');
+  eq(s.nodes.get(a).algorithm, null);
+  eq(CS.evaluate(s).placement.fallback, null);   // nothing left to fall back from
+});
+
+test('a change of segmentation that leaves the class alone keeps the algorithm', () => {
+  const s = CS.createState({ catalog, levels });
+  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'parity1');
+  CS.setAlgorithm(s, a, 'right-asymmetric');
+  CS.setSegmentation(s, a, 'linear');          // still parity: same class, no placement though
+  eq(s.nodes.get(a).algorithm, 'right-asymmetric');
+});
+
+test('flat mirror → plain mirror (RAID 1) drops near/far/offset', () => {
+  const s = CS.createState({ catalog, levels });
+  const a = CS.group(s, [CS.addDisk(s, 2), CS.addDisk(s, 2)]);
+  CS.setSegmentation(s, a, 'striped');
+  CS.setRedundancy(s, a, 'mirror');
+  CS.setAlgorithm(s, a, 'far');
+  CS.setSegmentation(s, a, 'linear');
+  eq(s.nodes.get(a).algorithm, null);
+});
+
+// ---------------------------------------------------------------------------
 console.log('\n[13] reset() — master clear');
 
 test('reset wipes both axes and leaves an empty, evaluable state', () => {
