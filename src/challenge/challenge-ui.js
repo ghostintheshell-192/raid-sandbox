@@ -126,6 +126,10 @@
         lastResult = r;
         updateChallengeUI(r);
       },
+      /** The selected challenge's id in challenge mode, null in sandbox mode (the share link carries it). */
+      currentChallengeId() {
+        return currentChallenge ? currentChallenge.id : null;
+      },
     };
   }
 

@@ -294,11 +294,19 @@
   // "Share" just copies it. An empty canvas clears the fragment. replaceState
   // adds no history entries, so Back still leaves the page, not the last drop.
   const BUILD_KEY = '#build=';
+  let   _writtenHash = null;   // what syncBuildUrl last wrote, so hashchange can tell ours from the user's
   function syncBuildUrl() {
     const doc   = BuildDocument.toDocument(state);
     const empty = doc.disks.length + doc.arrays.length + doc.components.length === 0;
-    const url   = location.pathname + location.search + (empty ? '' : BUILD_KEY + BuildDocument.encode(doc));
-    history.replaceState(null, '', url);
+    const hash  = empty ? '' : BUILD_KEY + BuildDocument.encode(doc);
+    // The challenge is part of what is being shared: keep ?challenge=<id> in the
+    // link while in challenge mode, drop it in sandbox mode.
+    const params = new URLSearchParams(location.search);
+    const chId   = challengeUI ? challengeUI.currentChallengeId() : null;
+    if (chId) params.set('challenge', chId); else params.delete('challenge');
+    const query  = params.toString() ? `?${params}` : '';
+    _writtenHash = hash;
+    history.replaceState(null, '', location.pathname + query + hash);
   }
   function loadBuildFromUrl() {
     if (!location.hash.startsWith(BUILD_KEY)) return false;
@@ -311,6 +319,19 @@
       return false;
     }
   }
+  // Editing the fragment in the address bar does not reload the page; it fires
+  // hashchange. Treat a fragment we did not write as a link being opened.
+  window.addEventListener('hashchange', () => {
+    if (location.hash === _writtenHash) return;
+    if (!location.hash.startsWith(BUILD_KEY)) return;
+    const loaded = loadBuildFromUrl();
+    if (!loaded) CanvasState.reset(state);
+    ctrl.render(); physCtrl.render();
+    const r = CanvasState.evaluate(state);
+    const msg = loaded ? null : statusBar.textContent;
+    onEvaluate(r);
+    if (msg) statusBar.textContent = msg;   // keep the load error over the routine status line
+  });
 
   function onEvaluate(r) {
     syncBuildUrl();
@@ -438,18 +459,29 @@
   // Master clear — wipes the build in both views; keeps the current mode/challenge.
   document.getElementById('btn-clear').addEventListener('click', () => ctrl.clear());
 
-  // Share — the address bar already IS the link; copy it and say so.
+  // Share — the address bar already IS the link; copy it and say so. Where the
+  // clipboard API is unavailable (an embedded browser, a non-https origin), the
+  // link is offered selected in a field, so Ctrl+C does the rest.
   document.getElementById('btn-share').addEventListener('click', () => {
     syncBuildUrl();
     const link = location.href;
     const say  = (msg) => { statusBar.textContent = msg; };
     if (!location.hash.startsWith(BUILD_KEY)) { say('Nothing to share yet — build something first.'); return; }
+    const offerSelected = () => {
+      statusBar.textContent = 'Copy this link (selected): ';
+      const field = document.createElement('input');
+      field.type = 'text'; field.readOnly = true; field.value = link;
+      field.style.cssText = 'width:22rem;max-width:40vw;font:inherit;font-size:.8rem;background:transparent;color:inherit;border:1px solid rgba(128,128,128,.4);padding:0 .3rem';
+      statusBar.appendChild(field);
+      field.focus(); field.select();
+      try { document.execCommand('copy'); say('✓ Link copied — anyone opening it sees this build.'); } catch (e) { /* stays selected */ }
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(link)
         .then(() => say('✓ Link copied — anyone opening it sees this build.'))
-        .catch(() => say(`Copy this link: ${link}`));
+        .catch(offerSelected);
     } else {
-      say(`Copy this link: ${link}`);
+      offerSelected();
     }
   });
 

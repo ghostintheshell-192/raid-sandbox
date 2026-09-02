@@ -56,7 +56,7 @@ test('toDocument → loadDocument reproduces the evaluation exactly', () => {
   eq(CS.evaluate(b).raidType, 'hardware');
 });
 
-test('ids, positions and the algorithm are kept verbatim', () => {
+test('ids, physical positions and the algorithm are kept verbatim', () => {
   const a = sampleBuild();
   const doc = BD.toDocument(a);
   const b = fresh();
@@ -64,8 +64,9 @@ test('ids, positions and the algorithm are kept verbatim', () => {
   eq(Array.from(b.nodes.keys()).sort().join(','), Array.from(a.nodes.keys()).sort().join(','));
   eq(Array.from(b.cpNodes.keys()).join(','), Array.from(a.cpNodes.keys()).join(','));
   const firstDisk = Array.from(a.nodes.keys())[0];
-  eq(b.positions.get(firstDisk).x, 10);
   eq(b.cpDiskPositions.get(firstDisk).x, 99);
+  eq(b.cpNodes.get(Array.from(a.cpNodes.keys())[0]).pos.x, 1);
+  assert(!('pos' in doc.disks[0]), 'the data view lays the tree out in flow: no disk positions to keep');
   const anArray = Array.from(a.nodes.values()).find((n) => n.kind === 'array' && n.redundancy === 'parity1');
   eq(b.nodes.get(anArray.id).algorithm, 'right-asymmetric');
 });
@@ -155,15 +156,42 @@ test('encode → decode is the identity on the document', () => {
 test('garbage is refused with a reason', () => {
   let err = null;
   try { BD.decode('%%%not base64%%%'); } catch (e) { err = e; }
-  assert(err && /not (base64|JSON)/.test(err.message), err && err.message);
+  assert(err && /unknown form "%"/.test(err.message), err && err.message);
+  err = null;
+  try { BD.decode('c%%%not base64%%%'); } catch (e) { err = e; }
+  assert(err && /not (base64|JSON)|malformed/.test(err.message), err && err.message);
   err = null;
   try { BD.decode(BD.encode({ hello: 'world' })); } catch (e) { err = e; }
   assert(err && /unknown version/.test(err.message), err && err.message);
 });
 
-test('a shareable build stays a reasonable URL fragment', () => {
+test('a shareable build is a SHORT fragment: the compact form, not the JSON', () => {
   const str = BD.encode(BD.toDocument(sampleBuild()));
-  assert(str.length < 2000, `${str.length} chars for a 6-disk RAID 50 with a wired path`);
+  eq(str[0], 'c');
+  assert(str.length < 600, `${str.length} chars for a 6-disk RAID 50 with a wired path`);
+});
+
+test('positions are rounded to whole pixels on the wire', () => {
+  const a = fresh();
+  const id = CS.cpAddNode(a, 'backplane', { x: 12.4, y: 99.6 });
+  const back = BD.decode(BD.encode(BD.toDocument(a)));
+  eq(back.components[0].id, id);
+  eq(back.components[0].pos.x, 12);
+  eq(back.components[0].pos.y, 100);
+});
+
+test('a document with hand-written ids falls back to the plain form, and still round-trips', () => {
+  const doc = { v: 1,
+    disks: [{ id: 'left', sizeGB: 2, protocol: 'SATA' }, { id: 'right', sizeGB: 2, protocol: 'SATA' }],
+    arrays: [{ id: 'pair', segmentation: 'linear', redundancy: 'mirror', algorithm: null, members: ['left', 'right'] }],
+    components: [], wires: [] };
+  const str = BD.encode(doc);
+  eq(str[0], 'j');
+  eq(JSON.stringify(BD.decode(str)), JSON.stringify(doc));
+  const b = fresh();
+  BD.loadDocument(b, doc);
+  eq(CS.evaluate(b).analysis.level, 'RAID 1');
+  assert(/^disk-\d+$/.test(CS.addDisk(b, 1)), 'fresh ids keep their own form');
 });
 
 finish();
