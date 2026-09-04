@@ -1,13 +1,16 @@
 ---
 type: bug
 priority: high
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
 related_decision: null
 ---
 
 # The sandbox says "build valid" while showing a hard violation
+
+> **Resolved 2026-09-04** on `fix/animate-gate-on-hard-violations` (Option B) — see the
+> resolution section at the end. Spec §6's open [DECISION] is confirmed in the same change.
 
 ## Problem
 
@@ -74,3 +77,21 @@ both place fine and both must now refuse to animate.
 - **Census**: `reference/refusal-points.md` — "The gap between 'valid' and valid"
 - **Spec**: domain-model §6 (the [DECISION] this resolves)
 - **Code Locations**: `index.html` (render path, `btnAnimate`, status bar), `src/sandbox/canvas-state.js` (`_firstIssue`, `evaluate`)
+
+## Resolution (2026-09-04)
+
+Option B, in `index.html`'s render path:
+
+- `btnAnimate.disabled` now reads the hard violations, not the placement alone. A disabled
+  button also carries `title="Fix this first: <the violation's own message>"` — a control
+  that refuses without a reason would be the same defect one level down.
+- The status bar branches on the hard violations before falling through to "✓ build
+  valid", and shows the violation's **own** message rather than a second wording that
+  could drift from the rule that produced it.
+- The grid still renders whenever a placement exists: seeing the layout is information,
+  the animation is the reward.
+- Soft violations gate nothing.
+
+No engine change — `evaluate()` already returned `violations: { hard, soft }`. Spec §6's
+`[DECISION] … Confirm.` is now confirmed, with the addition that the sandbox marks a build
+invalid by withholding the animation rather than by blocking the build.
