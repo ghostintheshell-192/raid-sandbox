@@ -174,7 +174,7 @@ See `.development/tech-debt/`:
 
 ## Notes
 
-- **Test suite**: 16 headless node files in `tests/` — run each with `node <file>`, or all
+- **Test suite**: 17 headless node files in `tests/` — run each with `node <file>`, or all
   via `bash .development/automation/test.sh`; type check via `typecheck.sh`; plus
   browser test pages (`*.test.html`) and demos. Responsive/touch/accordion work is
   browser-only (guarded), does not touch the headless suite.

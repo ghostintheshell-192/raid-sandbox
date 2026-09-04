@@ -15,8 +15,8 @@ pros:
   - Balanced parity load (same parity rotation as left-symmetric)
 
 cons:
-  - Worse sequential-read locality than left-symmetric: data segments do not
-    rotate smoothly across all disks
+  - "Worse sequential-read locality than left-symmetric: data segments do not
+    rotate smoothly across all disks"
 
 placement:
   parity:
