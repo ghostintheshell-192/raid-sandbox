@@ -125,6 +125,12 @@
       if (payload.source === 'sidebar' &&
           (payload.type === 'segmentation' || payload.type === 'redundancy' || payload.type === 'algorithm')) {
         if (targetKind !== 'array') return _NO;
+        // An algorithm chip only applies if the array's class offers it (same
+        // predicate as the tap picker's catalogue) — otherwise the drop would
+        // silently store a value the engine has to fall back away from
+        // (layout.js; the fallback is a safety net, not a user-facing choice).
+        if (payload.type === 'algorithm' && !_axisOptions('algorithm', targetId).includes(payload.value))
+          return _NO;
         const setter = payload.type === 'segmentation' ? CS.setSegmentation
                      : payload.type === 'redundancy'   ? CS.setRedundancy
                      :                                    CS.setAlgorithm;
@@ -505,7 +511,11 @@
         el.classList.remove('sbc-slot--over');
         const payload = getDrag(e);
         if (!payload || payload.source !== 'sidebar') return;
-        if (payload.type === axis) _applyAxis(axis, arrayId, payload.value);
+        if (payload.type !== axis) return;
+        // Same class predicate as _resolveDropAction: a slot only accepts an
+        // algorithm value that array's class actually offers.
+        if (axis === 'algorithm' && !_axisOptions('algorithm', arrayId).includes(payload.value)) return;
+        _applyAxis(axis, arrayId, payload.value);
       });
 
       return el;
