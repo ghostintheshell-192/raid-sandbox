@@ -349,15 +349,38 @@
       row.className = 'sbc-slots';
       row.appendChild(_makeSlot('segmentation', arrayId, node.segmentation));
       row.appendChild(_makeSlot('redundancy',   arrayId, node.redundancy));
-      // Placement-algorithm slot, shown with the default for the array's class:
-      // parity → left-symmetric; flat RAID 10 (striped+mirror) → near.
+      // Placement-algorithm slot: live with the default for the array's class
+      // (parity → left-symmetric; flat RAID 10 (striped+mirror) → near), or
+      // disabled with a one-line reason for every other class — the absence
+      // is a stated fact, not a slot that just isn't there
+      // (tech-debt/algorithm-slot-vanishes-silently.md).
       const isParity     = node.redundancy === 'parity1' || node.redundancy === 'parity2';
       const isFlatMirror = node.segmentation === 'striped' && node.redundancy === 'mirror';
       if (isParity || isFlatMirror) {
         const algoValue = node.algorithm ?? (isParity ? 'left-symmetric' : 'near');
         row.appendChild(_makeSlot('algorithm', arrayId, algoValue));
+      } else {
+        row.appendChild(_makeSlot('algorithm', arrayId, null, { disabled: true, reason: _noAlgorithmReason(node) }));
       }
       return row;
+    }
+
+    /**
+     * The one-line reason THIS array's own class has no placement algorithm —
+     * read from the level catalogue (data/raid-levels/*.yaml via state.levels),
+     * not written here as a string (ADR-002). Looked up by the node's own
+     * segmentation/redundancy against every leaf-shaped level def, not by
+     * recognizing the whole tree: a RAID 51's outer mirror-of-arrays gets the
+     * same "no layout to choose" fact as a plain RAID 1, because the algorithm
+     * axis is decided per array node, exactly like `_axisOptions` decides it.
+     */
+    function _noAlgorithmReason(node) {
+      if (!state.levels) return null;
+      const def = state.levels.order.find((d) =>
+        d.shape.members === 'disks' &&
+        d.shape.segmentation === node.segmentation &&
+        d.shape.redundancy === node.redundancy);
+      return (def && def.noAlgorithmReason) || null;
     }
 
     // ---- inline picker (touch-first, additive to drag-and-drop) -------------
@@ -467,11 +490,29 @@
       ref.parentNode.insertBefore(panel, ref.nextSibling);
     }
 
-    function _makeSlot(axis, arrayId, value) {
+    function _makeSlot(axis, arrayId, value, opts) {
+      const disabled = !!(opts && opts.disabled);
       const el = document.createElement('div');
-      el.className = value ? 'sbc-slot sbc-slot--filled' : 'sbc-slot sbc-slot--empty';
+      el.className = disabled ? 'sbc-slot sbc-slot--disabled'
+                    : value    ? 'sbc-slot sbc-slot--filled'
+                    :            'sbc-slot sbc-slot--empty';
       el.dataset.axis    = axis;
       el.dataset.arrayId = arrayId;
+
+      if (disabled) {
+        const hint = document.createElement('span');
+        hint.className   = 'sbc-slot-hint';
+        hint.textContent = 'no layout to choose';
+        el.appendChild(hint);
+        if (opts.reason) el.title = opts.reason;
+
+        // States a fact, does not collect one: no picker (tap) and no drop
+        // (drag), on either side of the class-change that made it disabled.
+        el.addEventListener('click', (e) => e.stopPropagation());
+        el.addEventListener('dragover', (e) => e.stopPropagation());
+        el.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); });
+        return el;
+      }
 
       if (value) {
         el.appendChild(document.createTextNode(_axisLabel(axis, value)));

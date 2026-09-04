@@ -59,14 +59,15 @@ Nothing happens, and nothing is said, because there is nothing to say no *to*.
 
 | where | what disappears | why | told? |
 |---|---|---|---|
-| `_axisOptions('algorithm', …)` | the algorithm slot itself | an array with parity gets the four rotations, a flat mirror the three mdadm layouts, **anything else gets an empty list and no slot** | ❌ never |
+| `_axisOptions('algorithm', …)` | the algorithm slot itself | an array with parity gets the four rotations, a flat mirror the three mdadm layouts, **anything else gets an empty list and no slot** | ✅ since 2026-09-05 — the slot stays, disabled, with the class's own one-line reason from `data/raid-levels/*.yaml` |
 
-Tracked as [`tech-debt/algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md).
+Tracked as [`tech-debt/algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) (resolved).
 
-One row, and it is the most important row in this document. A linear mirror has no
-algorithm to choose, which is correct — but the player sees a slot that was there a
-moment ago and is now gone, with no way to learn that the disappearance was the answer
-to a question they did not know they had asked.
+One row, and it was the most important row in this document. A linear mirror has no
+algorithm to choose, which is correct — but the player used to see a slot that was there
+a moment ago and now gone, with no way to learn that the disappearance was the answer
+to a question they did not know they had asked. The slot now stays, disabled, and says
+so.
 
 Note how close this is to a refusal the game *does* explain. "This algorithm does not
 belong here" is said out loud when the cause is the operating system
@@ -185,7 +186,7 @@ Everything actionable found here is tracked as tech debt; this map stays the map
 | gap | tracked as |
 |---|---|
 | ~~three~~ **two** refusals with no test (`model.js` on an unknown segmentation or redundancy, `physical.js` on a manifest with no `roles.sink.capability`) — **closed 2026-09-04** | [`refusal-tests-missing.md`](../tech-debt/refusal-tests-missing.md) |
-| the algorithm slot's silent absence | [`algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) |
+| the algorithm slot's silent absence — **closed 2026-09-05** | [`algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) |
 | "✓ build valid" alongside a hard violation, and the animation gate | [`build-valid-claimed-with-hard-violations.md`](../tech-debt/build-valid-claimed-with-hard-violations.md) |
 | the drag path accepting an algorithm the picker would filter | [`algorithm-drop-ignores-class.md`](../tech-debt/algorithm-drop-ignores-class.md) (already open) |
 | the power-loss warning §6 never got | [`power-loss-warning-promised-not-implemented.md`](../tech-debt/power-loss-warning-promised-not-implemented.md) |

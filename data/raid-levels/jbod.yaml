@@ -22,6 +22,15 @@ reference:
 
 defaultAlgorithm: null
 
+# Shown in the algorithm slot when it is disabled (canvas-controller.js
+# `_makeSlots`) — the fact the slot states instead of just disappearing.
+# This is the sentence for the CLASS this shape belongs to (linear+none),
+# reused by every node of that class regardless of what its members are —
+# no nested level currently reaches this class, but the wording still
+# names "members", not "disks", on the same principle as raid0/raid1.
+# See tech-debt/algorithm-slot-vanishes-silently.md.
+noAlgorithmReason: "a concatenation places nothing — members are joined end to end"
+
 description: >
   Just a Bunch Of Disks — concatenation with no striping and no redundancy.
   Disks are addressed sequentially: the first disk fills up, then the second,

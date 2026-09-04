@@ -21,6 +21,15 @@ reference:
 
 defaultAlgorithm: null
 
+# Shown in the algorithm slot when it is disabled (canvas-controller.js
+# `_makeSlots`) — the fact the slot states instead of just disappearing.
+# This is the sentence for the CLASS this shape belongs to (striped+none),
+# reused by every node of that class regardless of what its members are —
+# including a RAID 50's outer stripe-of-spans, which is striped+none at
+# that node too. Written for "stripe", not "RAID 0", so it stays true there.
+# See tech-debt/algorithm-slot-vanishes-silently.md.
+noAlgorithmReason: "a plain stripe has no parity and no copies to place"
+
 description: >
   Data is split into blocks (stripes) and distributed across all disks in round-robin
   order. Every disk holds a piece of every file. Pure speed — zero redundancy.
