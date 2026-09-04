@@ -83,7 +83,12 @@ or tech-debt that already holds the thinking) and a size: **S** hours, **M** a
 session or two, **L** several sessions. Nothing here is scheduled; the order is the
 decision.
 
-1. **Refusal points** — census every place the game must refuse an action, in two
+1. **Refusal points** — **CENSUS DONE 2026-09-04**, see
+   [`reference/refusal-points.md`](reference/refusal-points.md) and its companion
+   [`reference/unspoken-content.md`](reference/unspoken-content.md). What remains is
+   small and listed there: three tests, the `algorithm-drop-ignores-class` behaviour,
+   and the animation gate (the decision is taken, the code is not written).
+   Original scoping: census every place the game must refuse an action, in two
    families: *structural* (the engine cannot hold the state: incompatible port,
    self-loop, hand-wired disk, a document it cannot honour) and *UI* (the canvas
    declines: an algorithm chip on the wrong class — today missing,
