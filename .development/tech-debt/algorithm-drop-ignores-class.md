@@ -1,13 +1,16 @@
 ---
 type: bug
 priority: low
-status: open
+status: resolved
 discovered: 2026-09-02
 related: []
 related_decision: null
 ---
 
 # Dragging an algorithm chip onto an array ignores the array's class
+
+> **Resolved 2026-09-05** on `fix/algorithm-drop-ignores-class` (Option A) — see the
+> resolution section at the end.
 
 ## Problem
 
@@ -66,3 +69,39 @@ never have been reachable, and the explanation sends the player the wrong way.
 
 That raises the cost of leaving this open: it is not only a state that should not exist,
 it is a state that makes the game say something untrue.
+
+## Resolution (2026-09-05)
+
+Option A, exactly as scoped: both drop handlers in `src/sandbox/canvas-controller.js` now
+guard on the same predicate the tap picker already used.
+
+- `_resolveDropAction` — the sidebar-algorithm-chip-onto-array-body branch now refuses
+  (`return _NO`) when `!_axisOptions('algorithm', targetId).includes(payload.value)`,
+  before building the `setAlgorithm` action. This is the single source both the
+  drag-preview border colour and the canvas drop share, so a refused drop also previews
+  as refused — no separate "it looked droppable but nothing happened" state.
+- The slot's own `drop` handler (in `_makeSlot`) got the identical guard before calling
+  `_applyAxis`, since it does not go through `_resolveDropAction`.
+
+No second copy of the class rule was written — both sites call `_axisOptions('algorithm',
+arrayId)`, the exact function the picker already uses, so the two paths cannot drift apart
+again.
+
+Option B (greying out sidebar chips mid-drag) was left undone, as recommended — a nicety,
+not required to close the hole.
+
+**Not headlessly testable.** `canvas-controller.js` is DOM-only: `createController(...)`
+calls `document.addEventListener` and live-element `addEventListener` immediately on
+invocation, and destructures `root.DragUtil` at load time. Requiring the file in Node
+without a DOM/`DragUtil` stub throws immediately — confirmed by trying it. Building a fake
+DOM/EventTarget harness just to exercise two `if` guards would be inventing infrastructure
+the project doesn't have (no jsdom, zero-dependency by design), so this was verified
+in-browser instead, not added as a headless test. All 17 existing headless suites
+(`bash .development/automation/test.sh`) and the typecheck still pass unchanged, since
+`canvas-state.js` and the engine were not touched.
+
+**Browser check**: build a RAID 6 (parity2), drag a `near`/`far`/`offset` chip from the
+"LAYOUT (RAID 10 / 1E)" sidebar group onto its algorithm slot — the drop should be refused
+(no drop-ok border, no value change). Same in reverse: build a flat RAID 10
+(striped+mirror), drag a `Left Sym`/`Right Sym` chip onto it — also refused. Dropping an
+algorithm chip that *does* match the array's class still works as before.
