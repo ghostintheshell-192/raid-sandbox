@@ -1,13 +1,16 @@
 ---
 type: testing
 priority: low
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
 related_decision: null
 ---
 
 # Three refusals have no test
+
+> **Resolved 2026-09-04** on `test/refusal-coverage` (Option A) — and one of the three
+> turned out to be covered already. See the resolution section at the end.
 
 ## Problem
 
@@ -49,3 +52,37 @@ same files.
 
 - **Census**: `reference/refusal-points.md` — "What is missing"
 - **Code Locations**: `src/sandbox/canvas-state.js` (`cpCanConnect`), `src/engine/model.js`, `src/engine/physical.js`, `tests/catalog.test.js` (the pattern)
+
+## Resolution (2026-09-04)
+
+**Two tests, not three.** The first row of the table above was wrong.
+
+`cpCanConnect` with no catalogue **was already tested**, in `canvas-state.test.js` [13d]
+(*"without a catalogue nothing can be wired, and it says so"*), added 2026-09-02 with the
+physical-model refactor — two days before this entry claimed it was missing. No duplicate
+was added.
+
+How the census got it wrong is the part worth keeping: it searched the suites for the
+refusal's **message string** (`no catalogue loaded`), and the existing test asserts only
+`/catalogue/`. Grepping for the wording measures the wording, not the behaviour.
+
+The two that were genuinely missing:
+
+| test | suite | why there |
+|---|---|---|
+| `an unknown segmentation is refused` · `an unknown redundancy is refused` | `model-recognize.test.js`, section "Guards — array() refuses unknown vocabulary" | the suite that builds `M.array()` / `M.disk()` trees directly, where the factory is the thing under test rather than incidental |
+| `recognize() throws when the catalogue declares no roles.sink.capability` | `canvas-state.test.js` [13g] | the suite that already exercises `physical.js`; the guard fires before any graph data is read, so it is called directly with a sinkless catalogue rather than through a full `evaluate()` |
+
+Each asserts the **message**, not merely that something threw — a bare throw-check passes
+on the wrong error.
+
+**Verified by breaking it.** The guard in `physical.js`'s `sinkRole()` was temporarily
+replaced with a silent `{}` fallback; `canvas-state.test.js` then failed exactly one test
+(*"expected Physical.recognize to throw"*, 63 passed / 1 failed) and nothing else. The
+source was restored — `git diff -- src/` empty, 64 / 0 again.
+
+**Left alone, noted here**: the pre-existing catalogue test asserts `/catalogue/` where
+the house style elsewhere pins more of the message (`catalog.test.js` uses
+`/unknown component "ghost"/`). A regression that kept the word and changed the rest would
+slip through. Too small to reopen an entry for; worth tightening whenever that file is
+next edited.

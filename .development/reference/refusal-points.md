@@ -32,7 +32,7 @@ in two places: *"the reason is written for a developer or a test, not for the pl
 | where | refuses | test |
 |---|---|---|
 | `catalog.canConnect` | unknown component · no such port · the source is not an output · the target is not an input · incompatible port types | ✅ `catalog.test.js` [2] |
-| `cpCanConnect` | no catalogue loaded · a component wired to itself · a disk wired by hand · unknown node | ⚠️ all but "no catalogue loaded" |
+| `cpCanConnect` | no catalogue loaded · a component wired to itself · a disk wired by hand · unknown node | ✅ `canvas-state.test.js` [13d] |
 | `cpConnect` | **throws** when `cpCanConnect` says no, so no test can assert on a canvas no player could draw | ✅ |
 | `cpDisconnect` | refuses to delete a *derived* edge (disk → acceptor): routing is domain truth, not a drawing | ✅ |
 | `loadDocument` | unknown version · a member naming no node · an array as its own member · a node claimed by two arrays · a wire to an absent component · a wire the catalogue forbids · corrupt base64 — **and leaves the state empty, never half-loaded** | ✅ `build-document.test.js` [2] |
@@ -159,9 +159,19 @@ step by step; the sandbox allows the mistake, explains it, and withholds the pay
 
 Everything actionable found here is tracked as tech debt; this map stays the map.
 
+> **Correction, 2026-09-04.** This census originally listed three untested refusals. One
+> of them — `cpCanConnect` with no catalogue — **was already tested**, and had been since
+> 2026-09-02 (`canvas-state.test.js` [13d], *"without a catalogue nothing can be wired,
+> and it says so"*). The census missed it by grepping the tests for the refusal's *message
+> string* (`no catalogue loaded`) while the test asserts only `/catalogue/`.
+>
+> Worth remembering when auditing coverage: **searching for the message finds the wording,
+> not the behaviour.** A refusal is covered when something exercises the path, whatever the
+> assertion happens to spell.
+
 | gap | tracked as |
 |---|---|
-| three refusals with no test (`cpCanConnect` with no catalogue, `model.js` on an unknown segmentation or redundancy, `physical.js` on a manifest with no `roles.sink.capability`) | [`refusal-tests-missing.md`](../tech-debt/refusal-tests-missing.md) |
+| ~~three~~ **two** refusals with no test (`model.js` on an unknown segmentation or redundancy, `physical.js` on a manifest with no `roles.sink.capability`) — **closed 2026-09-04** | [`refusal-tests-missing.md`](../tech-debt/refusal-tests-missing.md) |
 | the algorithm slot's silent absence | [`algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) |
 | "✓ build valid" alongside a hard violation, and the animation gate | [`build-valid-claimed-with-hard-violations.md`](../tech-debt/build-valid-claimed-with-hard-violations.md) |
 | the drag path accepting an algorithm the picker would filter | [`algorithm-drop-ignores-class.md`](../tech-debt/algorithm-drop-ignores-class.md) (already open) |
