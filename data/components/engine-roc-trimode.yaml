@@ -20,6 +20,7 @@ provides:
   - protocol-translation
   - raid-engine
   - virtual-drive
+  - power-loss-protection   # same protected cache as engine-roc — see that file
 
 requires:
   - pcie-slot

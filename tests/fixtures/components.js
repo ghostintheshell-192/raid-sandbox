@@ -7,7 +7,7 @@
  * this JS mirror instead — and `components-data.test.js` (python3 + pyyaml, the
  * repo's YAML reader) asserts that the mirror and the YAML agree on every MODEL
  * field: ids and their order, `provides`, `ports` (dir, type, accepts),
- * `verdict`, `layouts`, and the manifest's `roles` and `portTypes`. UI fields (icon,
+ * `verdict`, `layouts`, `writeHole`, and the manifest's `roles` and `portTypes`. UI fields (icon,
  * colour, label, badge, chip, tooltip, descriptions) are not mirrored: nothing
  * headless reads them — except `ui.label`/`ui.badge`, which the recognizer
  * uses to NAME a piece in its diagnostics, so those two are mirrored too.
@@ -35,7 +35,7 @@ module.exports = {
               { id: 'out', dir: 'out', type: 'pcie' }] },
 
     { id: 'engine-roc',
-      provides: ['protocol-translation', 'raid-engine', 'virtual-drive'],
+      provides: ['protocol-translation', 'raid-engine', 'virtual-drive', 'power-loss-protection'],
       verdict: { raidType: 'hardware',
                  reason: 'The RAID engine is a RAID-on-Chip — it sits before the PCIe bus, builds the array itself, and the OS sees one virtual drive.' },
       ui: { label: 'RAID Engine', badge: 'RoC' },
@@ -43,7 +43,7 @@ module.exports = {
               { id: 'out', dir: 'out', type: 'virtual-drive' }] },
 
     { id: 'engine-roc-trimode',
-      provides: ['protocol-translation', 'raid-engine', 'virtual-drive'],
+      provides: ['protocol-translation', 'raid-engine', 'virtual-drive', 'power-loss-protection'],
       verdict: { raidType: 'hardware',
                  reason: 'The RAID engine is a tri-mode RAID-on-Chip — it takes SAS, SATA and NVMe drives directly, builds the array itself, and the OS sees one virtual drive.' },
       ui: { label: 'RAID Engine', badge: 'RoC tri-mode' },
@@ -54,6 +54,7 @@ module.exports = {
       provides: ['raid-engine'],
       verdict: { raidType: 'fake',
                  reason: 'The RAID engine is a metadata-only chip — it owns the array metadata, but the CPU still computes the parity, not the chip.' },
+      writeHole: { reason: 'The parity for each stripe is computed on the CPU and written after the data, so a power cut between the two can leave a stripe whose parity no longer matches, and a later rebuild trusts it. This chip owns the array metadata but has no write cache of its own to protect, so on {raidType} RAID nothing here holds the write — that job falls to a UPS.' },
       ui: { label: 'RAID Engine', badge: 'metadata' },
       ports: [{ id: 'in',  dir: 'in',  type: 'pcie' },
               { id: 'out', dir: 'out', type: 'pcie' }] },
@@ -63,6 +64,7 @@ module.exports = {
       verdict: { raidType: 'software',
                  reason: 'No RAID engine sits on the path — Linux and the CPU compute the layout themselves, with no RAID hardware involved.' },
       layouts: { reason: '{label} uses the "{algorithm}" layout, which only exists under Linux software RAID (mdadm). On {raidType} RAID, build a nested RAID 1+0 instead.' },
+      writeHole: { reason: "Parity is computed from the data and written as a separate step, so a power cut between the two can leave a stripe whose parity no longer matches its data — and a later rebuild recomputes a missing disk from that wrong parity without noticing. Linux md can close this write hole with a journal device, or with mdadm's --consistency-policy=ppl on RAID 5; without one, a {raidType} parity array needs a UPS or a controller with a battery-backed write cache." },
       ui: { label: 'Linux' },
       ports: [{ id: 'in',  dir: 'in',  type: 'cpu' }] },
 
@@ -70,6 +72,7 @@ module.exports = {
       provides: ['raid-engine', 'software-raid', 'os'],
       verdict: { raidType: 'software',
                  reason: 'No RAID engine sits on the path — Windows and the CPU compute the layout themselves, with no RAID hardware involved.' },
+      writeHole: { reason: 'Parity is computed on the CPU and written as a separate step, so a power cut between the two can leave a stripe whose parity no longer matches its data — and a later rebuild recomputes a missing disk from it without noticing. Nothing on a {raidType} path holds the write until both halves are safe; a UPS, or a controller with a battery-backed write cache, is what closes the gap.' },
       ui: { label: 'Windows' },
       ports: [{ id: 'in',  dir: 'in',  type: 'cpu' }] },
 

@@ -111,6 +111,7 @@
  * @typedef {{ id: string, name?: string, provides?: string[], ports: Port[],
  *             verdict?: { raidType: string, reason: string },
  *             layouts?: { reason: string },
+ *             writeHole?: { reason: string },
  *             ui?: { label?: string, badge?: string, chip?: string, tooltip?: string, icon?: string, color?: string } }} ComponentDef
  */
 

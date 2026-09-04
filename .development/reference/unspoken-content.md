@@ -151,7 +151,9 @@ a measurably worse array, and the game currently shows no difference at all.
 
 Tracked as [`tech-debt/raid0plus1-difference-not-surfaced.md`](../tech-debt/raid0plus1-difference-not-surfaced.md).
 
-**2. The write hole.** `os-linux.yaml`:
+**2. The write hole.** **Closed 2026-09-05** — the `note:` below is gone from
+`os-linux.yaml`, replaced by the `writeHole.reason` that `validator.js`'s `write-hole`
+rule (soft, cross-axis) actually shows. `os-linux.yaml` said:
 
 > *Without a battery-backed write cache (BBU) or UPS, a power loss during a write can
 > leave the array in an inconsistent state. **This is a soft constraint surfaced as a

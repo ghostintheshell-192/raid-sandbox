@@ -29,11 +29,6 @@ tools:
   - zfs                  # ZFS with native RAID-Z
   - lvm                  # LVM with striping/mirroring
 
-note: >
-  Without a battery-backed write cache (BBU) or UPS, a power loss during a write
-  can leave the array in an inconsistent state. This is a soft constraint surfaced
-  as a warning in the game.
-
 # The verdict when NO engine object sits on the path and the disks reach this
 # OS: the OS itself is the engine (`provides: raid-engine`).
 verdict:
@@ -50,6 +45,30 @@ layouts:
   reason: >-
     {label} uses the "{algorithm}" layout, which only exists under Linux
     software RAID (mdadm). On {raidType} RAID, build a nested RAID 1+0 instead.
+
+# The write hole, in this engine's own words. Same division as `verdict` and
+# `layouts`: a component that CAN survive a power cut mid-write claims
+# `power-loss-protection` in `provides:` and says nothing here; a component that
+# cannot declares what a player building a parity array on it should know. The
+# validator (`write-hole`, soft, §6) only compares — it holds no sentence and
+# names no component. {raidType} is filled in from the build.
+#
+# Ground truth: Linux md, `drivers/md/raid5-ppl.c` — "Partial Parity Log for
+# closing the RAID5 write hole" (line 3); its entries "mark the stripes for
+# which parity should be recalculated after an unclean shutdown" (line 52). PPL
+# is refused on anything but RAID 5 (`ppl_init_log`: `if (mddev->level != 5)`);
+# a journal device (`drivers/md/raid5-cache.c`) works for the whole raid4/5/6
+# personality. `drivers/md/md.c` `consistency_policy_show` reports exactly
+# journal / ppl / bitmap / resync / none.
+writeHole:
+  reason: >-
+    Parity is computed from the data and written as a separate step, so a power
+    cut between the two can leave a stripe whose parity no longer matches its
+    data — and a later rebuild recomputes a missing disk from that wrong parity
+    without noticing. Linux md can close this write hole with a journal device,
+    or with mdadm's --consistency-policy=ppl on RAID 5; without one, a
+    {raidType} parity array needs a UPS or a controller with a battery-backed
+    write cache.
 
 ui:
   label: "Linux"

@@ -15,6 +15,14 @@ provides:
   - protocol-translation
   - raid-engine
   - virtual-drive        # the OS sees this, not the physical disks
+  # The write cache this object is modelled with is battery- or flash-backed: an
+  # interrupted stripe write is replayed when power returns, which is what closes
+  # the write hole (§6 `write-hole`, soft). This is the game's model of a RoC —
+  # the protected cache is part of what makes it one (ADR-001) — not a promise
+  # that every real controller ships with the battery module fitted. Claiming
+  # this capability is what keeps the rule silent on this path; an engine that
+  # does NOT claim it explains itself in its own `writeHole.reason`.
+  - power-loss-protection
 
 requires:
   - pcie-slot
