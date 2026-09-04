@@ -1,16 +1,16 @@
 ---
 captured: 2026-09-04
-status: open
+status: promoted-to-spec
+promoted_to: ../../.development/specs/planned/degenerate-levels.md
+promoted_at: 2026-09-04
 context: "session 2026-09-04, testing the animation gate — Valentina, on a RAID 5 built with two disks: 'ma quello che è stato creato è veramente errato? cosa succede alla parità quando ci sono solo due dischi?'"
 tags: [engine, recognizer, teaching, model]
-promote: "to a spec, next session — Valentina's call, taken the day it was captured"
 ---
 
 # Levels that degenerate: recognize what runs, not only what was composed
 
-**PROMOTE THIS FIRST.** Agreed 2026-09-04: this becomes a proper spec in the next
-session, before any other roadmap item is picked up. Do not start work from this
-note — write the spec, then work from that.
+**Promoted 2026-09-04** to `specs/planned/degenerate-levels.md`, which is the ground truth
+from here on. This note stays as the record of where the idea came from.
 
 ## What
 
