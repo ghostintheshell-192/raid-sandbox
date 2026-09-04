@@ -61,6 +61,8 @@ Nothing happens, and nothing is said, because there is nothing to say no *to*.
 |---|---|---|---|
 | `_axisOptions('algorithm', …)` | the algorithm slot itself | an array with parity gets the four rotations, a flat mirror the three mdadm layouts, **anything else gets an empty list and no slot** | ❌ never |
 
+Tracked as [`tech-debt/algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md).
+
 One row, and it is the most important row in this document. A linear mirror has no
 algorithm to choose, which is correct — but the player sees a slot that was there a
 moment ago and is now gone, with no way to learn that the disappearance was the answer
@@ -139,6 +141,8 @@ So today the sandbox can say:
 while the panel underneath lists a hard violation. The two statements are on the same
 screen and contradict each other.
 
+Tracked as [`tech-debt/build-valid-claimed-with-hard-violations.md`](../tech-debt/build-valid-claimed-with-hard-violations.md).
+
 **Decision (2026-09-04): the animation is the reward, and the reward waits.** While a
 hard violation stands, the animate button stays disabled and the status line does not
 claim the build is valid. The mistake stays fully explorable and fully explained — what
@@ -153,14 +157,12 @@ step by step; the sandbox allows the mistake, explains it, and withholds the pay
 
 ## What is missing
 
-Small, and now enumerated:
+Everything actionable found here is tracked as tech debt; this map stays the map.
 
-1. a test for `cpCanConnect` with no catalogue loaded;
-2. a test for `model.js` rejecting an unknown segmentation or redundancy;
-3. a test for `physical.js` rejecting a manifest with no `roles.sink.capability`;
-4. **a behaviour, not a test**: dragging an algorithm chip onto an array whose class does
-   not have that algorithm is accepted — the picker filters, the drag does not
-   (`tech-debt/algorithm-drop-ignores-class.md`). One predicate, two drop handlers.
-
-Plus the two decisions taken above: the animation gate, and the silent absence of the
-algorithm slot, which needs a voice rather than a refusal.
+| gap | tracked as |
+|---|---|
+| three refusals with no test (`cpCanConnect` with no catalogue, `model.js` on an unknown segmentation or redundancy, `physical.js` on a manifest with no `roles.sink.capability`) | [`refusal-tests-missing.md`](../tech-debt/refusal-tests-missing.md) |
+| the algorithm slot's silent absence | [`algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) |
+| "✓ build valid" alongside a hard violation, and the animation gate | [`build-valid-claimed-with-hard-violations.md`](../tech-debt/build-valid-claimed-with-hard-violations.md) |
+| the drag path accepting an algorithm the picker would filter | [`algorithm-drop-ignores-class.md`](../tech-debt/algorithm-drop-ignores-class.md) (already open) |
+| the power-loss warning §6 never got | [`power-loss-warning-promised-not-implemented.md`](../tech-debt/power-loss-warning-promised-not-implemented.md) |

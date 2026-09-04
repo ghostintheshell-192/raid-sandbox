@@ -70,6 +70,8 @@ fixes it.
 there is no `algorithms-data.test.js`. Content that no one reads is content no one
 checks — the silence and the breakage are the same fact.
 
+Tracked as [`tech-debt/algorithms-data-unvalidated.md`](../tech-debt/algorithms-data-unvalidated.md).
+
 ### The knowledge base reads one file
 
 `kb.js` loads `data/intro.yaml` and nothing else. None of the level or algorithm content
@@ -86,6 +88,8 @@ Two things follow from that:
 - **One of its four "key parameters" does not exist in the game.** *Rebuild time* is
   presented as a thing to reason about; nothing computes or shows it. It is, in fact, the
   quantity behind the most important warning in `raid5.yaml`'s `cons`.
+
+Both are tracked as [`tech-debt/kb-intro-diverges-from-spec.md`](../tech-debt/kb-intro-diverges-from-spec.md).
 
 ## Two promises the data makes and the game does not keep
 
@@ -118,6 +122,8 @@ This matters beyond the two levels, because **inverting span and group is exactl
 player builds 0+1 while believing they are building 10**. The conceptual mistake produces
 a measurably worse array, and the game currently shows no difference at all.
 
+Tracked as [`tech-debt/raid0plus1-difference-not-surfaced.md`](../tech-debt/raid0plus1-difference-not-surfaced.md).
+
 **2. The write hole.** `os-linux.yaml`:
 
 > *Without a battery-backed write cache (BBU) or UPS, a power loss during a write can
@@ -131,6 +137,8 @@ This one is worth more than a missing warning. It is the reason a hardware RAID
 controller has a protected cache — that is, the reason the expensive object in the
 physical layer is expensive. The game already models the RoC's protected cache as part of
 what makes it a RoC (ADR-001); it never says what the cache protects against.
+
+Tracked as [`tech-debt/power-loss-warning-promised-not-implemented.md`](../tech-debt/power-loss-warning-promised-not-implemented.md).
 
 ## The duplicated numbers
 
@@ -153,6 +161,8 @@ The engine is right and the panel shows the engine's number, so nothing is broke
 But the file's value is the level's *minimum*, not the array's tolerance — and the moment
 that field is displayed as-is, it starts lying. Whoever wires up the level prose should
 take the prose and leave these three numbers alone.
+
+Tracked as [`tech-debt/level-numbers-duplicated-untested.md`](../tech-debt/level-numbers-duplicated-untested.md).
 
 ## What is genuinely absent
 
@@ -185,3 +195,7 @@ and the game cannot compute.
 
 And one small repair does not need to wait for either: the three algorithm files that do
 not parse, plus the missing `algorithms-data.test.js` that would have caught them.
+
+Everything actionable in this census is tracked as tech debt — five new entries, listed in
+[`tech-debt/README.md`](../tech-debt/README.md). What stays here is the map: the counts,
+the two broken promises, and what is genuinely absent.
