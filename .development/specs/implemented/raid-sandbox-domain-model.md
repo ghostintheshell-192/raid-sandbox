@@ -451,9 +451,21 @@ a central rulebook — that's what keeps "add a file" honest.
 | **spans of unequal capacity under one parent** → a *mirror* parent keeps one copy's worth and is limited to the smallest span; a *striped* parent loses no capacity, but the tail of the volume is striped over fewer spans and is slower there | `drivers/md/raid0.c` + §5c | **soft** (added 2026-07-25) |
 | hot-spare capacity ≥ coerced capacity of failed disk | `terminologia.md` | runtime module — deferred |
 
-**[DECISION]** Prompt mode *blocks* on hard constraints step-by-step; sandbox *allows the
-mistake* and explains why it's invalid. Same validator, different enforcement timing. Soft
-constraints are warnings in both. Confirm.
+**[DECISION — CONFIRMED 2026-09-04]** Prompt mode *blocks* on hard constraints
+step-by-step; the sandbox *allows the mistake* and explains why it's invalid. Same
+validator, different enforcement timing. Soft constraints are warnings in both.
+
+Confirmed with one addition the original wording left open — *what*, in the sandbox, marks
+a build as not-yet-valid. **The animation is the reward, and the reward waits**: while a
+hard violation stands, the ▶ animate button is disabled (and says why), and the status bar
+reports the blocking violation instead of claiming the build is valid. The grid still
+draws — seeing the layout is information, not a prize — and soft violations gate nothing.
+
+So the sandbox does not block the mistake and does not hide it: it withholds the payoff.
+Before this, `firstIssue` (structural incompleteness) was the only thing the status bar
+consulted, so a build with a hard violation was announced as "✓ build valid" while the
+panel underneath explained why it was not — see
+[`reference/refusal-points.md`](../../reference/refusal-points.md).
 
 ---
 

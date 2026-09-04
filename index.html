@@ -363,9 +363,20 @@
       elIssue.hidden = true;
     }
 
+    // The grid is information: it draws whenever a placement exists, valid build or
+    // not. The ANIMATION is the reward, and the reward waits — while a hard violation
+    // stands the button stays off, and says why (a disabled control with no reason is
+    // the "it does not offer" refusal this project just finished censusing).
+    // Soft violations gate nothing: they describe builds that are real and merely
+    // suboptimal, so refusing to animate them would call them wrong.
+    const blocking = (r.violations && r.violations.hard) || [];
+
     if (r.placement && !r.placement.unsupported) {
       RaidRender.renderGrid(elGrid, r.placement);
-      btnAnimate.disabled = false;
+      btnAnimate.disabled = blocking.length > 0;
+      btnAnimate.title    = blocking.length
+        ? `Fix this first: ${blocking[0].message}`
+        : '';
     } else if (r.placement && r.placement.unsupported) {
       elGrid.textContent  = `No placement: ${r.placement.reason}`;
       btnAnimate.disabled = true;
@@ -397,9 +408,15 @@
     challengeUI.update(r);
 
     statusBar.classList.remove('sbc-status--error');   // a routine line is never an error
-    statusBar.textContent = r.firstIssue
-      ? `⚠ ${r.firstIssue}`
-      : (r.analysis ? '✓ build valid — click ▶ to animate the write' : '← drag a disk chip to start');
+    // "valid" has to mean valid. firstIssue only reports structural incompleteness,
+    // so without this the bar claimed a build was valid while the panel below listed a
+    // hard violation. The blocking line is the violation's OWN message: a second
+    // wording here would be one more thing that can drift from the rule that produced it.
+    statusBar.textContent =
+        r.firstIssue    ? `⚠ ${r.firstIssue}`
+      : blocking.length ? `✕ ${blocking[0].message}`
+      : r.analysis      ? '✓ build valid — click ▶ to animate the write'
+      :                   '← drag a disk chip to start';
 
     // Shared-atom bridge: reflect data-view disk changes in the physical view.
     if (physCtrl) physCtrl.render();
