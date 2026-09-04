@@ -223,24 +223,51 @@
   }
 
   // Disks serving parallel READS — striping spreads data; mirroring fans copies.
+  // A mirror's read can be served by ANY member, whatever that member is, so a
+  // mirror sums what its members can each deliver (a mirror of disks: one per
+  // copy; a mirror of striped legs: the whole width of every leg).
   function readParallelism(node) {
     if (isDisk(node)) return 1;
     if (node.segmentation === 'striped')
       return allArrays(node)
         ? sum(node.members.map(readParallelism))
         : node.members.length;
-    if (node.redundancy === 'mirror') return node.members.length;  // RAID 1: read from any copy
+    if (node.redundancy === 'mirror') return sum(node.members.map(readParallelism));
+    return 1;                                                       // JBOD: one disk
+  }
+
+  // Disks ONE logical read is spread over. Striping spreads it; mirroring does
+  // not — a single read is served by one member — so a mirror is exactly as wide
+  // as the member serving it. This is what separates "the array reads faster" from
+  // "the array serves more readers at once".
+  function readWidth(node) {
+    if (isDisk(node)) return 1;
+    if (node.segmentation === 'striped')
+      return allArrays(node)
+        ? sum(node.members.map(readWidth))
+        : node.members.length;
+    if (node.redundancy === 'mirror')
+      return node.members.reduce((w, m) => Math.max(w, readWidth(m)), 1);
     return 1;                                                       // JBOD: one disk
   }
 
   // Buckets quantize the formula (the formula is authoritative, the bucket is
   // presentation). writeClass keys on striping first (parallelism), then penalty.
-  /** @returns {PerfClass} */
+  /**
+   * readClass folds the two read quantities, never the shape of a named level:
+   *   width > 1            → 'high'   (one read is spread over several disks)
+   *   fanout > width       → 'medium' (no spread, but copies serve readers in parallel)
+   *   one disk in the tree → 'high'   (it reads like the single disk it is)
+   *   otherwise            → 'low'    (one disk at a time while the others sit idle)
+   * A bare disk is the 'high' baseline the multipliers are measured against.
+   * @returns {PerfClass}
+   */
   function readClass(node) {
     if (isDisk(node)) return 'high';
-    if (topIsStriped(node)) return 'high';                          // RAID 0/5/6/10/50/60
-    if (node.redundancy === 'mirror') return 'medium';             // RAID 1: fan across copies
-    return 'low';                                                  // JBOD
+    const width = readWidth(node);
+    if (width > 1) return 'high';
+    if (readParallelism(node) > width) return 'medium';
+    return countDisks(node) === 1 ? 'high' : 'low';
   }
 
   /** @returns {PerfClass} */

@@ -27,6 +27,19 @@ const span6  = () => M.array('striped', 'parity2', disks(4));
 const RAID50 = M.array('striped', 'none', [span5(), span5()]);
 const RAID60 = M.array('striped', 'none', [span6(), span6()]);
 
+// Nested mirrors, the two nestings of the same 4 (then 8) disks.
+const stripeLeg = (k) => M.array('striped', 'none', disks(k));    // a RAID 0 leg
+const mirrorPair = () => M.array('linear', 'mirror', disks(2));   // a RAID 1 pair
+const RAID0plus1   = M.array('linear',  'mirror', [stripeLeg(2), stripeLeg(2)]);
+const RAID1plus0   = M.array('striped', 'none',   [mirrorPair(), mirrorPair()]);
+const RAID0plus1_8 = M.array('linear',  'mirror', [stripeLeg(4), stripeLeg(4)]);
+const RAID1plus0_8 = M.array('striped', 'none',   [mirrorPair(), mirrorPair(), mirrorPair(), mirrorPair()]);
+const RAID51 = M.array('linear', 'mirror', [M.array('striped', 'parity1', disks(3)),
+                                            M.array('striped', 'parity1', disks(3))]);
+const RAID61 = M.array('linear', 'mirror', [M.array('striped', 'parity2', disks(4)),
+                                            M.array('striped', 'parity2', disks(4))]);
+const ONEDISK = M.array('striped', 'none', disks(1));
+
 // ---------------------------------------------------------------------------
 console.log('\n[1] Write penalty W (random)');
 
@@ -92,6 +105,48 @@ test('analyze().readClass === performance.random.readClass', () => {
   const a = M.analyze(RAID5);
   eq(a.readClass, a.performance.random.readClass);
   eq(a.writeClass, a.performance.random.writeClass);
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[7] Mirror of arrays — a read is served by ANY member, at that member’s width');
+
+// Derivation: a mirror holds identical copies, so a read may go to any leg and
+// every leg can be reading at once → readMult = Σ(leg readMult). One read still
+// goes to ONE leg, so what it is spread over is that leg's width (2 of 4 here) —
+// still > 1, so RAID 0+1 reads in the same class as RAID 1+0, not below it.
+test('RAID 0+1 (2 legs × 2-disk stripe) → readMult 2+2 = 4, same as RAID 1+0', () => {
+  eq(M.performance(RAID0plus1).random.readMult, 4);
+  eq(M.performance(RAID1plus0).random.readMult, 4);
+});
+test('RAID 0+1 and RAID 1+0 over 4 disks land in the same read class (high)', () => {
+  eq(M.analyze(RAID0plus1).readClass, 'high');
+  eq(M.analyze(RAID0plus1).readClass, M.analyze(RAID1plus0).readClass);
+});
+test('RAID 0+1 and RAID 1+0 over 8 disks agree too → readMult 8, read high', () => {
+  eq(M.performance(RAID0plus1_8).random.readMult, 8);
+  eq(M.performance(RAID1plus0_8).random.readMult, 8);
+  eq(M.analyze(RAID0plus1_8).readClass, M.analyze(RAID1plus0_8).readClass);
+  eq(M.analyze(RAID0plus1_8).readClass, 'high');
+});
+// Same rule, parity members: each RAID-5 leg is striped over 3 disks, so a read
+// is spread over 3 (> 1 → high) and both legs can serve at once (3+3 = 6).
+test('RAID 51 (mirror over 3-disk RAID-5 spans) → readMult 6, read high', () => {
+  eq(M.performance(RAID51).random.readMult, 6);
+  eq(M.analyze(RAID51).readClass, 'high');
+});
+test('RAID 61 (mirror over 4-disk RAID-6 spans) → readMult 8, read high', () => {
+  eq(M.performance(RAID61).random.readMult, 8);
+  eq(M.analyze(RAID61).readClass, 'high');
+});
+// The other side of the rule: a mirror of DISKS fans copies out but spreads no
+// single read (width 1), which is what keeps RAID 1 at medium — see [3].
+test('RAID 1 three-way → readMult 3 but still read medium (width stays 1)', () => {
+  const R1x3 = M.array('linear', 'mirror', disks(3));
+  eq(M.performance(R1x3).random.readMult, 3);
+  eq(M.analyze(R1x3).readClass, 'medium');
+});
+test('a one-disk array reads like the disk it is → high, not low', () => {
+  eq(M.analyze(ONEDISK).readClass, 'high');
 });
 
 // ---------------------------------------------------------------------------
