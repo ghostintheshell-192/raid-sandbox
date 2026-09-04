@@ -1,6 +1,7 @@
 # The agnostic engine — how the domain moved out of the code
 
-**Status:** IMPLEMENTED — five steps, all merged to `main` on 2026-09-02
+**Status:** IMPLEMENTED — five steps merged to `main` on 2026-09-02, plus a sixth (the
+§6 constraints) on 2026-09-05
 **Decision:** [ADR-002](../../reference/decisions/002-the-engine-holds-no-domain-facts.md)
 **Origin:** the audit [`reference/engine-robustness-and-extraction.md`](../../reference/engine-robustness-and-extraction.md) (2026-09-01)
 **Realises:** domain-model spec §5, §5a, §5c (see §5d for the plan in short)
@@ -21,6 +22,8 @@ Each row is a fact the game needs. Before, the engine knew it. Now, the engine r
 | Which shape is which RAID level | a hand-written recognizer function | `shape:` in `data/raid-levels/*.yaml` |
 | How many disks a level needs | a `MIN_DISKS` constant | `minDisks:` in the level's file |
 | Why a level is what it is (the "why" text) | strings in code | `reason:` in the level's file |
+| Which array layouts exist only under one engine | a `MDADM_LAYOUTS` set + `os === 'os-linux'` in `validator.js` | `layout:<algorithm>` in that engine's `provides:`, explained by its `layouts.reason` |
+| Where a disk of a given protocol may NOT land | `protocol === 'NVMe' && target === 'backplane'` in `validator.js` | the same `accepts:` the catalogue enforces, read back |
 
 ## How it works now
 
@@ -45,7 +48,7 @@ In the browser, `src/sandbox/data-loader.js` is the single fetch-and-assemble pa
 every resource family. The headless tests get the same catalogue from JS mirrors in
 `tests/fixtures/`, kept honest by data tests that read the real YAML.
 
-## The five steps
+## The steps
 
 Each was a branch, tried in the browser by Valentina, then merged.
 
@@ -111,6 +114,33 @@ runtime). Zero expressions changed — comments only. `jsconfig.json` keeps `che
 files opt in one at a time; `bash .development/automation/typecheck.sh` runs it. The CI job
 is not a required check, because it needs the network for `npx`.
 
+**6 — The constraints read the catalogue too** (`refactor/validator-facts-in-data`, 2026-09-05)
+
+A late addition, after the five: the §6 rules were the last place in the engine that named
+components. Two of them did, and both now ask a catalogue instead.
+
+- **Cross-axis near/far/offset.** The rule held a list of the three mdadm layouts and the
+  test `raidType === 'software' && os === 'os-linux'`. Both facts moved into
+  `os-linux.yaml`: it claims `layout:near`, `layout:far`, `layout:offset` in its
+  `provides:`, and carries the sentence to show in a `layouts.reason` (a `{label}` /
+  `{algorithm}` / `{raidType}` template, the same convention as a level's `{n}`). The rule
+  is now a comparison and nothing else — *does the engine on this path claim the layout
+  the array asked for?* A layout no component claims is unrestricted, so `left-symmetric`
+  and the other parity rotations need no entry anywhere. The half the rule was missing is
+  in `physical.js`: `buildView` now reports `engineComponentId`, **which** object's verdict
+  the path carries — the RoC on a hardware path, the OS on a software one. Asking that
+  object what it offers is a sharper question than reading the `raidType` string.
+- **`nvme-backplane`.** Kept, not retired, and generalised: it reads the catalogue's
+  `accepts:` relation, so it guards the fact the catalogue enforces instead of restating
+  it. It is still structurally dead (`cpAutoRoute` only routes disks to acceptors) and
+  still a guard against a routing regression. Its code stays `nvme-backplane` because five
+  documents cite it by that name; its message is now derived from the data and no longer
+  names a protocol and a component in code.
+
+`validate(tree, physical, { levels, catalog })` — the component catalogue goes in the way
+the level catalogue always did. Both are optional: with no catalogue the rules that need
+one stand down rather than guess.
+
 ## Two lessons from the checkpoints
 
 Both were found by Valentina trying the thing in a browser, and both generalise:
@@ -128,15 +158,18 @@ Both were found by Valentina trying the thing in a browser, and both generalise:
 Recorded in ADR-002 as known exceptions, repeated here so the next reader does not have
 to guess whether they were missed:
 
-- `validator.js` names `'os-linux'`, `'backplane'` and `'NVMe'` in three rules. A
-  data-driven rule registry is on the roadmap.
 - `layout.js` keeps the placement algorithms in code, deliberately: how parity rotates is
   a computation bound to the Linux `md` source by the golden tables, not a fact about an
   object.
+- In `validator.js`, only vocabulary and identifiers: the capability prefix `layout:`, and
+  the rule codes `nvme-backplane` and `backplane-diversity`. Those two codes are stable
+  ids other documents cite, not facts the engine reasons with — but
+  `backplane-diversity` is still a dormant rule named after a component, and is worth
+  renaming when the diversity module (§9.4) gives it a body.
 
 ## Verification
 
-16 headless suites green, `typecheck.sh` clean, and each step tried in the browser before
+17 headless suites green, `typecheck.sh` clean, and each step tried in the browser before
 merging. The step-by-step diary — every checkpoint, every correction found in the browser
 — is the living plan `2026-09-02-0045-agnostic-engine-refactor-plan.md`, local to
 `.memory-bank/`; this document is what survives it.

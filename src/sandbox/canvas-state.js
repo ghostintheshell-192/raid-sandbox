@@ -553,9 +553,12 @@
 
     // §6 constraints: a pure module, fed a DERIVED physical view, only ATTACHES
     // its output here (same loose bolt-on pattern as the physical recognizer).
+    // Both catalogues go in: the rules read their facts from the data files
+    // rather than restating them (ADR-002), so without a catalogue the rules
+    // that need one simply do not fire.
     const violations = Validator.validate(tree,
       Physical.buildView(state.cpNodes, state.cpEdges, disks, cp, state.catalog),
-      { levels: state.levels });
+      { levels: state.levels, catalog: state.catalog });
 
     return {
       tree, analysis, placement, rootCount, incomplete, firstIssue: null,

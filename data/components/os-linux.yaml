@@ -12,6 +12,14 @@ provides:
   - raid-engine          # the RAID engine is the OS kernel (md driver or ZFS)
   - software-raid
   - os                   # the end of the control path (index.yaml `roles.sink`)
+  # The array layouts this engine offers (§6 cross-axis, §9.7). near/far/offset
+  # are mdadm's own RAID 10 layouts: they exist only where the md driver builds
+  # the array, i.e. when THIS component is the engine on the path. A layout no
+  # component claims is unrestricted and the validator never questions it, so
+  # left-symmetric & co. need no entry anywhere.
+  - layout:near
+  - layout:far
+  - layout:offset
 
 requires:
   - hba                  # needs individual disks visible (not a Virtual Drive)
@@ -33,6 +41,15 @@ verdict:
   reason: >-
     No RAID engine sits on the path — Linux and the CPU compute the layout
     themselves, with no RAID hardware involved.
+
+# What a player is told when an array asks for one of the `layout:` capabilities
+# above on a path where this component is NOT the engine. Same division as
+# `verdict`: the capability says what is offered, `reason` says why in words.
+# {label}, {algorithm} and {raidType} are filled in by the validator.
+layouts:
+  reason: >-
+    {label} uses the "{algorithm}" layout, which only exists under Linux
+    software RAID (mdadm). On {raidType} RAID, build a nested RAID 1+0 instead.
 
 ui:
   label: "Linux"

@@ -99,6 +99,7 @@ console.log('\n[3] the headless fixture mirrors the YAML');
 const modelFields = (def) => JSON.stringify({
   id: def.id, provides: def.provides || [], ports: def.ports,
   verdict: def.verdict || null,
+  layouts: def.layouts || null,
   ui: { label: (def.ui || {}).label, badge: (def.ui || {}).badge },
 });
 
@@ -140,6 +141,45 @@ test('every non-sink component with a verdict has an output port, and the sink c
     }
   }
   assert(sinks >= 1, 'no component provides the sink capability');
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[5] the layout capabilities are complete');
+
+// `layout:<algorithm>` in `provides:` is what makes the cross-axis rule (§6/§9.7)
+// data-driven: a claimed layout is legal only where its claimant is the engine,
+// and the claimant's `layouts.reason` is the sentence the player reads. A claim
+// without a reason would fire nothing, which looks exactly like no rule at all.
+const LAYOUT_CAP = 'layout:';
+const layoutCaps = (def) => (def.provides || []).filter((c) => c.startsWith(LAYOUT_CAP));
+
+test('every component claiming a layout also explains it (layouts.reason)', () => {
+  let claimants = 0;
+  for (const def of realManifest.components) {
+    if (!layoutCaps(def).length) continue;
+    claimants++;
+    assert(def.layouts && typeof def.layouts.reason === 'string' && def.layouts.reason.length > 20,
+      `${def.id}: claims ${layoutCaps(def).join(', ')} but declares no layouts.reason`);
+    for (const ph of ['{label}', '{algorithm}', '{raidType}'])
+      assert(def.layouts.reason.includes(ph), `${def.id}: layouts.reason has no ${ph}`);
+  }
+  assert(claimants >= 1, 'no component claims any layout — the cross-axis rule can never fire');
+});
+
+test('a layouts.reason without a layout claim would be dead text', () => {
+  for (const def of realManifest.components)
+    if (def.layouts) assert(layoutCaps(def).length,
+      `${def.id}: declares layouts.reason but claims no layout:<algorithm>`);
+});
+
+// The layouts a level names as its own must be claimed by somebody, or the game
+// offers a layout in the UI that no path can legally build.
+test('the mdadm RAID 10 layouts are claimed by exactly one component', () => {
+  const claimed = createCatalog(realManifest);
+  for (const algo of ['near', 'far', 'offset']) {
+    const who = claimed.providersOf(LAYOUT_CAP + algo);
+    assert(who.length === 1, `${algo} is claimed by ${who.length} components: ${who.join(', ')}`);
+  }
 });
 
 finish();

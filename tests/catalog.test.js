@@ -49,6 +49,15 @@ test('ports, provides and the port relation are readable', () => {
   eq(c.connectsTo('unknown').length, 0);
 });
 
+test('providersOf reads the provides relation backwards, in manifest order', () => {
+  const m = manifest();
+  m.components[2].provides = ['end', 'feed'];   // two claimants for the same capability
+  const c = createCatalog(m);
+  eq(c.providersOf('feed').join(','), 'source,sink');
+  eq(c.providersOf('end').join(','), 'sink');
+  eq(c.providersOf('nobody-claims-this').length, 0);   // unclaimed → empty, never undefined
+});
+
 test('acceptorsOf lists every (component, port) that accepts the protocol', () => {
   const c = createCatalog(manifest());
   const acc = c.acceptorsOf('X');

@@ -120,9 +120,11 @@ decision.
    `engineNodeId` in the eval result, `highlight.js`. **M**
 5. **Technical queue** — the level's `reason` in the results panel on success (today
    only on failure); RAID 0+1 reads "medium" (a linear mirror's read class counts
-   legs, not the stripe width inside them — `model.js` readClass); the validator's
-   last three ids in code (`'os-linux'`, `'backplane'`, `'NVMe'` — a data-driven rule
-   registry, the plan's step 3b); `algorithm-drop-ignores-class`; the physical
+   legs, not the stripe width inside them — `model.js` readClass);
+   ~~the validator's last three ids in code~~ (done 2026-09-05,
+   `refactor/validator-facts-in-data`: the layouts are `layout:<algorithm>`
+   capabilities in the engine's own file, the disk route reads `accepts:`);
+   `algorithm-drop-ignores-class`; the physical
    layer's missing tap-to-picker (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`);
    `touch-dnd.js` re-scope now that tap-to-build ships. **S each**
 6. **Challenges on the physical axis** — the requirement vocabulary knows only the

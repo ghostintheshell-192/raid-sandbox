@@ -6,9 +6,15 @@
  * physical view), returns the §6 constraint violations. No DOM, no canvas state.
  * This is what makes it testable in Node and reusable by checkChallenge (Stage D).
  *
- *   validate(tree, physical, { levels }) → { hard: Violation[], soft: Violation[] }   // never null
- *   `levels` is the level catalogue (levels.js): the rules that need a level's
- *   name or minimum read it there instead of carrying a table of their own.
+ *   validate(tree, physical, { levels, catalog })
+ *     → { hard: Violation[], soft: Violation[] }   // never null
+ *   `levels` is the level catalogue (levels.js) and `catalog` the component
+ *   catalogue (catalog.js). NO RULE CARRIES A TABLE OF ITS OWN (ADR-002): a rule
+ *   that needs a level's name or minimum reads the level catalogue, and a rule
+ *   that needs to know what a piece of hardware offers or accepts asks the
+ *   component catalogue. Neither the components nor the layouts are named here.
+ *   Both are optional: without a catalogue the rules that need one stand down
+ *   rather than guess.
  *
  *   Violation = {
  *     code,                       // stable id, e.g. 'min-disks'
@@ -32,7 +38,10 @@
  * `physical` is a DERIVED view (built by canvas-state from _recognizePhysicalLayer +
  * the disk routing), never the raw cp* Maps — so validator and recognizer can't
  * disagree about what the control path is:
- *   { raidType: 'hardware'|'software'|'fake'|null, os, engineCount, diskRoutes:[{id,protocol,target}] }
+ *   { raidType, os, engineCount, engineComponentId, diskRoutes:[{id,protocol,target}] }
+ * `raidType` is whatever value the data declared (hardware/software/fake here);
+ * `engineComponentId` is WHICH object declared it, which is what a rule asks when
+ * it wants to know what this path can actually compute.
  */
 
 (function (/** @type {any} */ root) {   // the UMD host: window, or Node's global
@@ -47,6 +56,19 @@
 
   const uniqSorted = (xs) => [...new Set(xs)].sort((x, y) => x - y);
   const fmt        = (n) => Math.round(n * 100) / 100;
+
+  /**
+   * Fill a `{placeholder}` template that came from a data file with the values
+   * only the running build knows. Same convention as the level catalogue's
+   * `reasonFor` ({n}): the sentence is the object's, the numbers are ours.
+   * An unknown placeholder is left visible rather than blanked — a data typo
+   * should look like one.
+   */
+  const fill = (template, vars) =>
+    template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+
+  /** How a component is NAMED in a message: whatever its own file calls it. */
+  const labelOf = (catalog, id) => ((catalog.get(id) || {}).ui || {}).label || id;
 
   /**
    * Collect every array node (depth-first) together with a STRUCTURAL LABEL.
@@ -93,17 +115,26 @@
     return out;
   }
 
-  // NVMe bypasses the backplane (and controller). In v1 cpAutoRoute enforces this
-  // by construction (NVMe → PCIe); the check is a real guard against a routing
-  // regression and is unit-testable on its own.
-  function checkNvmeBackplane(tree, physical) {
+  // A disk may only sit where something accepts its protocol — the `accepts:`
+  // lists on the components' input ports (NVMe on the PCIe bus, SATA/SAS on the
+  // backplane, …). The rule reads THAT relation instead of restating it, so it
+  // guards the fact the catalogue enforces rather than a second opinion about it.
+  //
+  // In v1 cpAutoRoute routes disks only to acceptors, so this cannot fire; it is
+  // a guard against a routing regression and is unit-testable on its own. The
+  // registry keeps its historical code, `nvme-backplane`, because five documents
+  // cite it by that name (refusal-points.md, physical-model-fidelity.md, …).
+  function checkDiskRouteAccepted(tree, physical, ctx) {
+    if (!ctx.catalog) return null;
     const out = [];
     for (const r of physical.diskRoutes || []) {
-      if (r.protocol === 'NVMe' && r.target === 'backplane')
-        out.push({
-          message: 'NVMe drives talk straight to the PCIe bus — they bypass the backplane.',
-          nodeId: r.id,
-        });
+      if (!r.target) continue;                        // unrouted → structural, not §6
+      if (ctx.catalog.acceptorsOf(r.protocol).some((a) => a.componentId === r.target)) continue;
+      out.push({
+        message: `${r.protocol} drives are not accepted by the ${labelOf(ctx.catalog, r.target)} `
+          + '— this disk cannot be wired into it.',
+        nodeId: r.id,
+      });
     }
     return out;
   }
@@ -120,24 +151,40 @@
     return null;
   }
 
-  // Cross-axis (§6, §9.7): near/far/offset are mdadm layouts — they only exist under
-  // Linux software RAID. On hardware/fake build a nested RAID 1+0; Windows Storage
-  // Spaces uses its own column/copy scheme. Only fires when the control path is
-  // DETERMINED and incompatible (an unbuilt path is the recognizer's job, not ours).
-  const MDADM_LAYOUTS = new Set(['near', 'far', 'offset']);
+  // Cross-axis (§6, §9.7): some array layouts exist only where a particular engine
+  // computes the array. Which layouts, and which engine, is DATA: a component
+  // declares `layout:<name>` in its `provides:` for every layout it offers, and a
+  // `layouts.reason` for what to tell a player who asks for one elsewhere.
+  //
+  // The rule is the comparison, and only the comparison:
+  //   - a layout no component claims is unrestricted (left-symmetric & co. need
+  //     no entry anywhere) — silence, not a violation;
+  //   - a claimed layout is legal exactly when the engine ON THIS PATH claims it.
+  // `layout:` is a vocabulary prefix for the capability namespace, not a fact
+  // about any object — the same standing as 'striping' or 'mirroring' (ADR-002).
+  // Only fires when the control path is DETERMINED (an unbuilt path is the
+  // recognizer's job, not ours).
+  const LAYOUT_CAP = 'layout:';
 
   function checkCrossAxisLayout(tree, physical, ctx) {
     if (!physical.raidType) return null;              // path not determined yet → don't nag
-    const linuxSoftware = physical.raidType === 'software' && physical.os === 'os-linux';
-    if (linuxSoftware) return null;
+    if (!ctx.catalog) return null;
+    const engineId = physical.engineComponentId || null;
+    const offered  = new Set(engineId ? ctx.catalog.provides(engineId) : []);
     const out = [];
     for (const { node: a, label } of ctx.arrays) {
-      if (MDADM_LAYOUTS.has(a.algorithm))
-        out.push({
-          message: `${label} uses the "${a.algorithm}" layout, which only exists under Linux `
-            + `software RAID (mdadm). On ${physical.raidType} RAID, build a nested RAID 1+0 instead.`,
-          nodeId: a.id,
-        });
+      if (!a.algorithm) continue;
+      const cap = LAYOUT_CAP + a.algorithm;
+      if (offered.has(cap)) continue;                 // this path offers it
+      const providers = ctx.catalog.providersOf(cap);
+      if (!providers.length) continue;                // nobody claims it → unrestricted
+      const owner = ctx.catalog.get(providers[0]);    // first claimant explains it
+      const reason = (owner && owner.layouts && owner.layouts.reason) || null;
+      if (!reason) continue;                          // claimed but unexplained → say nothing
+      out.push({
+        message: fill(reason, { label, algorithm: a.algorithm, raidType: physical.raidType }),
+        nodeId: a.id,
+      });
     }
     return out;
   }
@@ -234,7 +281,7 @@
       source: 'diversity §9.4',          run: checkBackplaneDiversity },
 
     { code: 'nvme-backplane',            severity: 'hard', layer: 'physical',
-      source: 'protocolli-dischi.md §6', run: checkNvmeBackplane },
+      source: 'protocolli-dischi.md §6', run: checkDiskRouteAccepted },
 
     { code: 'engine-single-point',       severity: 'hard', layer: 'physical',
       source: 'RIEPILOGO image §6',      run: checkEngineSinglePoint },
@@ -255,7 +302,7 @@
   /**
    * @param {ArrayNode | null} tree      the compiled build, or null (physical rules still run)
    * @param {Partial<PhysicalView>} [physical]  the derived physical view (physical.js buildView)
-   * @param {{ levels?: Levels | null }} [opts]
+   * @param {{ levels?: Levels | null, catalog?: Catalog | null }} [opts]
    * @returns {Violations}
    */
   function validate(tree, physical = {}, opts = {}) {
@@ -263,6 +310,7 @@
     const ctx = {
       arrays: tree ? walkArrays(tree, [], []) : [],   // [{ node, label }]
       levels,                                          // the level catalogue (minimums, names)
+      catalog: opts.catalog || null,                   // the component catalogue (provides, accepts)
       // Recognized once here rather than per rule: the phase-2b physical rules
       // (fake RAID is limited to 0/1/5/10, …) all need the level, and a rule
       // deriving it on its own could disagree with the panel.
@@ -281,7 +329,7 @@
       for (const f of (Array.isArray(found) ? found : [found])) {
         if (!f) continue;
         const nodeId = f.nodeId ?? null;
-        const key    = `${rule.code} ${nodeId}`;
+        const key    = `${rule.code}\0${nodeId}`;
         if (seen.has(key)) continue;
         seen.add(key);
         flat.push({

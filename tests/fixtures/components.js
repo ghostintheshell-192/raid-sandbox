@@ -7,7 +7,7 @@
  * this JS mirror instead — and `components-data.test.js` (python3 + pyyaml, the
  * repo's YAML reader) asserts that the mirror and the YAML agree on every MODEL
  * field: ids and their order, `provides`, `ports` (dir, type, accepts),
- * `verdict`, and the manifest's `roles` and `portTypes`. UI fields (icon,
+ * `verdict`, `layouts`, and the manifest's `roles` and `portTypes`. UI fields (icon,
  * colour, label, badge, chip, tooltip, descriptions) are not mirrored: nothing
  * headless reads them — except `ui.label`/`ui.badge`, which the recognizer
  * uses to NAME a piece in its diagnostics, so those two are mirrored too.
@@ -59,9 +59,10 @@ module.exports = {
               { id: 'out', dir: 'out', type: 'pcie' }] },
 
     { id: 'os-linux',
-      provides: ['raid-engine', 'software-raid', 'os'],
+      provides: ['raid-engine', 'software-raid', 'os', 'layout:near', 'layout:far', 'layout:offset'],
       verdict: { raidType: 'software',
                  reason: 'No RAID engine sits on the path — Linux and the CPU compute the layout themselves, with no RAID hardware involved.' },
+      layouts: { reason: '{label} uses the "{algorithm}" layout, which only exists under Linux software RAID (mdadm). On {raidType} RAID, build a nested RAID 1+0 instead.' },
       ui: { label: 'Linux' },
       ports: [{ id: 'in',  dir: 'in',  type: 'cpu' }] },
 

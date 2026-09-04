@@ -6,10 +6,13 @@
 const M = require('../src/engine/model.js');
 const levels = require('../src/engine/levels.js')
   .createLevels(require('./fixtures/raid-levels.js'));   // the level catalogue: data, mirrored from YAML
-// validate() takes the level catalogue as its third argument; the shim passes it
-// so every call below reads as before.
+// validate() takes the two catalogues in its third argument; the shim passes them
+// so every call below reads as before. Neither is optional in the game: the rules
+// read their domain facts from the data files, never from a table of their own.
+const catalog = require('../src/engine/catalog.js')
+  .createCatalog(require('./fixtures/components.js'));   // the component catalogue: data, mirrored from YAML
 const V0 = require('../src/engine/validator.js');
-const V  = { ...V0, validate: (tree, physical) => V0.validate(tree, physical, { levels }) };
+const V  = { ...V0, validate: (tree, physical) => V0.validate(tree, physical, { levels, catalog }) };
 const { test, assert, eq, finish } = require('./test-helpers.js');
 const hasCode = (list, code) => list.some((v) => v.code === code);
 
@@ -57,33 +60,97 @@ test('striped+mirror with 2 disks → min-disks (RAID 10 needs 4)', () => {
 // ---------------------------------------------------------------------------
 console.log('\n[3] Cross-axis near/far/offset (hard) — §9.7');
 
+// The rule owns no list of layouts and no component id: os-linux.yaml claims
+// `layout:near|far|offset` in its `provides:` and explains them in `layouts.reason`,
+// and the rule only asks whether the ENGINE ON THIS PATH claims what the array
+// asked for. `engineComponentId` is the object whose verdict the path carries
+// (physical.js buildView) — the RoC on a hardware path, the OS on a software one.
+const path = (raidType, engineComponentId, os) =>
+  ({ raidType, os: os ?? engineComponentId, engineComponentId });
+const raid10 = (algo) => M.array('striped', 'mirror', disks(4), algo);
+
 test('near layout on hardware RAID → cross-axis', () => {
-  const tree = M.array('striped', 'mirror', disks(4), 'near');
-  const r = V.validate(tree, { raidType: 'hardware', os: null });
+  const r = V.validate(raid10('near'), path('hardware', 'engine-roc', null));
   assert(hasCode(r.hard, 'cross-axis-near-far-offset'));
 });
 test('near layout on Linux software RAID → clean', () => {
-  const tree = M.array('striped', 'mirror', disks(4), 'near');
-  const r = V.validate(tree, { raidType: 'software', os: 'os-linux' });
+  const r = V.validate(raid10('near'), path('software', 'os-linux'));
   assert(!hasCode(r.hard, 'cross-axis-near-far-offset'));
 });
+test('near layout on Windows software RAID → cross-axis (software is not enough)', () => {
+  const r = V.validate(raid10('near'), path('software', 'os-windows'));
+  assert(hasCode(r.hard, 'cross-axis-near-far-offset'));
+});
+test('near layout on fake RAID under Linux → cross-axis (the chip is the engine)', () => {
+  const r = V.validate(raid10('near'), path('fake', 'engine-metadata', 'os-linux'));
+  assert(hasCode(r.hard, 'cross-axis-near-far-offset'));
+});
+test('far and offset behave like near — the rule reads the claims, not a list', () => {
+  for (const algo of ['far', 'offset']) {
+    assert(hasCode(V.validate(raid10(algo), path('hardware', 'engine-roc', null)).hard,
+      'cross-axis-near-far-offset'), `${algo} was not flagged on hardware RAID`);
+    assert(!hasCode(V.validate(raid10(algo), path('software', 'os-linux')).hard,
+      'cross-axis-near-far-offset'), `${algo} was flagged under Linux`);
+  }
+});
+test('a layout no component claims is unrestricted — left-symmetric on hardware is clean', () => {
+  const tree = M.array('striped', 'parity1', disks(4), 'left-symmetric');
+  const r = V.validate(tree, path('hardware', 'engine-roc', null));
+  assert(!hasCode(r.hard, 'cross-axis-near-far-offset'));
+});
+test('the message is the claimant’s own sentence, filled in with this build', () => {
+  const r = V.validate(raid10('far'), path('hardware', 'engine-roc', null));
+  const v = r.hard.find((x) => x.code === 'cross-axis-near-far-offset');
+  eq(v.message, 'This array uses the "far" layout, which only exists under Linux software '
+    + 'RAID (mdadm). On hardware RAID, build a nested RAID 1+0 instead.');
+});
 test('near layout with no control path yet → not flagged (recognizer’s job)', () => {
-  const tree = M.array('striped', 'mirror', disks(4), 'near');
-  const r = V.validate(tree, { raidType: null });
+  const r = V.validate(raid10('near'), { raidType: null });
+  assert(!hasCode(r.hard, 'cross-axis-near-far-offset'));
+});
+test('without a component catalogue the rule stands down rather than guesses', () => {
+  const r = V0.validate(raid10('near'), path('hardware', 'engine-roc', null), { levels });
   assert(!hasCode(r.hard, 'cross-axis-near-far-offset'));
 });
 
 // ---------------------------------------------------------------------------
 console.log('\n[4] Physical constraints (hard)');
 
+// `nvme-backplane` keeps its historical code (five documents cite it) but no
+// longer carries the pair it was named after: it asks the catalogue's `accepts:`
+// whether the component a disk landed on takes that protocol at all.
+const routed = (protocol, target) => ({ diskRoutes: [{ id: 'x', protocol, target }] });
+
 test('NVMe disk wired to backplane → nvme-backplane', () => {
   const tree = M.array('striped', 'none', disks(2));
-  const r = V.validate(tree, { diskRoutes: [{ id: 'x', protocol: 'NVMe', target: 'backplane' }] });
+  const r = V.validate(tree, routed('NVMe', 'backplane'));
   assert(hasCode(r.hard, 'nvme-backplane'));
+  eq(r.hard.find((v) => v.code === 'nvme-backplane').message,
+     'NVMe drives are not accepted by the Backplane — this disk cannot be wired into it.');
 });
 test('NVMe disk on PCIe → clean', () => {
   const tree = M.array('striped', 'none', disks(2));
-  const r = V.validate(tree, { diskRoutes: [{ id: 'x', protocol: 'NVMe', target: 'pcie' }] });
+  const r = V.validate(tree, routed('NVMe', 'pcie'));
+  assert(!hasCode(r.hard, 'nvme-backplane'));
+});
+test('SATA disk on the backplane → clean (the backplane accepts it)', () => {
+  const tree = M.array('striped', 'none', disks(2));
+  const r = V.validate(tree, routed('SATA', 'backplane'));
+  assert(!hasCode(r.hard, 'nvme-backplane'));
+});
+test('SATA disk on PCIe → flagged, on the same reading as NVMe/backplane', () => {
+  const tree = M.array('striped', 'none', disks(2));
+  const r = V.validate(tree, routed('SATA', 'pcie'));
+  assert(hasCode(r.hard, 'nvme-backplane'), 'the rule is the accepts: relation, not one pair');
+});
+test('an unrouted disk is not a §6 violation (structural, canvas-state’s job)', () => {
+  const tree = M.array('striped', 'none', disks(2));
+  const r = V.validate(tree, routed('NVMe', null));
+  assert(!hasCode(r.hard, 'nvme-backplane'));
+});
+test('without a component catalogue the route rule stands down', () => {
+  const tree = M.array('striped', 'none', disks(2));
+  const r = V0.validate(tree, routed('NVMe', 'backplane'), { levels });
   assert(!hasCode(r.hard, 'nvme-backplane'));
 });
 test('two engine sources → engine-single-point', () => {
