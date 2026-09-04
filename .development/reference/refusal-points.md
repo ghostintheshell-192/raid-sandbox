@@ -1,0 +1,166 @@
+# Refusal points — where the game says no, and whether it says why
+
+**Date:** 2026-09-04
+**Roadmap:** item 1 (this document *is* the deliverable)
+**Companion:** [`unspoken-content.md`](unspoken-content.md) — what the game knows and never says
+
+Every place the sandbox declines something the player tried, or could have tried.
+The point of listing them together is not completeness for its own sake: it is to see
+whether the *reason* for each refusal ever reaches the player.
+
+## Three ways to say no
+
+The game refuses in three different ways, and the difference decides whether an
+explanation has anywhere to live.
+
+| | what happens | is there an event to attach an explanation to? |
+|---|---|---|
+| **1. It prevents** | the action does not happen — the wire will not form | yes: the player tried something |
+| **2. It does not offer** | the option is not there at all | **no** — an absence has no moment |
+| **3. It accepts and explains** | the state exists, the panel reports a violation | yes, and it already speaks |
+
+Mechanism 3 is the best one wherever it applies: the player is allowed to make the
+mistake and is told why it is one. Mechanism 2 is the worst — the player cannot even
+form the question, because nothing tells them there was something to ask.
+
+## 1. It prevents — structural refusals
+
+The engine cannot hold the state, so the action is refused. Every one of these
+**produces a written reason that the player never sees**; the code says so explicitly,
+in two places: *"the reason is written for a developer or a test, not for the player."*
+
+| where | refuses | test |
+|---|---|---|
+| `catalog.canConnect` | unknown component · no such port · the source is not an output · the target is not an input · incompatible port types | ✅ `catalog.test.js` [2] |
+| `cpCanConnect` | no catalogue loaded · a component wired to itself · a disk wired by hand · unknown node | ⚠️ all but "no catalogue loaded" |
+| `cpConnect` | **throws** when `cpCanConnect` says no, so no test can assert on a canvas no player could draw | ✅ |
+| `cpDisconnect` | refuses to delete a *derived* edge (disk → acceptor): routing is domain truth, not a drawing | ✅ |
+| `loadDocument` | unknown version · a member naming no node · an array as its own member · a node claimed by two arrays · a wire to an absent component · a wire the catalogue forbids · corrupt base64 — **and leaves the state empty, never half-loaded** | ✅ `build-document.test.js` [2] |
+| `createCatalog` / `createLevels` | a malformed manifest, 6 and 7 cases respectively | ✅ `catalog.test.js` [3], `levels.test.js` [2] |
+| `model.js` | unknown segmentation or redundancy | ❌ |
+| `physical.js` | `roles.sink.capability` missing from the manifest | ❌ (checked against the real data, never as a refusal) |
+
+### The ones that should stay silent
+
+Most of the list above is **true of the formalism, not of RAID**: an output port is not
+an input, a component is not wired to itself, a node id does not exist. A player who
+tries to connect a disk to a disk does not need a lesson — the canvas not drawing the
+wire *is* the lesson, and it is understood on sight.
+
+**Decision: these stay mute.** Explaining them would train the player to read messages
+that carry nothing, which makes the messages that do carry something easier to ignore.
+
+The reasons keep their value for developers and tests, which is what they were written
+for.
+
+## 2. It does not offer — silent absences
+
+Nothing happens, and nothing is said, because there is nothing to say no *to*.
+
+| where | what disappears | why | told? |
+|---|---|---|---|
+| `_axisOptions('algorithm', …)` | the algorithm slot itself | an array with parity gets the four rotations, a flat mirror the three mdadm layouts, **anything else gets an empty list and no slot** | ❌ never |
+
+One row, and it is the most important row in this document. A linear mirror has no
+algorithm to choose, which is correct — but the player sees a slot that was there a
+moment ago and is now gone, with no way to learn that the disappearance was the answer
+to a question they did not know they had asked.
+
+Note how close this is to a refusal the game *does* explain. "This algorithm does not
+belong here" is said out loud when the cause is the operating system
+(`cross-axis-near-far-offset`, mechanism 3) and swallowed when the cause is the array's
+class. **The same lesson, told in one case and hidden in the other** — nobody decided
+that; it accumulated.
+
+## 3. It accepts and explains — the validator
+
+Seven rules, all in the declarative registry in `validator.js`. Each states its identity,
+severity, layer and source once; `validate` stamps them on, so a rule cannot disagree
+with its own registration.
+
+| code | severity | what it teaches |
+|---|---|---|
+| `min-disks` | hard | a level has a minimum, read from the level's own file |
+| `cross-axis-near-far-offset` | hard | near/far/offset are mdadm layouts — they exist only under Linux software RAID |
+| `nvme-backplane` | hard | NVMe talks straight to PCIe; it bypasses the backplane |
+| `engine-single-point` | hard | the RAID engine sits at exactly one point on the path |
+| `mixed-disk-sizes` | soft | mirror and parity coerce every member down to the smallest; RAID 0 and linear do not |
+| `uneven-spans` | soft | a mirror parent keeps one copy's worth; a striped parent runs slower over its tail |
+| `backplane-diversity` | soft | members of a span should sit on different backplanes |
+
+This is the part of the game that works. The messages name their subject, cite their
+source, and carry the real reason.
+
+### Is anything missing from §6?
+
+The domain-model spec §6 lists the constraint vocabulary. Compared against the seven
+rules:
+
+- **Implemented**: minimums, NVMe/backplane, near/far/offset, engine single point, and
+  the three soft rules. Every constraint the current model can express.
+- **Deliberately deferred**: hot-spare capacity — it belongs to the runtime module
+  (roadmap item 7).
+- **Superseded and marked as such**: the even-disk mirror rule (RAID 1E made it false),
+  and engine-type-by-position (ADR-001).
+- **Out of the model's reach — two of them**:
+
+  | constraint | source | why there is no rule |
+  |---|---|---|
+  | a partial Virtual Drive must cover *all* disks of the group | `terminologia.md` | — |
+  | nesting with RAID 0 requires the span be fully virtualized | `nested-raids.md` | — |
+
+  Both are about the **Virtual Drive**, and the game has no Virtual Drive. Spec §8 locks
+  a four-level vocabulary — physical disks → drive group → span → VD — and the model
+  implements three, stopping at the span. There is no way to violate these rules because
+  there is no object to violate them on.
+
+  They are not oversights and not debt. They are constraints waiting for a level of the
+  model that does not exist yet. (The apparent conflict with "a span is a *subset* of a
+  drive group, so 3-of-4 is allowed" dissolves once the two are read at their own levels:
+  a span divides the **disks**, a VD divides the **capacity**.)
+
+- **Promised in the data and never written**: `os-linux.yaml` states that without a
+  battery-backed cache or a UPS a power loss during a write can leave the array
+  inconsistent, and adds *"this is a soft constraint surfaced as a warning in the game."*
+  There is no such rule. That is the **write hole**, and it is the reason a hardware
+  controller has protected cache at all — see `unspoken-content.md`.
+
+## The gap between "valid" and valid
+
+The animate button turns on when a placement can be computed. It does not look at
+violations. And the status bar's "valid" is `firstIssue`, which only reports structural
+incompleteness — arrays with fewer than two members, empty slots. Once a build compiles,
+`firstIssue` is `null` **always**.
+
+So today the sandbox can say:
+
+> ✓ build valid — click ▶ to animate the write
+
+while the panel underneath lists a hard violation. The two statements are on the same
+screen and contradict each other.
+
+**Decision (2026-09-04): the animation is the reward, and the reward waits.** While a
+hard violation stands, the animate button stays disabled and the status line does not
+claim the build is valid. The mistake stays fully explorable and fully explained — what
+it does not do is get rewarded.
+
+Soft violations do not gate anything: they describe builds that are real and buildable,
+merely suboptimal, and refusing to animate them would call them wrong.
+
+This settles the open decision at the end of spec §6, marked *"Confirm."* since
+2026-06 — and settles it slightly differently from how it was posed. Prompt mode blocks
+step by step; the sandbox allows the mistake, explains it, and withholds the payoff.
+
+## What is missing
+
+Small, and now enumerated:
+
+1. a test for `cpCanConnect` with no catalogue loaded;
+2. a test for `model.js` rejecting an unknown segmentation or redundancy;
+3. a test for `physical.js` rejecting a manifest with no `roles.sink.capability`;
+4. **a behaviour, not a test**: dragging an algorithm chip onto an array whose class does
+   not have that algorithm is accepted — the picker filters, the drag does not
+   (`tech-debt/algorithm-drop-ignores-class.md`). One predicate, two drop handlers.
+
+Plus the two decisions taken above: the animation gate, and the silent absence of the
+algorithm slot, which needs a voice rather than a refusal.

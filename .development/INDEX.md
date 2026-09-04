@@ -54,10 +54,12 @@
 - [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
 - [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
 
-### reference/ (2 files)
+### reference/ (4 files)
 
 - [engine-robustness-and-extraction.md](reference/engine-robustness-and-extraction.md) — The composition engine — robustness audit and extraction map
 - [physical-model-fidelity.md](reference/physical-model-fidelity.md) — Physical model vs. physical reality — fidelity audit
+- [refusal-points.md](reference/refusal-points.md) — Refusal points — where the game says no, and whether it says why
+- [unspoken-content.md](reference/unspoken-content.md) — Unspoken content — what the game knows and never says
 
 ### reference/decisions/ (2 files)
 

@@ -34,9 +34,9 @@ This table only says whether the thinking has a home.
 
 | # | Roadmap item | Document | State |
 |---|---|---|---|
-| 1 | Refusal points (structural vs. UI) | — | the deliverable **is** the map; no spec needed in advance |
-| 2 | Info icons ("i") | [`planned/informative-ui.md`](planned/informative-ui.md) | inventory written; the visual channel is not yet designed |
-| 3 | Knowledge base rework | — | to write when picked up; carries the SEO decision |
+| 1 | Refusal points (structural vs. UI) | [`../reference/refusal-points.md`](../reference/refusal-points.md) | **done** — the map, the animation gate decision, and the four gaps that remain |
+| 2 | Info icons ("i") | [`planned/informative-ui.md`](planned/informative-ui.md) + [`../reference/unspoken-content.md`](../reference/unspoken-content.md) | the July inventory, now answered from the other side: the text is written and unreachable, so the work is a channel |
+| 3 | Knowledge base rework | [`../reference/unspoken-content.md`](../reference/unspoken-content.md) | three findings to inherit: the level prose it never sees, a vocabulary contradicting spec §8, a key parameter it advertises and the game cannot compute |
 | 4 | The verdict, drawn | [`planned/derived-controller.md`](planned/derived-controller.md) | identity implemented; the drawing is the open requirement at the end of that file |
 | 5 | Technical queue (S each) | `../tech-debt/` | one file per item; no spec needed |
 | 6 | Challenges on the physical axis | domain model §11a | the challenge schema exists; the physical vocabulary is the addition |
