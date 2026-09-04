@@ -48,3 +48,12 @@ useCases:
 note: >
   Recognized separately from RAID 1+0 because the two are often conflated and the
   difference (what a single failure takes down) is exactly what the sandbox teaches.
+
+# Soft §6 advisory (validator.js `level-advisory`, generic — the rule only asks
+# whether the recognized level has one). `{label}` is filled in by the validator
+# with the array's structural label ("This array", "Span 1", …).
+advisory: >-
+  {label} is a RAID 0+1: a mirror of stripes. It guarantees one failure, like RAID 1+0,
+  but a failed disk takes its whole striped leg with it, so a second failure is fatal
+  in 2 cases out of 3 — RAID 1+0 survives it in 2 cases out of 3. Same disks, same
+  capacity, weaker array: nest the other way round.

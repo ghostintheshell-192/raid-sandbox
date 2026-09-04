@@ -98,6 +98,7 @@
       if (typeof def.name !== 'string' || !def.name) fail(`${def.id}: name is required`);
       if (typeof def.reason !== 'string' || !def.reason) fail(`${def.id}: reason is required (the recognizer's one-line why)`);
       if (typeof def.minDisks !== 'number' || def.minDisks < 1) fail(`${def.id}: minDisks must be a positive number`);
+      if (def.advisory !== undefined && typeof def.advisory !== 'string') fail(`${def.id}: advisory must be a string`);
       validateShape(def.shape, def.id);
     }
   }

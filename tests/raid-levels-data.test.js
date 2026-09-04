@@ -140,6 +140,7 @@ console.log('\n[3] the headless fixture mirrors the YAML');
 
 const modelFields = (d) => JSON.stringify({
   id: d.id, name: d.name, notRaid: !!d.notRaid, reason: d.reason, shape: d.shape, minDisks: d.minDisks,
+  advisory: d.advisory,
 });
 
 test('same level ids, same order', () => {
@@ -147,7 +148,7 @@ test('same level ids, same order', () => {
 });
 
 for (const d of docs) {
-  test(`${d.id}: name, notRaid, reason, shape and minDisks match the YAML`, () => {
+  test(`${d.id}: name, notRaid, reason, shape, minDisks and advisory match the YAML`, () => {
     const mirror = fixture.levels.find((x) => x.id === d.id);
     assert(mirror, `fixture has no "${d.id}"`);
     eq(modelFields(mirror), modelFields(d));

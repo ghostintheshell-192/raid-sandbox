@@ -115,6 +115,22 @@
     return out;
   }
 
+  // A level may declare its own `advisory` (soft): a shape that is legitimate but
+  // strictly worse than a lookalike at the same cost (RAID 0+1 next to RAID 1+0
+  // is the first case — same disks, same capacity, weaker failure profile). The
+  // rule does not know what makes a shape worse; it only asks the level the node
+  // already recognizes as whether it has something to say about itself.
+  function checkLevelAdvisory(tree, physical, ctx) {
+    if (!ctx.levels) return null;
+    const out = [];
+    for (const { node: a, label } of ctx.arrays) {
+      const level = ctx.levels.match(a);
+      if (!level || !level.advisory) continue;
+      out.push({ message: fill(level.advisory, { label }), nodeId: a.id });
+    }
+    return out;
+  }
+
   // A disk may only sit where something accepts its protocol — the `accepts:`
   // lists on the components' input ports (NVMe on the PCIe bus, SATA/SAS on the
   // backplane, …). The rule reads THAT relation instead of restating it, so it
@@ -267,6 +283,9 @@
   const RULES = [
     { code: 'min-disks',                 severity: 'hard', layer: 'data',
       source: 'raid-types §6',           run: checkMinDisks },
+
+    { code: 'level-advisory',            severity: 'soft', layer: 'data',
+      source: 'domain-model §6',         run: checkLevelAdvisory },
 
     { code: 'mixed-disk-sizes',          severity: 'soft', layer: 'data',
       source: 'domain-model §6',         run: checkMixedDiskSizes },

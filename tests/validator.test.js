@@ -41,6 +41,40 @@ test('the min-disks check is recursive — a RAID 50 with a 2-disk span flags it
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[1b] Level advisory (soft) — generic, data-driven (ADR-002)');
+
+// RAID 0+1: a mirror of two RAID-0 legs. RAID 1+0: a stripe of two mirror pairs.
+// Same disks, same shape's minimum — only the nesting differs, which is exactly
+// the mistake the tech-debt names (invert span and drive group, build the worse
+// one while believing you built the better one).
+const raid0plus1 = () => M.array('linear', 'mirror', [M.array('striped', 'none', disks(2)), M.array('striped', 'none', disks(2))]);
+const raid1plus0 = () => M.array('striped', 'none', [M.array('linear', 'mirror', disks(2)), M.array('linear', 'mirror', disks(2))]);
+
+test('RAID 0+1 → level-advisory (soft), fires once, with the filled sentence', () => {
+  const r = V.validate(raid0plus1(), {});
+  const found = r.soft.filter((v) => v.code === 'level-advisory');
+  eq(found.length, 1);
+  eq(found[0].message, 'This array is a RAID 0+1: a mirror of stripes. It guarantees one failure, like RAID 1+0, '
+    + 'but a failed disk takes its whole striped leg with it, so a second failure is fatal in 2 cases '
+    + 'out of 3 — RAID 1+0 survives it in 2 cases out of 3. Same disks, same capacity, weaker array: '
+    + 'nest the other way round.');
+});
+test('RAID 1+0 → no level-advisory (same disks, right nesting)', () => {
+  const r = V.validate(raid1plus0(), {});
+  assert(!hasCode(r.soft, 'level-advisory'));
+});
+test('a level with no advisory (RAID 5) fires nothing', () => {
+  const r = V.validate(M.array('striped', 'parity1', disks(3)), {});
+  assert(!hasCode(r.soft, 'level-advisory'));
+});
+test('level-advisory is registered soft, data-layer', () => {
+  const rule = V.RULES.find((x) => x.code === 'level-advisory');
+  assert(rule, 'level-advisory is not registered');
+  eq(rule.severity, 'soft');
+  eq(rule.layer, 'data');
+});
+
+// ---------------------------------------------------------------------------
 console.log('\n[2] striped+mirror: RAID 1E (odd) vs RAID 10 (even)');
 
 test('striped+mirror with 3 disks → clean (valid RAID 1E, not an error)', () => {
