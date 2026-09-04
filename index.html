@@ -170,6 +170,7 @@
     <div>
       <h3>RAID level</h3>
       <div class="sbc-level" data-result="level">—</div>
+      <div data-result="level-reason" class="sbc-reason" hidden></div>
     </div>
     <div>
       <h3>Capacity</h3>
@@ -251,16 +252,17 @@
   physPanel.addEventListener('drop', () => physPanel.classList.remove('cp--active'));
 
   // Result panel elements.
-  const elLevel    = document.querySelector('[data-result="level"]');
-  const elCapacity = document.querySelector('[data-result="capacity"]');
-  const elFt       = document.querySelector('[data-result="ft"]');
-  const elRead     = document.querySelector('[data-result="read"]');
-  const elWrite    = document.querySelector('[data-result="write"]');
-  const elIssue    = document.querySelector('[data-result="issue"]');
-  const elRaidType = document.querySelector('[data-result="raid-type"]');
-  const elViolations = document.querySelector('[data-result="violations"]');
-  const elRaidWhy    = document.querySelector('[data-result="raid-type-reason"]');
-  const elGrid     = document.querySelector('[data-result="grid"]');
+  const elLevel       = document.querySelector('[data-result="level"]');
+  const elLevelReason = document.querySelector('[data-result="level-reason"]');
+  const elCapacity    = document.querySelector('[data-result="capacity"]');
+  const elFt          = document.querySelector('[data-result="ft"]');
+  const elRead        = document.querySelector('[data-result="read"]');
+  const elWrite       = document.querySelector('[data-result="write"]');
+  const elIssue       = document.querySelector('[data-result="issue"]');
+  const elRaidType    = document.querySelector('[data-result="raid-type"]');
+  const elViolations  = document.querySelector('[data-result="violations"]');
+  const elRaidWhy     = document.querySelector('[data-result="raid-type-reason"]');
+  const elGrid        = document.querySelector('[data-result="grid"]');
 
   // Sandbox = allow + explain (§6): violations are shown live, never block the build.
   function renderViolations(r) {
@@ -343,6 +345,10 @@
       const a = r.analysis;
       elLevel.textContent    = a.level ?? `non-standard (${a.reason})`;
       elLevel.className      = `sbc-level${a.level ? '' : ' sbc-level--nonstd'}`;
+      if (elLevelReason) {
+        elLevelReason.textContent = a.level ? (a.reason ?? '') : '';
+        elLevelReason.hidden      = !a.level;
+      }
       elCapacity.textContent = `${a.capacityGB} TB usable`;
       elFt.textContent       = `±${a.faultTolerance} disk failure${a.faultTolerance !== 1 ? 's' : ''}`;
       if (elRead)  elRead.textContent  = `read: ${a.readClass}`;
@@ -350,6 +356,10 @@
     } else {
       elLevel.textContent    = '—';
       elLevel.className      = 'sbc-level';
+      if (elLevelReason) {
+        elLevelReason.textContent = '';
+        elLevelReason.hidden      = true;
+      }
       elCapacity.textContent = '—';
       elFt.textContent       = '—';
       if (elRead)  elRead.textContent  = '—';
