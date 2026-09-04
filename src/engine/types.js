@@ -103,6 +103,7 @@
  * the model fields are typed; `ui` is whatever the file's ui: block says.
  * @typedef {{ id: string, name?: string, provides?: string[], ports: Port[],
  *             verdict?: { raidType: string, reason: string },
+ *             layouts?: { reason: string },
  *             ui?: { label?: string, badge?: string, chip?: string, tooltip?: string, icon?: string, color?: string } }} ComponentDef
  */
 
@@ -113,7 +114,8 @@
 /**
  * @typedef {{ ids: () => string[], has: (id: string) => boolean, get: (id: string) => ComponentDef | null,
  *             portsOf: (id: string) => Port[], portOf: (id: string, portId: string) => Port | null,
- *             provides: (id: string) => string[], connectsTo: (outType: string) => string[],
+ *             provides: (id: string) => string[], providersOf: (capability: string) => string[],
+ *             connectsTo: (outType: string) => string[],
  *             acceptorsOf: (protocol: string) => { componentId: string, portId: string }[],
  *             canConnect: (fromId: string, fromPort: string, toId: string, toPort: string) => CanConnect,
  *             roles: Roles, manifest: CatalogManifest }} Catalog
@@ -134,6 +136,7 @@
 /**
  * The derived view the validator consumes — never the raw cp* maps.
  * @typedef {{ raidType: string | null, os: string | null, engineCount: number,
+ *             engineComponentId?: string | null,
  *             diskRoutes: { id: string, protocol: string, target: string | null }[] }} PhysicalView
  */
 

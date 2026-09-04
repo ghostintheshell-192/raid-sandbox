@@ -102,11 +102,21 @@ engine change.
   drift — held together by data tests that read the real YAML with python and fail when
   they disagree.
 - **Known exceptions still in code**, recorded rather than hidden:
-  - `validator.js` names `'os-linux'`, `'backplane'` and `'NVMe'` in three rules — the
-    data-driven rule registry is on the roadmap (technical queue, item 5).
   - `layout.js` keeps the placement algorithms in code. Deliberate: how parity rotates
     is a *computation*, not a fact about an object, and the golden-table discipline binds
     it to the Linux `md` source. §5b's parametric algorithm registry stays deferred.
+
+`validator.js` was the third exception and is closed (2026-09-05, step 6 of the
+implementation): the two rules that named `'os-linux'`, `'NVMe'` and `'backplane'` now
+read the component catalogue. Which layouts exist only under one engine is a
+`layout:<algorithm>` capability in that engine's `provides:`, with the sentence to show
+in its `layouts.reason`; where a disk may land is the `accepts:` relation the catalogue
+already enforces. What is left in the file is vocabulary and ids, which this ADR allows:
+the capability prefix `layout:`, and the two rule *codes* `nvme-backplane` and
+`backplane-diversity`, which are stable identifiers cited by five documents rather than
+facts the engine reasons with. `backplane-diversity` is also still a dormant rule whose
+function name states a domain fact — worth renaming when the diversity module (§9.4)
+actually lands and gives it a body.
 
 ## See also
 

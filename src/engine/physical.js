@@ -35,7 +35,8 @@
  *   recognize(cpNodes, cpEdges, disks, catalog)
  *     → { raidType, os, complete, issue, reason, engineNodeId }
  *   buildView(cpNodes, cpEdges, disks, cp, catalog)
- *     → { raidType, os, engineCount, diskRoutes }   // the PhysicalView the validator consumes
+ *     → { raidType, os, engineCount, engineComponentId, diskRoutes }   // the PhysicalView
+ *       the validator consumes
  *
  * `disks` is [{ id, protocol }]: disks live on axis B and appear in cpEdges by
  * id only, so the recognizer has to be told which endpoints are sources.
@@ -198,8 +199,12 @@
 
   /**
    * Build the derived physical view the validator consumes.
-   *   engineCount — engine objects on the canvas (verdict-bearing, non-sink); >1 is illegal
-   *   diskRoutes  — each disk's protocol + the component it actually wires into
+   *   engineCount       — engine objects on the canvas (verdict-bearing, non-sink); >1 is illegal
+   *   engineComponentId — WHICH object's verdict this path carries: the engine object when one
+   *                       sits on it, otherwise the sink (no engine object → the OS is the engine).
+   *                       Rules that ask what the path can compute — the layouts it offers —
+   *                       ask this component, not the raidType string.
+   *   diskRoutes        — each disk's protocol + the component it actually wires into
    */
   /**
    * @param {Map<string, CpNode>} cpNodes @param {Map<string, CpEdge>} cpEdges
@@ -214,13 +219,17 @@
       engineCount = Array.from(cpNodes.values()).filter((n) => ids.has(n.componentId)).length;
     }
 
+    const engineComponentId = cp.engineNodeId
+      ? (cpNodes.get(cp.engineNodeId)?.componentId ?? null)
+      : (cp.raidType ? cp.os : null);   // undetermined path names no engine at all
+
     const diskRoutes = [];
     for (const d of disks) {
       const edge   = Array.from(cpEdges.values()).find((e) => e.fromNode === d.id);
       const target = edge ? (cpNodes.get(edge.toNode)?.componentId ?? null) : null;
       diskRoutes.push({ id: d.id, protocol: d.protocol, target });
     }
-    return { raidType: cp.raidType, os: cp.os, engineCount, diskRoutes };
+    return { raidType: cp.raidType, os: cp.os, engineCount, engineComponentId, diskRoutes };
   }
 
   // ---------------------------------------------------------------------------

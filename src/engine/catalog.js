@@ -10,7 +10,8 @@
  *   - which ports a component has, of which type and direction;
  *   - whether an output port of type X may be wired into an input port of type Y;
  *   - which components accept an atom (a disk) of protocol P, and on which port;
- *   - which capabilities a component declares (`provides`).
+ *   - which capabilities a component declares (`provides`), and which components
+ *     declare a given one (`providersOf` — the same relation read backwards).
  *
  * It does NOT decide what any of this MEANS — that a `raid-engine` on the path
  * makes the build hardware RAID is the recognizer's reading (physical.js) — and
@@ -142,6 +143,16 @@
     const portOf   = (id, portId) => portsOf(id).find((p) => p.id === portId) || null;
     const provides = (id) => (byId.get(id) || {}).provides || [];
 
+    /**
+     * The mirror of `provides`: every component declaring `capability`, in
+     * manifest order (same stance as acceptorsOf — all of them, first wins is
+     * the caller's choice). It is what lets a rule ask "does ANYONE offer this?"
+     * without a table of its own: a capability nobody claims is unconstrained.
+     */
+    const providersOf = (capability) => manifest.components
+      .filter((def) => (def.provides || []).includes(capability))
+      .map((def) => def.id);
+
     /** Input types an output port of `outType` may feed (empty for an unknown type). */
     const connectsTo = (outType) => (portTypes[outType] || { connectsTo: [] }).connectsTo;
 
@@ -185,8 +196,8 @@
     // `roles` is the manifest's reading guide for the recognizer (which
     // capability marks the end of the path, how to name it); the catalogue
     // carries it, the recognizer interprets it.
-    return { ids, has, get, portsOf, portOf, provides, connectsTo, acceptorsOf, canConnect,
-             roles: manifest.roles || {}, manifest };
+    return { ids, has, get, portsOf, portOf, provides, providersOf, connectsTo, acceptorsOf,
+             canConnect, roles: manifest.roles || {}, manifest };
   }
 
   // ---------------------------------------------------------------------------
