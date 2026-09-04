@@ -23,8 +23,13 @@
 - [INDEX.md](INDEX.md) — INDEX - Development Documentation
 - [README.md](README.md) — .development
 
-### specs/implemented/ (1 files)
+### specs/ (1 files)
 
+- [README.md](specs/README.md) — Specs — what is written down, and what is not yet
+
+### specs/implemented/ (2 files)
+
+- [agnostic-engine.md](specs/implemented/agnostic-engine.md) — The agnostic engine — how the domain moved out of the code
 - [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) — RAID Sandbox — Domain Model (design backbone)
 
 ### specs/planned/ (2 files)
@@ -54,9 +59,10 @@
 - [engine-robustness-and-extraction.md](reference/engine-robustness-and-extraction.md) — The composition engine — robustness audit and extraction map
 - [physical-model-fidelity.md](reference/physical-model-fidelity.md) — Physical model vs. physical reality — fidelity audit
 
-### reference/decisions/ (1 files)
+### reference/decisions/ (2 files)
 
 - [001-engine-identity-not-position.md](reference/decisions/001-engine-identity-not-position.md) — ADR-001: The RAID engine's type comes from which object it is, not where it sits
+- [002-the-engine-holds-no-domain-facts.md](reference/decisions/002-the-engine-holds-no-domain-facts.md) — ADR-002: The engine holds no domain facts — it reads them from data files
 
 ---
 
