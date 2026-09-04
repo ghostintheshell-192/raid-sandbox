@@ -67,9 +67,12 @@ The flow: Claude commits on the branch → **Valentina pushes** → **Claude ope
 
 **Keep the PR body short.** It is a summary of *what was done*, not an explanation of why —
 the why is in the files the PR adds, and repeating it there means writing it twice and
-letting the two drift. A few sentences or a short list. Spend the words on anything a
-reviewer cannot get from the diff: a decision that could have gone the other way, a
-product call worth objecting to, something to check in the browser.
+letting the two drift. A few sentences or a short list.
+
+The PR is asynchronous and permanent: it is what someone reads months later to find out
+what changed. Anything meant for Valentina *now*, while she decides whether to approve,
+belongs in the chat — a formatting choice, a small thing to look at, a question. If the
+point is visible in the diff, it is not worth a line of prose.
 
 `gh pr edit` currently fails on this repo with a GraphQL error about Projects (classic).
 Use the REST API instead: `gh api repos/<owner>/<repo>/pulls/<n> -X PATCH -F body=@<file>`.
