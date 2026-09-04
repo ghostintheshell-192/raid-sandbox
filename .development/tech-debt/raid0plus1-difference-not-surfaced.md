@@ -1,13 +1,16 @@
 ---
 type: feature
 priority: medium
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
-related_decision: null
+related_decision: ../reference/decisions/002-the-engine-holds-no-domain-facts.md
 ---
 
 # RAID 0+1 is recognized so the sandbox can say it is worse — and the sandbox never says it
+
+> **Resolved 2026-09-05** on `feat/raid0plus1-soft-rule`, by Option A as recommended.
+> See "Solution Implemented" at the end.
 
 ## Problem
 
@@ -69,3 +72,26 @@ writing one.
 - **Census**: `reference/unspoken-content.md` — "Two promises the data makes"
 - **Spec**: domain-model §4 (recognition), §6 (constraint vocabulary)
 - **Code Locations**: `data/raid-levels/raid0plus1.yaml`, `src/engine/validator.js`, `src/engine/model.js` (`failuresToKill`)
+
+## Solution Implemented
+
+Option A, generic rather than special-cased (ADR-002): `validator.js` gained one new
+rule, `level-advisory` (soft, layer `data`) — it asks `ctx.levels.match(node)` for the
+array's recognized level and, if that level's own file declares an `advisory` string,
+fires it with `{label}` filled in (same convention as `reasonFor`'s `{n}`). The rule
+names no level; it only asks "does the level I just recognized have something to say
+about itself".
+
+`raid0plus1.yaml` is the first (and so far only) file with an `advisory:` field. Adding
+one to another level is a data change, zero engine lines — the acceptance test ADR-002
+names.
+
+`levels.js` validates `advisory` as an optional string; `types.js`'s `LevelDef` gained
+the field; `tests/fixtures/raid-levels.js` mirrors the exact YAML text and
+`raid-levels-data.test.js` now includes `advisory` in the YAML/fixture alignment check.
+
+## Testing
+
+`tests/validator.test.js` [1b]: a RAID 0+1 build fires `level-advisory` once with the
+filled sentence; a RAID 1+0 build (same disks, right nesting) does not; a level with no
+advisory (RAID 5) fires nothing; the rule is registered soft/data.

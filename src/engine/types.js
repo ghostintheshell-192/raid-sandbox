@@ -79,7 +79,14 @@
  *             constraint?: 'even-disk-count' | 'odd-disk-count', copies?: number, childShape?: Shape }} Shape
  */
 
-/** @typedef {{ id: string, name: string, notRaid?: boolean, reason: string, shape: Shape, minDisks: number }} LevelDef */
+/**
+ * `advisory` is a soft, player-facing warning the level declares about ITSELF —
+ * a legitimate shape the level's own file considers worse than a lookalike
+ * (RAID 0+1 vs RAID 1+0). `{label}` is filled in by the validator, the same
+ * convention as `reason`'s `{n}`.
+ * @typedef {{ id: string, name: string, notRaid?: boolean, reason: string, shape: Shape, minDisks: number,
+ *             advisory?: string }} LevelDef
+ */
 
 /**
  * @typedef {{ ids: () => string[], get: (id: string) => LevelDef | null, order: LevelDef[],

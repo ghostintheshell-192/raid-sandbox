@@ -5,8 +5,8 @@
  * headless suites are zero-dependency and Node has no YAML parser, so they get
  * this JS mirror — and `raid-levels-data.test.js` (python3 + pyyaml) asserts the
  * mirror and the YAML agree on every field the engine reads: ids and their order,
- * `name`, `notRaid`, `reason`, `shape`, `minDisks`. Prose fields (description,
- * pros, cons, formulas) are not mirrored: nothing headless reads them.
+ * `name`, `notRaid`, `reason`, `shape`, `minDisks`, `advisory`. Prose fields
+ * (description, pros, cons, formulas) are not mirrored: nothing headless reads them.
  *
  * Edit the YAML first, then this file; a mismatch is a failing test.
  */
@@ -70,6 +70,10 @@ module.exports = {
 
     { id: 'raid0plus1', name: 'RAID 0+1', notRaid: false,
       reason: 'mirror over RAID-0 spans (0+1)',
-      shape: nested('linear', 'mirror', leaf('striped', 'none')), minDisks: 4 },
+      shape: nested('linear', 'mirror', leaf('striped', 'none')), minDisks: 4,
+      advisory: '{label} is a RAID 0+1: a mirror of stripes. It guarantees one failure, like RAID 1+0, '
+        + 'but a failed disk takes its whole striped leg with it, so a second failure is fatal in 2 cases '
+        + 'out of 3 — RAID 1+0 survives it in 2 cases out of 3. Same disks, same capacity, weaker array: '
+        + 'nest the other way round.' },
   ],
 };

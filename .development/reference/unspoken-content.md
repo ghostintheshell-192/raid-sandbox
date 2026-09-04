@@ -122,7 +122,8 @@ text and `ui.tooltip` the short label-ish one.
 These are different from the silence above: a file states that the game does something,
 and the game does not.
 
-**1. RAID 0+1 versus RAID 1+0.** `raid0plus1.yaml` says it twice:
+**1. RAID 0+1 versus RAID 1+0.** **Closed 2026-09-05** — see `raid0plus1.yaml` `advisory`
+(`validator.js`'s `level-advisory` rule). `raid0plus1.yaml` said it twice:
 
 > cons: *Strictly worse than RAID 1+0 at the same cost — **recognized so the sandbox can say so***
 >
