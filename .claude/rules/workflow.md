@@ -57,7 +57,27 @@ feat: invert the mobile build flow to a per-slot picker
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 ```
 
-### Deploy
+### Pull Requests
+
+**Merges go through GitHub, never locally.** The `headless` and `typecheck` workflows run
+on pull requests and on pushes to `main`, so a local merge means CI was never a gate.
+
+The flow: Claude commits on the branch → **Valentina pushes** → **Claude opens the PR**
+(`gh pr create`) → Valentina checks CI and merges from GitHub.
+
+**Keep the PR body short.** It is a summary of *what was done*, not an explanation of why —
+the why is in the files the PR adds, and repeating it there means writing it twice and
+letting the two drift. A few sentences or a short list.
+
+The PR is asynchronous and permanent: it is what someone reads months later to find out
+what changed. Anything meant for Valentina *now*, while she decides whether to approve,
+belongs in the chat — a formatting choice, a small thing to look at, a question. If the
+point is visible in the diff, it is not worth a line of prose.
+
+`gh pr edit` currently fails on this repo with a GraphQL error about Projects (classic).
+Use the REST API instead: `gh api repos/<owner>/<repo>/pulls/<n> -X PATCH -F body=@<file>`.
+
+## Deploy
 
 Push to `main` → Vercel builds and publishes to raid-sandbox.dev automatically. There is
 no build step (static site); Vercel just serves the files.
