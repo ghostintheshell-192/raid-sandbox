@@ -10,8 +10,16 @@ shape:
   members: disks
 
 minDisks: 2
-faultTolerance: 0
-capacityFormula: "sum of all disk sizes"
+
+# Reference only — documentation, not data the engine reads. faultToleranceAtMinimum
+# is the level's guaranteed tolerance AT ITS MINIMUM DISK COUNT, not the array's (see
+# tech-debt/level-numbers-duplicated-untested.md); the engine derives the real numbers
+# from the tree and that is what the game shows. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 0
+  capacityFormula: "sum of all disk sizes"
+
 defaultAlgorithm: null
 
 description: >

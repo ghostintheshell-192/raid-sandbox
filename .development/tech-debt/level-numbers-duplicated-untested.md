@@ -1,11 +1,14 @@
 ---
 type: testing
 priority: low
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
 related_decision: reference/decisions/002-the-engine-holds-no-domain-facts.md
 ---
+
+> **Resolved 2026-09-05** on `test/level-numbers-honest-group` (Option B) — see the
+> resolution section at the end.
 
 # Level files declare numbers the engine also computes, and nothing compares them
 
@@ -67,3 +70,29 @@ from the engine's own derivation, never from the file.
 - **Census**: `reference/unspoken-content.md` — "The duplicated numbers"
 - **Decision**: `reference/decisions/002-the-engine-holds-no-domain-facts.md`
 - **Code Locations**: `data/raid-levels/*.yaml`, `src/engine/model.js` (`faultTolerance`, performance), `tests/raid-levels-data.test.js`
+
+## Resolution (2026-09-05)
+
+Option B, in all 14 `data/raid-levels/*.yaml` files and `tests/raid-levels-data.test.js`:
+
+- `faultTolerance`, `writePenalty` and `capacityFormula` now live under a `reference:`
+  block, each preceded by a comment naming it documentation, not data the engine reads.
+  `faultTolerance` is renamed `faultToleranceAtMinimum` inside that block — the field is,
+  and was already, the level's tolerance *at its minimum disk count*, not the array's; the
+  new name says so instead of implying a fixed property of the level.
+- `defaultAlgorithm` and (RAID 6's) `parity` stay where they were — they are not part of
+  this duplication, and `levels.js` still reads only `id`, `name`, `reason`, `shape`,
+  `minDisks`, unchanged.
+- A new guard `[4]` in `raid-levels-data.test.js` builds, for each level, the smallest tree
+  its `shape` allows at `minDisks` (a leaf shape is `minDisks` disks; a nested shape is 2
+  equal spans of `minDisks / 2` disks each — the split every nested level's YAML comment
+  already assumed) and asserts `model.js`'s derived `faultTolerance` equals the declared
+  `reference.faultToleranceAtMinimum`. All 14 passed on the first run, confirming the
+  2026-09-04 hand check.
+- `tests/fixtures/raid-levels.js` is unchanged: it mirrors only the six keys the engine
+  reads, and `reference` was never one of them.
+
+No engine or gameplay change: nothing in `src/` reads the YAML's `faultTolerance`,
+`writePenalty` or `capacityFormula` — the panel already shows `model.js`'s own derivation
+(`index.html`'s `a.faultTolerance`, from `analyze()`), confirmed unchanged by grep before
+this change and untouched by it.

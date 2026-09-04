@@ -10,8 +10,15 @@ shape:
   members: disks
 
 minDisks: 2
-faultTolerance: 0
-capacityFormula: "N × disk size"
+
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's; the engine derives the real numbers. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 0
+  capacityFormula: "N × disk size"
+
 defaultAlgorithm: null
 
 description: >

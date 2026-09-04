@@ -16,12 +16,17 @@ shape:
     constraint: even-disk-count   # a RAID 10 span, not a RAID 1E one (odd → no canonical name)
 
 minDisks: 8   # 2 spans × 4-disk RAID 10 minimum
-faultTolerance: 1   # per span (each RAID 10 span survives one disk)
-capacityFormula: "spans × (disksPerSpan / 2) × disk size"
 
-writePenalty:
-  random: 2     # mirror only; no parity read-modify-write
-  sequential: 2
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's (per span: each RAID 10 span survives one disk). The engine derives the real
+# number from the tree. Checked against the engine by raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "spans × (disksPerSpan / 2) × disk size"
+  writePenalty:
+    random: 2     # mirror only; no parity read-modify-write
+    sequential: 2
 
 note: >
   RAID 100 (1+0+0) stripes across two or more flat RAID 10 spans. Distinct from RAID 1+0

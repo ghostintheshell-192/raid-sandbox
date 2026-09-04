@@ -16,12 +16,18 @@ shape:
     members: disks
 
 minDisks: 8   # 2 mirrored legs × 4-disk RAID 6
-faultTolerance: 5   # each RAID-6 leg costs 3 failures to kill; the mirror sums both legs
-capacityFormula: "(disksPerSpan − 2) × disk size   (one mirrored RAID-6 leg)"
 
-writePenalty:
-  random: 2     # modelled as the mirror's penalty (dominant write path); see raid51.yaml
-  sequential: 2
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's (each RAID-6 leg costs 3 failures to kill; the mirror sums both legs). The
+# engine derives the real number from the tree. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 5
+  capacityFormula: "(disksPerSpan − 2) × disk size   (one mirrored RAID-6 leg)"
+  writePenalty:
+    random: 2     # modelled as the mirror's penalty (dominant write path); see raid51.yaml
+    sequential: 2
 
 note: >
   RAID 61 mirrors a whole RAID 6 onto a second RAID 6 — the highest fault tolerance in
