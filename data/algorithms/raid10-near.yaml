@@ -14,8 +14,8 @@ pros:
   - Single-disk failure always recoverable (mirror partner is adjacent)
 
 cons:
-  - Read performance limited: both copies are in the same stripe position,
-    so read parallelism across stripes is not exploited
+  - "Read performance limited: both copies are in the same stripe position,
+    so read parallelism across stripes is not exploited"
 
 placement:
   copies: near              # copies co-located in the same stripe

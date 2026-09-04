@@ -70,6 +70,7 @@ kernel rules and never regenerated from the engine.
 - `touch-dnd.js` — touch shim for the HTML5 drag-and-drop API.
 
 ### tests
+- `algorithms-data.test.js` — validates the REAL algorithm YAML files in data/algorithms/. Run with: node algorithms-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so ...
 - `build-document.test.js` — headless tests for the build document (save / load / share). Run with: node build-document.test.js
 - `canvas-algo-integration.test.js` —  End-to-end: canvas state → algorithm chip → computePlacement → different grids. Run: node canvas-algo-integration.test.js
 - `canvas-state.fuzz.test.js` — deterministic gesture-workflow fuzz test. Run with: node canvas-state.fuzz.test.js

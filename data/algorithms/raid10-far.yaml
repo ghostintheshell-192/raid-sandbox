@@ -11,8 +11,8 @@ description: >
   positions — so each chunk's copy lives on a different disk than the original.
 
 pros:
-  - Read throughput close to RAID0: the original copies are laid out as pure
-    striping, so a sequential read can use all disks simultaneously
+  - "Read throughput close to RAID0: the original copies are laid out as pure
+    striping, so a sequential read can use all disks simultaneously"
   - Each chunk and its copy are guaranteed to be on different disks
 
 cons:

@@ -1,13 +1,16 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
 related_decision: reference/decisions/002-the-engine-holds-no-domain-facts.md
 ---
 
 # Three algorithm data files do not parse, and nothing would have noticed
+
+> **Resolved 2026-09-04** on `fix/algorithms-data-unvalidated` (Option C) — see the
+> resolution section at the end.
 
 ## Problem
 
@@ -74,3 +77,30 @@ computation bound to the golden tables, not a fact about an object).
 - **Census**: `reference/unspoken-content.md` — "Algorithms — the whole family is unread"
 - **Spec**: domain-model §5b (algorithm resource schema, deferred)
 - **Code Locations**: `data/algorithms/*.yaml`, `tests/components-data.test.js` (the pattern to copy)
+
+## Resolution (2026-09-04)
+
+`tests/algorithms-data.test.js` was written **first**, run, and confirmed to fail on
+exactly the three files — then the files were fixed. A test that has never failed proves
+nothing.
+
+The fix was quoting, nothing else: the prose is teaching material and every word is
+preserved verbatim. Six lines changed across three files.
+
+The test parses each file individually rather than dying on the first bad one, so it
+names *which* files are broken. It asserts `id` (matching the filename stem, unique),
+`name`, `placement` and `appliesTo` on every file, and reads the real YAML through
+python3 + pyyaml, like the other three data tests — the repo stays dependency-free.
+
+**One correction to this document's own analysis**: it listed `linuxConstant` among the
+fields the family is expected to carry. It is not universal. Only the four
+parity-rotation files have one, because only they map to an `ALGORITHM_*` constant in
+`drivers/md/raid5.h`; the three RAID10 files describe copy placement and never had one.
+The test asserts it conditionally — present for parity algorithms, absent for the RAID10
+ones — which turns the distinction into something a future edit cannot quietly break.
+
+Candidates for a later tightening, present in all seven files but not asserted:
+`convention`, `verificationStatus`, `description`, `pros`, `cons`, `source`, `default`.
+
+`data/algorithms/` remains unwired from the game, as intended (spec §5b). The test proves
+the files are valid data; it does not make them live.
