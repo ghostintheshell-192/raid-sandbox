@@ -78,6 +78,15 @@ during the plan's browser checkpoints is in the plan handoff
 
 ## Next Steps — the roadmap after the agnostic-engine plan
 
+> **Before any of this, next session**: promote
+> `.memory-bank/ideas/2026-09-04-degenerate-levels.md` to a spec. Agreed 2026-09-04, the
+> day it was captured. Below its minimum width every level collapses into a simpler one —
+> a two-disk RAID 5 *is* a mirror — and the game names only what was composed. The
+> proposed shape: keep the recognizer's box as "what the player is trying to build", add a
+> second derived box for "what the player actually has", and let errors surface as the diff
+> between them. It is closer to the point of the game than several items on this list, and
+> it may absorb §6 rules rather than add to them.
+
 Valentina's priority order, 2026-09-02. Each item says where it starts (the document
 or tech-debt that already holds the thinking) and a size: **S** hours, **M** a
 session or two, **L** several sessions. Nothing here is scheduled; the order is the
