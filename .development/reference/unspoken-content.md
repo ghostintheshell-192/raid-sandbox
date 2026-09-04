@@ -91,6 +91,29 @@ Two things follow from that:
 
 Both are tracked as [`tech-debt/kb-intro-diverges-from-spec.md`](../tech-debt/kb-intro-diverges-from-spec.md).
 
+### Components — the right text, in the field nobody shows
+
+The component files carry two descriptive fields, and the game shows the wrong one.
+
+`engine-roc.yaml`:
+
+| field | shown? | says |
+|---|---|---|
+| `description` | ❌ never | *"A dedicated PCIe card that includes **BOTH the HBA (protocol translation) AND** a RAID-on-Chip (RoC) processor."* |
+| `ui.tooltip` | ✅ on the sidebar chip | *"Dedicated compute silicon — has its own processor and XOR/Galois accelerator, computes the array itself."* |
+
+A player building a control path has no way to know that the RoC already **contains** the
+HBA, and may well go looking for an HBA to put in front of it. The fact that answers them
+is written down, in the field nothing reads; the field that is read does not mention it.
+
+This case differs from the rest of this census in a useful way: **the channel already
+exists.** There is a tooltip, it works, and it is showing the less useful of the two
+sentences. Whatever the info channel (roadmap item 2) turns out to be, this one is fixable
+before it lands.
+
+Same shape, unchecked, in the other component files: `description` is the long, teaching
+text and `ui.tooltip` the short label-ish one.
+
 ## Two promises the data makes and the game does not keep
 
 These are different from the silence above: a file states that the game does something,

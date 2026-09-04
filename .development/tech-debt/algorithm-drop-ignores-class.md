@@ -52,3 +52,17 @@ Option A — one predicate reused from the picker, two call sites. B is a nicety
 ---
 
 📍 **Investigation Note**: Read [ARCHITECTURE.md](../ARCHITECTURE.md) to locate relevant files and understand the architectural context before starting your analysis.
+
+## Seen in the browser (2026-09-04)
+
+Confirmed while testing the animation gate: an array of `striped + parity1` carrying the
+`near` layout, dropped straight onto it from the sidebar's "LAYOUT (RAID 10 / 1E)" group.
+
+It has a consequence not recorded when this was first written. The impossible state does
+not merely exist — it **produces a misleading violation**. `cross-axis-near-far-offset`
+fires and advises *"On hardware RAID, build a nested RAID 1+0 instead"*, which is not
+advice about a parity array at all. The game explains carefully a situation that should
+never have been reachable, and the explanation sends the player the wrong way.
+
+That raises the cost of leaving this open: it is not only a state that should not exist,
+it is a state that makes the game say something untrue.
