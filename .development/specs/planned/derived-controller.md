@@ -1,7 +1,10 @@
 # The controller is derived, not dragged
 
-**Status:** IMPLEMENTED — `engine-roc` / `engine-metadata` landed on
-`feature/derived-controller` (2026-07-30), not yet merged
+**Status:** PARTLY IMPLEMENTED — the derived identity shipped and is on `main`
+(merged 2026-07-31); the verdict *drawn on the canvas* is still open — see
+"Open requirement" at the end of this document
+**Status corrected:** 2026-09-04 (the line above read "not yet merged", left behind
+after the merge)
 **Amended:** 2026-07-30, see [ADR-001](../../reference/decisions/001-engine-identity-not-position.md)
 and the "Update 2026-07-30" section below — the Hardware/Fake discriminant changed
 **Origin:** the RIEPILOGO diagram (`.personal/IMG20260601163917.jpg`), re-read with its
@@ -171,3 +174,35 @@ the drag-and-drop UI at all — port typing forbids it structurally).
 Not yet done: the hardware-claims verification against a primary source (ADR-001, Cons),
 and the dashed-box/hover-highlight verdict rendering described earlier in this document —
 that remains a separate, unscheduled piece of UI work.
+
+## Open requirement — the verdict, drawn (not yet done)
+
+*Added 2026-09-04. Everything above stands as written; this section only states plainly
+what is still missing, so it does not have to be inferred from the prose.*
+
+**Requirement.** The RAID type is derived — but it is still told to the player in words,
+in the results panel. This document's own argument says it should be **shown**: a dashed
+box drawn around the pieces that actually form the controller on the canvas, coloured by
+the verdict.
+
+**Why it matters.** It is the ADR-001 lesson with no words at all. Hardware and fake RAID
+are identical in the wiring, and a player who sees the same box, in the same place, in two
+different colours, learns that faster than any sentence can teach it. That is exactly how
+fake RAID deceives buyers.
+
+**What already exists to build on:**
+
+- `engineNodeId` in the evaluation result — the engine already says *which* node it
+  judged, which is the anchor the box needs;
+- `src/sandbox/highlight.js` — the "what I am talking about is THAT one" mechanism, built
+  for violations, reusable here;
+- the verdict text and colour, already declared in each engine object's `verdict:` block
+  (see [ADR-002](../../reference/decisions/002-the-engine-holds-no-domain-facts.md)) — so
+  no verdict knowledge needs to enter the renderer.
+
+**Where it sits**: item 4 of the roadmap in `CURRENT-STATUS.md`, size **M**.
+
+Also still open from ADR-001's Cons, and unrelated to the drawing: the hardware claims in
+this document (where RST firmware lives, what the add-in chips do, SoC integration) were
+written from prior knowledge and have **not** been verified against a primary source. The
+project's ground-truth discipline applies before any of them is taught as fact.

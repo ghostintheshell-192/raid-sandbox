@@ -35,6 +35,7 @@ kernel rules and never regenerated from the engine.
 ## Key Decisions
 
 - [ADR-001: The RAID engine's type comes from which object it is, not where it sits](reference/decisions/001-engine-identity-not-position.md) `[high]` — Hardware vs. fake RAID is decided by which of two distinct engine objects sits on the control path (compute silicon vs. metadata-only chip), not by the engine's position relative to the PCIe bus; software RAID is the configuration where neither is present.
+- [ADR-002: The engine holds no domain facts — it reads them from data files](reference/decisions/002-the-engine-holds-no-domain-facts.md) `[high]` — The engine's code knows *how* to compose, recognize, validate and explain; it does not know *what* a backplane, a RAID-on-Chip or a RAID 5 is. Every domain fact — components, ports, verdicts, level shapes, disk minimums — lives in the YAML files and is read from there, so adding a capability is adding a file.
 
 ## Project Tree
 
