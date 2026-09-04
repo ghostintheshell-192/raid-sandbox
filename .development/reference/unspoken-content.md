@@ -15,8 +15,9 @@ behaviour the game does not have, and lists what is genuinely absent.
 
 ### Levels — 6 keys out of 17 reach the player
 
-`data/raid-levels/` holds 14 level files. `levels.js` consumes six keys: `id`, `name`,
-`notRaid`, `reason`, `shape`, `minDisks`. The other eleven are read by nobody:
+`data/raid-levels/` holds 14 level files. The engine consumes six keys — `levels.js`
+reads `id`, `name`, `reason`, `shape`, `minDisks`, and `model.js` reads `notRaid` off the
+matched level. The other eleven are read by nobody:
 
 | key | present in | what it holds |
 |---|---|---|
@@ -24,8 +25,8 @@ behaviour the game does not have, and lists what is genuinely absent.
 | `pros` | 13/14 | 2–3 concrete advantages |
 | `cons` | 13/14 | 2–3 concrete costs |
 | `useCases` | 14/14 | where the level actually belongs |
-| `notFor` | 12/14 | where it does not |
-| `note` | 6/14 | why this level is modelled the way it is |
+| `notFor` | 13/14 | where it does not |
+| `note` | 7/14 | why this level is modelled the way it is |
 | `capacityFormula` | 14/14 | the usable-capacity formula in words |
 | `writePenalty` | 9/14 | random and sequential I/O per logical write |
 | `faultTolerance` | 14/14 | the guaranteed number, as a fixed value |
@@ -33,8 +34,10 @@ behaviour the game does not have, and lists what is genuinely absent.
 | `parity` | 1/14 | RAID 6's P and Q |
 
 `faultTolerance`, `writePenalty` and `capacityFormula` are not silent in effect — the
-engine derives all three on its own and shows them. They are *duplicates*, which is its
-own risk, treated below.
+engine derives the two numbers on its own and shows them, and computes the capacity the
+formula describes. They are *duplicates* — with one nuance: the formula is words a human
+wrote for a human, which the engine cannot produce, and that is why the tech-debt entry
+keeps it. Duplication is its own risk, treated below.
 
 The genuinely mute ones are the prose: `description`, `pros`, `cons`, `useCases`,
 `notFor`, `note`. Six fields × fourteen levels, written and never displayed.
