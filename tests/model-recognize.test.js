@@ -78,4 +78,19 @@ test('algorithm does not change the recognized level', () => {
   eq(level(a), 'RAID 5');
 });
 
+// --- guards: array() refuses unknown vocabulary -----------------------------
+console.log('Guards — array() refuses unknown vocabulary');
+
+const failsWith = (fn, re) => {
+  let err = null;
+  try { fn(); } catch (e) { err = e; }
+  assert(err, 'expected array() to throw');
+  assert(re.test(err.message), err.message);
+};
+
+test('an unknown segmentation is refused', () =>
+  failsWith(() => M.array('diagonal', 'none', disks(2)), /Unknown segmentation: diagonal/));
+test('an unknown redundancy is refused', () =>
+  failsWith(() => M.array('striped', 'triple', disks(2)), /Unknown redundancy: triple/));
+
 finish();

@@ -12,6 +12,7 @@ global.RaidLayout = RaidLayout;
 
 const CS = require('../src/sandbox/canvas-state.js');
 const { createCatalog } = require('../src/engine/catalog.js');
+const Physical = require('../src/engine/physical.js');
 // The component catalogue is data; the headless mirror of data/components/*.yaml
 // (kept aligned by components-data.test.js) feeds every state this suite builds.
 const catalog = createCatalog(require('./fixtures/components.js'));
@@ -832,6 +833,21 @@ test('flat mirror → plain mirror (RAID 1) drops near/far/offset', () => {
   CS.setAlgorithm(s, a, 'far');
   CS.setSegmentation(s, a, 'linear');
   eq(s.nodes.get(a).algorithm, null);
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[13g] physical.js refuses a catalogue with no sink role');
+
+// A catalogue with no `roles` at all is perfectly valid to catalog.js (roles is
+// optional there) — components-data.test.js only proves the SHIPPED data
+// declares roles.sink; this proves the recognizer itself refuses a catalogue
+// that does not, instead of silently answering "no sink" forever.
+test('recognize() throws when the catalogue declares no roles.sink.capability', () => {
+  const sinkless = createCatalog({ components: [], portTypes: {} });
+  let err = null;
+  try { Physical.recognize(new Map(), new Map(), [], sinkless); } catch (e) { err = e; }
+  assert(err, 'expected Physical.recognize to throw');
+  assert(/roles\.sink\.capability is required/.test(err.message), err.message);
 });
 
 // ---------------------------------------------------------------------------
