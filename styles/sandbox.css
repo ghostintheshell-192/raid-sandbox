@@ -149,8 +149,19 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-slot--filled[data-axis="algorithm"]    { background: rgba(230,126,34,.18); border: 1.5px solid rgba(230,126,34,.5); }
 .sbc-slot--empty[data-axis="algorithm"]     { border-color: rgba(230,126,34,.3); }
 
+/* The slot stays instead of vanishing when the array's class has no layout to
+   choose (tech-debt/algorithm-slot-vanishes-silently.md) — quiet on purpose:
+   same dashed shape as an empty slot, no tint, no cursor, nothing that reads
+   as a warning. The reason lives in its title (a native tooltip on hover). */
+.sbc-slot--disabled {
+  border: 1.5px dashed rgba(128,128,128,.25);
+  background: rgba(128,128,128,.04);
+  opacity: .55;
+}
+
 /* Every slot is tappable: it opens the inline option picker. */
 .sbc-slot { cursor: pointer; }
+.sbc-slot.sbc-slot--disabled { cursor: default; }
 
 /* Active-zone glow: the tapped slot / disk / array / empty canvas lights up
    softly while its picker is open — "you've selected where to put something". */

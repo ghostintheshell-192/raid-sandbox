@@ -104,6 +104,17 @@ test('flat mirror levels (striped+mirror leaves) have defaultAlgorithm set', () 
   }
 });
 
+test('leaf levels with no placement algorithm (not parity, not flat mirror) have noAlgorithmReason set', () => {
+  for (const d of docs) {
+    const s = d.shape;
+    const isParity     = s.redundancy === 'parity1' || s.redundancy === 'parity2';
+    const isFlatMirror = s.segmentation === 'striped' && s.redundancy === 'mirror';
+    if (s.members === 'disks' && !isParity && !isFlatMirror)
+      assert(typeof d.noAlgorithmReason === 'string' && d.noAlgorithmReason,
+        `${d.id}: leaf level with no algorithm axis needs a noAlgorithmReason`);
+  }
+});
+
 test('faultToleranceAtMinimum == 0 only for none-redundancy leaf levels', () => {
   for (const d of docs)
     if (d.reference.faultToleranceAtMinimum === 0)

@@ -22,6 +22,15 @@ reference:
 
 defaultAlgorithm: null
 
+# Shown in the algorithm slot when it is disabled (canvas-controller.js
+# `_makeSlots`) — the fact the slot states instead of just disappearing.
+# This is the sentence for the CLASS this shape belongs to (linear+mirror),
+# reused by every node of that class regardless of what its members are —
+# including a RAID 51's outer mirror-of-spans, which is linear+mirror at
+# that node too. Written for "member", not "disk", so it stays true there.
+# See tech-debt/algorithm-slot-vanishes-silently.md.
+noAlgorithmReason: "a plain mirror has no layout to choose — every member holds a full copy"
+
 description: >
   Every disk is an exact, real-time copy of every other disk. If one fails,
   the others keep everything running as if nothing happened.
