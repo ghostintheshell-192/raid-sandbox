@@ -15,13 +15,19 @@ shape:
     members: disks
 
 minDisks: 6   # 2 spans × 3 disks minimum per RAID-5 span
-faultTolerance: 1   # per span; one failure per span is recoverable
-capacityFormula: "spans × (disksPerSpan − 1) × disk size"
-defaultAlgorithm: left-symmetric   # applies to each RAID-5 child span
 
-writePenalty:
-  random: 4     # inherited from the RAID-5 child spans
-  sequential: 1
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's (per span; one failure per span is recoverable). The engine derives the real
+# number from the tree. Checked against the engine by raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "spans × (disksPerSpan − 1) × disk size"
+  writePenalty:
+    random: 4     # inherited from the RAID-5 child spans
+    sequential: 1
+
+defaultAlgorithm: left-symmetric   # applies to each RAID-5 child span
 
 description: >
   A stripe over two or more RAID-5 spans (RAID 5+0). Combines the parallelism of

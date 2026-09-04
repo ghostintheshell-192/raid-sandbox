@@ -15,8 +15,16 @@ shape:
     members: disks
 
 minDisks: 4
-faultTolerance: 1   # guaranteed; may survive more if failures fall in different spans
-capacityFormula: "sum of span capacities  =  N/2 × disk size (for uniform spans)"
+
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's (guaranteed 1; may survive more if failures fall in different spans). The
+# engine derives the real number from the tree. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "sum of span capacities  =  N/2 × disk size (for uniform spans)"
+
 defaultAlgorithm: null
 
 note: >

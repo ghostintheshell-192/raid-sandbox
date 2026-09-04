@@ -10,16 +10,23 @@ shape:
   members: disks
 
 minDisks: 3
-faultTolerance: 1
-capacityFormula: "(N − 1) × disk size"
-defaultAlgorithm: left-symmetric
 
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's; the engine derives the real numbers. Checked against the engine by
+# raid-levels-data.test.js.
+#
 # Write-penalty table (Patterson/Gibson/Katz small-write problem):
 #   random:     4 I/Os per logical write (read old-data + read old-P, write new-data + write new-P)
 #   sequential: ~1 I/Os (full-stripe write computes P once; no read-modify-write)
-writePenalty:
-  random: 4
-  sequential: 1
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "(N − 1) × disk size"
+  writePenalty:
+    random: 4
+    sequential: 1
+
+defaultAlgorithm: left-symmetric
 
 description: >
   Data is striped across all disks with one parity block per stripe distributed

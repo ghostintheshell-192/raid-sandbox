@@ -14,13 +14,19 @@ shape:
   copies: 2
 
 minDisks: 3
-faultTolerance: 1
-capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
-defaultAlgorithm: near
 
-writePenalty:
-  random: 2
-  sequential: 2
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's; the engine derives the real numbers. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+  writePenalty:
+    random: 2
+    sequential: 2
+
+defaultAlgorithm: near
 
 note: >
   RAID 1E is the interleaved striped mirror used when the disk count is odd (so the

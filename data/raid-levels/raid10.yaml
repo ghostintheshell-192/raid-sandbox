@@ -14,14 +14,20 @@ shape:
   copies: 2
 
 minDisks: 4
-faultTolerance: 1   # guaranteed; may survive more if failures fall in different copy groups
-capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
-defaultAlgorithm: near
 
-# Write-penalty: mirror = 2 (write every copy; no parity read-modify-write)
-writePenalty:
-  random: 2
-  sequential: 2
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's; the engine derives the real numbers (guaranteed 1, may survive more if
+# failures fall in different copy groups). Checked against the engine by
+# raid-levels-data.test.js. Write-penalty: mirror = 2 (write every copy; no parity RMW).
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+  writePenalty:
+    random: 2
+    sequential: 2
+
+defaultAlgorithm: near
 
 note: >
   RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build).

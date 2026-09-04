@@ -10,16 +10,23 @@ shape:
   members: disks
 
 minDisks: 4
-faultTolerance: 2
-capacityFormula: "(N − 2) × disk size"
-defaultAlgorithm: left-symmetric
 
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's; the engine derives the real numbers. Checked against the engine by
+# raid-levels-data.test.js.
+#
 # Write-penalty table:
 #   random:     6 I/Os per logical write (read old-data + old-P + old-Q, write all three)
 #   sequential: ~1 I/Os (full-stripe write; both P and Q computed once)
-writePenalty:
-  random: 6
-  sequential: 1
+reference:
+  faultToleranceAtMinimum: 2
+  capacityFormula: "(N − 2) × disk size"
+  writePenalty:
+    random: 6
+    sequential: 1
+
+defaultAlgorithm: left-symmetric
 
 parity:
   count: 2

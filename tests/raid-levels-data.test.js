@@ -4,7 +4,7 @@
  * Run with: node raid-levels-data.test.js   (uses python3 + pyyaml to read YAML;
  * this repo is zero-dependency and Node has no YAML parser, so python is the reader.)
  *
- * Three guards:
+ * Four guards:
  *   1. the manifest (index.yaml + every listed file) builds a level catalogue
  *      through the SAME assemble/createLevels the browser uses — a shape with a
  *      typo, a missing reason, a nested level without a childShape all fail
@@ -13,12 +13,18 @@
  *      algorithm, fault tolerance 0 only without redundancy, …);
  *   3. tests/fixtures/raid-levels.js mirrors the YAML on every field the engine
  *      reads, so the browser (YAML) and Node (fixture) can never name shapes
- *      differently.
+ *      differently;
+ *   4. `reference.faultToleranceAtMinimum` — a number a human wrote, not a field
+ *      the engine reads (tech-debt/level-numbers-duplicated-untested.md) — agrees
+ *      with what model.js DERIVES for the smallest tree each shape allows at
+ *      minDisks. This is the one place that comparison happens; nothing else
+ *      checks the `reference` block against the engine.
  */
 
 const path = require('path');
 const { execFileSync } = require('child_process');
 const L = require('../src/engine/levels.js');
+const M = require('../src/engine/model.js');
 const fixture = require('./fixtures/raid-levels.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
@@ -74,10 +80,11 @@ console.log('\n[2] RAID level domain invariants');
 
 const docs = index.map((e) => files[e.id]);
 
-test('every level declares faultTolerance and capacityFormula', () => {
+test('every level declares reference.faultToleranceAtMinimum and reference.capacityFormula', () => {
   for (const d of docs) {
-    assert(typeof d.faultTolerance === 'number', `${d.id}: faultTolerance`);
-    assert(typeof d.capacityFormula === 'string' && d.capacityFormula, `${d.id}: capacityFormula`);
+    assert(d.reference && typeof d.reference === 'object', `${d.id}: reference block`);
+    assert(typeof d.reference.faultToleranceAtMinimum === 'number', `${d.id}: reference.faultToleranceAtMinimum`);
+    assert(typeof d.reference.capacityFormula === 'string' && d.reference.capacityFormula, `${d.id}: reference.capacityFormula`);
   }
 });
 
@@ -97,10 +104,10 @@ test('flat mirror levels (striped+mirror leaves) have defaultAlgorithm set', () 
   }
 });
 
-test('faultTolerance == 0 only for none-redundancy leaf levels', () => {
+test('faultToleranceAtMinimum == 0 only for none-redundancy leaf levels', () => {
   for (const d of docs)
-    if (d.faultTolerance === 0)
-      assert(d.shape.redundancy === 'none', `${d.id}: faultTolerance 0 but redundancy is "${d.shape.redundancy}"`);
+    if (d.reference.faultToleranceAtMinimum === 0)
+      assert(d.shape.redundancy === 'none', `${d.id}: faultToleranceAtMinimum 0 but redundancy is "${d.shape.redundancy}"`);
 });
 
 test('no two levels share a shape (the first match would shadow the second forever)', () => {
@@ -133,6 +140,34 @@ for (const d of docs) {
     const mirror = fixture.levels.find((x) => x.id === d.id);
     assert(mirror, `fixture has no "${d.id}"`);
     eq(modelFields(mirror), modelFields(d));
+  });
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n[4] reference.faultToleranceAtMinimum agrees with the engine');
+
+// Builds the smallest tree `shape` allows with `total` physical disks: a leaf
+// shape (members: disks) is just `total` disks; a nested shape (members: arrays)
+// splits into the smallest number of spans a shape can name — 2 — the count every
+// nested level's minDisks comment in the YAML already assumes (e.g. RAID 50 at 6
+// disks = two 3-disk RAID-5 spans).
+function smallestTree(shape, total) {
+  const disks = (n) => Array.from({ length: n }, (_, i) => M.disk(`d${i}`, 100));
+  if (shape.members === 'disks') {
+    const node = M.array(shape.segmentation, shape.redundancy, disks(total));
+    if (shape.copies) node.copies = shape.copies;   // flat RAID 10 / RAID 1E (§3a)
+    return node;
+  }
+  const spans = 2;
+  assert(total % spans === 0, `minDisks ${total} does not split into ${spans} equal spans`);
+  const members = Array.from({ length: spans }, () => smallestTree(shape.childShape, total / spans));
+  return M.array(shape.segmentation, shape.redundancy, members);
+}
+
+for (const d of docs) {
+  test(`${d.id}: reference.faultToleranceAtMinimum matches the engine at minDisks (${d.minDisks})`, () => {
+    const tree = smallestTree(d.shape, d.minDisks);
+    eq(M.faultTolerance(tree), d.reference.faultToleranceAtMinimum);
   });
 }
 

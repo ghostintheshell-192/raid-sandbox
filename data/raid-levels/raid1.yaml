@@ -10,8 +10,16 @@ shape:
   members: disks
 
 minDisks: 2
-faultTolerance: 1
-capacityFormula: "disk size (one copy's worth, regardless of disk count)"
+
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's — RAID 1 is exactly where this bites: an n-way mirror with n > 2 survives
+# n-1 failures, not 1. The engine derives the real number from the tree. Checked
+# against the engine (at minDisks) by raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "disk size (one copy's worth, regardless of disk count)"
+
 defaultAlgorithm: null
 
 description: >

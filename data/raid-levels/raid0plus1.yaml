@@ -16,8 +16,16 @@ shape:
     members: disks
 
 minDisks: 4   # 2 mirrored legs × 2-disk RAID 0
-faultTolerance: 1   # guaranteed: one failure kills a leg, the other leg survives
-capacityFormula: "one RAID-0 leg  =  N/2 × disk size (for uniform legs)"
+
+# Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
+# faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
+# array's (guaranteed: one failure kills a leg, the other leg survives). The engine
+# derives the real number from the tree. Checked against the engine by
+# raid-levels-data.test.js.
+reference:
+  faultToleranceAtMinimum: 1
+  capacityFormula: "one RAID-0 leg  =  N/2 × disk size (for uniform legs)"
+
 defaultAlgorithm: null
 
 description: >
