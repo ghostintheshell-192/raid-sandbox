@@ -35,7 +35,7 @@ in two places: *"the reason is written for a developer or a test, not for the pl
 | `cpCanConnect` | no catalogue loaded · a component wired to itself · a disk wired by hand · unknown node | ✅ `canvas-state.test.js` [13d] |
 | `cpConnect` | **throws** when `cpCanConnect` says no, so no test can assert on a canvas no player could draw | ✅ |
 | `cpDisconnect` | refuses to delete a *derived* edge (disk → acceptor): routing is domain truth, not a drawing | ✅ |
-| `loadDocument` | unknown version · a member naming no node · an array as its own member · a node claimed by two arrays · a wire to an absent component · a wire the catalogue forbids · corrupt base64 — **and leaves the state empty, never half-loaded** | ✅ `build-document.test.js` [2] |
+| `loadDocument` | unknown version · a member naming no node · an array as its own member · a node claimed by two arrays · a wire to an absent component · a wire the catalogue forbids · corrupt base64 — **and leaves the state empty, never half-loaded** | ✅ `build-document.test.js` [2] — except the self-member case, refused in code and exercised by no test |
 | `createCatalog` / `createLevels` | a malformed manifest, 6 and 7 cases respectively | ✅ `catalog.test.js` [3], `levels.test.js` [2] |
 | `model.js` | unknown segmentation or redundancy | ❌ |
 | `physical.js` | `roles.sink.capability` missing from the manifest | ❌ (checked against the real data, never as a refusal) |
@@ -88,10 +88,12 @@ with its own registration.
 | `engine-single-point` | hard | the RAID engine sits at exactly one point on the path |
 | `mixed-disk-sizes` | soft | mirror and parity coerce every member down to the smallest; RAID 0 and linear do not |
 | `uneven-spans` | soft | a mirror parent keeps one copy's worth; a striped parent runs slower over its tail |
-| `backplane-diversity` | soft | members of a span should sit on different backplanes |
+| `backplane-diversity` | soft | members of a span should sit on different backplanes — **registered, but dormant**: v1 has a single backplane, so the check returns nothing (§9.4, deferred) |
 
-This is the part of the game that works. The messages name their subject, cite their
-source, and carry the real reason.
+Six of these are live, and they are the part of the game that works: the messages name
+their subject, cite their source, and carry the real reason. The seventh,
+`backplane-diversity`, is written into the registry so the §6 rule is visible and wired,
+but it cannot fire until the model has more than one backplane.
 
 ### Is anything missing from §6?
 
@@ -99,11 +101,17 @@ The domain-model spec §6 lists the constraint vocabulary. Compared against the 
 rules:
 
 - **Implemented**: minimums, NVMe/backplane, near/far/offset, engine single point, and
-  the three soft rules. Every constraint the current model can express.
+  two soft rules (mixed disk sizes, uneven spans). Every constraint the current model can
+  express.
+- **Registered but unable to fire**: backplane diversity — the rule exists so the
+  vocabulary is complete; the model has nothing for it to check yet.
 - **Deliberately deferred**: hot-spare capacity — it belongs to the runtime module
   (roadmap item 7).
 - **Superseded and marked as such**: the even-disk mirror rule (RAID 1E made it false),
-  and engine-type-by-position (ADR-001).
+  and the reading of the engine's *position* as its type (ADR-001). Spec §6 had struck the
+  whole "exactly one point on the path" row for that, while the count half of it —
+  `engine-single-point`, more than one engine is a violation — was never superseded and is
+  still live. The row now says so.
 - **Out of the model's reach — two of them**:
 
   | constraint | source | why there is no rule |
@@ -168,6 +176,11 @@ Everything actionable found here is tracked as tech debt; this map stays the map
 > Worth remembering when auditing coverage: **searching for the message finds the wording,
 > not the behaviour.** A refusal is covered when something exercises the path, whatever the
 > assertion happens to spell.
+>
+> **Second correction, same day.** The seven-rule table counted `backplane-diversity` as a
+> rule that works. It is registered and dormant: its check returns nothing, by design, until
+> the model has more than one backplane. Reading the registry measured the vocabulary, not
+> the behaviour — the same mistake as above, from the other side.
 
 | gap | tracked as |
 |---|---|
