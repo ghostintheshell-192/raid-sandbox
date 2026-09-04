@@ -2,7 +2,8 @@
 # Introductory content for the Visualize tab.
 #
 # Narrative order (mirrors how one reasons about RAID):
-#   1. Storage layers  — physical (spans) then logical (virtual disks)
+#   1. Storage layers  — physical disks → drive group → span → virtual drive,
+#      per domain-model.md §8
 #   2. Data techniques — striping, redundancy
 #   3. Key parameters  — fault tolerance, capacity, throughput, rebuild time
 
@@ -16,42 +17,75 @@ summary: >
 
 # ---------------------------------------------------------------------------
 # STORAGE LAYERS
-# Accordion — physical layer first, then logical layer.
+# Accordion — the four-level chain, physical disks up to the virtual drive
+# the OS sees. This is the vocabulary the rest of the game (and the sandbox
+# canvas) uses; the intro is where a beginner should meet it once, in order.
 # ---------------------------------------------------------------------------
 
 storageLayers:
   label: "Storage layers"
 
   items:
-    - id: drive-spans
-      term: "Drive spans (physical layer)"
-      short: "Multiple physical disks joined into a single contiguous address space."
+    - id: physical-disks
+      term: "Physical disks"
+      short: "The raw drives — the hardware every layer above is built from."
       detail: >
-        A drive span — sometimes called JBOD (Just a Bunch Of Disks) — is the
-        simplest way to combine physical disks: they are joined end-to-end so
-        that Disk 0 occupies addresses 0–N, Disk 1 occupies N+1–2N, and so on.
-        No performance optimization, no redundancy — just raw pooled capacity.
+        A physical disk is a single hard drive or SSD, with its own capacity
+        and its own interface (SATA, SAS, or NVMe). On its own it just holds
+        data the way any disk does — no protection, no help from anything
+        above it.
 
-        RAID builds on top of spans. All member disks of a RAID array form a
-        span; the RAID controller then applies striping, mirroring, or parity
-        across that span. If a disk fails in a plain span, the data on that
-        disk is lost — but the rest of the span remains intact.
+        Every layer in this chain exists to turn a pile of physical disks
+        into something more useful than one disk at a time — faster, more
+        resilient, or both.
 
-    - id: virtual-disks
-      term: "Virtual disks (logical layer)"
-      short: "The logical device the OS sees — independent of the physical layout below."
+    - id: drive-group
+      term: "Drive group"
+      short: "The set of physical disks a controller gathers together to work with."
       detail: >
-        A virtual disk is the block device that the operating system, file
+        A drive group is a pool, not a layout: the controller gathers a set
+        of physical disks under itself, and from that point on it can carve
+        them up as it likes. Forming a drive group is a gathering step — a
+        drive group by itself has no striping, no mirroring, no parity. It
+        just marks off "these disks are mine to arrange."
+
+        The layout is decided one level down, in the span.
+
+    - id: span
+      term: "Span"
+      short: "A subset of the drive group's disks, carrying its own layout — striping, mirroring, or parity."
+      detail: >
+        A span is where a RAID layout actually applies: a set of disks — all
+        of the drive group, or only part of it — sharing one striping,
+        mirroring, or parity scheme. A span is a subset of the drive group's
+        disks; a drive group can hold several spans, each with its own
+        independent layout — the simplest such layout is none at all, disks
+        joined end-to-end with no striping and no redundancy, what the game
+        calls JBOD.
+
+        RAID 50 makes the relationship concrete: it stripes across two or
+        more RAID-5 spans, and each span independently tolerates one disk
+        failure. But the top-level stripe needs every span to reconstruct
+        data, so two failures in the *same* span destroy that span — and
+        with it the whole array — even though the other spans are
+        physically intact. A two-span RAID 50 therefore survives one
+        failure per span (two failures in total, as long as they land in
+        different spans), but not two failures landing in the same span.
+
+    - id: virtual-drive
+      term: "Virtual drive (VD)"
+      short: "The logical volume the OS sees — independent of the physical layout below."
+      detail: >
+        A virtual drive is the block device that the operating system, file
         system, or application works with. It has a contiguous address space
         and behaves exactly like a single physical disk — regardless of how
-        many drives, spans, or RAID levels are underneath.
+        many disks, spans, or RAID levels sit underneath.
 
-        Crucially, a virtual disk does not have to consume the entire span.
-        A 6 TB span could host a 2 TB virtual disk and leave 4 TB available
+        Crucially, a virtual drive does not have to consume the entire span.
+        A 6 TB span could host a 2 TB virtual drive and leave 4 TB available
         for another, as long as the total stays within span capacity. This
-        decoupling of physical layout from logical addressing is the same
-        abstraction that LVM (Linux) and Storage Spaces (Windows) build on —
-        and it is what makes RAID transparent to the software running above it.
+        decoupling of physical layout from logical addressing is what makes
+        RAID transparent to the software running above it.
 
 # ---------------------------------------------------------------------------
 # DATA TECHNIQUES
