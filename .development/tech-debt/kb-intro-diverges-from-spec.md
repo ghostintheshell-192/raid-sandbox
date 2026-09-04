@@ -1,7 +1,7 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-09-04
 related: []
 related_decision: null
@@ -59,6 +59,21 @@ base rework, where the SEO decision also lands.
 Whatever is decided, spec §8 is the authority and this file must agree with it. If the
 four-level chain is judged too much for an introduction, the fix is a note saying the
 intro simplifies — not a different meaning for the same word.
+
+## Resolution (2026-09-05)
+
+Implemented Option B. `data/intro.yaml`'s `storageLayers` section now presents all four
+levels of spec §8 — physical disks → drive group → span → virtual drive — under the
+locked terms, in that order. The span item explicitly calls out the drive-group/span
+mix-up (span is a *subset* of the drive group's disks, not the other way round) and
+grounds it in `data/raid-levels/raid50.yaml`'s span-level fault tolerance. The virtual-drive
+item keeps the "does not have to consume the entire span" point from the old text.
+
+`kb.js` needed no change: `buildAccordionGroup` already renders `storageLayers.items`
+generically as an accordion, so a fourth item shows up for free.
+
+Option C (rebuild time / key parameters) is **not** part of this fix and stays deferred to
+roadmap item 3 (knowledge base rework), as recommended.
 
 ## Related Documentation
 
