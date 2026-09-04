@@ -78,14 +78,14 @@ during the plan's browser checkpoints is in the plan handoff
 
 ## Next Steps — the roadmap after the agnostic-engine plan
 
-> **Before any of this, next session**: promote
-> `.memory-bank/ideas/2026-09-04-degenerate-levels.md` to a spec. Agreed 2026-09-04, the
-> day it was captured. Below its minimum width every level collapses into a simpler one —
-> a two-disk RAID 5 *is* a mirror — and the game names only what was composed. The
-> proposed shape: keep the recognizer's box as "what the player is trying to build", add a
-> second derived box for "what the player actually has", and let errors surface as the diff
-> between them. It is closer to the point of the game than several items on this list, and
-> it may absorb §6 rules rather than add to them.
+> **Before any of this**: implement
+> [`specs/planned/degenerate-levels.md`](specs/planned/degenerate-levels.md) — decided
+> 2026-09-04, spec written the same day. Below its minimum width every level collapses into
+> a simpler one — a two-disk RAID 5 *is* a mirror, and the kernel says so — and the game
+> names only what was composed. Two derived boxes (what you are building / what you have),
+> the diff is the trace of rewrites, `collapsesTo` on the level files, a content algebra as
+> the oracle in tests, and `min-disks` splits into a soft collapse and a hard refusal. It is
+> closer to the point of the game than anything below.
 
 Valentina's priority order, 2026-09-02. Each item says where it starts (the document
 or tech-debt that already holds the thinking) and a size: **S** hours, **M** a

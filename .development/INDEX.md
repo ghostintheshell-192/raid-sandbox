@@ -32,8 +32,9 @@
 - [agnostic-engine.md](specs/implemented/agnostic-engine.md) — The agnostic engine — how the domain moved out of the code
 - [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) — RAID Sandbox — Domain Model (design backbone)
 
-### specs/planned/ (2 files)
+### specs/planned/ (3 files)
 
+- [degenerate-levels.md](specs/planned/degenerate-levels.md) — Degenerate levels — what the player has, next to what they tried to build
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 

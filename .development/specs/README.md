@@ -34,6 +34,7 @@ This table only says whether the thinking has a home.
 
 | # | Roadmap item | Document | State |
 |---|---|---|---|
+| 0 | Degenerate levels — what the player has, next to what they tried to build | [`planned/degenerate-levels.md`](planned/degenerate-levels.md) | **spec written 2026-09-04**, from the idea note of the same day; decided, not implemented |
 | 1 | Refusal points (structural vs. UI) | [`../reference/refusal-points.md`](../reference/refusal-points.md) | **done** — the map, the animation gate decision, and the four gaps that remain |
 | 2 | Info icons ("i") | [`planned/informative-ui.md`](planned/informative-ui.md) + [`../reference/unspoken-content.md`](../reference/unspoken-content.md) | the July inventory, now answered from the other side: the text is written and unreachable, so the work is a channel |
 | 3 | Knowledge base rework | [`../reference/unspoken-content.md`](../reference/unspoken-content.md) | three findings to inherit: the level prose it never sees, a vocabulary contradicting spec §8, a key parameter it advertises and the game cannot compute |
