@@ -311,6 +311,19 @@ Not decided here; the candidates, in order of how much they show rather than tel
 The first is the sandbox's own channel and the preference; whether it reads well is a
 browser question.
 
+**Decided in the browser, 2026-09-05: the second — two boxes and the diff in words**, in
+the results panel, side by side where the panel is wide enough (≥ 1600px: the panel grows
+from 320 to 440px, the canvas keeps 1220px at Full HD), stacked below that. Box 1 *What
+you are building*, box 2 *What you have* — the working titles of §11.3 stayed. Box 2 is
+outlined when it differs and says *the same — what you built is what you have* when it
+does not. Under the boxes, the diff: one row per rewrite, *RAID 5 · 2 disks → RAID 1* and
+the level file's `because`; pointing at a row lights the node it rewrote. The
+`level-collapse` violations are not listed a second time below — the diff is their
+display. The grid channel (P cells relabelled as copies) is not dropped, only deferred:
+it can be added on top of this without moving anything. A RAID 51 with two-disk spans
+yields two identical rows, one per span; accepted for now, see
+`.memory-bank/ideas/2026-09-05-merge-identical-diff-rows.md`.
+
 ## 10. Tests
 
 - **The oracle** (§6): enumerated small trees, algebra vs. declared rules, both
