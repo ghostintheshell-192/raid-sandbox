@@ -93,26 +93,55 @@
   // Code, severity, layer and source come from the registry entry, not from here.
   // ---------------------------------------------------------------------------
 
-  // Level-specific disk minimums, read off the level catalogue: a leaf span is
-  // matched to its level (RAID 10 vs RAID 1E is the even/odd constraint in the
-  // level files, not a rule here) and compared to that level's `minDisks`. The
-  // universal ≥2 is STRUCTURAL and stays with canvas-state's _firstIssue, so a
-  // level whose minimum is 2 never fires here — the panel would otherwise say
-  // the same thing twice.
+  // Below a level's minimum there are TWO facts (degenerate-levels §8), and they
+  // are two rules:
+  //
+  //   - the build still RUNS, as a simpler level — `level-collapse`, soft: the
+  //     text is the `because` of the rewrite normalize() applied, and the diff
+  //     between what was composed and what runs is the whole explanation;
+  //   - the real system does not START it — `min-disks`, hard: the width is below
+  //     the level's `minDisksToRun`, and the message cites the kernel line the
+  //     level file gives as `minDisksToRunSource`.
+  //
+  // RAID 6 @3 is both at once and both are shown. A leaf span is matched to its
+  // level (RAID 10 vs RAID 1E is the even/odd constraint in the level files, not
+  // a rule here). The universal ≥2 is STRUCTURAL and stays with canvas-state's
+  // _firstIssue, so a minimum of 2 never fires here — the panel would otherwise
+  // say the same thing twice. A level file with no `minDisksToRun` falls back to
+  // `minDisks`, the rule as it was before the split.
   function checkMinDisks(tree, physical, ctx) {
     if (!ctx.levels) return null;
     const out = [];
     for (const { node: a, label } of ctx.arrays) {
       if (!allDisks(a)) continue;                     // nested levels checked via their leaf spans
       const level = ctx.levels.match(a);
-      if (!level || !(level.minDisks > 2)) continue;
-      if (a.members.length < level.minDisks)
-        out.push({
-          message: `${label} is a ${level.name} — it needs at least ${level.minDisks} disks and has ${a.members.length}.`,
-          nodeId: a.id,
-        });
+      if (!level) continue;
+      const min = level.minDisksToRun ?? level.minDisks;
+      if (!(min > 2) || a.members.length >= min) continue;
+      out.push({
+        message: level.minDisksToRunSource
+          ? `${label} is a ${level.name} with ${a.members.length} disks — Linux does not start it below ${min} (${level.minDisksToRunSource}).`
+          : `${label} is a ${level.name} — it needs at least ${min} disks and has ${a.members.length}.`,
+        nodeId: a.id,
+      });
     }
     return out;
+  }
+
+  function checkLevelCollapse(tree, physical, ctx) {
+    if (!ctx.levels) return null;
+    const labelOf = (id) => {
+      const hit = id !== null && ctx.arrays.find(({ node }) => node.id === id);
+      return hit ? hit.label : 'This array';
+    };
+    return Model.normalize(tree, ctx.levels).trace.map((r) => {
+      const level = ctx.levels.get(r.level);
+      const runs  = r.runsAs ? `a ${r.runsAs}` : 'a shape with no standard name';
+      const message = r.rule === 'absorb'
+        ? `${labelOf(r.nodeId)} is a ${level.name} of ${level.name}s — what runs is one ${level.name} over ${r.to.members} disks: ${r.because}.`
+        : `${labelOf(r.nodeId)} is a ${level.name} with ${r.from.members} disks — what runs is ${runs}: ${r.because}.`;
+      return { message, nodeId: r.nodeId };
+    });
   }
 
   // A level may declare its own `advisory` (soft): a shape that is legitimate but
@@ -320,7 +349,10 @@
    *             run: (tree: any, physical: any, ctx: any) => any }[]} */
   const RULES = [
     { code: 'min-disks',                 severity: 'hard', layer: 'data',
-      source: 'raid-types §6',           run: checkMinDisks },
+      source: 'degenerate-levels §8 (md raid5.c)', run: checkMinDisks },
+
+    { code: 'level-collapse',            severity: 'soft', layer: 'data',
+      source: 'degenerate-levels §8',    run: checkLevelCollapse },
 
     { code: 'level-advisory',            severity: 'soft', layer: 'data',
       source: 'domain-model §6',         run: checkLevelAdvisory },

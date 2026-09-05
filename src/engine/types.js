@@ -112,11 +112,12 @@
 /**
  * One rewrite `normalize()` applied (specs/planned/degenerate-levels.md §4): the
  * trace is the list of these — the diff between what was composed and what
- * runs. `level` is the id of the level whose file declared the rule.
+ * runs. `level` is the id of the level whose file declared the rule; `runsAs` the
+ * name the catalogue gives the rewritten node, or null when it has none.
  * @typedef {{ rule: 'collapse' | 'absorb', level: string, nodeId: string | null,
  *             from: { segmentation: Segmentation, redundancy: Redundancy, members: number },
  *             to:   { segmentation: Segmentation, redundancy: Redundancy, members: number },
- *             because: string, source: string }} Rewrite
+ *             runsAs: string | null, because: string, source: string }} Rewrite
  */
 
 /**

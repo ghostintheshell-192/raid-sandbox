@@ -334,8 +334,11 @@
     /** @type {Rewrite[]} */
     const trace = [];
     const shapeOf = (n) => ({ segmentation: n.segmentation, redundancy: n.redundancy, members: n.members.length });
-    const record = (rule, level, from, to, { because, source }) =>
-      trace.push({ rule, level: level.id, nodeId: from.id, from: shapeOf(from), to: shapeOf(to), because, source });
+    const record = (rule, level, from, to, { because, source }) => {
+      const named = levels.match(to);   // what the catalogue calls the rewritten node, if anything
+      trace.push({ rule, level: level.id, nodeId: from.id, from: shapeOf(from), to: shapeOf(to),
+                   runsAs: named ? named.name : null, because, source });
+    };
 
     // A node whose members all have the same leaf shape as itself, when the level
     // of that shape says nesting it inside itself changes nothing (a mirror of

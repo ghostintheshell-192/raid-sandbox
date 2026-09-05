@@ -71,6 +71,7 @@ test('RAID 5 @2 → a mirror: one rewrite, declared by raid5, id kept, algorithm
   eq(tree.id, 'a1');
   eq(tree.algorithm, null);
   eq(traceOf(trace), 'collapse:raid5@a1:striped+parity1/2→linear+mirror/2');
+  eq(trace[0].runsAs, 'RAID 1');
   const rule = fixture.levels.find((d) => d.id === 'raid5').collapsesTo[0];
   eq(trace[0].because, rule.because);
   eq(trace[0].source, rule.source);
