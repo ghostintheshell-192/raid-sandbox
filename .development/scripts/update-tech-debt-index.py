@@ -123,6 +123,10 @@ def generate_index_section(issues: List[Dict]) -> str:
     # Group by priority
     by_priority: Dict[str, List[Dict]] = {p: [] for p in PRIORITY_ORDER}
     for issue in issues:
+        # "Current" means open: a resolved or dropped issue keeps its file (the
+        # record of what was decided) but leaves this map.
+        if issue['status'].lower() in ('resolved', 'dropped'):
+            continue
         priority = issue['priority'].lower()
         if priority in by_priority:
             by_priority[priority].append(issue)
@@ -213,6 +217,8 @@ def main():
     # Count by priority
     by_priority = {}
     for issue in issues:
+        if issue['status'].lower() in ('resolved', 'dropped'):   # same filter as the index
+            continue
         p = issue['priority']
         by_priority[p] = by_priority.get(p, 0) + 1
 

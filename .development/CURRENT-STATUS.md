@@ -178,7 +178,7 @@ decision.
    Start: `data/`, `data-loader.js` (a language prefix). **M**
 9. **Accessibility** — keyboard and screen-reader paths were never considered; for a
    teaching tool they matter. Start: an audit of `index.html` roles/labels, the
-   drag-only interactions (tap-to-build already helps). **M**
+   drag-only interactions. **M**
 10. **Extracting the game engine** — the decision this whole plan prepared: second
     domain (datacenter / network topologies / motor workbench), name, scope; then
     `git subtree` with history, never a copy. Start:
@@ -221,9 +221,9 @@ See `.development/tech-debt/`:
 
 ## Notes
 
-- **Test suite**: 17 headless node files in `tests/` — run each with `node <file>`, or all
+- **Test suite**: 19 headless node files in `tests/` — run each with `node <file>`, or all
   via `bash .development/automation/test.sh`; type check via `typecheck.sh`; plus
-  browser test pages (`*.test.html`) and demos. Responsive/touch/accordion work is
+  browser test pages (`*.test.html`) and demos. Drag-and-drop, picker and animation work is
   browser-only (guarded), does not touch the headless suite.
 - **Zero-dependency**: YAML parsed in-browser via js-yaml; node tests must not require
   YAML parsing at runtime.
