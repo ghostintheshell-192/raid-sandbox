@@ -2,24 +2,50 @@
 
 ## Project State
 
-**Last Updated**: 2026-09-02
+**Last Updated**: 2026-09-05
 
 **Current Phase**: Live in its own repo. Extracted from the personal-site repo and
 deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-deploy from
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: none open. The **agnostic-engine plan** (2026-09-02, five steps, all
-merged) is complete: the engine reads its domain facts from `data/` instead of
-carrying them as code, a build is a document with a shareable link, and the engine is
-type-checked via `@ts-check`. What comes next is a decision, not a task — whether and
-how to extract the engine into a project of its own (see
-`reference/engine-robustness-and-extraction.md` §8). The queue of small items found
-during the plan's browser checkpoints is in the plan handoff
-(`.memory-bank/2026-09-02-0045-agnostic-engine-refactor-plan.md`, local).
+**Active Work**: implementing
+[`specs/planned/degenerate-levels.md`](specs/planned/degenerate-levels.md), in the
+order of its sections — data + coverage tests (§5, §10) → `normalize()` with its trace in
+`model.js` (§4) → `content.js` as the oracle (§6) → `min-disks` split into a soft
+collapse and a hard refusal (§8) → the UI, decided in the browser (§9). One branch per
+step, tried in the browser, then merged. Open question (§11.1): the write penalty of a
+two-disk RAID 5 must be checked in `raid5.c` (rmw/rcw) before the number is shown.
+
+The **agnostic-engine plan** (2026-09-02) is complete, and the technical queue it left
+behind (item 5 below) was closed on 2026-09-04/05 by two batches of agents working in
+worktrees, one PR each. What still waits on a decision, not a task: whether and how to
+extract the engine into a project of its own
+(`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
 
+- **The technical queue, closed by two batches of agents** (PRs #24–#33, 2026-09-04/05):
+  five agents per batch, each in its own worktree, one PR each, every one tried in the
+  browser. Batch 1: an algorithm drop is refused when the class does not offer it; the
+  knowledge base teaches the four levels of spec §8; the level files' numbers moved under
+  `reference:` and are tested against the engine; RAID 0+1 reads `high` (a mirror reads
+  as wide as the member serving it). Batch 2: the level's `reason` shows on success; the
+  algorithm slot stays, disabled and explained, when a class has none; the validator's
+  last domain facts moved into the data files (`provides: layout:*`, `engineComponentId`,
+  `nvme-backplane` reads `accepts:`); a generic `level-advisory` rule lets a level file
+  declare its own warning (RAID 0+1 first); the **write hole** is a soft cross-axis
+  warning, `power-loss-protection` declared by the RoC files. Six tech-debts closed, one
+  filed (`mirror-of-stripes-write-parallelism`). The validator has nine rules - 2026-09-05
+- **ADR-002, two censuses, the degenerate-levels spec** (PRs #15–#23, 2026-09-04):
+  ADR-002 "the engine holds no domain facts" and the agnostic-engine spec saved from the
+  diary; the refusal-points and unspoken-content censuses (verified line by line,
+  corrected where they overstated the code); the PR flow written into `workflow.md`; the
+  animation waits on hard violations; `data/algorithms/` validated and its three broken
+  files repaired; the two genuinely untested refusals covered; the degenerate-levels idea
+  promoted to `specs/planned/degenerate-levels.md` — below its minimum width a level
+  collapses into a simpler one, and the game names what was composed next to what runs.
+  Kernel facts read from `raid5.c`: RAID 1@2 → RAID 5@2 in place, RAID 6 < 4 refused - 2026-09-04
 - **Agnostic engine — the §5 promise kept** (five branches, all merged 2026-09-02):
   (1) the physical model lives in `src/engine/` (`catalog.js`, `physical.js`) and is fed
   by `data/components/*.yaml` — ports, the port-type relation, disk routing by
@@ -94,9 +120,9 @@ decision.
 
 1. **Refusal points** — **CENSUS DONE 2026-09-04**, see
    [`reference/refusal-points.md`](reference/refusal-points.md) and its companion
-   [`reference/unspoken-content.md`](reference/unspoken-content.md). What remains is
-   small and listed there: three tests, the `algorithm-drop-ignores-class` behaviour,
-   and the animation gate (the decision is taken, the code is not written).
+   [`reference/unspoken-content.md`](reference/unspoken-content.md). **Complete
+   2026-09-05**: the animation gate (PR #19), the two untested refusals (PR #21), the
+   `data/algorithms/` validation (PR #20), the algorithm drop refused by class (PR #24).
    Original scoping: census every place the game must refuse an action, in two
    families: *structural* (the engine cannot hold the state: incompatible port,
    self-loop, hand-wired disk, a document it cannot honour) and *UI* (the canvas
@@ -118,15 +144,13 @@ decision.
    coloured by verdict, the ADR-001 lesson with no words. Start:
    `specs/planned/derived-controller.md` ("the dashed box is the verdict, drawn"),
    `engineNodeId` in the eval result, `highlight.js`. **M**
-5. **Technical queue** — the level's `reason` in the results panel on success (today
-   only on failure); RAID 0+1 reads "medium" (a linear mirror's read class counts
-   legs, not the stripe width inside them — `model.js` readClass);
-   ~~the validator's last three ids in code~~ (done 2026-09-05,
-   `refactor/validator-facts-in-data`: the layouts are `layout:<algorithm>`
-   capabilities in the engine's own file, the disk route reads `accepts:`);
-   `algorithm-drop-ignores-class`; the physical
-   layer's missing tap-to-picker (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`);
-   `touch-dnd.js` re-scope now that tap-to-build ships. **S each**
+5. **Technical queue** — **mostly closed 2026-09-05** (see the milestone): the level's
+   `reason` on success (PR #28), RAID 0+1 reads high (PR #27), the validator's last ids
+   in code (PR #30), `algorithm-drop-ignores-class` (PR #24). Two items remain, both
+   Valentina's: the physical layer's missing tap-to-picker
+   (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`) needs a triage in the
+   browser first; `touch-dnd.js` re-scope now that tap-to-build ships — what "re-scope"
+   means here is still hers to say. **S each**
 6. **Challenges on the physical axis** — the requirement vocabulary knows only the
    data metrics; add the RAID type ("must be hardware") and the physical-validator
    phase 2 rules (fake RAID limited to 0/1/5/10, mixed protocols, Storage Spaces).
@@ -158,16 +182,28 @@ Small, any time:
   (the js-yaml argument); a Vercel function would be the first server-side code. **S**
 - **SEO: the content is not in the served HTML** — folds into item 3. **M**
 - **Google Fonts is the last third-party blocking request** — self-host JetBrains Mono. **S**
-- **Push + PR flow** — the plan's five steps were merged locally and pushed at once;
-  fine for a solo repo, but the `headless` check only runs on PRs and pushes to
-  `main`, so a PR per branch is what makes CI a gate. Valentina's call.
+- ~~**Push + PR flow**~~ — decided 2026-09-04 and written into `workflow.md` (PR #17):
+  a PR per branch, merged from GitHub, so the `headless` check is a gate. One caveat
+  learned the hard way (PR #32): a chained PR whose base branch is merged first must be
+  re-targeted to `main` before it is merged, or its commits land in a closed branch.
 
 ## Active Issues
 
 See `.development/tech-debt/`:
 
-- `algorithm-drop-ignores-class.md` — open (low): the drag path accepts an algorithm
-  the array's class does not have; the picker already filters. One predicate, two drops.
+- `physical-layer-canvas-has-no-touch-picker.md` — open (medium): the physical layer
+  never got the tap-to-picker inversion; needs a triage in the browser first (roadmap
+  item 5).
+- `canvas-nodes-are-unnamed.md` — open (medium): the canvas does not name the things
+  the player builds (roadmap item 2).
+- `capacity-approximate-on-mixed-disks.md` — open (medium): usable capacity is
+  approximate when an array mixes disk sizes.
+- `mirror-of-stripes-write-parallelism.md` — open (low): a mirror of striped legs
+  writes as one disk, so RAID 0+1 gets `writeMult 0.5` and `writeClass medium` against
+  1+0's `1` / `high`. Fixing it lets 0+1 satisfy the `database` challenge — a domain
+  decision, taken on purpose, recorded there.
+- `automation-not-checked-on-windows.md` — open (low): hooks and dev scripts are
+  tested only on the Linux workstation.
 - `nested-data-allocation-order.md` — **mostly RESOLVED**. Per-span order is
   Linux-verified (write-order bug fixed, golden hand-derived); only the cross-span
   stacking order remains a documented convention, by design.

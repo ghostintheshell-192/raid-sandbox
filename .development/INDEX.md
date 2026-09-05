@@ -38,7 +38,7 @@
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 
-### tech-debt/ (22 files)
+### tech-debt/ (23 files)
 
 - [README.md](tech-debt/README.md) — Tech Debt Issues
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
@@ -53,6 +53,7 @@
 - [headless-tests-bypass-port-validation.md](tech-debt/headless-tests-bypass-port-validation.md) — `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
 - [kb-intro-diverges-from-spec.md](tech-debt/kb-intro-diverges-from-spec.md) — The knowledge base teaches a vocabulary the spec does not use
 - [level-numbers-duplicated-untested.md](tech-debt/level-numbers-duplicated-untested.md) — Level files declare numbers the engine also computes, and nothing compares them
+- [mirror-of-stripes-write-parallelism.md](tech-debt/mirror-of-stripes-write-parallelism.md) — A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
 - [nvme-hardware-raid-unbuildable.md](tech-debt/nvme-hardware-raid-unbuildable.md) — NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
 - [nvme-software-raid-unbuildable.md](tech-debt/nvme-software-raid-unbuildable.md) — All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids

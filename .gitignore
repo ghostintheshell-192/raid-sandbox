@@ -33,6 +33,10 @@
 .mcp.json
 .tmp/
 
+# Agents run in git worktrees under the project (one per agent); the checkouts
+# are throwaway, the branches they produce are what gets kept.
+.claude/worktrees/
+
 # ---- Shell & system dotfiles (sandbox artifacts) ----
 .bash_profile
 .bashrc
