@@ -328,6 +328,27 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 }
 .sbc-level { font-size: 1.2rem; font-weight: 600; }
 .sbc-level--nonstd { color: #e67e22; font-size: .95rem; }
+
+/* The two boxes (degenerate levels §2): the form, and what runs. Side by side
+   where the panel is wide enough (see the ≥1600px block), stacked otherwise. */
+.sbc-boxes { display: grid; grid-template-columns: 1fr; gap: .6rem; }
+.sbc-box {
+  border: 1px solid rgba(128,128,128,.25); border-radius: 8px;
+  padding: .55rem .7rem; min-width: 0;
+}
+.sbc-box .sbc-level { font-size: 1.1rem; }
+.sbc-box--runs { border-color: rgba(46,204,113,.5); background: rgba(46,204,113,.07); }
+.sbc-box--runs.sbc-box--same { border-color: rgba(128,128,128,.25); background: transparent; }
+.sbc-box--runs.sbc-box--same .sbc-reason { font-style: italic; }
+/* The diff: one row per rewrite, the level file's own sentence under it. */
+.sbc-diff { display: flex; flex-direction: column; gap: .4rem; }
+.sbc-diff-row {
+  font-size: .78rem; padding: .45rem .6rem; border-radius: 6px;
+  border-left: 3px solid rgba(46,204,113,.7); background: rgba(46,204,113,.08);
+}
+.sbc-diff-head { display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap; font-weight: 600; }
+.sbc-diff-arrow { opacity: .6; }
+.sbc-diff-why { opacity: .75; margin-top: .15rem; }
 .sbc-stat  { font-size: .88rem; opacity: .8; }
 .sbc-issue {
   font-size: .8rem; padding: .5rem .7rem; border-radius: 6px;
@@ -430,7 +451,9 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 
 /* ---- large desktop (Full HD and up): use the extra width ---------- */
 @media (min-width: 1600px) {
-  .sbc-layout { grid-template-columns: 260px 1fr 320px; }
+  /* 440px holds the two boxes side by side; at Full HD the canvas keeps 1220px. */
+  .sbc-layout { grid-template-columns: 260px 1fr 440px; }
+  .sbc-boxes  { grid-template-columns: 1fr 1fr; }
   .sbc-sidebar, .sbc-results { padding: 1.1rem; }
   .sbc-canvas { padding: 1.6rem; }
   .sbc-chip   { font-size: .82rem; padding: .45rem .75rem; }

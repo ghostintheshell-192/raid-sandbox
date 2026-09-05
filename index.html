@@ -167,11 +167,23 @@
       <div class="sbc-reqs" data-result="requirements"></div>
     </div>
 
-    <div>
-      <h3>RAID level</h3>
-      <div class="sbc-level" data-result="level">—</div>
-      <div data-result="level-reason" class="sbc-reason" hidden></div>
+    <!-- Two readings of the same tree (specs/planned/degenerate-levels.md §2):
+         its FORM — what was composed — and its BEHAVIOUR — what runs. Below its
+         minimum a level collapses into a simpler one, and the diff between the
+         two boxes is the list of rewrites, each with the level file's own why. -->
+    <div class="sbc-boxes">
+      <div class="sbc-box" data-box="form">
+        <h3>What you are building</h3>
+        <div class="sbc-level" data-result="level">—</div>
+        <div data-result="level-reason" class="sbc-reason" hidden></div>
+      </div>
+      <div class="sbc-box sbc-box--runs" data-box="runs">
+        <h3>What you have</h3>
+        <div class="sbc-level" data-result="runs-level">—</div>
+        <div data-result="runs-reason" class="sbc-reason" hidden></div>
+      </div>
     </div>
+    <div data-result="diff" class="sbc-diff" hidden></div>
     <div>
       <h3>Capacity</h3>
       <div class="sbc-stat" data-result="capacity">—</div>
@@ -254,6 +266,10 @@
   // Result panel elements.
   const elLevel       = document.querySelector('[data-result="level"]');
   const elLevelReason = document.querySelector('[data-result="level-reason"]');
+  const elRunsLevel   = document.querySelector('[data-result="runs-level"]');
+  const elRunsReason  = document.querySelector('[data-result="runs-reason"]');
+  const elBoxRuns     = document.querySelector('[data-box="runs"]');
+  const elDiff        = document.querySelector('[data-result="diff"]');
   const elCapacity    = document.querySelector('[data-result="capacity"]');
   const elFt          = document.querySelector('[data-result="ft"]');
   const elRead        = document.querySelector('[data-result="read"]');
@@ -270,6 +286,9 @@
     elViolations.innerHTML = '';
     const v = r.violations || { hard: [], soft: [] };
     for (const x of [...v.hard, ...v.soft]) {
+      // A collapse is shown as the diff under the two boxes — the same rewrite,
+      // with the same `because`; listing it here too would say it twice.
+      if (x.code === 'level-collapse') continue;
       const div = document.createElement('div');
       div.className = 'sbc-issue' + (x.severity === 'hard' ? ' sbc-issue--hard' : '');
       div.textContent = `${x.severity === 'hard' ? '✕' : '⚠'} ${x.message}`;
@@ -277,6 +296,57 @@
       // the actual node, so the player never has to hunt for which one it means.
       RaidHighlight.attach(div, [x.nodeId]);
       elViolations.appendChild(div);
+    }
+  }
+
+  // Box 2 and the diff. The numbers in the panel are computed on what runs
+  // (spec §7); the diff says why they differ from the level that was composed.
+  // When nothing collapsed the trace is empty, and box 2 says so — that is
+  // information, not silence: what you built is what you have.
+  function renderRuns(a) {
+    const runs = a && a.runs;
+    const trace = runs ? runs.trace : [];
+    const same  = trace.length === 0;
+    if (!runs) {
+      elRunsLevel.textContent = '—';
+      elRunsLevel.className   = 'sbc-level';
+      elRunsReason.hidden     = true;
+    } else {
+      elRunsLevel.textContent  = runs.level ?? `non-standard (${runs.reason})`;
+      elRunsLevel.className    = `sbc-level${runs.level ? '' : ' sbc-level--nonstd'}`;
+      elRunsReason.textContent = same ? 'the same — what you built is what you have'
+                                      : (runs.level ? (runs.reason ?? '') : '');
+      elRunsReason.hidden      = !elRunsReason.textContent;
+    }
+    elBoxRuns.classList.toggle('sbc-box--same', same);
+
+    elDiff.innerHTML = '';
+    elDiff.hidden    = same;
+    const nameOf = (id) => (state.levels && state.levels.get(id) || { name: id }).name;
+    for (const w of trace) {
+      const row  = document.createElement('div');
+      row.className = 'sbc-diff-row';
+      const head = document.createElement('div');
+      head.className = 'sbc-diff-head';
+      const from = document.createElement('span');
+      from.textContent = w.rule === 'absorb'
+        ? `${nameOf(w.level)} of ${nameOf(w.level)}s`
+        : `${nameOf(w.level)} · ${w.from.members} disks`;
+      const arrow = document.createElement('span');
+      arrow.className = 'sbc-diff-arrow';
+      arrow.textContent = '→';
+      const to = document.createElement('span');
+      to.textContent = w.runsAs
+        ? (w.rule === 'absorb' ? `one ${w.runsAs} · ${w.to.members} disks` : w.runsAs)
+        : 'no standard name';
+      head.append(from, arrow, to);
+      const why = document.createElement('div');
+      why.className = 'sbc-diff-why';
+      why.textContent = w.because;
+      row.append(head, why);
+      // Pointing at a rewrite lights the node it rewrote, like a violation does.
+      RaidHighlight.attach(row, [w.nodeId]);
+      elDiff.appendChild(row);
     }
   }
 
@@ -353,7 +423,9 @@
       elFt.textContent       = `±${a.faultTolerance} disk failure${a.faultTolerance !== 1 ? 's' : ''}`;
       if (elRead)  elRead.textContent  = `read: ${a.readClass}`;
       if (elWrite) elWrite.textContent = `write: ${a.writeClass}`;
+      renderRuns(a);
     } else {
+      renderRuns(null);
       elLevel.textContent    = '—';
       elLevel.className      = 'sbc-level';
       if (elLevelReason) {
