@@ -19,6 +19,18 @@ its own (`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
 
+- **Desktop only** ([ADR-003](reference/decisions/003-desktop-only.md), 2026-09-05):
+  below 900px the game is no longer offered — `index.html` hides the canvases and shows
+  a short notice saying what RAID Sandbox is, that it needs a desktop browser, and
+  linking the knowledge base, which stays readable on a phone. No mobile version is
+  promised, because none is planned. **What went**: `touch-dnd.js` (the drag-and-drop
+  shim), `sidebar-accordion.js`, the ≤900px single-column flow and the
+  `pointer: coarse` block in `sandbox.css`, the narrow-screen physical-layer fold and
+  its toggle. **What stayed**: the inline picker, no longer a touch affordance but
+  click-to-build next to drag-and-drop, and the base for the accessibility work
+  (roadmap item 9). Two tech-debts close by deletion — the physical layer's missing
+  tap-to-picker and the `touch-dnd.js` re-scope. Every interface change from here is
+  designed once, for one width - 2026-09-05
 - **Degenerate levels — what the player has, next to what they tried to build** (PRs
   #35–#37, 2026-09-05, one day after the spec): the leaf level files declare
   `minDisksToRun` (with the kernel line) and `collapsesTo` (RAID 5 @2, RAID 6 @3,
@@ -145,13 +157,12 @@ decision.
    coloured by verdict, the ADR-001 lesson with no words. Start:
    `specs/planned/derived-controller.md` ("the dashed box is the verdict, drawn"),
    `engineNodeId` in the eval result, `highlight.js`. **M**
-5. **Technical queue** — **mostly closed 2026-09-05** (see the milestone): the level's
+5. **Technical queue** — **closed 2026-09-05** (see the milestones): the level's
    `reason` on success (PR #28), RAID 0+1 reads high (PR #27), the validator's last ids
-   in code (PR #30), `algorithm-drop-ignores-class` (PR #24). Two items remain, both
-   Valentina's: the physical layer's missing tap-to-picker
-   (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`) needs a triage in the
-   browser first; `touch-dnd.js` re-scope now that tap-to-build ships — what "re-scope"
-   means here is still hers to say. **S each**
+   in code (PR #30), `algorithm-drop-ignores-class` (PR #24). The two remaining items
+   were both about touch, and ADR-003 closed them by deletion rather than by a fix:
+   ~~the physical layer's missing tap-to-picker~~ and ~~the `touch-dnd.js` re-scope~~ —
+   the shim is gone, and the physical layer keeps drag-and-drop on a desktop pointer.
 6. **Challenges on the physical axis** — the requirement vocabulary knows only the
    data metrics; add the RAID type ("must be hardware") and the physical-validator
    phase 2 rules (fake RAID limited to 0/1/5/10, mixed protocols, Storage Spaces).
@@ -192,9 +203,6 @@ Small, any time:
 
 See `.development/tech-debt/`:
 
-- `physical-layer-canvas-has-no-touch-picker.md` — open (medium): the physical layer
-  never got the tap-to-picker inversion; needs a triage in the browser first (roadmap
-  item 5).
 - `canvas-nodes-are-unnamed.md` — open (medium): the canvas does not name the things
   the player builds (roadmap item 2).
 - `capacity-approximate-on-mixed-disks.md` — open (medium): usable capacity is

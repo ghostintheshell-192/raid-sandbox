@@ -31,15 +31,13 @@ Spec-driven and incremental:
 - **YAML data files** (`data/`) — RAID levels, algorithms, components, challenges.
   Parsed in-browser via **js-yaml**, vendored in `vendor/js-yaml/` (not a CDN, and not
   an npm dependency — see `vendor/README.md`).
-- **Touch support** — `touch-dnd.js` shims the HTML5 drag-and-drop API, which does not
-  exist on touch devices.
 - **Zero runtime dependencies** — the headless node tests must not require YAML parsing.
 
 ## Architecture (source layout)
 
 - `src/engine/` — `model.js`, `layout.js` (placement), `validator.js`
 - `src/sandbox/` — `canvas-controller.js`, `canvas-state.js`, `physical-controller.js`,
-  `render.js`, `sidebar-accordion.js`, `touch-dnd.js`
+  `render.js`, `highlight.js`, `drag-util.js`
 - `src/challenge/` — challenge mode
 - `data/` — YAML resource files (the domain data, extracted from `src/`)
 - `tests/` — headless node suites (`*.test.js`, run one at a time with `node <file>`)
@@ -47,12 +45,14 @@ Spec-driven and incremental:
 
 ## Key Design Decisions
 
-- **No stack change**: the bottleneck is *interaction* (touch gestures), not rendering.
-  Canvas/WebGL/WASM would be a regression here; the shareable URL is the goal. Only
-  sanctioned upgrade path is incremental **TypeScript via `@ts-check`** (zero runtime change) —
-  in place since 2026-09-02 on the engine files (`jsconfig.json`, `src/engine/types.js`,
-  `.development/automation/typecheck.sh`).
-- **Mobile flow inverted**: on touch, "tap a slot → it offers the pieces that fit"
-  (inline), not "pick a piece, find it a home" — drag and scroll compete for the same gesture.
+- **No stack change**: the whole game has to travel as one link, with zero runtime
+  dependencies, stay readable as source, and be type-checked without a toolchain.
+  Canvas/WebGL/WASM would cost all four and buy rendering speed the game does not need.
+  The only sanctioned upgrade path is incremental **TypeScript via `@ts-check`** (zero
+  runtime change) — in place since 2026-09-02 on the engine files (`jsconfig.json`,
+  `src/engine/types.js`, `.development/automation/typecheck.sh`).
+- **Desktop only** since 2026-09-05 ([ADR-003](../../.development/reference/decisions/003-desktop-only.md)):
+  below 900px `index.html` shows a short notice and a link to the knowledge base. The
+  inline picker survives the removal as click-to-build, next to drag-and-drop.
 - **License**: deliberately none for now (= full copyright). If revisited: AGPL-3.0 for
   code + CC BY-SA 4.0 for content.

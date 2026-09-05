@@ -1,13 +1,16 @@
 ---
 type: bug
 priority: medium
-status: open
+status: resolved
 discovered: 2026-07-31
 related: []
 related_decision: null
 ---
 
 # The Physical Layer canvas never got the mobile tap-to-picker inversion
+
+> **Resolved 2026-09-05** on `feat/desktop-only` — closed by deletion, not by a fix.
+> See the resolution section at the end.
 
 ## Problem
 
@@ -73,6 +76,20 @@ current branch.
   `src/sandbox/canvas-controller.js` (`_openPicker`, `_makeAddZone`,
   `_diskPickerOptions` — the pattern to extend), `src/sandbox/touch-dnd.js`
   (the current, sole touch path on axis A).
+
+## Resolution (2026-09-05)
+
+Closed by deletion. [ADR-003](../reference/decisions/003-desktop-only.md) makes RAID
+Sandbox a desktop game: below 900px `index.html` shows a short notice instead of the
+canvases, and the touch paths are gone — `touch-dnd.js`, the shim this issue called
+"the current, sole touch path on axis A", was deleted with them.
+
+None of the three options was taken. The physical layer keeps drag-and-drop as its
+only build gesture, which is a complete answer on a desktop pointer; the missing
+picker was a problem only for a surface the game no longer serves. Axis B keeps its
+inline picker, not as a touch affordance but as click-to-build next to drag —
+`_openPicker` and `_diskPickerOptions` are still the pattern to extend if the physical
+layer ever wants the same second path.
 
 ---
 

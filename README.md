@@ -41,4 +41,5 @@ node tests/model-perf.test.js      # and the other tests/*.test.js
 ```
 
 Browser-based pages (`tests/*.test.html`, `tests/animator.demo.html`) need a local
-server — the responsive, touch and accordion behaviour is browser-only by design.
+server — the drag-and-drop, picker and animation behaviour is browser-only by design.
+The game itself is desktop-only (ADR-003): below 900px it shows a notice instead.
