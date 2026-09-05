@@ -11,6 +11,17 @@ shape:
 
 minDisks: 4
 
+# Below minDisks Linux does not start it; the entry below minDisksToRun is what it WOULD
+# have been (specs/planned/degenerate-levels.md §5 — optional there, kept because it teaches).
+minDisksToRun: 4
+minDisksToRunSource: "drivers/md/raid5.c setup_conf(): 'not enough configured devices (%d, minimum 4)'"
+
+collapsesTo:
+  - disks: 3
+    becomes: { segmentation: linear, redundancy: mirror }
+    because: "with one data block per stripe both P and Q are that block itself — every disk holds a copy"
+    source: "algebra: P = D0, Q = g⁰·D0 = D0 — three copies; drivers/md/raid5.c setup_conf() refuses to start it"
+
 # Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
 # faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
 # array's; the engine derives the real numbers. Checked against the engine by

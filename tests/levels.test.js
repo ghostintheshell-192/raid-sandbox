@@ -58,6 +58,30 @@ test('a childShape on a leaf shape', () => failsWith((m) => { m.levels[0].shape.
 test('a missing reason',      () => failsWith((m) => { delete m.levels[0].reason; }, /a: reason is required/));
 test('a duplicate id',        () => failsWith((m) => { m.levels.push({ ...m.levels[0] }); }, /duplicate level id "a"/));
 
+// The collapse keys (spec: planned/degenerate-levels.md §5) — optional, leaf-only, well-formed.
+const collapse = (extra = {}) => ({
+  disks: 2, becomes: { segmentation: 'linear', redundancy: 'mirror' },
+  because: 'two copies, nothing to stripe', source: 'raid10.c setup_conf()', ...extra,
+});
+const withRun = (def, extra = {}) => Object.assign(def, { minDisksToRun: 2, minDisksToRunSource: 'the kernel', ...extra });
+
+test('a well-formed collapse on a leaf level is accepted', () => {
+  const m = manifest();
+  withRun(m.levels[1], { collapsesTo: [collapse()] });   // 3 would be b-odd's width, refused below
+  eq(L.createLevels(m).get('b-even').collapsesTo.length, 1);
+});
+test('a collapse key on a nested level',        () => failsWith((m) => { withRun(m.levels[3]); }, /nested: minDisksToRun belongs on a leaf level/));
+test('minDisksToRun above minDisks',            () => failsWith((m) => { withRun(m.levels[1], { minDisksToRun: 5 }); }, /b-even: minDisksToRun must be a whole number from 2 to minDisks \(4\)/));
+test('minDisksToRun without its source',        () => failsWith((m) => { withRun(m.levels[1], { minDisksToRunSource: undefined }); }, /b-even: minDisksToRun needs a minDisksToRunSource/));
+test('a source without a minDisksToRun',        () => failsWith((m) => { m.levels[1].minDisksToRunSource = 'the kernel'; }, /b-even: minDisksToRunSource without a minDisksToRun/));
+test('a collapse at the level\'s own minimum',  () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ disks: 4 })] }); }, /b-even: collapsesTo\[0\]: disks must be a whole number from 2 to minDisks − 1 \(3\)/));
+test('two collapses for the same width',        () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse(), collapse()] }); }, /b-even: collapsesTo\[1\]: a second entry for 2 disks/));
+test('a collapse at a width the shape cannot have', () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ disks: 3 })] }); }, /b-even: collapsesTo\[0\]: 3 disks never have this shape \(even-disk-count\)/));
+test('a collapse to an unknown redundancy',     () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ becomes: { segmentation: 'linear', redundancy: 'parity3' } })] }); }, /b-even: collapsesTo\[0\]: becomes\.redundancy "parity3"/));
+test('a collapse to the level\'s own shape',    () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ becomes: { segmentation: 'striped', redundancy: 'mirror' } })] }); }, /b-even: collapsesTo\[0\]: becomes is the level's own shape/));
+test('a collapse with no because',              () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ because: '' })] }); }, /b-even: collapsesTo\[0\]: because is required/));
+test('a collapse with no source',               () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ source: undefined })] }); }, /b-even: collapsesTo\[0\]: source is required/));
+
 // ---------------------------------------------------------------------------
 console.log('\n[3] matching: leaf, constraint, nested, order');
 

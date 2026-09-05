@@ -15,6 +15,17 @@ shape:
 
 minDisks: 4
 
+# Below minDisks md still starts it — and with 2 copies on 2 devices it is a mirror
+# (specs/planned/degenerate-levels.md §5).
+minDisksToRun: 2
+minDisksToRunSource: "drivers/md/raid10.c setup_conf(): the only bound on the device count is copies ≤ raid_disks, so a 2-device near-2 array starts"
+
+collapsesTo:
+  - disks: 2
+    becomes: { segmentation: linear, redundancy: mirror }
+    because: "two copies over two disks: every chunk sits on both, there is nothing left to stripe across"
+    source: "drivers/md/raid10.c setup_conf(): copies == raid_disks is accepted; with 2 copies on 2 devices each device holds every chunk, near or far"
+
 # Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
 # faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
 # array's; the engine derives the real numbers (guaranteed 1, may survive more if
