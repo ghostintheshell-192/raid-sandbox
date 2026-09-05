@@ -49,6 +49,7 @@ kernel rules and never regenerated from the engine.
 
 ### src/engine
 - `catalog.js`
+- `content.js`
 - `graph.js`
 - `layout.js`
 - `levels.js`
@@ -78,6 +79,7 @@ kernel rules and never regenerated from the engine.
 - `catalog.test.js` — headless tests for the component catalogue (engine/catalog.js). Run with: node catalog.test.js
 - `challenge-data.test.js` — validates the REAL challenge YAML files. Run with: node challenge-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so python is the reader....
 - `challenge.test.js` — headless tests for the requirement-satisfaction win-check. Run with: node challenge.test.js
+- `collapses-oracle.test.js` — the content algebra (engine/content.js) against the declared `collapsesTo` rules, in both directions (degenerate-levels §6, §10). Run with: node collapses-oracle.test.js
 - `components-data.test.js` — validates the REAL component YAML files and keeps the headless fixture aligned with them. Run with: node components-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and...
 - `graph.test.js` — headless tests for the control-path graph module. Run with: node graph.test.js
 - `layout-golden.test.js` — golden-table verification for all parity algorithms. Run with: node layout-golden.test.js
