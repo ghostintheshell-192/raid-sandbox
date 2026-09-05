@@ -58,7 +58,7 @@ test('a childShape on a leaf shape', () => failsWith((m) => { m.levels[0].shape.
 test('a missing reason',      () => failsWith((m) => { delete m.levels[0].reason; }, /a: reason is required/));
 test('a duplicate id',        () => failsWith((m) => { m.levels.push({ ...m.levels[0] }); }, /duplicate level id "a"/));
 
-// The collapse keys (spec: planned/degenerate-levels.md §5) — optional, leaf-only, well-formed.
+// The collapse keys (spec: implemented/degenerate-levels.md §5) — optional, leaf-only, well-formed.
 const collapse = (extra = {}) => ({
   disks: 2, becomes: { segmentation: 'linear', redundancy: 'mirror' },
   because: 'two copies, nothing to stripe', source: 'raid10.c setup_conf()', ...extra,

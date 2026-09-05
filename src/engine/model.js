@@ -28,7 +28,7 @@
  * derivations below — capacity, fault tolerance, performance — are folds over the
  * same tree and stay here: they are the domain's arithmetic, not its vocabulary.
  *
- * The same tree is read twice (specs/planned/degenerate-levels.md): for its FORM
+ * The same tree is read twice (specs/implemented/degenerate-levels.md): for its FORM
  * — the recognizer, box 1 — and for its BEHAVIOUR — `normalize()` rewrites it
  * bottom-up by the rules the level files declare, the recognizer names the
  * result, box 2. The numbers are computed on the normalised tree.
@@ -316,7 +316,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // NORMALIZE (specs/planned/degenerate-levels.md §4) — what the player HAS,
+  // NORMALIZE (specs/implemented/degenerate-levels.md §4) — what the player HAS,
   // derived from what they composed by rewriting the tree bottom-up. Every
   // rewrite is one the level catalogue declares — a leaf level's `collapsesTo`
   // at a width below its minimum, or a level that `absorbsNested` members of

@@ -15,7 +15,7 @@
  *     childShape?:  a shape every member must match        (members: arrays)
  *
  * A leaf level may also say what it becomes below its minimum (spec:
- * planned/degenerate-levels.md §5): `minDisksToRun` + `minDisksToRunSource`
+ * implemented/degenerate-levels.md §5): `minDisksToRun` + `minDisksToRunSource`
  * (the width the real system still starts, with the kernel line that says so)
  * and `collapsesTo[]` (one `{ disks, becomes, because, source }` per width worth
  * explaining). This file validates them; it does not apply them — the rewrite

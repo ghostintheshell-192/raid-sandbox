@@ -1,6 +1,6 @@
 # Degenerate levels — what the player has, next to what they tried to build
 
-**Status:** planned — decided 2026-09-04, not yet implemented
+**Status:** implemented — decided 2026-09-04, built 2026-09-05 (PRs #35 data, #36 engine, #37 UI); the per-section notes below say what each step settled
 **From:** `.memory-bank/ideas/2026-09-04-degenerate-levels.md` (the capture; this file supersedes it)
 **Builds on:** domain model §1 (the level is derived, never selected), §4 (recognition ≠ validation), §6 (constraints); [ADR-002](../../reference/decisions/002-the-engine-holds-no-domain-facts.md)
 **Ground truth:** `drivers/md/raid5.c` (Linux `md`), and the algebra of parity
@@ -339,14 +339,18 @@ yields two identical rows, one per span; accepted for now, see
 
 ## 11. Open questions
 
-1. **The write penalty of a two-disk RAID 5.** The engine's parity table says 4 I/Os
-   (read-modify-write). With one data block per stripe `md` should need no read at all —
-   cost 2, a mirror's. To verify in `raid5.c` (the rmw / rcw choice) before the number
-   is shown; until then the diff shows the numbers of the normalised tree and says no
-   more.
-2. **`minDisksToRun` per implementation** (§5) — when the physical axis is asked.
-3. **The names of the two boxes** on screen. Working titles: *what you are building* /
-   *what you have*.
+1. ~~**The write penalty of a two-disk RAID 5.**~~ **Answered 2026-09-05, from
+   `drivers/md/raid5.c` `handle_stripe_dirtying()`.** The kernel counts, per stripe, the
+   blocks it would have to read for a read-modify-write (`rmw`: the data block being
+   written plus the parity) and for a reconstruct-write (`rcw`: every data block *not*
+   being overwritten). With one data device that is being written, `rcw` is 0 — there is
+   no other data block to read — so the branch `rcw == 0` calls `schedule_reconstruction()`
+   with no read at all: write the block, write the parity, **2 I/Os, a mirror's**. The
+   number the normalised tree gives is the kernel's; nothing more to show. (`rmw` would
+   have been 2, and `rmw < rcw` never holds against 0.)
+2. **`minDisksToRun` per implementation** (§5) — when the physical axis is asked. Still open.
+3. ~~**The names of the two boxes**~~ — the working titles stayed (§9, 2026-09-05):
+   *What you are building* / *What you have*.
 
 ## 12. Out of scope
 

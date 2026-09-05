@@ -12,7 +12,7 @@ shape:
 minDisks: 4
 
 # Below minDisks Linux does not start it; the entry below minDisksToRun is what it WOULD
-# have been (specs/planned/degenerate-levels.md §5 — optional there, kept because it teaches).
+# have been (specs/implemented/degenerate-levels.md §5 — optional there, kept because it teaches).
 minDisksToRun: 4
 minDisksToRunSource: "drivers/md/raid5.c setup_conf(): 'not enough configured devices (%d, minimum 4)'"
 

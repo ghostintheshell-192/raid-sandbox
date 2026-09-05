@@ -1,7 +1,7 @@
 ---
 captured: 2026-09-04
 status: promoted-to-spec
-promoted_to: ../../.development/specs/planned/degenerate-levels.md
+promoted_to: ../../.development/specs/implemented/degenerate-levels.md
 promoted_at: 2026-09-04
 context: "session 2026-09-04, testing the animation gate — Valentina, on a RAID 5 built with two disks: 'ma quello che è stato creato è veramente errato? cosa succede alla parità quando ci sono solo due dischi?'"
 tags: [engine, recognizer, teaching, model]
@@ -9,7 +9,7 @@ tags: [engine, recognizer, teaching, model]
 
 # Levels that degenerate: recognize what runs, not only what was composed
 
-**Promoted 2026-09-04** to `specs/planned/degenerate-levels.md`, which is the ground truth
+**Promoted 2026-09-04** to `specs/implemented/degenerate-levels.md`, which is the ground truth
 from here on. This note stays as the record of where the idea came from.
 
 ## What

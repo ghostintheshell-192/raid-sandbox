@@ -1,6 +1,6 @@
 /**
  * model-normalize.test.js — headless tests for `normalize()` and the two-box
- * `analyze()` (specs/planned/degenerate-levels.md §4, §7, §10 "Recognition").
+ * `analyze()` (specs/implemented/degenerate-levels.md §4, §7, §10 "Recognition").
  * Run with: node model-normalize.test.js
  *
  * What is asserted is HAND-DERIVED from the spec's §3 table and its composition

@@ -16,7 +16,7 @@ shape:
 minDisks: 4
 
 # Below minDisks md still starts it — and with 2 copies on 2 devices it is a mirror
-# (specs/planned/degenerate-levels.md §5).
+# (specs/implemented/degenerate-levels.md §5).
 minDisksToRun: 2
 minDisksToRunSource: "drivers/md/raid10.c setup_conf(): the only bound on the device count is copies ≤ raid_disks, so a 2-device near-2 array starts"
 

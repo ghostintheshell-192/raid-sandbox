@@ -9,22 +9,27 @@ deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-de
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: implementing
-[`specs/planned/degenerate-levels.md`](specs/planned/degenerate-levels.md), in the
-order of its sections — data + coverage tests (§5, §10) → `normalize()` with its trace in
-`model.js` (§4) → `content.js` as the oracle (§6) → `min-disks` split into a soft
-collapse and a hard refusal (§8) → the UI, decided in the browser (§9). One branch per
-step, tried in the browser, then merged. Open question (§11.1): the write penalty of a
-two-disk RAID 5 must be checked in `raid5.c` (rmw/rcw) before the number is shown.
-
-The **agnostic-engine plan** (2026-09-02) is complete, and the technical queue it left
-behind (item 5 below) was closed on 2026-09-04/05 by two batches of agents working in
-worktrees, one PR each. What still waits on a decision, not a task: whether and how to
-extract the engine into a project of its own
-(`reference/engine-robustness-and-extraction.md` §8).
+**Active Work**: none open. The **degenerate-levels spec** is implemented (PRs #35–#37,
+2026-09-05, now `specs/implemented/degenerate-levels.md`): below its minimum a level
+collapses into a simpler one, the panel shows what was built next to what runs, and the
+diff between them is the trace of rewrites the level files declare. The **agnostic-engine
+plan** (2026-09-02) is complete and its technical queue closed (2026-09-04/05). What
+waits on a decision, not a task: whether and how to extract the engine into a project of
+its own (`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
 
+- **Degenerate levels — what the player has, next to what they tried to build** (PRs
+  #35–#37, 2026-09-05, one day after the spec): the leaf level files declare
+  `minDisksToRun` (with the kernel line) and `collapsesTo` (RAID 5 @2, RAID 6 @3,
+  RAID 10 @2 → a mirror), `raid1.yaml` declares that a mirror of mirrors is one mirror;
+  `normalize()` rewrites the tree bottom-up by those rules and keeps the trace;
+  `analyze()` computes the numbers on what runs and returns box 2 as `runs`; the content
+  algebra (`content.js`, tests only) is the oracle that found exactly those three
+  collapses; `min-disks` split into a hard refusal (below `minDisksToRun`) and a soft
+  `level-collapse`; the panel shows two boxes and the diff between them, side by side
+  from 1600px. §11.1 answered from `raid5.c`: a two-disk RAID 5 writes at a mirror's
+  cost. 19 headless suites - 2026-09-05
 - **The technical queue, closed by two batches of agents** (PRs #24–#33, 2026-09-04/05):
   five agents per batch, each in its own worktree, one PR each, every one tried in the
   browser. Batch 1: an algorithm drop is refused when the class does not offer it; the
@@ -43,7 +48,7 @@ extract the engine into a project of its own
   corrected where they overstated the code); the PR flow written into `workflow.md`; the
   animation waits on hard violations; `data/algorithms/` validated and its three broken
   files repaired; the two genuinely untested refusals covered; the degenerate-levels idea
-  promoted to `specs/planned/degenerate-levels.md` — below its minimum width a level
+  promoted to `specs/planned/degenerate-levels.md` (now `implemented/`) — below its minimum width a level
   collapses into a simpler one, and the game names what was composed next to what runs.
   Kernel facts read from `raid5.c`: RAID 1@2 → RAID 5@2 in place, RAID 6 < 4 refused - 2026-09-04
 - **Agnostic engine — the §5 promise kept** (five branches, all merged 2026-09-02):
@@ -104,14 +109,10 @@ extract the engine into a project of its own
 
 ## Next Steps — the roadmap after the agnostic-engine plan
 
-> **Before any of this**: implement
-> [`specs/planned/degenerate-levels.md`](specs/planned/degenerate-levels.md) — decided
-> 2026-09-04, spec written the same day. Below its minimum width every level collapses into
-> a simpler one — a two-disk RAID 5 *is* a mirror, and the kernel says so — and the game
-> names only what was composed. Two derived boxes (what you are building / what you have),
-> the diff is the trace of rewrites, `collapsesTo` on the level files, a content algebra as
-> the oracle in tests, and `min-disks` splits into a soft collapse and a hard refusal. It is
-> closer to the point of the game than anything below.
+> ~~**Before any of this**: implement the degenerate-levels spec~~ — **done 2026-09-05**
+> (PRs #35–#37, `specs/implemented/degenerate-levels.md`): below its minimum width a level
+> collapses into a simpler one — a two-disk RAID 5 *is* a mirror, and the kernel says so —
+> and the panel now shows what was built next to what runs, with the diff between them.
 
 Valentina's priority order, 2026-09-02. Each item says where it starts (the document
 or tech-debt that already holds the thinking) and a size: **S** hours, **M** a
