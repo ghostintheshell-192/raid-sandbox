@@ -19,7 +19,7 @@
  *      with what model.js DERIVES for the smallest tree each shape allows at
  *      minDisks. This is the one place that comparison happens; nothing else
  *      checks the `reference` block against the engine;
- *   5. the collapse keys (specs/planned/degenerate-levels.md §5): every leaf level
+ *   5. the collapse keys (specs/implemented/degenerate-levels.md §5): every leaf level
  *      says what the real system still starts (`minDisksToRun`, with its source),
  *      every width that runs below `minDisks` has a `collapsesTo` entry — the
  *      COVERAGE rule — and the three cases of spec §3 read as the spec says.
@@ -192,7 +192,7 @@ for (const d of docs) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[5] the two minimums and collapsesTo (specs/planned/degenerate-levels.md §5)');
+console.log('\n[5] the two minimums and collapsesTo (specs/implemented/degenerate-levels.md §5)');
 
 const leaves = docs.filter((d) => d.shape.members === 'disks');
 const nested = docs.filter((d) => d.shape.members === 'arrays');

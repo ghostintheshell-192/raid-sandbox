@@ -84,7 +84,7 @@
  */
 
 /**
- * A collapse rule (specs/planned/degenerate-levels.md §5): at `disks` members —
+ * A collapse rule (specs/implemented/degenerate-levels.md §5): at `disks` members —
  * below the level's minDisks — the node is rewritten to the `becomes` shape.
  * `because` is the player-facing sentence, `source` the kernel line or the
  * algebra that grounds it.
@@ -110,7 +110,7 @@
  */
 
 /**
- * One rewrite `normalize()` applied (specs/planned/degenerate-levels.md §4): the
+ * One rewrite `normalize()` applied (specs/implemented/degenerate-levels.md §4): the
  * trace is the list of these — the diff between what was composed and what
  * runs. `level` is the id of the level whose file declared the rule; `runsAs` the
  * name the catalogue gives the rewritten node, or null when it has none.

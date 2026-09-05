@@ -12,7 +12,7 @@ shape:
 minDisks: 3
 
 # Below minDisks this is no longer a RAID 5 — but the real system still starts it, and
-# what runs is a mirror (specs/planned/degenerate-levels.md §5). Two facts, two sources.
+# what runs is a mirror (specs/implemented/degenerate-levels.md §5). Two facts, two sources.
 minDisksToRun: 2
 minDisksToRunSource: "drivers/md/raid5.c raid5_takeover_raid1(): a 2-device RAID 1 is converted to RAID 5 in place (any other count is refused); mdadm creates 2-device RAID 5"
 

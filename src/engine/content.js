@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * content.js — RAID Sandbox: the content algebra (specs/planned/degenerate-levels.md §6).
+ * content.js — RAID Sandbox: the content algebra (specs/implemented/degenerate-levels.md §6).
  *
  * TESTS ONLY. The game never loads this file (no script tag in index.html):
  * the declared `collapsesTo` rules run at runtime, and this is the independent
