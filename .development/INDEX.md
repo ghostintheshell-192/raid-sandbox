@@ -33,10 +33,11 @@
 - [degenerate-levels.md](specs/implemented/degenerate-levels.md) — Degenerate levels — what the player has, next to what they tried to build
 - [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) — RAID Sandbox — Domain Model (design backbone)
 
-### specs/planned/ (2 files)
+### specs/planned/ (3 files)
 
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
+- [knowledge-base.md](specs/planned/knowledge-base.md) — Knowledge base — one source, two depths, pages that stand alone
 
 ### tech-debt/ (23 files)
 
