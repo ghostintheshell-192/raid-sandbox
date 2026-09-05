@@ -159,11 +159,11 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   opacity: .55;
 }
 
-/* Every slot is tappable: it opens the inline option picker. */
+/* Every slot is clickable: it opens the inline option picker. */
 .sbc-slot { cursor: pointer; }
 .sbc-slot.sbc-slot--disabled { cursor: default; }
 
-/* Active-zone glow: the tapped slot / disk / array / empty canvas lights up
+/* Active-zone glow: the clicked slot / disk / array / empty canvas lights up
    softly while its picker is open — "you've selected where to put something". */
 .sbc-picking {
   box-shadow: 0 0 0 2px rgba(120,170,255,.5), 0 0 14px rgba(120,170,255,.35);
@@ -224,7 +224,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-picker[data-kind="redundancy"]   .sbc-pick { border-color: rgba(46,204,113,.5);  background: rgba(46,204,113,.12); }
 .sbc-picker[data-kind="algorithm"]    .sbc-pick { border-color: rgba(230,126,34,.5);  background: rgba(230,126,34,.12); }
 
-/* Empty canvas = a tap-to-build zone + the "start here" affordance. */
+/* Empty canvas = a click-to-build zone + the "start here" affordance. */
 .sbc-canvas-empty {
   display: flex; align-items: center; justify-content: center;
   min-height: 120px; padding: 1.5rem;
@@ -237,7 +237,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-canvas-empty.sbc-picking { opacity: .9; }
 
 /* Persistent add-zone after existing groups: quieter than the empty hint.
-   Tapping it seeds a fresh loose disk = the start of a separate RAID group. */
+   Clicking it seeds a fresh loose disk = the start of a separate RAID group. */
 .sbc-canvas-add {
   display: flex; align-items: center; justify-content: center;
   margin-top: .5rem; padding: .55rem;
@@ -262,9 +262,6 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   min-height: 0;   /* grid item: don't inflate the grid past 100vh */
 }
 .sbc-physical.cp--active { border-color: rgba(52,152,219,.6); }
-/* The collapse toggle is a narrow-screen affordance only; desktop shows the
-   physical canvas unconditionally. */
-.sbc-physical-toggle, .sbc-canvas-title { display: none; }
 /* inner canvas + SVG overlay */
 .pln-canvas {
   position: relative; width: 100%; height: 100%;
@@ -434,15 +431,18 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sb-cell.lit   { opacity: 1; }
 
 /* ================================================================== */
-/* RESPONSIVE                                                          */
+/* RESPONSIVE — desktop widths only (ADR-003)                          */
 /* ================================================================== */
+/* Below 901px the game is not offered at all: index.html hides the whole
+   layout and shows the desktop-only notice instead. Everything here therefore
+   only has to fit the desktop widths the game is designed for. */
 
-/* ---- desktop: pin the shell to the real viewport box ----------------- */
+/* ---- pin the shell to the real viewport box -------------------------- */
 /* Some setups report 100vh larger than the usable height (here 100vh≈1074 vs
    innerHeight 1042), which added a ~32px page scrollbar. Anchoring the shell to
    height:100% along html→body→layout uses the actual viewport box instead, and
-   overflow:hidden guarantees the app never scrolls the page. Desktop only — the
-   <=900px layout below stays a normal scrolling column. */
+   overflow:hidden guarantees the app never scrolls the page. Guarded by the
+   breakpoint so the notice page below it stays a normal scrolling document. */
 @media (min-width: 901px) {
   html, body { height: 100%; overflow: hidden; }
   body { min-height: 0; }
@@ -466,162 +466,39 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
   .sbc-layout { grid-template-columns: 180px 1fr 215px; }
 }
 
-/* ---- mobile / tablet portrait: single-column flow ------------------ */
+/* ---- below the breakpoint: the notice, not the game (ADR-003) ------- */
+/* The game markup stays in the document — the inline script still wires it and
+   still reads a #build= link — but nothing of it is shown. */
+.sbc-notice { display: none; }
 @media (max-width: 900px) {
-  /* The fixed-viewport grid becomes a normal scrolling page. */
-  .sbc-layout {
-    display: flex; flex-direction: column;
-    height: auto; min-height: 100vh; overflow: visible;
+  .sbc-layout { display: none; }
+  .sbc-notice {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;
+    max-width: 34rem; margin: 0 auto; padding: 2rem 1.2rem;
+    /* body already carries 2rem of vertical padding — subtract it, or the page
+       scrolls for the sake of a screenful of text. */
+    min-height: calc(100vh - 4rem); justify-content: center;
   }
-
-  /* Canvas-first: the data layer is the primary view, so it leads; the palette
-     — now a catalogue you tap into rather than the main gesture — drops to the
-     bottom. `order` only bites here, where the grid is a flex column. */
-  .sbc-header       { order: 0; }
-  .sbc-canvas-title { order: 1; }
-  .sbc-canvas       { order: 2; }
-  .sbc-physical     { order: 3; }
-  .sbc-results      { order: 4; }
-  .sbc-sidebar      { order: 5; }
-
-  .sbc-header { padding: .6rem .8rem; gap: .6rem .8rem; }
-  /* Inline usage hint adds noise on small screens — the status bar is enough. */
-  .sbc-header-hint { display: none; }
-  .sbc-status { margin-left: 0; flex-basis: 100%; }
-
-  /* Sidebar becomes a wrapping chip area above the canvas: the groups flow
-     onto as many rows as the width allows, rather than scrolling off-screen.
-     Each group is a flex item that grows to share the row and shrinks so its
-     own chips can wrap inside it. */
-  .sbc-sidebar {
-    flex-direction: row; flex-wrap: wrap;
-    align-items: flex-start;
-    gap: .8rem 1.2rem;
-    overflow: visible;
-    border-right: none;
-    border-bottom: 1px solid rgba(128,128,128,.2);
-    padding: .6rem .8rem;
+  .sbc-notice h1 { font-size: 1.5rem; margin: 0; }
+  .sbc-notice p  {
+    font-size: .92rem; line-height: 1.6; margin: 0;
+    color: var(--text-secondary);
   }
-  .sbc-sidebar > div { flex: 1 1 100%; min-width: 0; }
-  .sbc-sidebar h3 { white-space: nowrap; }
-  .sbc-chips { flex-wrap: wrap; }
-
-  /* --- accordion: each group is a tappable, card-like collapsible row --- */
-  /* JS (sidebar-accordion.js) toggles .is-open, one section at a time.    */
-  .sbc-section {
-    border: 1px solid rgba(128,128,128,.22);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .sbc-section > h3 {
-    margin: 0;
-    cursor: pointer; user-select: none;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: .5rem; padding: .7rem .85rem; min-height: 44px;
-    background: rgba(128,128,128,.10);
-    transition: background .12s ease;
-  }
-  .sbc-section > h3:hover,
-  .sbc-section > h3:focus-visible { background: rgba(128,128,128,.18); }
-  .sbc-section.is-open > h3 {
-    background: rgba(128,128,128,.16);
-    border-bottom: 1px solid rgba(128,128,128,.22);
-  }
-  /* Chevron: a clear, finger-sized affordance that rotates open. */
-  .sbc-section > h3::after {
-    content: '\25B8';   /* ▸ */
-    font-size: 1.05rem; opacity: .75; line-height: 1;
-    transition: transform .15s ease;
-  }
-  .sbc-section.is-open > h3::after { transform: rotate(90deg); }
-  .sbc-section > .sbc-chips { display: none; padding: .7rem .85rem; }
-  .sbc-section.is-open > .sbc-chips { display: flex; }
-
-  /* Canvases stack with fixed working heights; the page scrolls instead. */
-  /* Data layer gets a title bar matching the physical layer's — but no chevron,
-     since it never collapses. Drop the faint corner label to avoid duplication. */
-  .sbc-canvas::before { display: none; }
-  .sbc-canvas-title {
-    display: flex; align-items: center; gap: .5rem;
-    margin: .6rem .6rem 0; padding: .7rem .85rem; min-height: 44px;
-    font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .9;
-    background: rgba(128,128,128,.10);
-    border: 1px solid rgba(128,128,128,.22); border-radius: 8px 8px 0 0;
-  }
-  .sbc-canvas {
-    min-height: 46vh;
-    margin: 0 .6rem .3rem;            /* flush under its title bar */
-    border-top: none; border-radius: 0 0 10px 10px;
-  }
-  /* Physical layer collapses under its own toggle (secondary view). Collapsed
-     by default via JS; the panel framing moves onto the open canvas so the
-     closed state is just a tappable bar. */
-  .sbc-physical {
-    min-height: 0;
-    margin: .3rem .6rem .6rem;
-    border: none; background: none; overflow: visible;
-  }
-  .sbc-physical::before { display: none; }   /* the toggle text is the label now */
-  .sbc-physical-toggle {
-    display: flex; width: 100%;
-    align-items: center; justify-content: space-between; gap: .5rem;
-    margin: 0; padding: .7rem .85rem; min-height: 44px;
-    font: inherit; color: inherit; text-align: left;
-    font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .9;
-    background: rgba(128,128,128,.10);
-    border: 1px solid rgba(128,128,128,.22); border-radius: 8px;
-    cursor: pointer; transition: background .12s ease;
-  }
-  .sbc-physical-toggle:hover,
-  .sbc-physical-toggle:focus-visible { background: rgba(128,128,128,.18); }
-  .sbc-physical-toggle::after {
-    content: '\25B8'; font-size: 1.05rem; opacity: .75; line-height: 1;
-    transition: transform .15s ease;
-  }
-  .sbc-physical.is-open .sbc-physical-toggle { border-radius: 8px 8px 0 0; }
-  .sbc-physical.is-open .sbc-physical-toggle::after { transform: rotate(90deg); }
-
-  .sbc-physical .pln-canvas { display: none; }
-  .sbc-physical.is-open .pln-canvas {
-    display: block; min-height: 34vh;
-    border: 2px dashed rgba(128,128,128,.3); border-top: none;
-    border-radius: 0 0 10px 10px;
-    background: rgba(0,0,0,.05);
-  }
-
-  /* Results panel flows below the canvases. */
-  .sbc-results {
-    border-left: none;
-    border-top: 1px solid rgba(128,128,128,.2);
-    overflow-y: visible;
+  .sbc-notice code { font-size: .88em; }
+  /* The one line the reader came for: full contrast, and not hedged. */
+  .sbc-notice-req { color: var(--text-primary); font-weight: 600; }
+  .sbc-notice-link {
+    margin-top: .4rem; padding: .6rem .9rem;
+    font-size: .88rem; font-weight: 600; text-decoration: none;
+    color: var(--accent-cyan);
+    border: 1px solid var(--accent-border); border-radius: 8px;
+    background: var(--accent-dim);
   }
 }
 
-/* ---- touch devices: bigger targets, no hover-gated controls -------- */
-@media (pointer: coarse) {
-  .sbc-chip {
-    min-height: 40px;
-    display: inline-flex; align-items: center;
-    padding: .45rem .8rem;
-  }
-  .sbc-disk { min-height: 40px; display: inline-flex; align-items: center; }
-  .pln-node { min-height: 38px; }
-
-  /* Hover doesn't exist on touch — keep delete buttons visible. */
-  .sbc-delete, .pln-delete { opacity: .65; }
-  .sbc-slot--filled .sbc-delete--inline { opacity: .65; }
-
-  /* Port dots need a finger-sized hit area. */
-  .pln-port { width: 18px; height: 18px; }
-  .pln-port--in  { left:  -11px; }
-  .pln-port--out { right: -11px; }
-}
-
-/* Draggables: avoid double-tap zoom delays and long-press text selection,
-   so the touch-DnD shim can take over the gesture cleanly. */
+/* Draggables: a drag that starts on a label would otherwise select its text
+   instead of picking the piece up. */
 [draggable="true"] {
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
 }

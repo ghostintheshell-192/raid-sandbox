@@ -79,7 +79,7 @@
 
   <!-- sidebar -->
   <aside class="sbc-sidebar" id="sidebar">
-    <div class="sbc-section is-open">
+    <div class="sbc-section">
       <h3>Disks</h3>
       <div class="sbc-chips">
         <div class="sbc-chip" data-drag="disk" data-protocol="SATA" data-size="2">SATA 2 TB</div>
@@ -131,17 +131,10 @@
   </aside>
 
   <!-- canvas — data layer -->
-  <!-- Title bar mirrors the physical layer's, for visual consistency on narrow
-       screens; the data layer never collapses, so it has no chevron/toggle. -->
-  <div class="sbc-canvas-title">Data layer</div>
   <main class="sbc-canvas" id="canvas"></main>
 
   <!-- physical layer canvas -->
   <div class="sbc-physical" id="physical-panel">
-    <!-- Secondary view: on narrow screens this header collapses the canvas
-         (see the toggle wiring at the end of the inline script). -->
-    <button class="sbc-physical-toggle" id="physical-toggle" type="button"
-            aria-expanded="true" aria-controls="physical-canvas">Physical layer</button>
     <div class="pln-canvas" id="physical-canvas">
       <svg class="pln-svg" id="physical-svg"></svg>
     </div>
@@ -223,6 +216,18 @@
 
 </div>
 
+<!-- Below the desktop breakpoint the game is not offered (ADR-003): the layout
+     above is hidden and this takes its place, so a phone — or a shared #build=
+     link opened on one — lands on a page that says what happened, not on a
+     canvas too narrow to build in. The knowledge base is the way on from here. -->
+<section class="sbc-notice">
+  <h1>RAID Sandbox</h1>
+  <p>Build a RAID array out of disks and controllers, then watch where data and
+     parity actually land — the layouts follow the Linux <code>md</code> kernel rules.</p>
+  <p class="sbc-notice-req">It needs a desktop browser.</p>
+  <a class="sbc-notice-link" href="kb.html">Read the knowledge base →</a>
+</section>
+
 <!-- js-yaml: vendored, not from a CDN — see vendor/README.md -->
 <script src="vendor/js-yaml/js-yaml.min.js"></script>
 <script src="src/engine/model.js"></script>
@@ -238,8 +243,6 @@
 <script src="src/sandbox/build-document.js"></script>
 <script src="src/sandbox/drag-util.js"></script>
 <script src="src/sandbox/highlight.js"></script>
-<script src="src/sandbox/touch-dnd.js"></script>
-<script src="src/sandbox/sidebar-accordion.js"></script>
 <script src="src/sandbox/canvas-controller.js"></script>
 <script src="src/sandbox/physical-controller.js"></script>
 <script src="src/challenge/challenge.js"></script>
@@ -589,30 +592,6 @@
     }
   });
 
-  // The physical layer is secondary: on narrow screens it starts collapsed so the
-  // data layer and the results panel below stay discoverable. Expanding re-renders
-  // it, because its edges are positioned via getBoundingClientRect — which reads
-  // zero while the canvas is display:none. Desktop keeps it always open (CSS hides
-  // the toggle), so the class is a no-op there.
-  (function () {
-    const toggle = document.getElementById('physical-toggle');
-    const panel  = document.getElementById('physical-panel');
-    if (!toggle || !panel) return;
-    const narrow = window.matchMedia('(max-width: 900px)');
-
-    function setOpen(open) {
-      panel.classList.toggle('is-open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-      if (open && physCtrl) requestAnimationFrame(() => physCtrl.render());
-    }
-    toggle.addEventListener('click', () => setOpen(!panel.classList.contains('is-open')));
-
-    // Collapsed by default on narrow screens, open on desktop.
-    const sync = () => setOpen(!narrow.matches);
-    sync();
-    if (narrow.addEventListener) narrow.addEventListener('change', sync);
-    else if (narrow.addListener) narrow.addListener(sync);   // older Safari/WebKit
-  })();
 </script>
 </body>
 </html>

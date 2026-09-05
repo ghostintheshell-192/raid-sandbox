@@ -50,32 +50,17 @@ of issues, git history is a better record than a second directory.
 
 ## Current Issues by Priority
 
-**High Priority:**
-- `build-valid-claimed-with-hard-violations.md` - The sandbox says "build valid" while showing a hard violation
+**High Priority:** None currently
 
 **Medium Priority:**
-- `algorithm-slot-vanishes-silently.md` - The algorithm slot disappears without saying why
-- `algorithms-data-unvalidated.md` - Three algorithm data files do not parse, and nothing would have noticed
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 - `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
-- `headless-tests-bypass-port-validation.md` - `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
-- `kb-intro-diverges-from-spec.md` - The knowledge base teaches a vocabulary the spec does not use
-- `nvme-hardware-raid-unbuildable.md` - NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
-- `nvme-software-raid-unbuildable.md` - All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
-- `physical-layer-canvas-has-no-touch-picker.md` - The Physical Layer canvas never got the mobile tap-to-picker inversion
-- `physical-recognizer-does-not-walk-the-path.md` - The physical recognizer checks presence and one edge, not the path
-- `power-loss-warning-promised-not-implemented.md` - The power-loss warning is promised in the data and was never written
-- `raid0plus1-difference-not-surfaced.md` - RAID 0+1 is recognized so the sandbox can say it is worse — and the sandbox never says it
 
 **Low Priority:**
-- `algorithm-drop-ignores-class.md` - Dragging an algorithm chip onto an array ignores the array's class
 - `automation-not-checked-on-windows.md` - The hooks and dev scripts are authored and tested only on the Linux workstation
-- `control-path-tolerates-cycles.md` - A control path that loops back on itself is accepted in silence
-- `level-numbers-duplicated-untested.md` - Level files declare numbers the engine also computes, and nothing compares them
 - `mirror-of-stripes-write-parallelism.md` - A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order
-- `ports-double-source-of-truth.md` - Component ports are defined twice, and the two environments read different copies
-- `refusal-tests-missing.md` - Three refusals have no test
+- `physical-layer-canvas-has-no-touch-picker.md` - The Physical Layer canvas has no click-to-build picker — drag is its only path
 
 ## Tips
 

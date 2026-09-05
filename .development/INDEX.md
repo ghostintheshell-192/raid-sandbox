@@ -57,7 +57,7 @@
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
 - [nvme-hardware-raid-unbuildable.md](tech-debt/nvme-hardware-raid-unbuildable.md) — NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
 - [nvme-software-raid-unbuildable.md](tech-debt/nvme-software-raid-unbuildable.md) — All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
-- [physical-layer-canvas-has-no-touch-picker.md](tech-debt/physical-layer-canvas-has-no-touch-picker.md) — The Physical Layer canvas never got the mobile tap-to-picker inversion
+- [physical-layer-canvas-has-no-touch-picker.md](tech-debt/physical-layer-canvas-has-no-touch-picker.md) — The Physical Layer canvas has no click-to-build picker — drag is its only path
 - [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
 - [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
 - [power-loss-warning-promised-not-implemented.md](tech-debt/power-loss-warning-promised-not-implemented.md) — The power-loss warning is promised in the data and was never written
@@ -71,10 +71,11 @@
 - [refusal-points.md](reference/refusal-points.md) — Refusal points — where the game says no, and whether it says why
 - [unspoken-content.md](reference/unspoken-content.md) — Unspoken content — what the game knows and never says
 
-### reference/decisions/ (2 files)
+### reference/decisions/ (3 files)
 
 - [001-engine-identity-not-position.md](reference/decisions/001-engine-identity-not-position.md) — ADR-001: The RAID engine's type comes from which object it is, not where it sits
 - [002-the-engine-holds-no-domain-facts.md](reference/decisions/002-the-engine-holds-no-domain-facts.md) — ADR-002: The engine holds no domain facts — it reads them from data files
+- [003-desktop-only.md](reference/decisions/003-desktop-only.md) — ADR-003: RAID Sandbox is a desktop game — the mobile flow is removed
 
 ---
 

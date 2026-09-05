@@ -19,9 +19,9 @@ data/ (YAML)  →  engine/  →  sandbox/  →  DOM
   (constraint engine). This layer is what the headless suites assert against,
   and it must stay independent of the DOM for that to remain possible.
 - **`src/sandbox/`** — owns the DOM. Controllers (`canvas-controller.js`,
-  `physical-controller.js`), state (`canvas-state.js`), rendering
-  (`render.js`), and the touch shim (`touch-dnd.js`) that stands in for the
-  HTML5 drag-and-drop API where it does not exist.
+  `physical-controller.js`), state (`canvas-state.js`) and rendering
+  (`render.js`). Desktop only (ADR-003): building is drag-and-drop plus the
+  inline click-to-build picker.
 - **`src/challenge/`** — challenge mode, built on top of the same engine.
 - **`data/`** — YAML resource files, parsed in-browser. The headless tests do
   not read them: they must run with zero dependencies.
@@ -36,6 +36,7 @@ kernel rules and never regenerated from the engine.
 
 - [ADR-001: The RAID engine's type comes from which object it is, not where it sits](reference/decisions/001-engine-identity-not-position.md) `[high]` — Hardware vs. fake RAID is decided by which of two distinct engine objects sits on the control path (compute silicon vs. metadata-only chip), not by the engine's position relative to the PCIe bus; software RAID is the configuration where neither is present.
 - [ADR-002: The engine holds no domain facts — it reads them from data files](reference/decisions/002-the-engine-holds-no-domain-facts.md) `[high]` — The engine's code knows *how* to compose, recognize, validate and explain; it does not know *what* a backplane, a RAID-on-Chip or a RAID 5 is. Every domain fact — components, ports, verdicts, level shapes, disk minimums — lives in the YAML files and is read from there, so adding a capability is adding a file.
+- [ADR-003: RAID Sandbox is a desktop game — the mobile flow is removed](reference/decisions/003-desktop-only.md) `[medium]` — Below the desktop breakpoint the game is no longer offered. A phone or a narrow window gets a short page that says what RAID Sandbox is, that it needs a desktop browser, and points to the knowledge base — which stays readable on mobile. The touch shim, the mobile layout and the accordion palette go; the inline picker stays, as click-to-build on desktop. No mobile version is promised.
 
 ## Project Tree
 
@@ -67,8 +68,6 @@ kernel rules and never regenerated from the engine.
 - `highlight.js` — RAID Sandbox: "what I am talking about is THAT one".
 - `physical-controller.js` — RAID Sandbox: physical layer (axis A) canvas controller.
 - `render.js` — RAID Sandbox: render + animate a placement grid (Phase 2b).
-- `sidebar-accordion.js` — collapse the palette into an accordion on narrow screens.
-- `touch-dnd.js` — touch shim for the HTML5 drag-and-drop API.
 
 ### tests
 - `algorithms-data.test.js` — validates the REAL algorithm YAML files in data/algorithms/. Run with: node algorithms-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so ...

@@ -126,7 +126,7 @@
           (payload.type === 'segmentation' || payload.type === 'redundancy' || payload.type === 'algorithm')) {
         if (targetKind !== 'array') return _NO;
         // An algorithm chip only applies if the array's class offers it (same
-        // predicate as the tap picker's catalogue) — otherwise the drop would
+        // predicate as the inline picker's catalogue) — otherwise the drop would
         // silently store a value the engine has to fall back away from
         // (layout.js; the fallback is a safety net, not a user-facing choice).
         if (payload.type === 'algorithm' && !_axisOptions('algorithm', targetId).includes(payload.value))
@@ -206,20 +206,20 @@
         );
       }
       // Persistent add-zone: always present, so a fresh loose disk — and thus a
-      // separate RAID group — can be started by tap even when the canvas isn't
+      // separate RAID group — can be started by click even when the canvas isn't
       // empty (mirrors dragging a disk onto blank canvas). `roots` is a Set, so
       // multiple independent groups are first-class state, not a workaround.
       canvasEl.appendChild(_makeAddZone(state.roots.size === 0));
     }
 
-    // A tap-to-build zone that drops a fresh loose disk. When the canvas is empty
+    // A click-to-build zone that drops a fresh loose disk. When the canvas is empty
     // it fills the space as the "start here" affordance; otherwise it sits after
     // the groups as a quiet "+ add a disk" that can seed a new, separate group.
     function _makeAddZone(isEmpty) {
       const zone = document.createElement('div');
       zone.className   = isEmpty ? 'sbc-canvas-empty' : 'sbc-canvas-add';
       zone.textContent = isEmpty
-        ? 'Tap to add a disk — or drag one from the palette'
+        ? 'Click to add a disk — or drag one from the palette'
         : '+ add a disk';
       zone.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -258,7 +258,7 @@
         _dragPayload = { source: 'canvas', type: 'disk', id };
         setDrag(e, _dragPayload);
       });
-      // Tap-to-build: a disk offers disk chips. A loose disk forms a new array
+      // Click-to-build: a disk offers disk chips. A loose disk forms a new array
       // with the chosen disk; a disk already in an array grows that array.
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -319,7 +319,7 @@
       // Dissolve button: returns disks to canvas, removes array.
       el.appendChild(_deleteBtn(() => { CS.dissolve(state, id); _evaluateAndRender(); }));
 
-      // Tap-to-build: tapping the array body (outside slots/members/×) grows it.
+      // Click-to-build: clicking the array body (outside slots/members/×) grows it.
       // The picker lands after the members, reading as "one more disk here".
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -383,12 +383,14 @@
       return (def && def.noAlgorithmReason) || null;
     }
 
-    // ---- inline picker (touch-first, additive to drag-and-drop) -------------
-    // Every empty zone offers, in-flow, the things that can go into it: a slot
-    // offers its axis values, an empty canvas / loose disk / array offers disk
-    // chips. The chosen option carries its own action (opt.apply), so the same
-    // picker widget drives both attribute-setting and building. Drag still works
-    // for mouse users; this just frees touch from it.
+    // ---- inline picker (click-to-build, additive to drag-and-drop) ----------
+    // The second way to build, next to drag-and-drop: every empty zone offers,
+    // in-flow, the things that can go into it — a slot offers its axis values,
+    // an empty canvas / loose disk / array offers disk chips. It answers "what
+    // can go here", which dragging never does, so it stays a first-class path
+    // even though the game is desktop-only (ADR-003). The chosen option carries
+    // its own action (opt.apply), so the same widget drives both
+    // attribute-setting and building.
 
     // Algorithm options depend on the array's class, exactly as _makeSlots
     // decides whether to show the slot at all (parity vs flat mirror).
@@ -506,7 +508,7 @@
         el.appendChild(hint);
         if (opts.reason) el.title = opts.reason;
 
-        // States a fact, does not collect one: no picker (tap) and no drop
+        // States a fact, does not collect one: no picker (click) and no drop
         // (drag), on either side of the class-change that made it disabled.
         el.addEventListener('click', (e) => e.stopPropagation());
         el.addEventListener('dragover', (e) => e.stopPropagation());
@@ -533,7 +535,7 @@
         el.appendChild(hint);
       }
 
-      // Tap/click opens the inline picker (touch-first path, additive to DnD).
+      // Click opens the inline picker (the click-to-build path, additive to DnD).
       // The panel lands under the whole slots row, not inside this one slot.
       el.addEventListener('click', (e) => {
         e.stopPropagation();

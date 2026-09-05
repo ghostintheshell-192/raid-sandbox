@@ -3,8 +3,8 @@
  *
  * One highlighting language for the whole app. A panel entry that refers to
  * things on the canvas — a §6 violation, the RAID-type line — lights those
- * things up while the player points at it. Hover on desktop; on touch, where
- * there is no hover, a tap pins the same highlight until the next tap.
+ * things up while the player points at it. Hovering lights it; clicking pins it,
+ * so the highlight survives while the eye moves to the canvas it points at.
  *
  * This module knows nothing about violations, badges or the domain. It is given
  * an element and a list of node ids and wires the interaction; deciding WHICH
@@ -85,7 +85,8 @@
     el.addEventListener('mouseenter', () => { if (!_pinned) set(el._refIds); });
     el.addEventListener('mouseleave', () => { if (!_pinned) clear(); });
 
-    // Touch path: tap pins, tap again (or anywhere else) releases.
+    // Pinning: a click pins the highlight, a second one (or a click anywhere
+    // else) releases it — hover alone dies the moment the pointer leaves.
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       if (_pinned === el) { unpin(); return; }
