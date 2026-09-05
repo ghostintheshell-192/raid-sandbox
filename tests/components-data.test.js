@@ -100,6 +100,7 @@ const modelFields = (def) => JSON.stringify({
   id: def.id, provides: def.provides || [], ports: def.ports,
   verdict: def.verdict || null,
   layouts: def.layouts || null,
+  writeHole: def.writeHole || null,
   ui: { label: (def.ui || {}).label, badge: (def.ui || {}).badge },
 });
 
@@ -180,6 +181,49 @@ test('the mdadm RAID 10 layouts are claimed by exactly one component', () => {
     const who = claimed.providersOf(LAYOUT_CAP + algo);
     assert(who.length === 1, `${algo} is claimed by ${who.length} components: ${who.join(', ')}`);
   }
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[6] every RAID engine either survives a power cut or explains why not');
+
+// The §6 `write-hole` rule is a comparison and holds no sentence: an engine that
+// keeps a parity write safe across a power cut claims `power-loss-protection`,
+// and one that cannot carries the sentence a player should read in its own
+// `writeHole.reason`. So the invariant that is actually checkable in the data is
+// the exclusive-or: for every component that can BE the engine on a path (it
+// provides `raid-engine`), exactly one of the two is present. An engine with
+// neither is a silent gap — the rule fires nothing and the player is told
+// nothing; an engine with both contradicts itself.
+const POWER_LOSS_CAP = 'power-loss-protection';
+const isEngine   = (def) => (def.provides || []).includes('raid-engine');
+const isProtected = (def) => (def.provides || []).includes(POWER_LOSS_CAP);
+
+test('every raid-engine component either claims power-loss-protection or declares writeHole.reason', () => {
+  let engines = 0;
+  for (const def of realManifest.components) {
+    if (!isEngine(def)) continue;
+    engines++;
+    if (isProtected(def)) {
+      assert(!def.writeHole,
+        `${def.id}: claims ${POWER_LOSS_CAP} and still declares writeHole.reason — pick one`);
+    } else {
+      assert(def.writeHole && typeof def.writeHole.reason === 'string' && def.writeHole.reason.length > 20,
+        `${def.id}: is a RAID engine, does not claim ${POWER_LOSS_CAP}, and explains nothing`);
+    }
+  }
+  assert(engines >= 2, 'fewer than two RAID engines — the write-hole rule cannot be exercised');
+});
+
+test('at least one engine protects and at least one does not', () => {
+  const engines = realManifest.components.filter(isEngine);
+  assert(engines.some(isProtected), `no component claims ${POWER_LOSS_CAP} — the rule could never stay silent`);
+  assert(engines.some((d) => !isProtected(d)), 'every engine is protected — the rule could never fire');
+});
+
+test('a writeHole.reason on a component that is not an engine would be dead text', () => {
+  for (const def of realManifest.components)
+    if (def.writeHole) assert(isEngine(def),
+      `${def.id}: declares writeHole.reason but is never the engine on a path`);
 });
 
 finish();

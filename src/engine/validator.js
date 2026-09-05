@@ -205,6 +205,44 @@
     return out;
   }
 
+  // Cross-axis (§6, §5a "needs UPS"): the WRITE HOLE. A parity array updates a
+  // stripe's data and its parity as two separate writes; interrupt them and the
+  // parity no longer matches the data, and a later rebuild recomputes a missing
+  // disk from the wrong parity. Ground truth: Linux md, `drivers/md/raid5-ppl.c`
+  // — "Partial Parity Log for closing the RAID5 write hole" (line 3), whose
+  // entries "mark the stripes for which parity should be recalculated after an
+  // unclean shutdown" (line 52). It is a PARITY problem: raid1.c lists
+  // MD_HAS_PPL / MD_HAS_JOURNAL among UNSUPPORTED_MDDEV_FLAGS, so a mirror has
+  // neither — hence `parity1`/`parity2` here and not `mirror`.
+  //
+  // Which engines survive it is DATA, both ways round: an engine that can claims
+  // `power-loss-protection` in its `provides:` (a protected write cache), and an
+  // engine that cannot explains its own situation in `writeHole.reason` — the OS
+  // as engine and the metadata chip do not have the same story to tell, and
+  // neither is the rule's to tell. The rule is the comparison and nothing else,
+  // so a new engine component with or without protection costs zero lines here.
+  // `power-loss-protection` is a capability key, not a fact about any object —
+  // same standing as `layout:` above (ADR-002).
+  //
+  // Fires ONCE per build (nodeId null, like engine-single-point): the exposure
+  // belongs to the path, not to one span, and a RAID 50 would otherwise repeat
+  // the same paragraph per span. Only when the path is DETERMINED.
+  const POWER_LOSS_CAP = 'power-loss-protection';
+  const PARITY = new Set(['parity1', 'parity2']);
+
+  function checkWriteHole(tree, physical, ctx) {
+    if (!physical.raidType) return null;              // path not determined yet → don't nag
+    if (!ctx.catalog) return null;
+    if (!ctx.arrays.some(({ node }) => PARITY.has(node.redundancy))) return null;
+    const engineId = physical.engineComponentId || null;
+    if (!engineId) return null;
+    if (ctx.catalog.provides(engineId).includes(POWER_LOSS_CAP)) return null;
+    const def    = ctx.catalog.get(engineId);
+    const reason = (def && def.writeHole && def.writeHole.reason) || null;
+    if (!reason) return null;                         // unprotected but unexplained → say nothing
+    return { message: fill(reason, { raidType: physical.raidType }) };
+  }
+
   // Mixed disk sizes in one array (soft): the larger disks are coerced down.
   //
   // Only mirror and parity coerce. md RAID 0 does NOT: create_strip_zones()
@@ -295,6 +333,9 @@
 
     { code: 'cross-axis-near-far-offset', severity: 'hard', layer: 'cross',
       source: 'cross-axis §6/§9.7',      run: checkCrossAxisLayout },
+
+    { code: 'write-hole',                severity: 'soft', layer: 'cross',
+      source: 'domain-model §5a/§6 (md raid5-ppl.c)', run: checkWriteHole },
 
     { code: 'backplane-diversity',       severity: 'soft', layer: 'cross',
       source: 'diversity §9.4',          run: checkBackplaneDiversity },
