@@ -29,6 +29,20 @@ verdict:
     No RAID engine sits on the path — Windows and the CPU compute the layout
     themselves, with no RAID hardware involved.
 
+# See os-linux.yaml for what this block is and which kernel source it answers
+# to. Deliberately silent about what Windows itself offers: the ground truth
+# available here is the Linux md source, and Storage Spaces' own crash-consistency
+# machinery is not something this project has checked. What IS true of any path
+# without protected cache is said, and nothing more.
+writeHole:
+  reason: >-
+    Parity is computed on the CPU and written as a separate step, so a power cut
+    between the two can leave a stripe whose parity no longer matches its data —
+    and a later rebuild recomputes a missing disk from it without noticing.
+    Nothing on a {raidType} path holds the write until both halves are safe; a
+    UPS, or a controller with a battery-backed write cache, is what closes the
+    gap.
+
 ui:
   label: "Windows"
   chip: "OS Windows"

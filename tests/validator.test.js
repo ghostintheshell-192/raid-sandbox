@@ -148,6 +148,73 @@ test('without a component catalogue the rule stands down rather than guesses', (
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[3b] The write hole (soft) — cross-axis, data-driven');
+
+// A parity array writes data and parity separately; a power cut between the two
+// leaves parity that no longer matches (md: `drivers/md/raid5-ppl.c`, "Partial
+// Parity Log for closing the RAID5 write hole"). Which engines survive it is
+// data both ways: engine-roc claims `power-loss-protection`, and the engines
+// that cannot each carry their own `writeHole.reason`. The rule names neither.
+const raid5   = () => M.array('striped', 'parity1', disks(3));
+const raid6   = () => M.array('striped', 'parity2', disks(4));
+const raid50  = () => M.array('striped', 'none',
+  [M.array('striped', 'parity1', disks(3)), M.array('striped', 'parity1', disks(3))]);
+const softOf  = (r) => r.soft.filter((v) => v.code === 'write-hole');
+
+test('RAID 5 on Linux software RAID → write-hole, with Linux’s own sentence', () => {
+  const found = softOf(V.validate(raid5(), path('software', 'os-linux')));
+  eq(found.length, 1);
+  eq(found[0].message, 'Parity is computed from the data and written as a separate step, so a power '
+    + 'cut between the two can leave a stripe whose parity no longer matches its data — and a later '
+    + 'rebuild recomputes a missing disk from that wrong parity without noticing. Linux md can close '
+    + "this write hole with a journal device, or with mdadm's --consistency-policy=ppl on RAID 5; "
+    + 'without one, a software parity array needs a UPS or a controller with a battery-backed write cache.');
+  eq(found[0].nodeId, null);   // the exposure belongs to the path, not to one span
+});
+test('RAID 5 on a RoC → clean (the protected cache is what the capability claims)', () => {
+  assert(!softOf(V.validate(raid5(), path('hardware', 'engine-roc', null))).length);
+});
+test('RAID 5 on a tri-mode RoC → clean (same object family, same claim)', () => {
+  assert(!softOf(V.validate(raid5(), path('hardware', 'engine-roc-trimode', null))).length);
+});
+test('RAID 5 on fake RAID → write-hole, with the metadata chip’s own sentence', () => {
+  const found = softOf(V.validate(raid5(), path('fake', 'engine-metadata', 'os-linux')));
+  eq(found.length, 1);
+  eq(found[0].message, 'The parity for each stripe is computed on the CPU and written after the data, '
+    + 'so a power cut between the two can leave a stripe whose parity no longer matches, and a later '
+    + 'rebuild trusts it. This chip owns the array metadata but has no write cache of its own to '
+    + 'protect, so on fake RAID nothing here holds the write — that job falls to a UPS.');
+});
+test('RAID 6 on software RAID → write-hole (both parity kinds, not just parity1)', () => {
+  assert(softOf(V.validate(raid6(), path('software', 'os-windows'))).length === 1);
+});
+test('RAID 1 on software RAID → clean (md gives a mirror no PPL and no journal)', () => {
+  assert(!softOf(V.validate(M.array('linear', 'mirror', disks(2)), path('software', 'os-linux'))).length);
+});
+test('RAID 10 on software RAID → clean (still no parity to lose)', () => {
+  assert(!softOf(V.validate(M.array('striped', 'mirror', disks(4)), path('software', 'os-linux'))).length);
+});
+test('RAID 0 on software RAID → clean (no parity, no redundancy to be inconsistent)', () => {
+  assert(!softOf(V.validate(M.array('striped', 'none', disks(2)), path('software', 'os-linux'))).length);
+});
+test('RAID 50 on software RAID → fires ONCE, not once per span', () => {
+  eq(softOf(V.validate(raid50(), path('software', 'os-linux'))).length, 1);
+});
+test('RAID 5 with no control path yet → nothing (recognizer’s job)', () => {
+  assert(!softOf(V.validate(raid5(), { raidType: null })).length);
+});
+test('without a component catalogue the rule stands down rather than guesses', () => {
+  const r = V0.validate(raid5(), path('software', 'os-linux'), { levels });
+  assert(!softOf(r).length);
+});
+test('write-hole is registered soft, cross-layer', () => {
+  const rule = V.RULES.find((x) => x.code === 'write-hole');
+  assert(rule, 'write-hole is not registered');
+  eq(rule.severity, 'soft');
+  eq(rule.layer, 'cross');
+});
+
+// ---------------------------------------------------------------------------
 console.log('\n[4] Physical constraints (hard)');
 
 // `nvme-backplane` keeps its historical code (five documents cite it) but no

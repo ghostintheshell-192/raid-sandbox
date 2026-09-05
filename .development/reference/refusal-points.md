@@ -130,7 +130,9 @@ rules:
   drive group, so 3-of-4 is allowed" dissolves once the two are read at their own levels:
   a span divides the **disks**, a VD divides the **capacity**.)
 
-- **Promised in the data and never written**: `os-linux.yaml` states that without a
+- **Promised in the data and never written** — **closed 2026-09-05** (`write-hole`, soft,
+  cross-axis; the sentence lives on each engine that has no protected cache).
+  `os-linux.yaml` stated that without a
   battery-backed cache or a UPS a power loss during a write can leave the array
   inconsistent, and adds *"this is a soft constraint surfaced as a warning in the game."*
   There is no such rule. That is the **write hole**, and it is the reason a hardware
@@ -189,4 +191,4 @@ Everything actionable found here is tracked as tech debt; this map stays the map
 | the algorithm slot's silent absence — **closed 2026-09-05** | [`algorithm-slot-vanishes-silently.md`](../tech-debt/algorithm-slot-vanishes-silently.md) |
 | "✓ build valid" alongside a hard violation, and the animation gate | [`build-valid-claimed-with-hard-violations.md`](../tech-debt/build-valid-claimed-with-hard-violations.md) |
 | the drag path accepting an algorithm the picker would filter | [`algorithm-drop-ignores-class.md`](../tech-debt/algorithm-drop-ignores-class.md) (already open) |
-| the power-loss warning §6 never got | [`power-loss-warning-promised-not-implemented.md`](../tech-debt/power-loss-warning-promised-not-implemented.md) |
+| the power-loss warning §6 never got — **closed 2026-09-05** (`write-hole`) | [`power-loss-warning-promised-not-implemented.md`](../tech-debt/power-loss-warning-promised-not-implemented.md) |
