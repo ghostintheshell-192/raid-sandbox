@@ -71,10 +71,11 @@
 - [refusal-points.md](reference/refusal-points.md) — Refusal points — where the game says no, and whether it says why
 - [unspoken-content.md](reference/unspoken-content.md) — Unspoken content — what the game knows and never says
 
-### reference/decisions/ (2 files)
+### reference/decisions/ (3 files)
 
 - [001-engine-identity-not-position.md](reference/decisions/001-engine-identity-not-position.md) — ADR-001: The RAID engine's type comes from which object it is, not where it sits
 - [002-the-engine-holds-no-domain-facts.md](reference/decisions/002-the-engine-holds-no-domain-facts.md) — ADR-002: The engine holds no domain facts — it reads them from data files
+- [003-desktop-only.md](reference/decisions/003-desktop-only.md) — ADR-003: RAID Sandbox is a desktop game — the mobile flow is removed
 
 ---
 
