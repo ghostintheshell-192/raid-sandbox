@@ -80,8 +80,11 @@ and the information icons will lean on the same idea.
 
 ## Consequences
 
-- **Two tech-debts close by deletion**: `physical-layer-canvas-has-no-touch-picker`
-  and the `touch-dnd.js` re-scope (roadmap item 5).
+- **One tech-debt closes by deletion, one is re-scoped.** The `touch-dnd.js` re-scope
+  (roadmap item 5) is answered: the shim is gone. `physical-layer-canvas-has-no-touch-picker`
+  loses its touch half but not its point — the data layer keeps a click-to-build picker
+  and the physical layer has only drag, an asymmetry that matters for the accessibility
+  work (item 9); it stays open at low priority under a truer title.
 - **Smaller surface**: two JavaScript files and the mobile section of the stylesheet go;
   the headless suites are untouched (none of this was ever loaded under Node).
 - **A phone visitor loses the game** and gets the knowledge base. Until the site is
@@ -97,7 +100,8 @@ and the information icons will lean on the same idea.
 ## See also
 
 - `.claude/rules/overview.md` — the stack decision, restated by this ADR.
-- `tech-debt/physical-layer-canvas-has-no-touch-picker.md` — closed by this decision.
+- `tech-debt/physical-layer-canvas-has-no-touch-picker.md` — re-scoped by this decision:
+  no longer about touch, still about the physical layer having one build path.
 - `.memory-bank/2026-07-24-2135-mobile-tap-to-build-ci-branch-protection.md` (local) —
   the day tap-to-build shipped and the shim was first questioned.
 - [ADR-001](001-engine-identity-not-position.md), [ADR-002](002-the-engine-holds-no-domain-facts.md) —

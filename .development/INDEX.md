@@ -57,7 +57,7 @@
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
 - [nvme-hardware-raid-unbuildable.md](tech-debt/nvme-hardware-raid-unbuildable.md) — NVMe disks can never reach `engine-roc` — Hardware RAID over NVMe is unbuildable
 - [nvme-software-raid-unbuildable.md](tech-debt/nvme-software-raid-unbuildable.md) — All-NVMe software RAID cannot be built — the recognizer demands an HBA the spec forbids
-- [physical-layer-canvas-has-no-touch-picker.md](tech-debt/physical-layer-canvas-has-no-touch-picker.md) — The Physical Layer canvas never got the mobile tap-to-picker inversion
+- [physical-layer-canvas-has-no-touch-picker.md](tech-debt/physical-layer-canvas-has-no-touch-picker.md) — The Physical Layer canvas has no click-to-build picker — drag is its only path
 - [physical-recognizer-does-not-walk-the-path.md](tech-debt/physical-recognizer-does-not-walk-the-path.md) — The physical recognizer checks presence and one edge, not the path
 - [ports-double-source-of-truth.md](tech-debt/ports-double-source-of-truth.md) — Component ports are defined twice, and the two environments read different copies
 - [power-loss-warning-promised-not-implemented.md](tech-debt/power-loss-warning-promised-not-implemented.md) — The power-loss warning is promised in the data and was never written

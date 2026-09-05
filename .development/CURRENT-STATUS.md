@@ -28,8 +28,8 @@ its own (`reference/engine-robustness-and-extraction.md` §8).
   `pointer: coarse` block in `sandbox.css`, the narrow-screen physical-layer fold and
   its toggle. **What stayed**: the inline picker, no longer a touch affordance but
   click-to-build next to drag-and-drop, and the base for the accessibility work
-  (roadmap item 9). Two tech-debts close by deletion — the physical layer's missing
-  tap-to-picker and the `touch-dnd.js` re-scope. Every interface change from here is
+  (roadmap item 9). One tech-debt closes by deletion — the `touch-dnd.js` re-scope — and one is
+  re-scoped: the physical layer's missing picker, now a desktop asymmetry at low priority. Every interface change from here is
   designed once, for one width - 2026-09-05
 - **Degenerate levels — what the player has, next to what they tried to build** (PRs
   #35–#37, 2026-09-05, one day after the spec): the leaf level files declare
@@ -160,9 +160,9 @@ decision.
 5. **Technical queue** — **closed 2026-09-05** (see the milestones): the level's
    `reason` on success (PR #28), RAID 0+1 reads high (PR #27), the validator's last ids
    in code (PR #30), `algorithm-drop-ignores-class` (PR #24). The two remaining items
-   were both about touch, and ADR-003 closed them by deletion rather than by a fix:
-   ~~the physical layer's missing tap-to-picker~~ and ~~the `touch-dnd.js` re-scope~~ —
-   the shim is gone, and the physical layer keeps drag-and-drop on a desktop pointer.
+   were both about touch. ADR-003 answered them: ~~the `touch-dnd.js` re-scope~~ (the shim
+   is gone), and the physical layer's missing picker re-scoped as a desktop asymmetry,
+   low priority, to take up with item 9 (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`).
 6. **Challenges on the physical axis** — the requirement vocabulary knows only the
    data metrics; add the RAID type ("must be hardware") and the physical-validator
    phase 2 rules (fake RAID limited to 0/1/5/10, mixed protocols, Storage Spaces).
@@ -211,6 +211,8 @@ See `.development/tech-debt/`:
   writes as one disk, so RAID 0+1 gets `writeMult 0.5` and `writeClass medium` against
   1+0's `1` / `high`. Fixing it lets 0+1 satisfy the `database` challenge — a domain
   decision, taken on purpose, recorded there.
+- `physical-layer-canvas-has-no-touch-picker.md` — open (low, re-scoped by ADR-003): the physical
+  layer has drag-and-drop only, the data layer also click-to-build; take up with item 9.
 - `automation-not-checked-on-windows.md` — open (low): hooks and dev scripts are
   tested only on the Linux workstation.
 - `nested-data-allocation-order.md` — **mostly RESOLVED**. Per-span order is

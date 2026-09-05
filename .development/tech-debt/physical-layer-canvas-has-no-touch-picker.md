@@ -1,16 +1,15 @@
 ---
 type: bug
-priority: medium
-status: resolved
+priority: low
+status: open
 discovered: 2026-07-31
 related: []
-related_decision: null
+related_decision: ../reference/decisions/003-desktop-only.md
 ---
 
-# The Physical Layer canvas never got the mobile tap-to-picker inversion
+# The Physical Layer canvas has no click-to-build picker — drag is its only path
 
-> **Resolved 2026-09-05** on `feat/desktop-only` — closed by deletion, not by a fix.
-> See the resolution section at the end.
+> **Re-scoped 2026-09-05** (ADR-003): the touch half of this issue is gone with the mobile flow; what is left is the asymmetry with the data layer, which keeps its click-to-build picker. Priority down to low. See "Re-scoped" at the end.
 
 ## Problem
 
@@ -77,19 +76,26 @@ current branch.
   `_diskPickerOptions` — the pattern to extend), `src/sandbox/touch-dnd.js`
   (the current, sole touch path on axis A).
 
-## Resolution (2026-09-05)
+## Re-scoped (2026-09-05)
 
-Closed by deletion. [ADR-003](../reference/decisions/003-desktop-only.md) makes RAID
-Sandbox a desktop game: below 900px `index.html` shows a short notice instead of the
-canvases, and the touch paths are gone — `touch-dnd.js`, the shim this issue called
-"the current, sole touch path on axis A", was deleted with them.
+[ADR-003](../reference/decisions/003-desktop-only.md) makes RAID Sandbox a desktop
+game: the touch paths are gone — `touch-dnd.js`, the shim this issue called "the
+current, sole touch path on axis A", was deleted with them — so the half of this issue
+that was about a phone no longer exists.
 
-None of the three options was taken. The physical layer keeps drag-and-drop as its
-only build gesture, which is a complete answer on a desktop pointer; the missing
-picker was a problem only for a surface the game no longer serves. Axis B keeps its
-inline picker, not as a touch affordance but as click-to-build next to drag —
-`_openPicker` and `_diskPickerOptions` are still the pattern to extend if the physical
-layer ever wants the same second path.
+The other half does. The data layer keeps its inline picker as **click-to-build** next
+to drag-and-drop; the physical layer has drag-and-drop and nothing else. On a desktop
+pointer that is a complete answer, which is why the priority drops to low. It is not a
+closed question, for two reasons:
+
+- **consistency** — a player who has learned "click an empty spot and it offers what
+  fits" on the data layer meets a canvas where that does nothing;
+- **accessibility** (roadmap item 9) — a click-driven picker is the base a keyboard path
+  can be built on; a drag-only canvas is not.
+
+Option A (the picker, `_openPicker` + `_diskPickerOptions` as the pattern to extend) is
+still the one to take when item 9 is picked up. Options B and C were about touch and
+are gone with it.
 
 ---
 
