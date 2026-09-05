@@ -14,6 +14,14 @@
  *     constraint?:  even-disk-count | odd-disk-count      (leaf shapes)
  *     childShape?:  a shape every member must match        (members: arrays)
  *
+ * A leaf level may also say what it becomes below its minimum (spec:
+ * planned/degenerate-levels.md §5): `minDisksToRun` + `minDisksToRunSource`
+ * (the width the real system still starts, with the kernel line that says so)
+ * and `collapsesTo[]` (one `{ disks, becomes, because, source }` per width worth
+ * explaining). This file validates them; it does not apply them — the rewrite
+ * is model.js's job, and it composes bottom-up, which is why a nested level
+ * never declares them: its spans carry the rule.
+ *
  * The grammar is deliberately small: two attributes, a leaf/nested switch, a
  * parity constraint on the disk count, and "every member matches S" for the
  * nested levels. That is exactly what the hand-written recognizer used to
@@ -88,6 +96,52 @@
     }
   }
 
+  // The collapse keys are optional on a leaf level (the data test insists on
+  // them for the real files) and forbidden on a nested one: the collapse
+  // composes from the spans (spec §3), so a rule on the outer level would be a
+  // second statement of the same fact, free to drift.
+  const COLLAPSE_KEYS = ['minDisksToRun', 'minDisksToRunSource', 'collapsesTo'];
+
+  function validateCollapses(def) {
+    if (def.shape.members !== 'disks') {
+      for (const key of COLLAPSE_KEYS)
+        if (def[key] !== undefined)
+          fail(`${def.id}: ${key} belongs on a leaf level — a nested level's spans carry it`);
+      return;
+    }
+    if (def.minDisksToRun !== undefined) {
+      if (!Number.isInteger(def.minDisksToRun) || def.minDisksToRun < 2 || def.minDisksToRun > def.minDisks)
+        fail(`${def.id}: minDisksToRun must be a whole number from 2 to minDisks (${def.minDisks})`);
+      if (typeof def.minDisksToRunSource !== 'string' || !def.minDisksToRunSource)
+        fail(`${def.id}: minDisksToRun needs a minDisksToRunSource (the kernel line, or the algebra)`);
+    } else if (def.minDisksToRunSource !== undefined) {
+      fail(`${def.id}: minDisksToRunSource without a minDisksToRun`);
+    }
+    if (def.collapsesTo === undefined) return;
+    if (!Array.isArray(def.collapsesTo)) fail(`${def.id}: collapsesTo must be a list`);
+    const widths = new Set();
+    def.collapsesTo.forEach((c, i) => {
+      const where = `${def.id}: collapsesTo[${i}]`;
+      if (!c || typeof c !== 'object') fail(`${where}: expected { disks, becomes, because, source }`);
+      if (!Number.isInteger(c.disks) || c.disks < 2 || c.disks >= def.minDisks)
+        fail(`${where}: disks must be a whole number from 2 to minDisks − 1 (${def.minDisks - 1})`);
+      if (widths.has(c.disks)) fail(`${where}: a second entry for ${c.disks} disks`);
+      widths.add(c.disks);
+      if (!constraintHolds(def.shape.constraint, c.disks))
+        fail(`${where}: ${c.disks} disks never have this shape (${def.shape.constraint}) — the entry could not fire`);
+      const b = c.becomes;
+      if (!b || typeof b !== 'object') fail(`${where}: becomes must be a shape { segmentation, redundancy }`);
+      if (!Model.SEGMENTATIONS.includes(b.segmentation))
+        fail(`${where}: becomes.segmentation "${b.segmentation}" is not one of ${Model.SEGMENTATIONS.join(', ')}`);
+      if (!Model.REDUNDANCIES.includes(b.redundancy))
+        fail(`${where}: becomes.redundancy "${b.redundancy}" is not one of ${Model.REDUNDANCIES.join(', ')}`);
+      if (b.segmentation === def.shape.segmentation && b.redundancy === def.shape.redundancy)
+        fail(`${where}: becomes is the level's own shape — a rewrite to itself explains nothing`);
+      if (typeof c.because !== 'string' || !c.because) fail(`${where}: because is required (the player-facing sentence)`);
+      if (typeof c.source !== 'string' || !c.source) fail(`${where}: source is required (the kernel line, or the algebra)`);
+    });
+  }
+
   function validate(manifest) {
     if (!manifest || !Array.isArray(manifest.levels)) fail('manifest.levels must be a list');
     const seen = new Set();
@@ -100,6 +154,7 @@
       if (typeof def.minDisks !== 'number' || def.minDisks < 1) fail(`${def.id}: minDisks must be a positive number`);
       if (def.advisory !== undefined && typeof def.advisory !== 'string') fail(`${def.id}: advisory must be a string`);
       validateShape(def.shape, def.id);
+      validateCollapses(def);
     }
   }
 

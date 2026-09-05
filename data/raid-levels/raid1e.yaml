@@ -15,6 +15,11 @@ shape:
 
 minDisks: 3
 
+# Nothing collapses here: the only width below 3 is 2, an even count, which is RAID 10's
+# shape — see raid10.yaml for what a 2-disk striped mirror becomes.
+minDisksToRun: 3
+minDisksToRunSource: "drivers/md/raid10.c setup_conf(): no bound on the device count beyond copies ≤ raid_disks — 3 devices start; 2 is an even count, RAID 10's shape"
+
 # Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
 # faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
 # array's; the engine derives the real numbers. Checked against the engine by

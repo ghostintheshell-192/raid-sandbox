@@ -11,6 +11,10 @@ shape:
 
 minDisks: 2
 
+# Nothing runs below 2 (specs/planned/degenerate-levels.md §5): the bound is structural.
+minDisksToRun: 2
+minDisksToRunSource: "structural — an array of one member is that member; the sandbox refuses it before any level is named (spec §6, the universal ≥ 2)"
+
 # Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
 # faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
 # array's; the engine derives the real numbers. Checked against the engine by

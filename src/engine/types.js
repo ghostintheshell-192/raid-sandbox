@@ -80,12 +80,27 @@
  */
 
 /**
+ * A collapse rule (specs/planned/degenerate-levels.md §5): at `disks` members —
+ * below the level's minDisks — the node is rewritten to the `becomes` shape.
+ * `because` is the player-facing sentence, `source` the kernel line or the
+ * algebra that grounds it.
+ * @typedef {{ disks: number, becomes: { segmentation: Segmentation, redundancy: Redundancy },
+ *             because: string, source: string }} Collapse
+ */
+
+/**
  * `advisory` is a soft, player-facing warning the level declares about ITSELF —
  * a legitimate shape the level's own file considers worse than a lookalike
  * (RAID 0+1 vs RAID 1+0). `{label}` is filled in by the validator, the same
  * convention as `reason`'s `{n}`.
+ *
+ * `minDisksToRun` is the width the real system still starts (a fact, with its
+ * source), as opposed to `minDisks`, the level's definition; `collapsesTo` says
+ * what the level becomes in between. Leaf levels only — a nested level's spans
+ * carry the rule.
  * @typedef {{ id: string, name: string, notRaid?: boolean, reason: string, shape: Shape, minDisks: number,
- *             advisory?: string }} LevelDef
+ *             advisory?: string,
+ *             minDisksToRun?: number, minDisksToRunSource?: string, collapsesTo?: Collapse[] }} LevelDef
  */
 
 /**

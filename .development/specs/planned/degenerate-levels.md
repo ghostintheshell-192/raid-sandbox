@@ -117,17 +117,27 @@ The fields:
 | field | meaning | required |
 |---|---|---|
 | `minDisks` | the canonical minimum — the level's definition. Unchanged | yes (exists) |
-| `minDisksToRun` | the minimum the real system accepts. A fact, with a source | yes, with `minDisksToRunSource` |
-| `collapsesTo[]` | one entry per width below `minDisks` that is worth explaining | see the coverage rule |
+| `minDisksToRun` | the minimum the real system accepts. A fact, with a source | leaf levels: yes, with `minDisksToRunSource` |
+| `collapsesTo[]` | one entry per width below `minDisks` that is worth explaining | leaf levels: see the coverage rule |
 | `.disks` | the width the entry is for | yes |
 | `.becomes` | the shape the node is rewritten to | yes |
 | `.because` | the player-facing sentence | yes |
 | `.source` | kernel citation or algebra — the ground truth for this rule | yes |
 
 **Coverage rule** (a data test): every width from `minDisksToRun` up to `minDisks − 1`,
-and at least 2, has a `collapsesTo` entry — otherwise a configuration exists that runs
-and the game cannot explain. Below `minDisksToRun` an entry is optional and useful
+and at least 2, *that has the level's shape* has a `collapsesTo` entry — otherwise a
+configuration exists that runs and the game cannot explain. The shape clause is the
+disk-count constraint: three disks never have RAID 10's shape (even), they are RAID 1E's,
+so RAID 10 owes no entry at 3 and an entry there could never fire (`levels.js` refuses it). Below `minDisksToRun` an entry is optional and useful
 (RAID 6 with 3 disks: *it would be a three-way mirror, and Linux does not start it*).
+
+**Leaf levels only.** A nested level (`members: arrays`) declares none of the three keys,
+and `levels.js` refuses them there: its collapse *is* the recursion of §3 — the spans
+carry the rule, and a copy on the outer level would be the same fact stated twice, free
+to drift. Where nothing runs below the minimum (JBOD, RAID 0, RAID 1: the universal
+≥ 2 is structural) `minDisksToRun` equals `minDisks` and the source says so; RAID 1E
+likewise, since the only width below 3 is even and belongs to RAID 10's shape.
+Implemented 2026-09-05 (data, validation, coverage test).
 
 **`minDisksToRun` is implementation-dependent.** The numbers above are `md`'s. A hardware
 controller has its own minimums, known only from vendor documentation — the same
