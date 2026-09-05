@@ -81,6 +81,13 @@ test('a collapse to an unknown redundancy',     () => failsWith((m) => { withRun
 test('a collapse to the level\'s own shape',    () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ becomes: { segmentation: 'striped', redundancy: 'mirror' } })] }); }, /b-even: collapsesTo\[0\]: becomes is the level's own shape/));
 test('a collapse with no because',              () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ because: '' })] }); }, /b-even: collapsesTo\[0\]: because is required/));
 test('a collapse with no source',               () => failsWith((m) => { withRun(m.levels[1], { collapsesTo: [collapse({ source: undefined })] }); }, /b-even: collapsesTo\[0\]: source is required/));
+test('absorbsNested is accepted on a leaf level', () => {
+  const m = manifest();
+  m.levels[0].absorbsNested = { because: 'a stripe of stripes', source: 'algebra' };
+  eq(L.createLevels(m).get('a').absorbsNested.because, 'a stripe of stripes');
+});
+test('absorbsNested on a nested level',         () => failsWith((m) => { m.levels[3].absorbsNested = { because: 'x', source: 'y' }; }, /nested: absorbsNested belongs on a leaf level/));
+test('absorbsNested with no because',           () => failsWith((m) => { m.levels[0].absorbsNested = { source: 'y' }; }, /a: absorbsNested\.because is required/));
 
 // ---------------------------------------------------------------------------
 console.log('\n[3] matching: leaf, constraint, nested, order');

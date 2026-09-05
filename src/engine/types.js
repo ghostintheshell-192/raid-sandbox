@@ -47,12 +47,16 @@
 /** @typedef {'high' | 'medium' | 'low'} PerfClass */
 
 /**
- * `RaidModel.analyze()`: the recognition plus every derived property. The flat
- * keys are the challenge vocabulary (challenge.js reads them by name).
+ * `RaidModel.analyze()`: the recognition of what was COMPOSED (box 1) plus every
+ * derived property, computed on the normalised tree — the numbers belong to what
+ * runs. `runs` is box 2: the recognition of the normalised tree, the tree, and
+ * the trace of rewrites that produced it (empty when nothing collapsed). The
+ * flat keys are the challenge vocabulary (challenge.js reads them by name).
  * @typedef {Recognition & {
  *   diskCount: number, capacityGB: number, rawCapacityGB: number, faultTolerance: number,
  *   readClass: PerfClass, writeClass: PerfClass,
- *   performance: { writePenalty: number, parallelism: number, random: PerfProfile, sequential: PerfProfile }
+ *   performance: { writePenalty: number, parallelism: number, random: PerfProfile, sequential: PerfProfile },
+ *   runs: Recognition & { tree: TreeNode, trace: Rewrite[] }
  * }} Analysis
  */
 
@@ -96,11 +100,23 @@
  *
  * `minDisksToRun` is the width the real system still starts (a fact, with its
  * source), as opposed to `minDisks`, the level's definition; `collapsesTo` says
- * what the level becomes in between. Leaf levels only — a nested level's spans
- * carry the rule.
+ * what the level becomes in between; `absorbsNested` says that nesting this
+ * shape inside itself changes nothing (a mirror of mirrors is one mirror). Leaf
+ * levels only — a nested level's spans carry the rule.
  * @typedef {{ id: string, name: string, notRaid?: boolean, reason: string, shape: Shape, minDisks: number,
  *             advisory?: string,
- *             minDisksToRun?: number, minDisksToRunSource?: string, collapsesTo?: Collapse[] }} LevelDef
+ *             minDisksToRun?: number, minDisksToRunSource?: string, collapsesTo?: Collapse[],
+ *             absorbsNested?: { because: string, source: string } }} LevelDef
+ */
+
+/**
+ * One rewrite `normalize()` applied (specs/planned/degenerate-levels.md §4): the
+ * trace is the list of these — the diff between what was composed and what
+ * runs. `level` is the id of the level whose file declared the rule.
+ * @typedef {{ rule: 'collapse' | 'absorb', level: string, nodeId: string | null,
+ *             from: { segmentation: Segmentation, redundancy: Redundancy, members: number },
+ *             to:   { segmentation: Segmentation, redundancy: Redundancy, members: number },
+ *             because: string, source: string }} Rewrite
  */
 
 /**

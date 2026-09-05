@@ -100,7 +100,7 @@
   // them for the real files) and forbidden on a nested one: the collapse
   // composes from the spans (spec §3), so a rule on the outer level would be a
   // second statement of the same fact, free to drift.
-  const COLLAPSE_KEYS = ['minDisksToRun', 'minDisksToRunSource', 'collapsesTo'];
+  const COLLAPSE_KEYS = ['minDisksToRun', 'minDisksToRunSource', 'collapsesTo', 'absorbsNested'];
 
   function validateCollapses(def) {
     if (def.shape.members !== 'disks') {
@@ -116,6 +116,12 @@
         fail(`${def.id}: minDisksToRun needs a minDisksToRunSource (the kernel line, or the algebra)`);
     } else if (def.minDisksToRunSource !== undefined) {
       fail(`${def.id}: minDisksToRunSource without a minDisksToRun`);
+    }
+    if (def.absorbsNested !== undefined) {
+      const a = def.absorbsNested;
+      if (!a || typeof a !== 'object') fail(`${def.id}: absorbsNested must be { because, source }`);
+      if (typeof a.because !== 'string' || !a.because) fail(`${def.id}: absorbsNested.because is required (the player-facing sentence)`);
+      if (typeof a.source !== 'string' || !a.source) fail(`${def.id}: absorbsNested.source is required (the algebra, or the kernel line)`);
     }
     if (def.collapsesTo === undefined) return;
     if (!Array.isArray(def.collapsesTo)) fail(`${def.id}: collapsesTo must be a list`);

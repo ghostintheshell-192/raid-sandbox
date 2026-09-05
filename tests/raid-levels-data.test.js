@@ -148,6 +148,7 @@ const modelFields = (d) => JSON.stringify({
   id: d.id, name: d.name, notRaid: !!d.notRaid, reason: d.reason, shape: d.shape, minDisks: d.minDisks,
   advisory: d.advisory,
   minDisksToRun: d.minDisksToRun, minDisksToRunSource: d.minDisksToRunSource, collapsesTo: d.collapsesTo,
+  absorbsNested: d.absorbsNested,
 });
 
 test('same level ids, same order', () => {
@@ -206,8 +207,12 @@ test('every leaf level declares minDisksToRun with its source', () => {
 
 test('no nested level declares a collapse key — its spans carry the rule (spec §3)', () => {
   for (const d of nested)
-    for (const key of ['minDisksToRun', 'minDisksToRunSource', 'collapsesTo'])
+    for (const key of ['minDisksToRun', 'minDisksToRunSource', 'collapsesTo', 'absorbsNested'])
       assert(d[key] === undefined, `${d.id}: ${key} on a nested level`);
+});
+
+test('absorbsNested is declared by the plain mirror alone (spec §3: RAID 51 with 2-disk spans is a four-way RAID 1)', () => {
+  eq(leaves.filter((d) => d.absorbsNested).map((d) => d.id).join(','), 'raid1');
 });
 
 // The coverage rule: a width that RUNS (≥ minDisksToRun), is not the level

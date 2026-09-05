@@ -6,7 +6,8 @@
  * this JS mirror — and `raid-levels-data.test.js` (python3 + pyyaml) asserts the
  * mirror and the YAML agree on every field the engine reads: ids and their order,
  * `name`, `notRaid`, `reason`, `shape`, `minDisks`, `advisory`, and the collapse
- * keys of the leaf levels — `minDisksToRun`, `minDisksToRunSource`, `collapsesTo`.
+ * keys of the leaf levels — `minDisksToRun`, `minDisksToRunSource`, `collapsesTo`,
+ * `absorbsNested`.
  * Prose fields (description, pros, cons, formulas) are not mirrored: nothing
  * headless reads them.
  *
@@ -35,7 +36,10 @@ module.exports = {
     { id: 'raid1',  name: 'RAID 1', notRaid: false,
       reason: 'mirroring, {n} copies',
       shape: leaf('linear', 'mirror'), minDisks: 2,
-      minDisksToRun: 2, minDisksToRunSource: STRUCTURAL },
+      minDisksToRun: 2, minDisksToRunSource: STRUCTURAL,
+      absorbsNested: {
+        because: 'a mirror of mirrors is one mirror — every disk still holds a full copy',
+        source:  'content algebra (degenerate-levels §6): every cell of every member carries the same segment, so the copy count is the disk count' } },
 
     { id: 'raid5',  name: 'RAID 5', notRaid: false,
       reason: 'striping with single distributed parity',
