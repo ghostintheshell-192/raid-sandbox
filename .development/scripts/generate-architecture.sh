@@ -58,9 +58,9 @@ data/ (YAML)  →  engine/  →  sandbox/  →  DOM
   (constraint engine). This layer is what the headless suites assert against,
   and it must stay independent of the DOM for that to remain possible.
 - **`src/sandbox/`** — owns the DOM. Controllers (`canvas-controller.js`,
-  `physical-controller.js`), state (`canvas-state.js`), rendering
-  (`render.js`), and the touch shim (`touch-dnd.js`) that stands in for the
-  HTML5 drag-and-drop API where it does not exist.
+  `physical-controller.js`), state (`canvas-state.js`) and rendering
+  (`render.js`). Desktop only (ADR-003): building is drag-and-drop plus the
+  inline click-to-build picker.
 - **`src/challenge/`** — challenge mode, built on top of the same engine.
 - **`data/`** — YAML resource files, parsed in-browser. The headless tests do
   not read them: they must run with zero dependencies.
