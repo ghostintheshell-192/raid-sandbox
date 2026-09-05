@@ -27,17 +27,19 @@ matched level. The other eleven are read by nobody:
 | `useCases` | 14/14 | where the level actually belongs |
 | `notFor` | 13/14 | where it does not |
 | `note` | 7/14 | why this level is modelled the way it is |
-| `capacityFormula` | 14/14 | the usable-capacity formula in words |
-| `writePenalty` | 9/14 | random and sequential I/O per logical write |
-| `faultTolerance` | 14/14 | the guaranteed number, as a fixed value |
+| `reference.capacityFormula` | 14/14 | the usable-capacity formula in words |
+| `reference.writePenalty` | 9/14 | random and sequential I/O per logical write |
+| `reference.faultToleranceAtMinimum` | 14/14 | the guaranteed number at the level's minimum disk count |
 | `defaultAlgorithm` | 11/14 | which layout the level assumes |
 | `parity` | 1/14 | RAID 6's P and Q |
 
-`faultTolerance`, `writePenalty` and `capacityFormula` are not silent in effect — the
-engine derives the two numbers on its own and shows them, and computes the capacity the
-formula describes. They are *duplicates* — with one nuance: the formula is words a human
-wrote for a human, which the engine cannot produce, and that is why the tech-debt entry
-keeps it. Duplication is its own risk, treated below.
+The three `reference.*` keys are not silent in effect — the engine derives the two
+numbers on its own and shows them, and computes the capacity the formula describes. They
+are *duplicates* — with one nuance: the formula is words a human wrote for a human, which
+the engine cannot produce, and that is why the tech-debt entry keeps it. Since
+2026-09-05 (PR #26) they live under a `reference:` block, named for what they are, and
+`raid-levels-data.test.js` checks the fault-tolerance number against the engine at each
+level's minimum. Duplication is its own risk, treated below.
 
 The genuinely mute ones are the prose: `description`, `pros`, `cons`, `useCases`,
 `notFor`, `note`. Six fields × fourteen levels, written and never displayed.
@@ -159,8 +161,9 @@ rule (soft, cross-axis) actually shows. `os-linux.yaml` said:
 > leave the array in an inconsistent state. **This is a soft constraint surfaced as a
 > warning in the game.***
 
-There is no such rule; the validator has seven and none concerns power. Spec §5a had it
-too, as *"needs UPS"*, from the beginning.
+At the time of the census there was no such rule: the validator had seven and none
+concerned power (it has nine since 2026-09-05, `level-advisory` and `write-hole` being
+the two added). Spec §5a had it too, as *"needs UPS"*, from the beginning.
 
 This one is worth more than a missing warning. It is the reason a hardware RAID
 controller has a protected cache — that is, the reason the expensive object in the
@@ -173,11 +176,14 @@ Tracked as [`tech-debt/power-loss-warning-promised-not-implemented.md`](../tech-
 
 `faultTolerance`, `writePenalty` and `capacityFormula` exist both in the level files and
 as engine derivations. Checked on 2026-09-04: **at each level's minimum disk count the
-declared and computed fault tolerance agree in all 14 cases.** Nothing guarantees they
-keep agreeing — `raid-levels-data.test.js` checks that the fields exist and are internally
-plausible, never that they match what the engine computes.
+declared and computed fault tolerance agree in all 14 cases.** At the time nothing
+guaranteed they kept agreeing — `raid-levels-data.test.js` checked that the fields
+existed and were internally plausible, never that they matched what the engine computes.
+**Closed 2026-09-05** (PR #26): the three keys moved under `reference:`, the number was
+renamed `faultToleranceAtMinimum` to say what it is, and the test now builds each level's
+shape at its minimum and compares.
 
-There is also a subtler mismatch already present. The declared number is a **fixed value**;
+The subtler mismatch is what the rename records. The declared number is a **fixed value**;
 the real one depends on the build:
 
 | build | file says | engine computes |
