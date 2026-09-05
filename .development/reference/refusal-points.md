@@ -77,13 +77,15 @@ that; it accumulated.
 
 ## 3. It accepts and explains — the validator
 
-Seven rules, all in the declarative registry in `validator.js`. Each states its identity,
-severity, layer and source once; `validate` stamps them on, so a rule cannot disagree
-with its own registration.
+Seven rules at the time of the census (ten on 2026-09-05: `level-advisory`, `write-hole`
+and `level-collapse` came after), all in the declarative registry in `validator.js`. Each
+states its identity, severity, layer and source once; `validate` stamps them on, so a
+rule cannot disagree with its own registration.
 
 | code | severity | what it teaches |
 |---|---|---|
-| `min-disks` | hard | a level has a minimum, read from the level's own file |
+| `min-disks` | hard | below `minDisksToRun` the real system does not start the level — the kernel line is cited from the level's own file (since 2026-09-05; before, the canonical `minDisks`) |
+| `level-collapse` | soft | below `minDisks` the build still runs, as a simpler level — `normalize()`'s trace, one violation per rewrite, with the level file's `because` (2026-09-05, degenerate-levels §8) |
 | `cross-axis-near-far-offset` | hard | near/far/offset are mdadm layouts — they exist only under Linux software RAID |
 | `nvme-backplane` | hard | NVMe talks straight to PCIe; it bypasses the backplane |
 | `engine-single-point` | hard | the RAID engine sits at exactly one point on the path |

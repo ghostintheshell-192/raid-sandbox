@@ -49,6 +49,7 @@ kernel rules and never regenerated from the engine.
 
 ### src/engine
 - `catalog.js`
+- `content.js`
 - `graph.js`
 - `layout.js`
 - `levels.js`
@@ -78,11 +79,13 @@ kernel rules and never regenerated from the engine.
 - `catalog.test.js` — headless tests for the component catalogue (engine/catalog.js). Run with: node catalog.test.js
 - `challenge-data.test.js` — validates the REAL challenge YAML files. Run with: node challenge-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and Node has no YAML parser, so python is the reader....
 - `challenge.test.js` — headless tests for the requirement-satisfaction win-check. Run with: node challenge.test.js
+- `collapses-oracle.test.js` — the content algebra (engine/content.js) against the declared `collapsesTo` rules, in both directions (degenerate-levels §6, §10). Run with: node collapses-oracle.test.js
 - `components-data.test.js` — validates the REAL component YAML files and keeps the headless fixture aligned with them. Run with: node components-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and...
 - `graph.test.js` — headless tests for the control-path graph module. Run with: node graph.test.js
 - `layout-golden.test.js` — golden-table verification for all parity algorithms. Run with: node layout-golden.test.js
 - `levels-oracle.test.js` — the hand-written recognizer as ORACLE for the data-driven one. Run with: node levels-oracle.test.js
 - `levels.test.js` — headless tests for the level catalogue and the shape matcher (engine/levels.js). Run with: node levels.test.js
+- `model-normalize.test.js` — headless tests for `normalize()` and the two-box `analyze()` (specs/planned/degenerate-levels.md §4, §7, §10 "Recognition"). Run with: node model-normalize.test.js
 - `model-perf.test.js` — headless tests for the performance derivation (§4b). Run with: node model-perf.test.js
 - `model-recognize.test.js` — headless tests for the level RECOGNIZER (§4). Run with: node model-recognize.test.js
 - `raid-levels-data.test.js` — validates the REAL raid-levels YAML files and keeps the headless fixture aligned with them. Run with: node raid-levels-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency ...

@@ -15,6 +15,12 @@ minDisks: 2
 minDisksToRun: 2
 minDisksToRunSource: "structural — an array of one member is that member; the sandbox refuses it before any level is named (spec §6, the universal ≥ 2)"
 
+# A mirror whose members are mirrors is one mirror: this is what lets a RAID 51 whose
+# spans collapsed into pairs read as a four-way RAID 1 (degenerate-levels §3, §4).
+absorbsNested:
+  because: "a mirror of mirrors is one mirror — every disk still holds a full copy"
+  source: "content algebra (degenerate-levels §6): every cell of every member carries the same segment, so the copy count is the disk count"
+
 # Reference only — documentation, not data (see tech-debt/level-numbers-duplicated-untested.md).
 # faultToleranceAtMinimum is the level's tolerance AT ITS MINIMUM DISK COUNT, not the
 # array's — RAID 1 is exactly where this bites: an n-way mirror with n > 2 survives

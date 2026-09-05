@@ -28,6 +28,11 @@
  * derivations below — capacity, fault tolerance, performance — are folds over the
  * same tree and stay here: they are the domain's arithmetic, not its vocabulary.
  *
+ * The same tree is read twice (specs/planned/degenerate-levels.md): for its FORM
+ * — the recognizer, box 1 — and for its BEHAVIOUR — `normalize()` rewrites it
+ * bottom-up by the rules the level files declare, the recognizer names the
+ * result, box 2. The numbers are computed on the normalised tree.
+ *
  * Exposed as the global `RaidModel` in the browser, and via module.exports under Node.
  */
 
@@ -311,25 +316,91 @@
   }
 
   // ---------------------------------------------------------------------------
+  // NORMALIZE (specs/planned/degenerate-levels.md §4) — what the player HAS,
+  // derived from what they composed by rewriting the tree bottom-up. Every
+  // rewrite is one the level catalogue declares — a leaf level's `collapsesTo`
+  // at a width below its minimum, or a level that `absorbsNested` members of
+  // its own shape — so this function names no level and knows no width. The
+  // list of rewrites that fired is the TRACE: the diff between the two boxes.
+  // It is empty when nothing collapsed, and that is information too — what you
+  // built is what you have.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * @param {TreeNode} node @param {Levels | null} [levels]
+   * @returns {{ tree: TreeNode, trace: Rewrite[] }}  a NEW tree; the input is never mutated
+   */
+  function normalize(node, levels) {
+    /** @type {Rewrite[]} */
+    const trace = [];
+    const shapeOf = (n) => ({ segmentation: n.segmentation, redundancy: n.redundancy, members: n.members.length });
+    const record = (rule, level, from, to, { because, source }) => {
+      const named = levels.match(to);   // what the catalogue calls the rewritten node, if anything
+      trace.push({ rule, level: level.id, nodeId: from.id, from: shapeOf(from), to: shapeOf(to),
+                   runsAs: named ? named.name : null, because, source });
+    };
+
+    // A node whose members all have the same leaf shape as itself, when the level
+    // of that shape says nesting it inside itself changes nothing (a mirror of
+    // mirrors is one mirror): the members' disks become the node's own.
+    const absorb = (n) => {
+      if (!allArrays(n)) return n;
+      const sameLeaf = (m) => m.segmentation === n.segmentation && m.redundancy === n.redundancy && allDisks(m);
+      if (!n.members.every(sameLeaf)) return n;
+      const flat  = array(n.segmentation, n.redundancy, n.members.flatMap((m) => m.members), null, n.id);
+      const level = levels.match(flat);
+      if (!level || !level.absorbsNested) return n;
+      record('absorb', level, n, flat, level.absorbsNested);
+      return flat;
+    };
+
+    // A leaf node at a width its level declares a collapse for: the same disks,
+    // the declared shape. The algorithm goes — it belonged to the old class.
+    const collapse = (n) => {
+      if (!allDisks(n)) return n;
+      const level = levels.match(n);
+      const rule  = level && (level.collapsesTo || []).find((c) => c.disks === n.members.length);
+      if (!rule) return n;
+      const to = array(rule.becomes.segmentation, rule.becomes.redundancy, n.members, null, n.id);
+      record('collapse', level, n, to, rule);
+      return to;
+    };
+
+    const rewrite = (n) => {
+      if (isDisk(n)) return n;
+      const copy = { ...n, members: n.members.map(rewrite) };   // leaves first (§4: bottom-up)
+      return levels ? collapse(absorb(copy)) : copy;
+    };
+
+    return { tree: rewrite(node), trace };
+  }
+
+  // ---------------------------------------------------------------------------
   // ANALYZE — one call that returns the full picture for a build.
   // ---------------------------------------------------------------------------
 
   /**
-   * One call that returns the full picture for a build.
+   * One call that returns the full picture for a build. The recognition at the
+   * top is box 1 — the FORM, what was composed. The numbers are computed on the
+   * normalised tree, because they belong to what runs (spec §7); `runs` is box 2
+   * — the BEHAVIOUR: what that tree is called, the tree itself, and the trace.
+   * When nothing collapses the two trees coincide and the numbers are unchanged.
    * @param {TreeNode} node @param {Levels | null} [levels]
    * @returns {Analysis}
    */
   function analyze(node, levels) {
-    const perf = performance(node);
+    const { tree, trace } = normalize(node, levels);
+    const perf = performance(tree);
     return {
       ...recognize(node, levels),
-      diskCount:      countDisks(node),
-      capacityGB:     capacityGB(node),
-      rawCapacityGB:  rawCapacityGB(node),
-      faultTolerance: faultTolerance(node),
+      diskCount:      countDisks(tree),
+      capacityGB:     capacityGB(tree),
+      rawCapacityGB:  rawCapacityGB(tree),
+      faultTolerance: faultTolerance(tree),
       readClass:      perf.random.readClass,    // flat convenience keys, 1:1 with challenge metrics
       writeClass:     perf.random.writeClass,   // conservative (random) — challenges opt into seq
       performance:    perf,
+      runs:           { ...recognize(tree, levels), tree, trace },
     };
   }
 
@@ -346,7 +417,7 @@
 
   const RaidModel = {
     SEGMENTATIONS, REDUNDANCIES, disk, array, isDisk, isArray, countDisks,
-    recognize, capacityGB, rawCapacityGB, faultTolerance, performance, analyze,
+    recognize, normalize, capacityGB, rawCapacityGB, faultTolerance, performance, analyze,
   };
 
   if (typeof module !== 'undefined' && module.exports) {

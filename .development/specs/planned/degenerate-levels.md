@@ -80,6 +80,15 @@ box 2                RAID 1
 The diff is a trace, in the way a compiler keeps a log of the simplifications it applied.
 It is not a function of two names.
 
+Implemented 2026-09-05 as `RaidModel.normalize(tree, levels) → { tree, trace }`: a new
+tree (the composed one is never touched; the disks are shared), one trace entry per
+rewrite — `rule` (`collapse` or `absorb`), the `level` whose file declared it, the
+`nodeId`, the shape before and after, `because`, `source`. `analyze()` returns box 1 at
+the top as before, the numbers computed on the normalised tree (§7), and box 2 as
+`runs: { level, …, tree, trace }`. One consequence worth knowing: a two-disk RAID 5 now
+*reads* as a mirror too — `readClass` medium, not high — because one read of a two-disk
+parity stripe touches one disk, which the composed tree's arithmetic (width 2) got wrong.
+
 ## 5. The data: `collapsesTo`, and two minimums
 
 Per ADR-002 the rules are data. They live on the level file whose shape they narrow,
@@ -131,7 +140,16 @@ disk-count constraint: three disks never have RAID 10's shape (even), they are R
 so RAID 10 owes no entry at 3 and an entry there could never fire (`levels.js` refuses it). Below `minDisksToRun` an entry is optional and useful
 (RAID 6 with 3 disks: *it would be a three-way mirror, and Linux does not start it*).
 
-**Leaf levels only.** A nested level (`members: arrays`) declares none of the three keys,
+**`absorbsNested`** — the one rule the width does not express. A RAID 51 whose spans have
+collapsed into pairs is a mirror *of mirrors*, and the catalogue has no name for that
+shape; §3 says it is a four-way RAID 1. So a leaf level may declare that nesting its
+shape inside itself changes nothing, and `normalize()` then folds the members' disks
+into the node (`raid1.yaml`: *a mirror of mirrors is one mirror*, with its `because` and
+`source`). Declared, like the collapses, so the engine names no level; only the plain
+mirror declares it — a stripe of stripes is left alone, because the catalogue has no
+RAID 00 and no claim to make about it. Added 2026-09-05 while implementing §4.
+
+**Leaf levels only.** A nested level (`members: arrays`) declares none of the keys,
 and `levels.js` refuses them there: its collapse *is* the recursion of §3 — the spans
 carry the rule, and a copy on the outer level would be the same fact stated twice, free
 to drift. Where nothing runs below the minimum (JBOD, RAID 0, RAID 1: the universal
@@ -208,6 +226,15 @@ treats one as RAID 5 (XOR computed for nothing, a RAID 5 growth path). The algeb
 *"the data lands identically"*, which is part of the truth. The other part — what a real
 system does with it — is the `source:` on the declared rule.
 
+Implemented 2026-09-05 as `src/engine/content.js` (tests only — no script tag loads it)
+and `tests/collapses-oracle.test.js`. One refinement the implementation forced: a plain
+mirror is read off the *copies*, not off the drawn rows — every disk holds every segment
+— because `far` draws its copies in other rows and is a mirror all the same; the rows are
+consulted only to tell a stripe from a concatenation, the one distinction the contents
+cannot make. The oracle runs every leaf level from 2 disks to two past its minimum, checks
+that at and above the minimum the algebra reads the level as itself, and prints what it
+found below it: `raid5 @2`, `raid6 @3`, `raid10 @2` → `linear+mirror`. Nothing else.
+
 **Where it lives.** The core (symbolic content, equality classes, copy counting) knows
 nothing about RAID. The RAID-specific part is *how a role derives its content* — data is
 itself, P is the XOR, Q carries `gⁱ` — and that sits next to `layout.js`, which is
@@ -261,6 +288,15 @@ does not, and the button says why.
 `checkMinDisks` today skips levels whose minimum is 2 (the universal ≥ 2 is structural,
 `_firstIssue`). With `minDisksToRun: 2` on RAID 5 the hard half never fires for it, which
 is correct.
+
+Implemented 2026-09-05 in `validator.js`: `min-disks` (hard) now compares a leaf span to
+its level's `minDisksToRun` and cites `minDisksToRunSource` — *Linux does not start it
+below 4 (drivers/md/raid5.c setup_conf(): …)*; a level file without the key falls back
+to `minDisks`, the rule as it was. `level-collapse` (soft, new) is `normalize()`'s trace
+read as violations, one per rewrite, on the node that was rewritten: *This array is a
+RAID 5 with 2 disks — what runs is a RAID 1: with one data block per stripe the parity
+is that block itself…*. The soft text names what runs through the catalogue (`runsAs` on
+the trace entry), never through a table of shape names in code.
 
 ## 9. UI — to decide in the browser
 

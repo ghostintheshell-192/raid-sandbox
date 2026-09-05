@@ -20,24 +20,62 @@ const d = (n = 2, p = 'SATA') => M.disk(`d${Math.random()}`, n, p);
 const disks = (k, p = 'SATA') => Array.from({ length: k }, () => d(2, p));
 
 // ---------------------------------------------------------------------------
-console.log('\n[1] Minimum disks per level (hard)');
+console.log('\n[1] Below the minimum: a collapse (soft) and a refusal by the real system (hard) — degenerate-levels §8');
 
-test('RAID 5 with 2 disks → min-disks', () => {
-  const r = V.validate(M.array('striped', 'parity1', disks(2)), {});
-  assert(hasCode(r.hard, 'min-disks'));
+// The one rule became two facts. Below `minDisks` the build may still RUN as a
+// simpler level (RAID 5 @2 is a mirror — soft, the diff explains it), or the real
+// system may not START it (RAID 6 @3 — hard, citing the kernel line). RAID 6 @3 is
+// both at once, and both are shown.
+test('RAID 5 with 2 disks → level-collapse (soft), NOT min-disks: Linux starts it, as a mirror', () => {
+  const r = V.validate(M.array('striped', 'parity1', disks(2), null, 'a1'), {});
+  assert(!hasCode(r.hard, 'min-disks'));
+  const found = r.soft.filter((v) => v.code === 'level-collapse');
+  eq(found.length, 1);
+  eq(found[0].nodeId, 'a1');
+  eq(found[0].message, 'This array is a RAID 5 with 2 disks — what runs is a RAID 1: '
+    + 'with one data block per stripe the parity is that block itself — the second disk holds a copy.');
 });
 test('RAID 5 with 3 disks → clean', () => {
   const r = V.validate(M.array('striped', 'parity1', disks(3)), {});
   assert(!hasCode(r.hard, 'min-disks'));
+  assert(!hasCode(r.soft, 'level-collapse'));
 });
-test('RAID 6 with 3 disks → min-disks', () => {
-  const r = V.validate(M.array('striped', 'parity2', disks(3)), {});
-  assert(hasCode(r.hard, 'min-disks'));
+test('RAID 6 with 3 disks → BOTH: min-disks (hard, the kernel refuses) and level-collapse (soft, it would be a mirror)', () => {
+  const r = V.validate(M.array('striped', 'parity2', disks(3), null, 'a1'), {});
+  const hard = r.hard.filter((v) => v.code === 'min-disks');
+  eq(hard.length, 1);
+  eq(hard[0].message, 'This array is a RAID 6 with 3 disks — Linux does not start it below 4 '
+    + "(drivers/md/raid5.c setup_conf(): 'not enough configured devices (%d, minimum 4)').");
+  assert(hasCode(r.soft, 'level-collapse'));
 });
-test('the min-disks check is recursive — a RAID 50 with a 2-disk span flags it', () => {
-  const span = M.array('striped', 'parity1', disks(2));
-  const r = V.validate(M.array('striped', 'none', [span, M.array('striped', 'parity1', disks(3))]), {});
-  assert(hasCode(r.hard, 'min-disks'));
+test('the checks are recursive — a RAID 50 with a 2-disk span: the span collapses (soft), nothing hard', () => {
+  const span = M.array('striped', 'parity1', disks(2), null, 's1');
+  const r = V.validate(M.array('striped', 'none', [span, M.array('striped', 'parity1', disks(3), null, 's2')], null, 'top'), {});
+  assert(!hasCode(r.hard, 'min-disks'));
+  const found = r.soft.filter((v) => v.code === 'level-collapse');
+  eq(found.length, 1);
+  eq(found[0].nodeId, 's1');
+  assert(found[0].message.startsWith('Span 1 is a RAID 5 with 2 disks'), found[0].message);
+});
+test('a RAID 60 with a 3-disk span: that span is refused (hard) and named', () => {
+  const r = V.validate(M.array('striped', 'none', [M.array('striped', 'parity2', disks(3), null, 's1'), M.array('striped', 'parity2', disks(4), null, 's2')], null, 'top'), {});
+  const hard = r.hard.filter((v) => v.code === 'min-disks');
+  eq(hard.length, 1);
+  eq(hard[0].nodeId, 's1');
+});
+test('a RAID 51 of two 2-disk spans: three soft collapses — two spans, then the mirror of mirrors', () => {
+  const r = V.validate(M.array('linear', 'mirror', [M.array('striped', 'parity1', disks(2), null, 's1'), M.array('striped', 'parity1', disks(2), null, 's2')], null, 'top'), {});
+  const found = r.soft.filter((v) => v.code === 'level-collapse');
+  eq(found.map((v) => v.nodeId).join(','), 's1,s2,top');
+  eq(found[2].message, 'This array is a RAID 1 of RAID 1s — what runs is one RAID 1 over 4 disks: '
+    + 'a mirror of mirrors is one mirror — every disk still holds a full copy.');
+  assert(r.hard.length === 0);
+});
+test('level-collapse is registered soft, data-layer; min-disks stays hard', () => {
+  const c = V.RULES.find((x) => x.code === 'level-collapse');
+  const m = V.RULES.find((x) => x.code === 'min-disks');
+  eq(c.severity, 'soft'); eq(c.layer, 'data');
+  eq(m.severity, 'hard'); eq(m.layer, 'data');
 });
 
 // ---------------------------------------------------------------------------
@@ -86,9 +124,10 @@ test('striped+mirror with 4 disks → clean (RAID 10)', () => {
   const r = V.validate(M.array('striped', 'mirror', disks(4)), {});
   assert(r.hard.length === 0);
 });
-test('striped+mirror with 2 disks → min-disks (RAID 10 needs 4)', () => {
-  const r = V.validate(M.array('striped', 'mirror', disks(2)), {});
-  assert(hasCode(r.hard, 'min-disks'));
+test('striped+mirror with 2 disks → level-collapse (soft): md starts it, and it is a mirror', () => {
+  const r = V.validate(M.array('striped', 'mirror', disks(2), null, 'a1'), {});
+  assert(!hasCode(r.hard, 'min-disks'));
+  assert(hasCode(r.soft, 'level-collapse'));
 });
 
 // ---------------------------------------------------------------------------
@@ -367,14 +406,15 @@ test('every rule declares a unique code, a valid severity and a valid layer', ()
   }
 });
 
+// RAID 6 @3 is the hard case now that RAID 5 @2 runs (as a mirror): see [1].
 test('violations are stamped with their rule’s layer', () => {
-  const r = V.validate(M.array('striped', 'parity1', disks(2)), { engineCount: 2 });
+  const r = V.validate(M.array('striped', 'parity2', disks(3)), { engineCount: 2 });
   eq(r.hard.find((v) => v.code === 'min-disks').layer, 'data');
   eq(r.hard.find((v) => v.code === 'engine-single-point').layer, 'physical');
 });
 
 test('two spans failing the same rule stay two violations (distinct nodeId)', () => {
-  const bad = (id) => M.array('striped', 'parity1', disks(2), null, id);
+  const bad = (id) => M.array('striped', 'parity2', disks(3), null, id);
   const r = V.validate(M.array('striped', 'none', [bad('a1'), bad('a2')], null, 'top'), {});
   eq(r.hard.filter((v) => v.code === 'min-disks').length, 2);
   eq(r.hard.filter((v) => v.code === 'min-disks').map((v) => v.nodeId).join(','), 'a1,a2');
@@ -383,7 +423,7 @@ test('two spans failing the same rule stay two violations (distinct nodeId)', ()
 test('the same rule firing twice on the same node is reported once', () => {
   // Same id on both spans is not something the canvas can produce; it is the
   // direct probe of the (code, nodeId) dedup.
-  const bad = () => M.array('striped', 'parity1', disks(2), null, 'same');
+  const bad = () => M.array('striped', 'parity2', disks(3), null, 'same');
   const r = V.validate(M.array('striped', 'none', [bad(), bad()], null, 'top'), {});
   eq(r.hard.filter((v) => v.code === 'min-disks').length, 1);
 });
