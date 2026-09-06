@@ -14,7 +14,8 @@ long: |
   ## The arithmetic
 
   XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has
-  one property that makes it a form of redundancy: applied twice, a value cancels.
+  one property that makes it useful as redundancy: XOR a value in twice and it
+  cancels out, so any one term of an XOR sum can be recovered from the others.
   With data blocks *D₀*, *D₁*, *D₂* and parity *P* over a stripe:
 
   ```text
@@ -30,8 +31,8 @@ long: |
   ```
 
   The parity is computed over the blocks that share a stripe, so it needs a
-  stripe: parity exists only under [[striping]], and the [[chunk]] entry says what
-  a full stripe is worth in bytes. Lose the disk that held *D₁* and every read of
+  stripe: parity exists only under [[striping]], and the [[chunk]] entry says how
+  many bytes a full stripe holds. Lose the disk that held *D₁* and every read of
   *D₁* is answered by reading the rest of its stripe and XORing; that is the array
   in *degraded* mode. Replace the disk, and the same computation, run over every
   stripe, writes it back: the [[rebuild]].
@@ -41,7 +42,8 @@ long: |
   The 1988 RAID paper defines the fourth level with one *check disk* per group,
   holding the parity of every stripe. It works, and it has one bottleneck: "every
   write must read and write the check disk", so the whole array can only complete
-  writes as fast as that one disk. The fifth level is the same parity moved: "the
+  writes as fast as that one disk. The fifth level keeps the same parity but
+  spreads it: "the
   final level RAID distributes the data and check information across all the
   disks — including the check disks". Linux `md` says the same in its own words:
   RAID 4 is "a RAID0 array with an extra device for storing parity", the last of
@@ -56,7 +58,7 @@ long: |
   `pd_idx = data_disks - sector_div(stripe2, raid_disks)`. Every disk then carries
   the same share of parity and of data, and no disk is the check disk.
 
-  ## Keeping it true
+  ## Keeping the parity up to date
 
   Whenever a data block changes, the parity of its stripe must change with it.
   The paper gives the rule and its cost:
@@ -82,7 +84,7 @@ long: |
   The two writes of that rule are separate disk operations, and a power cut
   between them leaves a stripe whose parity no longer matches its data. Nothing in
   the arithmetic detects it; the next rebuild trusts it. This is the
-  [[write-hole]], and it is why a parity array wants a [[raid-engine]] whose write
+  [[write-hole]], and it is why a parity array needs a [[raid-engine]] whose write
   cache survives power loss.
 
   ## Two parities
@@ -111,13 +113,21 @@ long: |
 related: [redundancy, striping, chunk, algorithm, write-penalty, write-hole, rebuild, fault-tolerance, raid-engine]
 
 sources:
-  - "Patterson, Gibson, Katz — A Case for RAID, 1988, §10 Fourth Level RAID: 'new parity = (old data xor new data) xor old parity'; 'a small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes'; 'The check disk is the bottleneck, and the final level RAID removes this bottleneck'; §11 Fifth Level RAID: 'distributes the data and check information across all the disks — including the check disks'"
-  - "md(4) man page — RAID4: 'like a RAID0 array with an extra device for storing parity'; RAID5: 'the parity blocks for each stripe, instead of being on a single device, are distributed across all devices', 'allows more parallelism when writing'; RAID6: 'can handle the loss of any two devices without data loss'"
-  - "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
-  - "drivers/md/raid5.c handle_stripe_dirtying() — rmw and rcw counted per stripe; 'prefer read-modify-write, but need to get some data'; the reconstruct-write branch taken when rcw is the cheaper"
-  - "H. Peter Anvin — The mathematics of RAID-6 (2004, last updated 2011): 'RAID-6 supports losing any two drives. The way this is done is by computing two syndromes, generally referred P and Q'; P as XOR parity, Q as a Reed-Solomon code over GF(2⁸) with generator {02}; 255 data drives at most"
-  - "mke2fs(8) man page, -E stripe_width — 'allows the block allocator to prevent read-modify-write of the parity in a RAID stripe'"
-  - "Microsoft Learn, Storage Spaces overview — parity spaces: 'Data is striped across multiple drives with parity information for fault tolerance'; single parity and dual parity"
-  - "data/algorithms/left-symmetric.yaml — the rotation as the sandbox draws it"
+  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988, §10 Fourth Level RAID: 'new parity = (old data xor new data) xor old parity'; 'a small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes'; 'The check disk is the bottleneck, and the final level RAID removes this bottleneck'; §11 Fifth Level RAID: 'distributes the data and check information across all the disks — including the check disks'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - text: "md(4) man page — RAID4: 'like a RAID0 array with an extra device for storing parity'; RAID5: 'the parity blocks for each stripe, instead of being on a single device, are distributed across all devices', 'allows more parallelism when writing'; RAID6: 'can handle the loss of any two devices without data loss'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c
+  - text: "drivers/md/raid5.c handle_stripe_dirtying() — rmw and rcw counted per stripe; 'prefer read-modify-write, but need to get some data'; the reconstruct-write branch taken when rcw is the cheaper"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c
+  - text: "H. Peter Anvin — The mathematics of RAID-6 (2004, last updated 2011): 'RAID-6 supports losing any two drives. The way this is done is by computing two syndromes, generally referred P and Q'; P as XOR parity, Q as a Reed-Solomon code over GF(2⁸) with generator {02}; 255 data drives at most"
+    url: https://www.kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
+  - text: "mke2fs(8) man page, -E stripe_width — 'allows the block allocator to prevent read-modify-write of the parity in a RAID stripe'"
+    url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
+  - text: "Microsoft Learn, Storage Spaces overview — parity spaces: 'Data is striped across multiple drives with parity information for fault tolerance'; single parity and dual parity"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - text: "data/algorithms/left-symmetric.yaml — the rotation as the sandbox draws it"
+    url: ../data/algorithms/left-symmetric.yaml
 
 status: written

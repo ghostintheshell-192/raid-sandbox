@@ -51,9 +51,10 @@ long: |
   ```
 
   Read the data in order and it walks every disk in turn, D3 on disk 3 then D4 on
-  disk 0, with no disk visited twice in a row: that is what *symmetric* buys, and
-  why it is the default. The asymmetric layouts restart at disk 0 every stripe
-  (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), which reads less evenly.
+  disk 0, with no disk visited twice in a row: that is the advantage of
+  *symmetric*, and why it is the default. The asymmetric layouts restart at disk 0
+  every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a
+  sequential read uses the disks less evenly.
   Left-symmetric is also the layout hardware controllers use, under the name the
   SNIA Disk Data Format gives it, *rotating parity N with data continuation*;
   `mdadm` lists it a second time as `ddf-N-continue` for that reason. An array
@@ -72,8 +73,8 @@ long: |
   default, puts the copies side by side in the same stripe, which is what a
   controller's RAID 10 does by spanning mirror pairs; far and offset exist only
   where `md` builds the array, because only `md` defines them. That is the one
-  place where the [[raid-engine]] on the path restricts the layout: a far layout
-  cannot be asked of a controller.
+  place where the [[raid-engine]] on the path restricts the layout: a controller
+  cannot be asked for a far layout.
 
   ## What the choice changes, and what it does not
 
@@ -81,17 +82,24 @@ long: |
   are stored, only their places differ. What changes is the speed profile (how
   evenly a sequential read walks the disks, how far a write's copies are from each
   other) and compatibility: the layout is part of the array's metadata, and an
-  array assembled under the wrong one reads garbage. That is why a layout is
+  array assembled with the wrong layout returns garbage, because every block is
+  looked for in the wrong place. That is why a layout is
   chosen at creation and recorded, and why `mdadm` refuses to guess it.
 
 related: [parity, mirroring, segmentation, raid-engine, chunk, why-linux-md]
 
 sources:
-  - "mdadm(8) man page, --layout — RAID5/6: 'left-asymmetric, left-symmetric, right-asymmetric, right-symmetric', default left-symmetric; 'parity-first', 'parity-last'; 'ddf-zero-restart, ddf-N-restart, and ddf-N-continue'; RAID10: 'n' near, 'o' offset, 'f' far, followed by the number of copies, default n2"
-  - "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
-  - "md(4) man page — RAID4: parity on 'the last of the active devices'; RAID5: parity 'distributed across all devices'; RAID10 near, far and offset layouts"
-  - "data/algorithms/*.yaml — the seven layouts as the sandbox draws them: left/right × symmetric/asymmetric, with left-symmetric marked as the DDF convention (ALGORITHM_ROTATING_N_CONTINUE); raid10 near, far, offset"
-  - "data/components/os-linux.yaml — near/far/offset declared as layouts that exist only where the md driver is the engine"
-  - "tests/layout-golden.test.js — the left-symmetric table above, hand-derived from the kernel rule"
+  - text: "mdadm(8) man page, --layout — RAID5/6: 'left-asymmetric, left-symmetric, right-asymmetric, right-symmetric', default left-symmetric; 'parity-first', 'parity-last'; 'ddf-zero-restart, ddf-N-restart, and ddf-N-continue'; RAID10: 'n' near, 'o' offset, 'f' far, followed by the number of copies, default n2"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+  - text: "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c
+  - text: "md(4) man page — RAID4: parity on 'the last of the active devices'; RAID5: parity 'distributed across all devices'; RAID10 near, far and offset layouts"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "data/algorithms/*.yaml — the seven layouts as the sandbox draws them: left/right × symmetric/asymmetric, with left-symmetric marked as the DDF convention (ALGORITHM_ROTATING_N_CONTINUE); raid10 near, far, offset"
+    url: ../data/algorithms/left-symmetric.yaml
+  - text: "data/components/os-linux.yaml — near/far/offset declared as layouts that exist only where the md driver is the engine"
+    url: ../data/components/os-linux.yaml
+  - text: "tests/layout-golden.test.js — the left-symmetric table above, hand-derived from the kernel rule"
+    url: ../tests/layout-golden.test.js
 
 status: written

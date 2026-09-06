@@ -84,7 +84,7 @@ kb:
     RAID 1 is the pair *linear + mirror*: nothing is cut into chunks, and every
     member holds the whole ([[mirroring]]). It is the first level of the 1988
     paper, "the most expensive option we consider since all disks are
-    duplicated", and the one every other level is a cheaper answer to. There is
+    duplicated", and every other level is a cheaper answer to the same problem. There is
     no layout to choose and no chunk size, because there is nothing to place:
     `mdadm` does not accept a chunk size for it.
 
@@ -93,8 +93,8 @@ kb:
     The strongest [[fault-tolerance]] per disk: with *n* copies,
     *n − 1* failures. The number the level is quoted with, one, is the two-disk
     case; a three-way mirror survives two, and Windows Storage Spaces offers
-    both as two-way and three-way mirror spaces. It also buys a kind of speed
-    that is easy to misread. One read is served by one disk, at that disk's
+    both as two-way and three-way mirror spaces. It also gives a kind of speed
+    that is easy to misunderstand. One read is served by one disk, at that disk's
     speed; but *n* readers at once can each have a copy, because the engine
     spreads requests over the members ([[performance]]). A mirror serves more
     readers, it does not serve a reader faster.
@@ -110,8 +110,8 @@ kb:
     ## Two things that follow
 
     Two things follow from "every member holds the whole". A mirror of mirrors is
-    just a mirror with more copies, which is how a nested level whose spans have
-    shrunk to pairs reads as one wide RAID 1. And a RAID 5 on two disks *is* a
+    just a mirror with more copies, which is why a nested level whose spans have
+    shrunk to two-disk mirrors is recognized as one wide RAID 1. And a RAID 5 on two disks *is* a
     RAID 1: with one data block per stripe the parity is that block. The Linux
     kernel uses this to grow a mirror into a RAID 5: it first relabels the
     two-disk RAID 1 as a two-disk RAID 5, moving nothing because the two layouts

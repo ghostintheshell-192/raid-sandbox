@@ -118,15 +118,15 @@
       <li>disks joined end to end are <em>linear</em> in <code>md</code>, a <em>spanned volume</em> or a <em>simple space</em> elsewhere, and JBOD in common speech</li>
     </ul>
     <h3 id="where-md-is-not-the-reference">Where md is not the reference</h3>
-    <p>Some things exist only outside it. A protected write cache and its <a href="bbu.html">BBU</a> are controller hardware, and what a page says about them comes from the vendor. What Storage Spaces does for crash consistency is Microsoft&#39;s to document, and the page quotes Microsoft or stays silent. Every entry lists its sources, and the list says which kind each sentence rests on.</p>
+    <p>Some things exist only outside it. A protected write cache and its <a href="bbu.html">BBU</a> are controller hardware, and what a page says about them comes from the vendor. What Storage Spaces does for crash consistency is Microsoft&#39;s to document, and the page quotes Microsoft or stays silent. Every entry lists its sources, and the list shows which kind of source each sentence rests on.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>Linux kernel source, COPYING — &#39;SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note&#39;</li>
-      <li>Linux kernel source, drivers/md/ — raid0.c, raid1.c, raid5.c, raid10.c, md-linear.c</li>
-      <li>md(4) man page — the levels md implements: LINEAR, RAID0, RAID1, RAID4, RAID5, RAID6, RAID10</li>
-      <li>Microsoft Learn, Storage Spaces overview — &#39;simple&#39;, &#39;mirror&#39; and &#39;parity&#39; as the resiliency types of a storage space</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/COPYING">Linux kernel source, COPYING — &#39;SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note&#39;</a></li>
+      <li><a href="https://github.com/torvalds/linux/tree/master/drivers/md">Linux kernel source, drivers/md/ — raid0.c, raid1.c, raid5.c, raid10.c, md-linear.c</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — the levels md implements: LINEAR, RAID0, RAID1, RAID4, RAID5, RAID6, RAID10</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview — &#39;simple&#39;, &#39;mirror&#39; and &#39;parity&#39; as the resiliency types of a storage space</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">

@@ -90,7 +90,7 @@ kb:
     RAID 5 is the pair *striped + single parity*: the data is dealt out in chunks
     across all the members ([[striping]]), and in every stripe one chunk holds
     the XOR of the others ([[parity]]). It is the fifth level of the 1988 paper,
-    and the one the paper was written to arrive at: the fourth level had put all
+    and the one the paper builds up to: the fourth level had put all
     the parity on one disk, and "the check disk is the bottleneck"; the fifth
     "distributes the data and check information across all the disks". Which
     disk holds the parity in which stripe is the placement [[algorithm]], almost
@@ -101,7 +101,7 @@ kb:
     Capacity, first. A mirror spends half the disks on copies;
     RAID 5 spends one disk's worth on parity whatever the count, so on four disks
     it keeps three quarters, on eight seven eighths. The [[fault-tolerance]] is
-    one disk, on any count, and the count is the trap: the more disks, the more
+    one disk, on any count, and the disk count is the risk: the more disks, the more
     space, the more likely a second failure while the first is being rebuilt.
 
     ## What it pays

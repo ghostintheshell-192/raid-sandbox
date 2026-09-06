@@ -120,25 +120,25 @@ RAID 1    2           = 2 TB      (a four-way mirror)
 RAID 10   4 × 2 ÷ 2   = 4 TB
 RAID 5    (4 − 1) × 2 = 6 TB
 RAID 6    (4 − 2) × 2 = 4 TB</code></pre>
-    <p>The parity lines say why parity is the cheap redundancy: the cost is one block per stripe, fixed, so the share it takes shrinks as the stripe widens. On ten disks RAID 5 keeps 90 % of the raw space; a mirror keeps 50 % on any count. The 1988 RAID paper gives the same figures as &quot;useable storage capacity&quot;, 50 % for its first level and 91 % or 96 % for its fifth on groups of 10 or 25. <code>md</code> states the RAID 6 line as a count: &quot;it requires N+2 drives to store N drives worth of data&quot;.</p>
+    <p>The parity lines show why parity is the cheaper redundancy: its cost is one block per stripe, whatever the width, so the share it takes shrinks as the stripe widens. On ten disks RAID 5 keeps 90 % of the raw space; a mirror keeps 50 % on any count. The 1988 RAID paper gives the same figures as &quot;useable storage capacity&quot;, 50 % for its first level and 91 % or 96 % for its fifth on groups of 10 or 25. <code>md</code> states the RAID 6 line as a count: &quot;it requires N+2 drives to store N drives worth of data&quot;.</p>
     <p>RAID 10 is the exception to &quot;redundancy and nothing else&quot;: it is a mirror, but its copies are striped over the set, so each block sits on two disks out of <em>N</em> rather than on all of them. This is the one place the <a href="segmentation.html">segmentation</a> axis touches capacity, and the <a href="mirroring.html">mirroring</a> entry has the layout.</p>
     <h3 id="members-of-different-sizes">Members of different sizes</h3>
-    <p>The rules above assume equal members. When they differ, a striped or mirrored layout can use of each member only what the smallest offers, because every stripe takes one chunk from each and every copy must fit on each: a mirror of 2 TB and 4 TB holds 2 TB, and a RAID 5 over 2, 2, 2 and 4 TB holds 6, not 8. Linux <code>raid0</code> is the one layout that recovers the difference, by continuing the stripe over the larger disks once the smaller are full (<a href="segmentation.html">segmentation</a>); a linear array takes each member whole. So for a parity or mirror layout the honest rule is the smallest member&#39;s size times the count, and a controller applies exactly that.</p>
+    <p>The rules above assume equal members. When they differ, a striped or mirrored layout can use of each member only what the smallest offers, because every stripe takes one chunk from each and every copy must fit on each: a mirror of 2 TB and 4 TB holds 2 TB, and a RAID 5 over 2, 2, 2 and 4 TB holds 6, not 8. Linux <code>raid0</code> is the one layout that recovers the difference, by continuing the stripe over the larger disks once the smaller are full (<a href="segmentation.html">segmentation</a>); a linear array takes each member whole. So for a parity or mirror layout the safe rule is the smallest member&#39;s size times the count, and a controller applies exactly that.</p>
     <h3 id="nesting">Nesting</h3>
     <p>Capacity composes bottom-up: compute each <a href="span.html">span</a>, then apply the group&#39;s rule to the spans as if they were disks. A RAID 50 of two RAID 5 spans, each four disks of 2 TB:</p>
     <pre class="kb-figure"><code>each span      (4 − 1) × 2  = 6 TB
 the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</code></pre>
     <p>A RAID 51 over the same spans, a mirror of them, keeps one span&#39;s worth: 6 TB.</p>
     <h3 id="what-it-is-not">What it is not</h3>
-    <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. The trade is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages lay it out.</p>
+    <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. What differs between them is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages show both.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>Patterson, Gibson, Katz — A Case for RAID, 1988 — &#39;Useable Storage Capacity Percentage&#39; per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)</li>
-      <li>md(4) man page — RAID6: &#39;it requires N+2 drives to store N drives worth of data&#39;; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device</li>
-      <li>src/engine/model.js capacityGB() — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes</li>
-      <li>data/raid-levels/*.yaml reference.capacityFormula — the formulas in words, per level</li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988 — &#39;Useable Storage Capacity Percentage&#39; per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID6: &#39;it requires N+2 drives to store N drives worth of data&#39;; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device</a></li>
+      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB() — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes</a></li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.capacityFormula — the formulas in words, per level</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">

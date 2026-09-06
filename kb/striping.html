@@ -112,21 +112,21 @@
     <p>A disk answers one request at a time, at its own bandwidth. Put <em>N</em> disks side by side and deal the data across them, and two different things get faster.</p>
     <p><strong>One large request.</strong> A read of many chunks touches many disks, and the <a href="raid-engine.html">raid engine</a> issues the pieces to all of them together. The request finishes when the slowest piece finishes, so the array&#39;s bandwidth for it approaches <em>N</em> times one disk&#39;s. This is the sequential case: video, backups, large files.</p>
     <p><strong>Many small requests.</strong> A request smaller than a chunk touches one disk. Striping does not make it faster; but the next small request, at an unrelated address, most likely lands on a different disk, and the two are served at the same time. The array does not answer one request faster; it answers <em>N</em> at once. This is the random case: databases, many users, small files.</p>
-    <p>The two are worth telling apart because they are bought differently. Bandwidth for one request comes from the <em>width</em> of the stripe, the number of disks a request spans, and a larger chunk narrows it. Throughput for many requests comes from the <em>number</em> of disks and from requests being spread across them, which a larger chunk helps. The chunk size is the knob between the two, and the <a href="chunk.html">chunk</a> entry says what the defaults are and why.</p>
-    <h3 id="the-price">The price</h3>
+    <p>The two must be told apart, because they are obtained in different ways. Bandwidth for one request comes from the <em>width</em> of the stripe, the number of disks one request spans, and a larger chunk reduces that number. Throughput for many requests comes from the <em>number</em> of disks and from the requests being spread across them, and a larger chunk helps that, because each request stays on one disk. The chunk size is the parameter that decides which of the two an array favours, and the <a href="chunk.html">chunk</a> entry says what the defaults are and why.</p>
+    <h3 id="the-cost">The cost</h3>
     <p>Every disk holds a piece of everything. A file of any size beyond one chunk is spread over several disks, and the address space as a whole is spread over all of them. If one disk fails, what remains is not &quot;the other files&quot;: it is every file with holes in it. A striped set of <em>N</em> disks with no redundancy fails when <em>any</em> of its disks fails, so it fails, on average, <em>N</em> times as often as one disk.</p>
-    <p>This was known before RAID had a name. Salem and Garcia-Molina described disk striping in 1986 as a way to get bandwidth from several disks, and in 1988 the same authors published on its impact on reliability. The paper that named RAID, by Patterson, Gibson and Katz in the same year, starts from that cost: an array of many cheap disks is fast and fails often, and the levels it defines are the ways to pay for the reliability back. That is why striping and <a href="redundancy.html">redundancy</a> are two separate axes: striping is the speed, redundancy is what is added so that the speed does not come with the <em>N</em>-fold failure rate.</p>
+    <p>This was known before RAID had a name. Salem and Garcia-Molina described disk striping in 1986 as a way to get bandwidth from several disks, and in 1988 the same authors published on its impact on reliability. The paper that named RAID, by Patterson, Gibson and Katz in the same year, starts from that cost: an array of many cheap disks is fast and fails often, and the levels it defines are the ways to add the reliability back, each at a different cost in disk space and write operations. That is why striping and <a href="redundancy.html">redundancy</a> are two separate axes: striping provides the speed, and redundancy is added so that the speed does not come with an <em>N</em>-fold failure rate.</p>
     <h3 id="striping-under-redundancy">Striping under redundancy</h3>
-    <p>With a <a href="mirroring.html">mirroring</a> layer the striped set is copied, or the stripe is built out of copies (RAID 10). With <a href="parity.html">parity</a> the stripe is the unit the parity is computed over: one chunk per stripe holds the XOR of the others, and the stripe is what a full-stripe write can compute in one go and what a small write has to read back to update. Parity does not exist without a stripe, which is why there is no linear level with parity.</p>
+    <p>With a <a href="mirroring.html">mirroring</a> layer the striped set is copied, or the stripe is built out of copies (RAID 10). With <a href="parity.html">parity</a> the stripe is the unit the parity is computed over: one chunk per stripe holds the XOR of the others. A write that covers a whole stripe computes the parity in one step; a small write has to read the old data and the old parity first. Parity does not exist without a stripe, which is why there is no linear level with parity.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>Kenneth Salem, Hector Garcia-Molina — Disk Striping. ICDE 1986, pp. 336–342</li>
-      <li>Hector Garcia-Molina, Kenneth Salem — The Impact of Disk Striping on Reliability. IEEE Data Engineering Bulletin 11(1), 1988, pp. 26–39</li>
-      <li>David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID). SIGMOD 1988</li>
-      <li>md(4) man page — RAID0: chunks assigned to devices in turn; mdadm(8): the chunk size as the striping parameter</li>
-      <li>src/engine/model.js readWidth() vs readParallelism() — the two kinds of speed, as the sandbox derives them: one request&#39;s width, and the disks serving parallel readers</li>
+      <li><a href="https://dblp.org/search?q=Disk+Striping+Salem+Garcia-Molina">Kenneth Salem, Hector Garcia-Molina — Disk Striping. ICDE 1986, pp. 336–342</a></li>
+      <li><a href="https://dblp.org/search?q=Disk+Striping+Salem+Garcia-Molina">Hector Garcia-Molina, Kenneth Salem — The Impact of Disk Striping on Reliability. IEEE Data Engineering Bulletin 11(1), 1988, pp. 26–39</a></li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID). SIGMOD 1988</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID0: chunks assigned to devices in turn; mdadm(8): the chunk size as the striping parameter</a></li>
+      <li><a href="../src/engine/model.js">src/engine/model.js readWidth() vs readParallelism() — the two kinds of speed, as the sandbox derives them: one request&#39;s width, and the disks serving parallel readers</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -152,7 +152,7 @@
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#two-kinds-of-speed">Two kinds of speed</a></li>
-        <li><a href="#the-price">The price</a></li>
+        <li><a href="#the-cost">The cost</a></li>
         <li><a href="#striping-under-redundancy">Striping under redundancy</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>

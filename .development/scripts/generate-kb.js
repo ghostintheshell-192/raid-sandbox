@@ -757,7 +757,13 @@ function conceptPage(entry, ctx) {
   out.push('  <section class="kb-section" id="sources">');
   out.push('    <h2>Sources</h2>');
   out.push('    <ul class="kb-sources">');
-  for (const s of entry.sources) out.push(`      <li>${escapeHtml(plain(s))}</li>`);
+  // A source is text, or text with the url of the thing itself: the man page,
+  // the paper, the kernel file, the vendor's document — so the reader can check.
+  for (const s of entry.sources) {
+    if (typeof s === 'string') { out.push(`      <li>${escapeHtml(plain(s))}</li>`); continue; }
+    if (!s || !s.text || !s.url) fail(`${entry.where}: a source needs text and url (or a plain string)`);
+    out.push(`      <li><a href="${escapeHtml(s.url)}">${escapeHtml(plain(s.text))}</a></li>`);
+  }
   out.push('    </ul>');
   out.push('  </section>');
   toc.push({ id: 'sources', title: 'Sources' });

@@ -98,9 +98,9 @@ kb:
     has no tolerance left while the replacement is being written, and the
     writing takes as long as the disk is large; the 1988 paper's formula has that
     repair time in its denominator ([[fault-tolerance]]). RAID 6 goes through the
-    same rebuild with one failure still in hand, and an unreadable sector found
+    same rebuild with one failure still tolerated, and an unreadable sector found
     on a survivor during it is recomputed instead of lost. That is the whole
-    argument for the level, and it grows with the size of the disks.
+    argument for the level, and the argument gets stronger as disks get larger.
 
     ## What it pays
 
@@ -118,7 +118,7 @@ kb:
 
     Four disks is the minimum, and here the kernel enforces it: `raid5.c` refuses
     to start a RAID 6 with fewer, "not enough configured devices (minimum 4)".
-    With three the array would be a three-way mirror in disguise, *P* and *Q*
+    With three the array would be a three-way mirror under another name, *P* and *Q*
     both equal to the single data block, which is why nothing is lost by
     refusing it.
 

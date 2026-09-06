@@ -60,7 +60,7 @@ long: |
   firmware, an *option ROM* in the system BIOS which, in Intel's words, manages the
   drives and RAID volumes "before the operating system loads". That is what it is
   for: the machine can boot from the array. Once the OS is up, its driver does the
-  engine's work on the CPU, exactly as in software RAID. Linux makes this literal:
+  engine's work on the CPU, exactly as in software RAID. Linux shows this directly:
   `mdadm` runs Intel Rapid Storage volumes as `md` arrays with an *external*
   metadata format, `imsm`, "supported by an option-rom on some platforms". The
   metadata is the firmware's; the computing is the operating system's.
@@ -85,12 +85,18 @@ long: |
 related: [segmentation, parity, rebuild, virtual-drive, physical-disks, backplane, hba, bbu, write-hole, why-linux-md]
 
 sources:
-  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Introduction to RAID — 'Virtual drives are drive groups or spanned drive groups that are available to the operating system'; Virtual Drive — 'a partition in a drive group that is made up of contiguous data segments on the drives'"
-  - "Intel, Option ROM Information for Intel RAID Controller Hub — 'The option ROM manages Serial ATA hard drives and RAID volumes that are attached to an Intel RAID Controller hub before the operating system loads'; 'integrated with the system BIOS'"
-  - "mdadm(8) man page, --metadata=imsm — 'Use the Intel(R) Matrix Storage Manager metadata format. This creates a CONTAINER which is managed in a similar manner to DDF, and is supported by an option-rom on some platforms'"
-  - "md(4) man page — the superblock as the per-device metadata of a native md array"
-  - "Microsoft Learn, Storage Spaces overview — Storage Spaces as the operating system's own pooling and resiliency layer"
+  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Introduction to RAID — 'Virtual drives are drive groups or spanned drive groups that are available to the operating system'; Virtual Drive — 'a partition in a drive group that is made up of contiguous data segments on the drives'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
+  - text: "Intel, Option ROM Information for Intel RAID Controller Hub — 'The option ROM manages Serial ATA hard drives and RAID volumes that are attached to an Intel RAID Controller hub before the operating system loads'; 'integrated with the system BIOS'"
+    url: https://www.intel.com/content/www/us/en/support/articles/000006106/technologies.html
+  - text: "mdadm(8) man page, --metadata=imsm — 'Use the Intel(R) Matrix Storage Manager metadata format. This creates a CONTAINER which is managed in a similar manner to DDF, and is supported by an option-rom on some platforms'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+  - text: "md(4) man page — the superblock as the per-device metadata of a native md array"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "Microsoft Learn, Storage Spaces overview — Storage Spaces as the operating system's own pooling and resiliency layer"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
   - ".development/reference/decisions/001-engine-identity-not-position.md — the ownership/computation distinction; its RoC internals (own processor, protected cache) are stated there as not yet verified against a primary source"
-  - "data/components/engine-roc.yaml, engine-metadata.yaml, os-linux.yaml, os-windows.yaml — the three engine cases as the sandbox models them"
+  - text: "data/components/engine-roc.yaml, engine-metadata.yaml, os-linux.yaml, os-windows.yaml — the three engine cases as the sandbox models them"
+    url: ../data/components/engine-roc.yaml
 
 status: to-verify

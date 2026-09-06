@@ -26,9 +26,9 @@ long: |
 
   Their example: 100 disks rated at 30,000 hours each give an array rated at
   300 hours, "less than 2 weeks". Their conclusion: "Without fault tolerance, large
-  arrays of inexpensive disks are too unreliable to be useful." Striping makes it
-  exactly this bad, because every disk is carrying relevant data ([[striping]]); a linear
-  array loses only what was on the dead disk, but that is still data lost.
+  arrays of inexpensive disks are too unreliable to be useful." Striping makes the
+  loss total, because every disk carries a piece of every file ([[striping]]); a
+  linear array loses only what was on the dead disk, but that is still data lost.
 
   Redundancy is the answer: store, beside the data, enough extra information that
   the contents of a failed member can be recomputed from the survivors. The levels
@@ -64,7 +64,7 @@ long: |
   makes their numbers different from the flat levels', and the [[span]] entry
   shows why.
 
-  ## What the axis carries
+  ## What depends on this axis
 
   Three numbers follow from the redundancy alone, and each has its own entry:
 
@@ -74,8 +74,8 @@ long: |
   - [[write-penalty]]: how many disk operations one write costs, because every
     copy must be written and every parity kept consistent
 
-  Segmentation carries none of these. It carries the speed, and the one place the
-  two axes touch is the striped mirror of RAID 10, whose capacity and tolerance
+  Segmentation determines none of these. It determines the speed. The one place
+  where the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance
   depend on how the copies are laid out ([[mirroring]]).
 
   ## What it does not do
@@ -89,14 +89,18 @@ long: |
   Nor does it make the array whole again by itself. After a failure the array runs
   *degraded*, serving reads by recomputing what the dead member held, until the
   member is replaced and the engine has written it back from the redundancy: the
-  [[rebuild]]. Until then the tolerance is spent.
+  [[rebuild]]. Until then the array has no tolerance left.
 
 related: [segmentation, mirroring, parity, capacity, fault-tolerance, write-penalty, rebuild, raid-is-not-a-backup, span, raid-engine]
 
 sources:
-  - "David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: 'MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array'; the 100-disk example; 'Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful'; §6: 'break the arrays into reliability groups, with each group having extra check disks containing redundant information'"
-  - "md(4) man page — RAID1: 'each device in a RAID1 array contains exactly the same data'; RAID5: parity blocks 'distributed across all devices'; RAID6: 'can handle the loss of any two devices'"
-  - "Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques"
-  - "src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis"
+  - text: "David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: 'MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array'; the 100-disk example; 'Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful'; §6: 'break the arrays into reliability groups, with each group having extra check disks containing redundant information'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - text: "md(4) man page — RAID1: 'each device in a RAID1 array contains exactly the same data'; RAID5: parity blocks 'distributed across all devices'; RAID6: 'can handle the loss of any two devices'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - text: "src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis"
+    url: ../src/engine/model.js
 
 status: written

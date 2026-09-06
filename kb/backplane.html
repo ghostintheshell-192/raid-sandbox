@@ -109,10 +109,10 @@
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector; an active one carries a SAS expander, a switch that lets one cable reach many disks. Either way it stores nothing and computes no RAID.</p>
     <p>In a server or a disk shelf the <a href="physical-disks.html">physical disks</a> do not cable to the controller one by one. They slide into bays, and the bays are connectors on a board at the back of the cage: the backplane. Its job is electrical, to carry each disk&#39;s signal lines to a connector the <a href="hba.html">HBA</a> or the RAID controller cables to, and to bring power and the bay&#39;s status lights.</p>
-    <p>Two kinds exist, and the difference is whether anything on the board thinks:</p>
+    <p>Two kinds exist, and the difference is whether anything on the board processes commands:</p>
     <ul>
       <li><strong>Passive.</strong> Connectors and traces, one lane per bay. A cable from the controller carries four lanes, so a passive backplane serves four bays per connector, and a larger cage needs more cables.</li>
-      <li><strong>Active.</strong> The board carries a SAS <em>expander</em>, a switch between the controller&#39;s lanes and the bays. One four-lane cable then reaches every disk in the cage, and the expander routes each command to its target. The expander is silicon that forwards; it is not a <a href="raid-engine.html">raid engine</a>, and it keeps no data.</li>
+      <li><strong>Active.</strong> The board carries a SAS <em>expander</em>, a switch between the controller&#39;s lanes and the bays. One four-lane cable then reaches every disk in the cage, and the expander routes each command to its target. The expander only forwards commands; it is not a <a href="raid-engine.html">raid engine</a>, and it keeps no data.</li>
     </ul>
     <p>NVMe disks are the case that steps around it: they speak PCIe, and in the simplest wiring they reach the bus without a SAS backplane in between (<a href="physical-disks.html">physical disks</a>).</p>
     <p>Why name it at all, if it computes nothing? Because it is a failure domain. A backplane that dies takes every disk on it off the path at once, however the disks are laid out. The practice that follows is to spread the members of one <a href="span.html">span</a> across backplanes where the cage allows it, so that no single board holds both copies of a mirror or two members of a parity stripe.</p>
@@ -120,9 +120,9 @@
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>data/components/backplane.yaml — &#39;Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data&#39;; the note on spreading a span across backplanes</li>
-      <li>Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections — the backplane as what the controller&#39;s cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)</li>
-      <li>US patent 7,275,935 (Universal backplane connection) — &#39;Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality&#39;; &#39;passive backplanes contain almost no computing circuitry&#39; (secondary)</li>
+      <li><a href="../data/components/backplane.yaml">data/components/backplane.yaml — &#39;Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data&#39;; the note on spreading a span across backplanes</a></li>
+      <li><a href="https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72">Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections — the backplane as what the controller&#39;s cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)</a></li>
+      <li><a href="https://patents.google.com/patent/US7275935">US patent 7,275,935 (Universal backplane connection) — &#39;Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality&#39;; &#39;passive backplanes contain almost no computing circuitry&#39; (secondary)</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">

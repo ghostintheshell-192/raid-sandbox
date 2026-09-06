@@ -35,14 +35,15 @@ long: |
   The array does not answer one request faster; it answers *N* at once. This is the
   random case: databases, many users, small files.
 
-  The two are worth telling apart because they are bought differently. Bandwidth
-  for one request comes from the *width* of the stripe, the number of disks a
-  request spans, and a larger chunk narrows it. Throughput for many requests comes
-  from the *number* of disks and from requests being spread across them, which a
-  larger chunk helps. The chunk size is the knob between the two, and the [[chunk]]
-  entry says what the defaults are and why.
+  The two must be told apart, because they are obtained in different ways.
+  Bandwidth for one request comes from the *width* of the stripe, the number of
+  disks one request spans, and a larger chunk reduces that number. Throughput for
+  many requests comes from the *number* of disks and from the requests being spread
+  across them, and a larger chunk helps that, because each request stays on one
+  disk. The chunk size is the parameter that decides which of the two an array
+  favours, and the [[chunk]] entry says what the defaults are and why.
 
-  ## The price
+  ## The cost
 
   Every disk holds a piece of everything. A file of any size beyond one chunk is
   spread over several disks, and the address space as a whole is spread over all
@@ -55,26 +56,32 @@ long: |
   same authors published on its impact on reliability. The paper that named RAID,
   by Patterson, Gibson and Katz in the same year, starts from that cost: an array
   of many cheap disks is fast and fails often, and the levels it defines are the
-  ways to pay for the reliability back. That is why striping and [[redundancy]] are
-  two separate axes: striping is the speed, redundancy is what is added so that
-  the speed does not come with the *N*-fold failure rate.
+  ways to add the reliability back, each at a different cost in disk space and
+  write operations. That is why striping and [[redundancy]] are two separate
+  axes: striping provides the speed, and redundancy is added so that the speed
+  does not come with an *N*-fold failure rate.
 
   ## Striping under redundancy
 
   With a [[mirroring]] layer the striped set is copied, or the stripe is built out
   of copies (RAID 10). With [[parity]] the stripe is the unit the parity is computed
-  over: one chunk per stripe holds the XOR of the others, and the stripe is what a
-  full-stripe write can compute in one go and what a small write has to read back
-  to update. Parity does not exist without a stripe, which is why there is no
+  over: one chunk per stripe holds the XOR of the others. A write that covers a
+  whole stripe computes the parity in one step; a small write has to read the old
+  data and the old parity first. Parity does not exist without a stripe, which is why there is no
   linear level with parity.
 
 related: [segmentation, chunk, redundancy, mirroring, parity, performance, raid-engine]
 
 sources:
-  - "Kenneth Salem, Hector Garcia-Molina — Disk Striping. ICDE 1986, pp. 336–342"
-  - "Hector Garcia-Molina, Kenneth Salem — The Impact of Disk Striping on Reliability. IEEE Data Engineering Bulletin 11(1), 1988, pp. 26–39"
-  - "David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID). SIGMOD 1988"
-  - "md(4) man page — RAID0: chunks assigned to devices in turn; mdadm(8): the chunk size as the striping parameter"
-  - "src/engine/model.js readWidth() vs readParallelism() — the two kinds of speed, as the sandbox derives them: one request's width, and the disks serving parallel readers"
+  - text: "Kenneth Salem, Hector Garcia-Molina — Disk Striping. ICDE 1986, pp. 336–342"
+    url: https://dblp.org/search?q=Disk+Striping+Salem+Garcia-Molina
+  - text: "Hector Garcia-Molina, Kenneth Salem — The Impact of Disk Striping on Reliability. IEEE Data Engineering Bulletin 11(1), 1988, pp. 26–39"
+    url: https://dblp.org/search?q=Disk+Striping+Salem+Garcia-Molina
+  - text: "David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID). SIGMOD 1988"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - text: "md(4) man page — RAID0: chunks assigned to devices in turn; mdadm(8): the chunk size as the striping parameter"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "src/engine/model.js readWidth() vs readParallelism() — the two kinds of speed, as the sandbox derives them: one request's width, and the disks serving parallel readers"
+    url: ../src/engine/model.js
 
 status: written

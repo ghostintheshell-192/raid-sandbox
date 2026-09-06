@@ -25,8 +25,8 @@ long: |
     as any read error is: `md` "will attempt to find the correct data elsewhere
     (from mirrors or from parity), write it to the failed block, and re-read".
     The disk reallocates the sector, and the block is whole again. If that
-    fails, the whole device is marked faulty, which is better learned on a
-    Tuesday afternoon than during a rebuild.
+    fails, the whole device is marked faulty, which is better discovered during a
+    scheduled pass than during a rebuild.
   - **Mismatches.** Blocks that read fine but disagree: two copies of a mirror
     that differ, a parity that is not the XOR of its stripe. `md` counts them in
     `mismatch_cnt` during a `check`, and rewrites them during a `repair`, "in
@@ -45,13 +45,16 @@ long: |
   verifies the redundancy itself, that the copies and the parity agree.
 
   Scrubbing costs a full read of every disk, throttled like a rebuild is. What it
-  buys is that the array's tolerance is real when it is needed, not nominal.
+  gives in return is a tolerance that is real when it is needed, not only nominal.
 
 related: [rebuild, write-hole, parity, mirroring, fault-tolerance]
 
 sources:
-  - "md(4) man page, SCRUBBING AND MISMATCHES — 'check' and 'repair' written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; 'repair' corrects them as a resync would"
-  - "md(4) man page, RECOVERY — on a read error md will 'find the correct data elsewhere', write it back and re-read; a device that cannot be corrected is marked faulty"
-  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read — 'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
+  - text: "md(4) man page, SCRUBBING AND MISMATCHES — 'check' and 'repair' written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; 'repair' corrects them as a resync would"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "md(4) man page, RECOVERY — on a read error md will 'find the correct data elsewhere', write it back and re-read; a device that cannot be corrected is marked faulty"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read — 'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
 
 status: written

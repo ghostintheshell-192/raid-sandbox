@@ -36,7 +36,8 @@ long: |
   it addresses any disk: by sector number, the *logical block address* (LBA),
   counting from 0 to the last sector. Each member disk has its own sector numbers,
   also counting from 0. So on every read and every write something has to
-  translate: array sector *s* is member *m*, sector *t*.
+  translate the array's sector number into a member and a sector on that member:
+  array sector *s* becomes member *m*, sector *t*.
 
   That translation is done by the [[raid-engine]], wherever it lives: the firmware
   of a RAID-on-Chip on a hardware controller, or the operating system's driver in
@@ -116,10 +117,10 @@ long: |
   ```
 
   A request larger than a chunk now spans several members, and they serve it at
-  the same time: a striped array can bring as many disks to one request as it has
-  members, a linear array brings one. This is where the speed of a striped array
-  comes from. The price is that every disk holds a piece of everything. Lose one
-  disk and the address space is full of holes: no file survives whole. Linux `md`
+  the same time: a striped array can use all of its members for one request, a
+  linear array uses one disk. This is where the speed of a striped array comes
+  from. The cost is that every disk holds a piece of every file. Lose one disk and
+  every file larger than a chunk has a piece missing: none survives whole. Linux `md`
   calls this mode `raid0`; Windows Storage Spaces calls it a *simple space* and
   describes it the same way, data striped across the drives with no resiliency.
 
@@ -143,17 +144,17 @@ long: |
   chunk size for it, because there is nothing to cut. The chunk size is a striping
   parameter, meaningful for RAID 0, 4, 5, 6 and 10 and no other level.
 
-  So the segmentation axis carries the name when there is no redundancy (RAID 0
-  against JBOD is this axis alone) and the number of disks one request can reach.
-  It does not carry capacity or fault tolerance: those come from the [[redundancy]]
+  So the segmentation axis determines two things: the name, when there is no
+  redundancy (RAID 0 and JBOD differ on this axis alone), and how many disks one
+  request can use. It does not determine capacity or fault tolerance: those come from the [[redundancy]]
   axis, with one exception, the flat striped mirror of RAID 10, explained under
   [[mirroring]].
 
-  One practical consequence: striping wants members that contribute equal space,
-  because every stripe needs one chunk from each. Linux `raid0` copes with unequal
+  One practical consequence: striping needs every member to contribute the same
+  amount of space, because every stripe takes one chunk from each. Linux `raid0` copes with unequal
   disks by splitting the array into zones: the stripe runs across all disks until
-  the smallest is full, then continues across the larger ones only. Linear has no
-  such problem, and no such benefit.
+  the smallest is full, then continues across the larger ones only. Linear never
+  needs equal members, so it has no such problem; it has none of the speed either.
 
   Linux `md` is quoted throughout these pages, and not only here, because its
   source is public and every rule can be read and checked; hardware controllers and
@@ -163,12 +164,19 @@ long: |
 related: [striping, chunk, redundancy, mirroring, performance, raid-engine, drive-group, span, why-linux-md]
 
 sources:
-  - "md(4) man page — LINEAR: 'simply catenates the available space on each drive to form one large virtual drive'; RAID0: 'assigns the first chunk of the array to the first device, the second chunk to the second device, and so on until all drives have been assigned one chunk'"
-  - "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'"
-  - "drivers/md/raid0.c map_sector() — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled"
-  - "drivers/md/md-linear.c linear_conf() / which_dev() — each device's end_sector is the previous one's plus its own size; a sector is served by the device whose range contains it"
-  - "Microsoft Learn, Storage Spaces overview — simple spaces: 'Data is striped across multiple drives', 'no resiliency or redundancy'"
-  - "src/engine/model.js writeParallelism() / readWidth() — striped → the stripe width, linear → 1: the rule the sandbox computes with"
-  - "src/engine/layout.js placeStripe() / placeLinear() — the two grids the sandbox draws; and the refusal of linear + parity ('parity requires striping')"
+  - text: "md(4) man page — LINEAR: 'simply catenates the available space on each drive to form one large virtual drive'; RAID0: 'assigns the first chunk of the array to the first device, the second chunk to the second device, and so on until all drives have been assigned one chunk'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+  - text: "drivers/md/raid0.c map_sector() — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid0.c
+  - text: "drivers/md/md-linear.c linear_conf() / which_dev() — each device's end_sector is the previous one's plus its own size; a sector is served by the device whose range contains it"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/md-linear.c
+  - text: "Microsoft Learn, Storage Spaces overview — simple spaces: 'Data is striped across multiple drives', 'no resiliency or redundancy'"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - text: "src/engine/model.js writeParallelism() / readWidth() — striped → the stripe width, linear → 1: the rule the sandbox computes with"
+    url: ../src/engine/model.js
+  - text: "src/engine/layout.js placeStripe() / placeLinear() — the two grids the sandbox draws; and the refusal of linear + parity ('parity requires striping')"
+    url: ../src/engine/layout.js
 
 status: written

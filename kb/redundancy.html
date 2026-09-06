@@ -110,7 +110,7 @@
     <h3 id="the-problem-it-answers">The problem it answers</h3>
     <p>A disk fails, eventually. Put many disks together and the array fails as soon as any one of them does, so it fails sooner. The paper that named RAID put it as a formula, with MTTF (&quot;mean time to failure&quot;):</p>
     <pre class="kb-figure"><code>MTTF of a disk array = MTTF of a single disk ÷ number of disks in the array</code></pre>
-    <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes it exactly this bad, because every disk is carrying relevant data (<a href="striping.html">striping</a>); a linear array loses only what was on the dead disk, but that is still data lost.</p>
+    <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes the loss total, because every disk carries a piece of every file (<a href="striping.html">striping</a>); a linear array loses only what was on the dead disk, but that is still data lost.</p>
     <p>Redundancy is the answer: store, beside the data, enough extra information that the contents of a failed member can be recomputed from the survivors. The levels the paper defined are the ways to do this at different costs, and every RAID level since is one of two techniques, or a nesting of them.</p>
     <h3 id="two-techniques">Two techniques</h3>
     <ul>
@@ -123,25 +123,25 @@ mirror    RAID 1, RAID 10          n copies of every block
 parity1   RAID 5 (and RAID 4)      one parity block per stripe
 parity2   RAID 6                   two parity blocks per stripe, P and Q</code></pre>
     <p>A nested level is one of these built over spans that are themselves one of these: RAID 50 is <code>none</code> over <code>parity1</code> spans, RAID 51 is <code>mirror</code> over <code>parity1</code> spans, RAID 60 is <code>none</code> over <code>parity2</code> spans. The nesting is what makes their numbers different from the flat levels&#39;, and the <a href="span.html">span</a> entry shows why.</p>
-    <h3 id="what-the-axis-carries">What the axis carries</h3>
+    <h3 id="what-depends-on-this-axis">What depends on this axis</h3>
     <p>Three numbers follow from the redundancy alone, and each has its own entry:</p>
     <ul>
       <li><a href="capacity.html">capacity</a>: how much of the raw space is left for data</li>
       <li><a href="fault-tolerance.html">fault tolerance</a>: how many members can fail, in the worst place, before data is lost</li>
       <li><a href="write-penalty.html">write penalty</a>: how many disk operations one write costs, because every copy must be written and every parity kept consistent</li>
     </ul>
-    <p>Segmentation carries none of these. It carries the speed, and the one place the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance depend on how the copies are laid out (<a href="mirroring.html">mirroring</a>).</p>
+    <p>Segmentation determines none of these. It determines the speed. The one place where the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance depend on how the copies are laid out (<a href="mirroring.html">mirroring</a>).</p>
     <h3 id="what-it-does-not-do">What it does not do</h3>
     <p>Redundancy protects against a disk failing. It does not protect against the data being wrong: a deletion, an overwrite, a corrupted file are written to every copy and folded into every parity block as faithfully as good data is, because to the <a href="raid-engine.html">raid engine</a> they are writes like any other. An array with redundancy is not a backup; the reasons are collected under <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
-    <p>Nor does it make the array whole again by itself. After a failure the array runs <em>degraded</em>, serving reads by recomputing what the dead member held, until the member is replaced and the engine has written it back from the redundancy: the <a href="rebuild.html">rebuild</a>. Until then the tolerance is spent.</p>
+    <p>Nor does it make the array whole again by itself. After a failure the array runs <em>degraded</em>, serving reads by recomputing what the dead member held, until the member is replaced and the engine has written it back from the redundancy: the <a href="rebuild.html">rebuild</a>. Until then the array has no tolerance left.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: &#39;MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array&#39;; the 100-disk example; &#39;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful&#39;; §6: &#39;break the arrays into reliability groups, with each group having extra check disks containing redundant information&#39;</li>
-      <li>md(4) man page — RAID1: &#39;each device in a RAID1 array contains exactly the same data&#39;; RAID5: parity blocks &#39;distributed across all devices&#39;; RAID6: &#39;can handle the loss of any two devices&#39;</li>
-      <li>Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques</li>
-      <li>src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis</li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: &#39;MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array&#39;; the 100-disk example; &#39;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful&#39;; §6: &#39;break the arrays into reliability groups, with each group having extra check disks containing redundant information&#39;</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID1: &#39;each device in a RAID1 array contains exactly the same data&#39;; RAID5: parity blocks &#39;distributed across all devices&#39;; RAID6: &#39;can handle the loss of any two devices&#39;</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques</a></li>
+      <li><a href="../src/engine/model.js">src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -171,7 +171,7 @@ parity2   RAID 6                   two parity blocks per stripe, P and Q</code><
       <ul class="kb-toc-list">
         <li><a href="#the-problem-it-answers">The problem it answers</a></li>
         <li><a href="#two-techniques">Two techniques</a></li>
-        <li><a href="#what-the-axis-carries">What the axis carries</a></li>
+        <li><a href="#what-depends-on-this-axis">What depends on this axis</a></li>
         <li><a href="#what-it-does-not-do">What it does not do</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>

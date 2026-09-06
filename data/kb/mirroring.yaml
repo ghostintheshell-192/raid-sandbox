@@ -14,7 +14,7 @@ long: |
   ## The mechanism
 
   A mirror stores the same block in the same place on every member. The Linux `md`
-  description of RAID 1 is the whole of it: "each device in a RAID1 array contains
+  description of RAID 1 says all of it: "each device in a RAID1 array contains
   exactly the same data. Changes are written to all devices in parallel. Data is
   read from any one device. The driver attempts to distribute read requests across
   all devices to maximise performance." The 1988 RAID paper calls this the first
@@ -28,7 +28,7 @@ long: |
   disk's head is from the sector; the result is that several readers are spread
   over several copies.
 
-  ## What it buys, and for what
+  ## What it gives
 
   With *n* copies:
 
@@ -40,17 +40,17 @@ long: |
   read fanout      n                             n readers can be served at once
   ```
 
-  The two read lines are the point that is easy to get wrong. A mirror does not
+  The two read lines are the point most often misunderstood. A mirror does not
   make one read faster: a single request goes to a single disk and arrives at that
-  disk's speed. What it multiplies is how many requests can be in flight, one per
-  copy. [[striping]] is what makes one request wider. The [[performance]] entry
-  keeps the two apart.
+  disk's speed. What it multiplies is the number of requests that can be served at
+  the same time, one per copy. Making one request faster is what [[striping]]
+  does. The [[performance]] entry explains the two separately.
 
   Fault tolerance is where a mirror is strongest: a three-way mirror survives two
   failures, an *n*-way mirror *n − 1*. The number a level is usually quoted with,
   "RAID 1 tolerates one failure", is the two-disk case; the rule is the copy count
-  minus one, and the [[fault-tolerance]] entry says why the quoted number is the
-  minimum, not the level.
+  minus one, and the [[fault-tolerance]] entry says why the quoted number describes
+  the smallest configuration, not the level.
 
   ## Copies striped: RAID 10
 
@@ -97,11 +97,17 @@ long: |
 related: [redundancy, striping, segmentation, algorithm, capacity, fault-tolerance, write-penalty, performance, raid-engine, raid-is-not-a-backup]
 
 sources:
-  - "md(4) man page — RAID1: 'each device in a RAID1 array contains exactly the same data. Changes are written to all devices in parallel. Data is read from any one device. The driver attempts to distribute read requests across all devices to maximise performance'; RAID10: 'every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives'; near / far / offset layouts; 'there must be at least as many devices as replicas'; far layout: 'similar to RAID0 in terms of speed', 'more seeking for writes'"
-  - "drivers/md/raid1.c read_balance() — the criteria that choose the copy serving a read (sequential continuation, pending load, head distance); raid1_write_request() — the write issued to every non-faulty mirror"
-  - "drivers/md/raid10.c — header comment: 'Each device is divided into far_copies sections. In each section, chunks are laid out in a style similar to raid0, but near_copies copies of each chunk is stored (each on a different drive)'"
-  - "Patterson, Gibson, Katz — A Case for RAID, 1988, §7 First Level RAID: Mirrored Disks — 'all disks are duplicated (G=1 and C=1), and every write to a data disk is also a write to a check disk'; useable storage capacity 50%"
-  - "Microsoft Learn, Storage Spaces overview — 'Two-way mirroring tolerates one drive failure; three-way mirroring tolerates two simultaneous drive failures'"
-  - "src/engine/model.js capacityGB() / failuresToKill() — the RAID 1 rule (one copy's worth, kill every member) and the flat RAID 10 rule (sum ÷ copies, kill all copies of a chunk)"
+  - text: "md(4) man page — RAID1: 'each device in a RAID1 array contains exactly the same data. Changes are written to all devices in parallel. Data is read from any one device. The driver attempts to distribute read requests across all devices to maximise performance'; RAID10: 'every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives'; near / far / offset layouts; 'there must be at least as many devices as replicas'; far layout: 'similar to RAID0 in terms of speed', 'more seeking for writes'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "drivers/md/raid1.c read_balance() — the criteria that choose the copy serving a read (sequential continuation, pending load, head distance); raid1_write_request() — the write issued to every non-faulty mirror"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid1.c
+  - text: "drivers/md/raid10.c — header comment: 'Each device is divided into far_copies sections. In each section, chunks are laid out in a style similar to raid0, but near_copies copies of each chunk is stored (each on a different drive)'"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid10.c
+  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988, §7 First Level RAID: Mirrored Disks — 'all disks are duplicated (G=1 and C=1), and every write to a data disk is also a write to a check disk'; useable storage capacity 50%"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - text: "Microsoft Learn, Storage Spaces overview — 'Two-way mirroring tolerates one drive failure; three-way mirroring tolerates two simultaneous drive failures'"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - text: "src/engine/model.js capacityGB() / failuresToKill() — the RAID 1 rule (one copy's worth, kill every member) and the flat RAID 10 rule (sum ÷ copies, kill all copies of a chunk)"
+    url: ../src/engine/model.js
 
 status: written

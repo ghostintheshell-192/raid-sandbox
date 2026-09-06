@@ -111,17 +111,17 @@
     <p>A span is the layer at which the two axes are chosen. Take some or all of a <a href="drive-group.html">drive group</a>&#39;s disks and give them one <a href="segmentation.html">segmentation</a> and one <a href="redundancy.html">redundancy</a>: that set is a span, and the pair of choices is its RAID level. The simplest span has no layout at all, disks joined end to end with no redundancy, which is JBOD. The figure under <a href="virtual-drive.html">virtual drive</a> shows where the span sits: inside the drive group, under the virtual drives carved from it.</p>
     <h3 id="spans-inside-levels">Spans inside levels</h3>
     <p>The nested levels make the layer visible. RAID 50 stripes across two or more RAID 5 spans, and each span independently tolerates one disk failure. But the top-level stripe needs every span to reconstruct data, so two failures in the <em>same</em> span destroy that span, and with it the whole array, even though the other spans are physically intact. A two-span RAID 50 therefore survives one failure per span, two in total as long as they land in different spans, but not two failures landing in the same span. The same reading gives RAID 10 (spans of mirrors, striped) and RAID 60 (spans of RAID 6, striped).</p>
-    <h3 id="the-word-in-the-field">The word in the field</h3>
-    <p>The vendor usage is Broadcom&#39;s: &quot;disk spanning allows multiple drives to function like one large drive&quot;, the spanned levels are &quot;RAID 00, RAID 10, RAID 50, and RAID 60&quot;, and inside such a drive group &quot;the span numbering starts from Span 0, Span 1, Span 2, and so on&quot;. A RAID 10 there is built &quot;by spanning two or more contiguous RAID 1 virtual drives&quot;, and can hold up to eight spans. So in a controller&#39;s vocabulary a span is one leg of a nested level, and a flat level (RAID 5 on four disks) is a drive group with one layout and no spans to speak of. These pages use the word for both: the flat case is a drive group with a single span.</p>
+    <h3 id="the-word-as-vendors-use-it">The word as vendors use it</h3>
+    <p>The vendor usage is Broadcom&#39;s: &quot;disk spanning allows multiple drives to function like one large drive&quot;, the spanned levels are &quot;RAID 00, RAID 10, RAID 50, and RAID 60&quot;, and inside such a drive group &quot;the span numbering starts from Span 0, Span 1, Span 2, and so on&quot;. A RAID 10 there is built &quot;by spanning two or more contiguous RAID 1 virtual drives&quot;, and can hold up to eight spans. So in a controller&#39;s vocabulary a span is one leg of a nested level, and a flat level (RAID 5 on four disks) is a drive group with one layout and no separate spans. These pages use the word for both: the flat case is a drive group with a single span.</p>
     <p>Linux <code>md</code> does not use the word at all. A RAID 50 there is two <code>md</code> RAID 5 devices given as members to an <code>md</code> RAID 0: the spans are arrays in their own right, each with its own device name, and the nesting is explicit.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>data/intro.yaml storageLayers.span — the text this entry migrates</li>
-      <li>Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning — &#39;Disk spanning allows multiple drives to function like one large drive&#39;; spanned drive groups: &#39;RAID 00, RAID 10, RAID 50, and RAID 60&#39;; &#39;the span numbering starts from Span 0, Span 1, Span 2, and so on&#39;</li>
-      <li>Broadcom, same guide, RAID 10 Drive Groups — &#39;Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives&#39;; a maximum of 8 spans</li>
-      <li>src/engine/model.js — an array&#39;s members are disks or arrays: the nesting as the sandbox computes it</li>
+      <li><a href="../data/intro.yaml">data/intro.yaml storageLayers.span — the text this entry migrates</a></li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667525.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning — &#39;Disk spanning allows multiple drives to function like one large drive&#39;; spanned drive groups: &#39;RAID 00, RAID 10, RAID 50, and RAID 60&#39;; &#39;the span numbering starts from Span 0, Span 1, Span 2, and so on&#39;</a></li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, same guide, RAID 10 Drive Groups — &#39;Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives&#39;; a maximum of 8 spans</a></li>
+      <li><a href="../src/engine/model.js">src/engine/model.js — an array&#39;s members are disks or arrays: the nesting as the sandbox computes it</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -145,7 +145,7 @@
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#spans-inside-levels">Spans inside levels</a></li>
-        <li><a href="#the-word-in-the-field">The word in the field</a></li>
+        <li><a href="#the-word-as-vendors-use-it">The word as vendors use it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

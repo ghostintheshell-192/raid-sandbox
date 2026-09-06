@@ -130,27 +130,27 @@ RAID 5    (1 + 1) − 1             = 1
 RAID 6    (1 + 1 + 1) − 1         = 2</code></pre>
     <p>Linux <code>md</code> states two of these directly: a RAID 1 array can lose all devices but one, a RAID 6 array &quot;can handle the loss of any two devices&quot;.</p>
     <h3 id="nesting-where-the-failures-land">Nesting: where the failures land</h3>
-    <p>Apply the rule bottom-up, and the spans&#39; own tolerance becomes the members&#39; cost. A RAID 50 of two RAID 5 spans:</p>
+    <p>Apply the rule from the bottom up: first compute F for each span, then use those values as the members&#39; F one level above. A RAID 50 of two RAID 5 spans:</p>
     <pre class="kb-figure"><code>each span     F = 2           (parity1 over disks: two failures kill it)
 the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
               tolerance = 2 − 1 = 1</code></pre>
-    <p>One failure, guaranteed. The array will in fact survive a second failure if it lands in the <em>other</em> span, which is why RAID 50 is often described as &quot;one per span&quot;; but the guarantee is one, because the adversary puts the second failure in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The <a href="span.html">span</a> entry draws the RAID 50 case.</p>
-    <h3 id="while-it-is-spent">While it is spent</h3>
+    <p>One failure, guaranteed. The array will in fact survive a second failure if it lands in the <em>other</em> span, which is why RAID 50 is often described as &quot;one per span&quot;; but the guarantee is one, because the adversary puts the second failure in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The <a href="span.html">span</a> entry describes the RAID 50 case.</p>
+    <h3 id="while-the-tolerance-is-used-up">While the tolerance is used up</h3>
     <p>After a failure the array runs <em>degraded</em>. Nothing is lost yet, but the tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a stripe with no parity, and every read of the dead member&#39;s blocks is answered by recomputing them from the survivors. The 1988 paper&#39;s reliability model has a term for the window this opens, MTTR, the mean time to repair, and the group&#39;s time to failure divides by it:</p>
     <pre class="kb-figure"><code>MTTF of a group  =  MTTF of a disk ÷ (G + C)  ×  1 ÷ P(another failure before the dead disk is repaired)
                  =  MTTF of a disk²  ÷  ((G + C) × (G + C − 1) × MTTR)</code></pre>
-    <p>with <em>G</em> data disks and <em>C</em> check disks in the group. The shorter the repair, the safer the array: this is the <a href="rebuild.html">rebuild</a>, and it is where the time a disk takes to be rewritten becomes a reliability number.</p>
+    <p>with <em>G</em> data disks and <em>C</em> check disks in the group. The shorter the repair, the safer the array: this is the <a href="rebuild.html">rebuild</a>, and this formula is why the time a rebuild takes is a reliability number, not only a performance one.</p>
     <h3 id="what-it-does-not-count">What it does not count</h3>
     <p>A failure is a disk that stops answering. A deletion, an overwrite, a corrupted block are not failures: the redundancy records them faithfully. Fault tolerance measures survival of hardware, not of data (<a href="raid-is-not-a-backup.html">RAID is not a backup</a>).</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as &#39;the mean time to repair&#39;</li>
-      <li>md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: &#39;can handle the loss of any two devices without data loss&#39;; RAID4/RAID5: one device failure tolerated</li>
-      <li>src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1</li>
-      <li>data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level&#39;s tolerance at its minimum disk count, not the array&#39;s</li>
-      <li>data/intro.yaml parameters.fault-tolerance — the text this entry supersedes</li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as &#39;the mean time to repair&#39;</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: &#39;can handle the loss of any two devices without data loss&#39;; RAID4/RAID5: one device failure tolerated</a></li>
+      <li><a href="../src/engine/model.js">src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1</a></li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level&#39;s tolerance at its minimum disk count, not the array&#39;s</a></li>
+      <li><a href="../data/intro.yaml">data/intro.yaml parameters.fault-tolerance — the text this entry supersedes</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -178,7 +178,7 @@ the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
         <li><a href="#guaranteed-not-lucky">Guaranteed, not lucky</a></li>
         <li><a href="#the-rule-per-redundancy">The rule, per redundancy</a></li>
         <li><a href="#nesting-where-the-failures-land">Nesting: where the failures land</a></li>
-        <li><a href="#while-it-is-spent">While it is spent</a></li>
+        <li><a href="#while-the-tolerance-is-used-up">While the tolerance is used up</a></li>
         <li><a href="#what-it-does-not-count">What it does not count</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>

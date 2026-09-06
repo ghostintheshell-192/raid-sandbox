@@ -108,7 +108,7 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it. Every layer above exists to turn a set of them into something more useful than one disk at a time.</p>
-    <p>A physical disk is one device: a spinning hard drive or a solid-state drive, with a capacity, an interface, and an address space of its own, sectors numbered from 0 to the last (the <a href="segmentation.html">segmentation</a> entry says how an array maps its sectors onto these). It is the atom of everything on these pages: a <a href="drive-group.html">drive group</a> gathers disks, a <a href="span.html">span</a> lays them out, a <a href="virtual-drive.html">virtual drive</a> is what they are presented as.</p>
+    <p>A physical disk is one device: a spinning hard drive or a solid-state drive, with a capacity, an interface, and an address space of its own, sectors numbered from 0 to the last (the <a href="segmentation.html">segmentation</a> entry says how an array maps its sectors onto these). It is the basic unit of everything on these pages: a <a href="drive-group.html">drive group</a> gathers disks, a <a href="span.html">span</a> lays them out, a <a href="virtual-drive.html">virtual drive</a> is what they are presented as.</p>
     <h3 id="the-interface-is-part-of-the-path">The interface is part of the path</h3>
     <p>The interface a disk speaks decides how it reaches the <a href="raid-engine.html">raid engine</a>:</p>
     <ul>
@@ -122,9 +122,9 @@
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>data/intro.yaml storageLayers.physical-disks — the text this entry migrates</li>
-      <li>data/components/backplane.yaml, hba.yaml, pcie-bus.yaml — the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them</li>
-      <li>md(4) man page — RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each</li>
+      <li><a href="../data/intro.yaml">data/intro.yaml storageLayers.physical-disks — the text this entry migrates</a></li>
+      <li><a href="../data/components/backplane.yaml">data/components/backplane.yaml, hba.yaml, pcie-bus.yaml — the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each</a></li>
     </ul>
   </section>
   <section class="kb-section" id="related">

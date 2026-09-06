@@ -21,7 +21,7 @@ long: |
   is in that memory, and write it to the disks later. This is *write-back*
   caching, and it is a large part of why a hardware controller is fast on writes:
   the [[write-penalty]] of a parity update is paid in the background, and small
-  writes can be gathered into full stripes. The cost is a window. Until the
+  writes can be gathered into full stripes. The cost is a window of risk. Until the
   cached data reaches the disks, it exists only in volatile memory, and a power
   cut in that window loses writes the operating system was told had succeeded.
   For a parity array the loss can be worse than the missing writes: a stripe
@@ -65,7 +65,9 @@ related: [raid-engine, write-hole, write-penalty, parity]
 sources:
   - "Broadcom TechDocs, CacheVault Data Protection (9700 series) — 'The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure'; 'The data is backed up to the NAND flash memory available on the MegaRAID storage adapter'"
   - "Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data 'by providing battery power to the controller'; CacheVault by 'storing cached data in non-volatile flash cache storage'; write-through until the battery is charged — not read verbatim"
-  - "Linux kernel Documentation/driver-api/md/raid5-cache.rst — the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
-  - "data/components/engine-roc.yaml — `power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
+  - text: "Linux kernel Documentation/driver-api/md/raid5-cache.rst — the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
+    url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
+  - text: "data/components/engine-roc.yaml — `power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
+    url: ../data/components/engine-roc.yaml
 
 status: to-verify

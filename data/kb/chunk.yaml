@@ -14,8 +14,8 @@ short: >
 long: |
   ## Three words for two things
 
-  Striping cuts data into pieces and deals them across disks, and the vocabulary
-  around it has one piece and one row, named differently by each family.
+  Striping cuts data into pieces and deals them across disks. There are two
+  things to name, the piece and the row, and each vendor names them differently.
 
   - **Chunk, or strip: the piece on one disk.** Linux `md` says *chunk*; `mdadm`
     sets it with `--chunk`. Broadcom's MegaRAID says *strip*: "the strip size is
@@ -39,8 +39,8 @@ long: |
   stripe size   = C × (N − P)      the data a full stripe carries
   ```
 
-  The trap is the middle word. Outside the vendor documents "stripe size" is used
-  for either the piece or the row, and the two differ by a factor of *N − P*. When
+  The word to be careful with is the middle one, *stripe size*. Outside the vendor
+  documents it is used for either the piece or the row, and the two differ by a factor of *N − P*. When
   a document gives one number, check which it means before doing arithmetic with
   it.
 
@@ -54,7 +54,8 @@ long: |
 
   ## What the size does
 
-  The chunk is the knob between the two kinds of speed that [[striping]] buys. A
+  The chunk size is the main tuning parameter, and it determines which of the two
+  performance advantages of [[striping]] an array gets. A
   request smaller than a chunk touches one disk; a request of *R* sectors touches
   about *R ÷ C* disks, up to *N*. A small chunk spreads one request over many disks
   and gives it their combined bandwidth, at the cost of every disk doing a small
@@ -62,12 +63,12 @@ long: |
   others free for other requests, which is what a workload of many small,
   unrelated accesses wants.
 
-  Under parity the row matters as much as the piece. A write that covers a whole
+  Under parity the size of the row matters as much as the size of the piece. A write that covers a whole
   stripe, *C × (N − P)* of data aligned to the stripe's start, lets the
   [[raid-engine]] compute the parity from what it is writing; a smaller write must
   read what it does not have first, the read-modify-write behind the
-  [[write-penalty]]. This is why the layer above can be told the numbers: the ext4
-  file system takes the chunk as its `stride` ("the number of blocks read or
+  [[write-penalty]]. This is why the file system above the array can be given the
+  two numbers: the ext4 file system takes the chunk as its `stride` ("the number of blocks read or
   written to disk before moving to the next disk, which is sometimes referred to as
   the chunk size") and the row as its `stripe_width` (typically "stride-size × N,
   where N is the number of data-bearing disks"), and uses them to place its data so
@@ -76,10 +77,15 @@ long: |
 related: [striping, segmentation, parity, write-penalty, raid-engine]
 
 sources:
-  - "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'; 'RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB'"
-  - "md(4) man page — RAID0: 'configured at creation with a Chunk Size which must be at least 4 kibibytes'; chunks assigned to devices in turn"
-  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping — strip size, stripe size and stripe width, quoted; strips 'from a minimum of 64 KB to 1 MB'"
-  - "mke2fs(8) man page, -E stride= and stripe_width= — quoted"
-  - "src/engine/layout.js — the grids the sandbox draws are one chunk per cell, one stripe per row"
+  - text: "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'; 'RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+  - text: "md(4) man page — RAID0: 'configured at creation with a Chunk Size which must be at least 4 kibibytes'; chunks assigned to devices in turn"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping — strip size, stripe size and stripe width, quoted; strips 'from a minimum of 64 KB to 1 MB'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667459.html
+  - text: "mke2fs(8) man page, -E stride= and stripe_width= — quoted"
+    url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
+  - text: "src/engine/layout.js — the grids the sandbox draws are one chunk per cell, one stripe per row"
+    url: ../src/engine/layout.js
 
 status: written

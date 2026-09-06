@@ -17,7 +17,7 @@ long: |
   A physical disk is one device: a spinning hard drive or a solid-state drive, with
   a capacity, an interface, and an address space of its own, sectors numbered from
   0 to the last (the [[segmentation]] entry says how an array maps its sectors onto
-  these). It is the atom of everything on these pages: a [[drive-group]] gathers
+  these). It is the basic unit of everything on these pages: a [[drive-group]] gathers
   disks, a [[span]] lays them out, a [[virtual-drive]] is what they are presented as.
 
   ## The interface is part of the path
@@ -46,8 +46,11 @@ long: |
 related: [drive-group, span, virtual-drive, backplane, hba, raid-engine, segmentation]
 
 sources:
-  - "data/intro.yaml storageLayers.physical-disks — the text this entry migrates"
-  - "data/components/backplane.yaml, hba.yaml, pcie-bus.yaml — the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them"
-  - "md(4) man page — RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each"
+  - text: "data/intro.yaml storageLayers.physical-disks — the text this entry migrates"
+    url: ../data/intro.yaml
+  - text: "data/components/backplane.yaml, hba.yaml, pcie-bus.yaml — the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them"
+    url: ../data/components/backplane.yaml
+  - text: "md(4) man page — RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
 
 status: to-verify

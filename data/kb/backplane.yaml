@@ -20,7 +20,8 @@ long: |
   each disk's signal lines to a connector the [[hba|HBA]] or the RAID controller
   cables to, and to bring power and the bay's status lights.
 
-  Two kinds exist, and the difference is whether anything on the board thinks:
+  Two kinds exist, and the difference is whether anything on the board processes
+  commands:
 
   - **Passive.** Connectors and traces, one lane per bay. A cable from the
     controller carries four lanes, so a passive backplane serves four bays per
@@ -28,7 +29,7 @@ long: |
   - **Active.** The board carries a SAS *expander*, a switch between the
     controller's lanes and the bays. One four-lane cable then reaches every disk
     in the cage, and the expander routes each command to its target. The
-    expander is silicon that forwards; it is not a [[raid-engine]], and it keeps
+    expander only forwards commands; it is not a [[raid-engine]], and it keeps
     no data.
 
   NVMe disks are the case that steps around it: they speak PCIe, and in the
@@ -44,8 +45,11 @@ long: |
 related: [physical-disks, hba, raid-engine, span]
 
 sources:
-  - "data/components/backplane.yaml — 'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
-  - "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections — the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
-  - "US patent 7,275,935 (Universal backplane connection) — 'Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality'; 'passive backplanes contain almost no computing circuitry' (secondary)"
+  - text: "data/components/backplane.yaml — 'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
+    url: ../data/components/backplane.yaml
+  - text: "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections — the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
+    url: https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72
+  - text: "US patent 7,275,935 (Universal backplane connection) — 'Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality'; 'passive backplanes contain almost no computing circuitry' (secondary)"
+    url: https://patents.google.com/patent/US7275935
 
 status: to-verify

@@ -59,8 +59,8 @@ long: |
 
   ## Nesting: where the failures land
 
-  Apply the rule bottom-up, and the spans' own tolerance becomes the members'
-  cost. A RAID 50 of two RAID 5 spans:
+  Apply the rule from the bottom up: first compute F for each span, then use those
+  values as the members' F one level above. A RAID 50 of two RAID 5 spans:
 
   ```text
   each span     F = 2           (parity1 over disks: two failures kill it)
@@ -73,9 +73,9 @@ long: |
   span"; but the guarantee is one, because the adversary puts the second failure
   in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes
   three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The
-  [[span]] entry draws the RAID 50 case.
+  [[span]] entry describes the RAID 50 case.
 
-  ## While it is spent
+  ## While the tolerance is used up
 
   After a failure the array runs *degraded*. Nothing is lost yet, but the
   tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a
@@ -90,8 +90,8 @@ long: |
   ```
 
   with *G* data disks and *C* check disks in the group. The shorter the repair,
-  the safer the array: this is the [[rebuild]], and it is where the time a disk
-  takes to be rewritten becomes a reliability number.
+  the safer the array: this is the [[rebuild]], and this formula is why the time a
+  rebuild takes is a reliability number, not only a performance one.
 
   ## What it does not count
 
@@ -102,10 +102,15 @@ long: |
 related: [redundancy, mirroring, parity, capacity, span, rebuild, raid-is-not-a-backup]
 
 sources:
-  - "Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as 'the mean time to repair'"
-  - "md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
-  - "src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
-  - "data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
-  - "data/intro.yaml parameters.fault-tolerance — the text this entry supersedes"
+  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as 'the mean time to repair'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - text: "md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
+    url: ../src/engine/model.js
+  - text: "data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
+    url: ../data/raid-levels/raid5.yaml
+  - text: "data/intro.yaml parameters.fault-tolerance — the text this entry supersedes"
+    url: ../data/intro.yaml
 
 status: written

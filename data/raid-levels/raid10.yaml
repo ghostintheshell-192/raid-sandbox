@@ -91,16 +91,16 @@ kb:
     resulting collection of datablocks are distributed over multiple drives".
     Where the second copy lands is the placement [[algorithm]], *near*, *far* or
     *offset*; near, the default, puts the two copies side by side in the same
-    stripe, which is the arrangement a hardware controller reaches by a different
-    road, spanning mirror pairs into a stripe. That nested form, RAID 1+0, has
-    its own page; on the near layout the two put every block in the same place,
-    and the difference is who built it and what else it can do. RAID 0+1, a
-    mirror of two stripes, is the same disks in a worse order, and its page says
-    why.
+    stripe, which is the same arrangement a hardware controller reaches in a
+    different way, by striping over mirror pairs. That nested form, RAID 1+0, has
+    its own page; with the near layout the two put every block in the same place,
+    and the difference is which engine built it and which other layouts it can
+    offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse
+    arrangement, and its page says why.
 
     ## What it buys
 
-    Speed, on both counts. A large read spans the stripe, at the
+    Speed, of both kinds. A large read spans the stripe, at the
     combined bandwidth of all *N* disks; a small read has two disks to choose
     from; and a write costs two operations, one per copy, with no parity to read
     or compute ([[write-penalty]]). Among the redundant levels it has the best
@@ -113,17 +113,18 @@ kb:
     the same as a two-way mirror, whatever the count. And its
     [[fault-tolerance]] needs the word *guaranteed*: the array survives one
     failure for certain, and a second only if it lands on a disk that does not
-    hold the other copy of the same chunks. On four disks near-2 that is a coin
-    toss; on a controller's RAID 1+0 it is "one per pair". The number to plan on
-    is one.
+    hold the other copy of the same chunks. On four disks with two copies, the
+    second failure lands on the partner of the first in one case out of three; on
+    a controller's RAID 1+0 the same rule reads "one failure per pair". The number
+    to plan on is one.
 
     ## The disk count
 
     An even count of disks is the natural shape, one copy per disk per stripe.
     `md` accepts an odd count too, with the copies wrapping across stripes; that
-    array is what the industry names RAID 1E, and it has its own page. Two disks
-    is where `md` stops making the distinction: two copies on two devices is a
-    mirror, and the array is a RAID 1 by another name.
+    array is what the industry names RAID 1E, and it has its own page. With two
+    disks the distinction disappears: two copies on two devices is a mirror, and
+    the array is a RAID 1 by another name.
 
   example: { disks: 4, sizeGB: 2, protocol: SATA, algorithm: near }
 

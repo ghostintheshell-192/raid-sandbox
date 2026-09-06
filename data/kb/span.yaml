@@ -30,7 +30,7 @@ long: |
   two failures landing in the same span. The same reading gives RAID 10 (spans of
   mirrors, striped) and RAID 60 (spans of RAID 6, striped).
 
-  ## The word in the field
+  ## The word as vendors use it
 
   The vendor usage is Broadcom's: "disk spanning allows multiple drives to function
   like one large drive", the spanned levels are "RAID 00, RAID 10, RAID 50, and
@@ -38,7 +38,7 @@ long: |
   Span 1, Span 2, and so on". A RAID 10 there is built "by spanning two or more
   contiguous RAID 1 virtual drives", and can hold up to eight spans. So in a
   controller's vocabulary a span is one leg of a nested level, and a flat level
-  (RAID 5 on four disks) is a drive group with one layout and no spans to speak of.
+  (RAID 5 on four disks) is a drive group with one layout and no separate spans.
   These pages use the word for both: the flat case is a drive group with a single
   span.
 
@@ -49,9 +49,13 @@ long: |
 related: [drive-group, virtual-drive, segmentation, redundancy, fault-tolerance]
 
 sources:
-  - "data/intro.yaml storageLayers.span — the text this entry migrates"
-  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning — 'Disk spanning allows multiple drives to function like one large drive'; spanned drive groups: 'RAID 00, RAID 10, RAID 50, and RAID 60'; 'the span numbering starts from Span 0, Span 1, Span 2, and so on'"
-  - "Broadcom, same guide, RAID 10 Drive Groups — 'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'; a maximum of 8 spans"
-  - "src/engine/model.js — an array's members are disks or arrays: the nesting as the sandbox computes it"
+  - text: "data/intro.yaml storageLayers.span — the text this entry migrates"
+    url: ../data/intro.yaml
+  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning — 'Disk spanning allows multiple drives to function like one large drive'; spanned drive groups: 'RAID 00, RAID 10, RAID 50, and RAID 60'; 'the span numbering starts from Span 0, Span 1, Span 2, and so on'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667525.html
+  - text: "Broadcom, same guide, RAID 10 Drive Groups — 'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'; a maximum of 8 spans"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
+  - text: "src/engine/model.js — an array's members are disks or arrays: the nesting as the sandbox computes it"
+    url: ../src/engine/model.js
 
 status: to-verify

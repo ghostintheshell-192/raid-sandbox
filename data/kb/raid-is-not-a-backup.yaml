@@ -18,7 +18,7 @@ long: |
   by keeping enough extra information on the other disks that the array keeps
   serving, and a [[rebuild]] makes it whole again. This is *availability*: the
   system stays up through a hardware failure. It is worth a great deal, and it
-  is all it is.
+  is the only thing redundancy provides.
 
   ## What it does not answer
 
@@ -26,13 +26,13 @@ long: |
     document, a database corrupted by a bug, a disk encrypted by ransomware:
     each is a write, and the [[raid-engine]] does with it what it does with every
     write, copies it to every mirror and folds it into every parity block, at
-    once. There is no earlier version anywhere in the array. Redundancy is
-    faithful, and faithfulness is the problem.
+    once. There is no earlier version anywhere in the array. Redundancy
+    reproduces every write faithfully, and here that faithfulness is the problem.
   - **The whole array at once.** The disks share a controller, a power supply,
     a chassis, a room. A controller that fails, a power surge, a flood, a theft
     take every member together, and the redundancy among them is irrelevant.
     An array is one failure domain.
-  - **The second failure.** Fault tolerance is a count, and the count is spent
+  - **The second failure.** Fault tolerance is a count, and the count is used up
     by the first failure until the rebuild completes ([[fault-tolerance]]). A
     second disk lost in that window, or one unreadable sector on a survivor,
     ends the array; the [[write-hole]] can end it quietly.
@@ -52,7 +52,7 @@ long: |
   ```
 
   A mirrored disk is not a second copy in that sense: it is the same copy,
-  written twice, in the same place, by the same hand.
+  written twice, in the same place, by the same engine.
 
   ## The two together
 
@@ -60,13 +60,16 @@ long: |
   array keeps a service running while a disk is replaced, so that the failure is
   an event and not an outage. A backup is what the service is restored from when
   the array, or what was written to it, is gone. A system that needs both has
-  both, and neither excuses the other.
+  both, and neither replaces the other.
 
 related: [redundancy, fault-tolerance, rebuild, write-hole, raid-engine, mirroring]
 
 sources:
-  - "Paul Ruggiero, Matthew A. Heckathorn — Data Backup Options, US-CERT / Carnegie Mellon University, 2012 — the 3-2-1 rule, quoted; 'Saving just one backup file may not be enough to safeguard your information'"
-  - "md(4) man page — RAID1: 'Changes are written to all devices in parallel' (the faithfulness of a mirror)"
-  - "data/kb/redundancy.yaml, fault-tolerance.yaml, write-hole.yaml — the mechanisms this entry relies on, with their own sources"
+  - text: "Paul Ruggiero, Matthew A. Heckathorn — Data Backup Options, US-CERT / Carnegie Mellon University, 2012 — the 3-2-1 rule, quoted; 'Saving just one backup file may not be enough to safeguard your information'"
+    url: https://www.cisa.gov/sites/default/files/publications/data_backup_options.pdf
+  - text: "md(4) man page — RAID1: 'Changes are written to all devices in parallel' (the faithfulness of a mirror)"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - text: "data/kb/redundancy.yaml, fault-tolerance.yaml, write-hole.yaml — the mechanisms this entry relies on, with their own sources"
+    url: ../data/kb/redundancy.yaml
 
 status: written
