@@ -587,6 +587,11 @@ function chrome({ file, title, description, fullDescription = description, headi
   <script type="application/ld+json">
 ${JSON.stringify(ld, null, 2).split('\n').map((l) => '  ' + l).join('\n')}
   </script>
+
+  <!-- Vercel Web Analytics: https://vercel.com/docs/analytics/quickstart (HTML) —
+       cookieless, no consent needed, served from this site's own origin. -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="kb-body kb-body--${kind}">
 
