@@ -160,11 +160,13 @@ test('RAID 5 @2: box 1 says RAID 5, box 2 says RAID 1, the numbers are a mirror\
   eq(a.diskCount, 2);
 });
 
-test('RAID 6 @3: box 2 is a three-way mirror and the write penalty drops from 6 to 2', () => {
+// Three copies, three writes: with one data block per stripe the kernel writes
+// D, P and Q and reads nothing (rcw = 0), which is what a three-way mirror costs.
+test('RAID 6 @3: box 2 is a three-way mirror and the write penalty drops from 6 to 3', () => {
   const a = M.analyze(raid6(3), levels);
   eq(a.level, 'RAID 6');
   eq(a.runs.level, 'RAID 1');
-  eq(a.performance.writePenalty, 2);
+  eq(a.performance.writePenalty, 3);
   eq(a.faultTolerance, 2);
   eq(a.capacityGB, 1000);
 });

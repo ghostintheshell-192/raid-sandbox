@@ -58,7 +58,6 @@ of issues, git history is a better record than a second directory.
 
 **Low Priority:**
 - `automation-not-checked-on-windows.md` - The hooks and dev scripts are authored and tested only on the Linux workstation
-- `mirror-of-stripes-write-parallelism.md` - A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order
 - `physical-layer-canvas-has-no-touch-picker.md` - The Physical Layer canvas has no click-to-build picker — drag is its only path
 

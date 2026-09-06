@@ -233,12 +233,15 @@ Like capacity and fault-tolerance, performance **derives from the two axes**:
 
 | Quantity | Comes from | Values |
 |----------|-----------|--------|
-| **Write penalty** `W` | `redundancy` | none=1 · mirror=2 · parity1=4 · parity2=6 |
-| **Parallelism** `N` | `segmentation` | striped → many disks in parallel · linear → 1 at a time |
+| **Write penalty** `W` | `redundancy` | none=1 · mirror=copies (2 for a pair) · parity1=4 · parity2=6 |
+| **Parallelism** `N` | `segmentation` | striped → many disks in parallel · linear → 1 at a time · mirror → one copy's width |
 
-`W` is the number of physical I/O ops per logical write: mirror writes each copy (2); parity1 does
-read-modify-write — read old data + old parity, write new data + new parity (4); parity2 adds the
-second parity Q (6). These values are the storage-design canon.
+`W` is the number of physical I/O ops per logical write: mirror writes each copy (2 for a pair, 3
+for a three-way mirror; a mirror of arrays pays every copy's own W, so a mirror of two RAID 5 spans
+is 2 × 4); parity1 does read-modify-write — read old data + old parity, write new data + new parity
+(4); parity2 adds the second parity Q (6). These values are the storage-design canon. *(Update
+2026-09-06: the mirror entry was the constant 2 until the knowledge base stated the rule as "n
+copies, n writes" — `tech-debt/mirror-of-stripes-write-parallelism.md`, resolved.)*
 
 The canonical **functional IOPS** formula:
 
