@@ -29,7 +29,6 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const M = require('../src/engine/model.js');
 const { evaluate } = require('../.development/scripts/lib/capacity-template.js');
-const { sequentialPenalty } = require('../.development/scripts/lib/write-penalty.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
 const dir = path.join(__dirname, '..', 'data', 'raid-levels');
@@ -112,7 +111,7 @@ for (const id of pages) {
   test(`${id}: reference.writePenalty.sequential matches the engine`, () => {
     const ref = (doc.reference || {}).writePenalty;
     assert(ref && typeof ref.sequential === 'number', `${id}: reference.writePenalty.sequential is missing`);
-    eq(sequentialPenalty(M.performance(exampleTree(doc)), `${id}.yaml`), ref.sequential);
+    eq(M.performance(exampleTree(doc)).writePenaltySequential, ref.sequential);
   });
 }
 

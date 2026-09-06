@@ -58,9 +58,13 @@
 
   <section class="kb-section" id="what-it-is">
     <p class="kb-lede">Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
-    <p>RAID 10 is the pair <em>striped + mirror</em>: the data is cut into chunks and dealt across the members (<a href="concepts.html#striping">Striping</a>), and each chunk is stored twice, on two different disks (<a href="concepts.html#mirroring">Mirroring</a>). In Linux <code>md</code> it is one level, not a nesting: &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. Where the second copy lands is the placement <a href="concepts.html#algorithm">Placement algorithm</a>, <em>near</em>, <em>far</em> or <em>offset</em>; near, the default, puts the two copies side by side in the same stripe, which is the arrangement a hardware controller reaches by a different road, spanning mirror pairs into a stripe. That nested form, RAID 1+0, has its own page; on the near layout the two put every block in the same place, and the difference is who built it and what else it can do. RAID 0+1, a mirror of two stripes, is the same disks in a worse order, and its page says why.</p>
-    <p>What it buys is speed on both counts. A large read spans the stripe, at the combined bandwidth of all <em>N</em> disks; a small read has two disks to choose from; and a write costs two operations, one per copy, with no parity to read or compute (<a href="concepts.html#write-penalty">Write penalty</a>). Among the redundant levels it has the best write numbers, which is why databases and virtual machine hosts run on it (<a href="concepts.html#performance">Performance</a>).</p>
-    <p>What it pays is half the space: the <a href="concepts.html#capacity">Capacity</a> is <em>N ÷ 2</em> disks&#39; worth, the same as a two-way mirror, whatever the count. And its <a href="concepts.html#fault-tolerance">Fault tolerance</a> needs the word <em>guaranteed</em>: the array survives one failure for certain, and a second only if it lands on a disk that does not hold the other copy of the same chunks. On four disks near-2 that is a coin toss; on a controller&#39;s RAID 1+0 it is &quot;one per pair&quot;. The number to plan on is one.</p>
+    <h3>What it is</h3>
+    <p>RAID 10 is the pair <em>striped + mirror</em>: the data is cut into chunks and dealt across the members (<a href="concepts.html#striping">striping</a>), and each chunk is stored twice, on two different disks (<a href="concepts.html#mirroring">mirroring</a>). In Linux <code>md</code> it is one level, not a nesting: &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. Where the second copy lands is the placement <a href="concepts.html#algorithm">algorithm</a>, <em>near</em>, <em>far</em> or <em>offset</em>; near, the default, puts the two copies side by side in the same stripe, which is the arrangement a hardware controller reaches by a different road, spanning mirror pairs into a stripe. That nested form, RAID 1+0, has its own page; on the near layout the two put every block in the same place, and the difference is who built it and what else it can do. RAID 0+1, a mirror of two stripes, is the same disks in a worse order, and its page says why.</p>
+    <h3>What it buys</h3>
+    <p>Speed, on both counts. A large read spans the stripe, at the combined bandwidth of all <em>N</em> disks; a small read has two disks to choose from; and a write costs two operations, one per copy, with no parity to read or compute (<a href="concepts.html#write-penalty">write penalty</a>). Among the redundant levels it has the best write numbers, which is why databases and virtual machine hosts run on it (<a href="concepts.html#performance">performance</a>).</p>
+    <h3>What it pays</h3>
+    <p>Half the space: the <a href="concepts.html#capacity">capacity</a> is <em>N ÷ 2</em> disks&#39; worth, the same as a two-way mirror, whatever the count. And its <a href="concepts.html#fault-tolerance">fault tolerance</a> needs the word <em>guaranteed</em>: the array survives one failure for certain, and a second only if it lands on a disk that does not hold the other copy of the same chunks. On four disks near-2 that is a coin toss; on a controller&#39;s RAID 1+0 it is &quot;one per pair&quot;. The number to plan on is one.</p>
+    <h3>The disk count</h3>
     <p>An even count of disks is the natural shape, one copy per disk per stripe. <code>md</code> accepts an odd count too, with the copies wrapping across stripes; that array is what the industry names RAID 1E, and it has its own page. Two disks is where <code>md</code> stops making the distinction: two copies on two devices is a mirror, and the array is a RAID 1 by another name.</p>
   </section>
   <section class="kb-section" id="segmentation">
@@ -117,9 +121,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
       <dd>Windows operating system managing RAID in software via Storage Spaces (Windows 8+/Server 2012+) or legacy Disk Management (dynamic volumes). Storage Spaces supports mirroring, striping, and parity spaces with optional journaling for crash consistency.</dd>
     </dl>
     <ul class="kb-notes">
-      <li>RAID 10 uses the &quot;far&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
-      <li>RAID 10 uses the &quot;near&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
-      <li>RAID 10 uses the &quot;offset&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
+      <li>RAID 10 uses the &quot;far / near / offset&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
     </ul>
   </section>
   <section class="kb-section" id="below-the-minimum">
@@ -139,7 +141,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
     <ul>
       <li>Best write performance among redundant RAID levels (mirror penalty only, no RMW)</li>
       <li>Full read parallelism across all N disks</li>
-      <li>near/far/offset layouts available under Linux mdadm (software RAID only — §6 constraint)</li>
+      <li>near/far/offset layouts available under Linux mdadm (software RAID only)</li>
     </ul>
     <h3>Costs</h3>
     <ul>
@@ -157,7 +159,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
       <li>Large storage on a budget (50% efficiency)</li>
       <li>Environments where near/far/offset layouts are needed on hardware RAID</li>
     </ul>
-    <p class="kb-note">RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build). The flat form (this file) is mdadm&#39;s own RAID 10 level, which supports the near/far/offset layout algorithms — none of which decompose into mirror pairs. Nested RAID 1+0 is recognized separately (see raid1plus0.yaml).</p>
+    <p class="kb-note">RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build). The flat form (this file) is mdadm&#39;s own RAID 10 level, which supports the near/far/offset layout algorithms — none of which decompose into mirror pairs. Nested RAID 1+0 is recognized separately, as its own level.</p>
   </section>
   <section class="kb-section" id="try-it">
     <h2>Try it</h2>

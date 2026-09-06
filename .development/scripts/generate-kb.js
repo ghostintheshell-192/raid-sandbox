@@ -44,7 +44,6 @@ const Levels = require(path.join(ROOT, 'src', 'engine', 'levels.js'));
 const Layout = require(path.join(ROOT, 'src', 'engine', 'layout.js'));
 const BuildDoc = require(path.join(ROOT, 'src', 'sandbox', 'build-document.js'));
 const { render, escapeHtml } = require('./lib/kb-markdown.js');
-const { sequentialPenalty } = require('./lib/write-penalty.js');
 
 const fail = (msg) => { throw new Error(msg); };
 
@@ -77,7 +76,7 @@ const SECTION_CONCEPT = {
 // (model.js SEGMENTATIONS / REDUNDANCIES), not a fact about any level: the
 // level says which pair it is, this table says how the pair is spelled.
 const SEGMENTATION_WORDS = { striped: 'striped', linear: 'linear' };
-const REDUNDANCY_WORDS   = { none: 'no redundancy', mirror: 'mirror', parity1: 'single parity', parity2: 'dual parity' };
+const REDUNDANCY_WORDS   = { none: 'no redundancy', mirror: 'mirror', parity1: 'single parity', parity2: 'double parity' };
 
 const SITE   = 'https://raid-sandbox.dev';
 const PARITY = ['parity1', 'parity2'];
@@ -281,7 +280,7 @@ function workedText(def, node) {
     capacity:               Model.capacityGB(node),
     faultTolerance:         Model.faultTolerance(node),
     writePenaltyRandom:     perf.writePenalty,
-    writePenaltySequential: sequentialPenalty(perf, `${def.where}: kb.worked`),
+    writePenaltySequential: perf.writePenaltySequential,
   };
 
   return WORKED_KEYS.map((key) =>
@@ -325,7 +324,9 @@ function whereItRuns(def, components, algorithms) {
   const engines = components.filter((c) => provides(c, 'raid-engine'));
   if (!engines.length) fail('data/components: no component provides raid-engine');
 
-  const restricted = [];
+  // One line per owning engine, its layouts joined: the validator fills this
+  // sentence for one algorithm at a time, a page states the restriction once.
+  const byOwner = new Map();
   for (const algo of algorithmsFor(def, algorithms)) {
     const cap = LAYOUT_CAP + algoKey(algo.id);
     const owner = engines.find((c) => provides(c, cap));
@@ -339,14 +340,15 @@ function whereItRuns(def, components, algorithms) {
     const without = engines.filter((c) => !provides(c, cap) && c.verdict && c.verdict.raidType !== ownerType);
     const types = [...new Set(without.map((c) => c.verdict.raidType))].sort();
     if (!types.length) fail(`${owner.where}: ${cap} is offered by every engine — the restriction has no other side`);
-    restricted.push({
-      owner,
-      algorithm: algo,
-      reason: fill(plain(owner.layouts.reason),
-                   { label: def.name, algorithm: algoKey(algo.id), raidType: joinOr(types) },
-                   `${owner.where}: layouts.reason`),
-    });
+    if (!byOwner.has(owner.id)) byOwner.set(owner.id, { owner, algorithms: [], types });
+    byOwner.get(owner.id).algorithms.push(algoKey(algo.id));
   }
+  const restricted = [...byOwner.values()].map(({ owner, algorithms: names, types }) => ({
+    owner,
+    reason: fill(plain(owner.layouts.reason),
+                 { label: def.name, algorithm: names.join(' / '), raidType: joinOr(types) },
+                 `${owner.where}: layouts.reason`),
+  }));
 
   const writeHoles = !PARITY.includes(def.shape.redundancy) ? [] :
     engines.filter((c) => !provides(c, 'power-loss-protection'))
@@ -366,8 +368,10 @@ const joinOr = (xs) => xs.length < 2 ? (xs[0] || '') : `${xs.slice(0, -1).join('
 // data. A concept lives on the concepts page at its own anchor; a level lives on
 // its own page. An id that is neither is a broken reference and stops the build.
 // The lookup is case-insensitive because the prose capitalises a reference that
-// opens a sentence ([[Redundancy]]); the link text is the entry's own `name`,
-// so the page never invents a wording for it.
+// opens a sentence ([[Redundancy]]). The link TEXT is the reference as the author
+// typed it, hyphens read as spaces — "chunk", "write penalty", "Redundancy" — so
+// a link sits in its sentence; [[id|text]] says it another way. The entry's own
+// `name` is used only where the link stands alone (related lists, the map).
 // ---------------------------------------------------------------------------
 
 function target(id, ctx) {
@@ -382,7 +386,7 @@ function makeResolver(ctx, where) {
   return (id, text) => {
     const hit = target(id, ctx);
     if (!hit) fail(`${where}: [[${id}]] names no knowledge-base entry and no level page`);
-    return `<a href="${hit.href}">${escapeHtml(text || hit.name)}</a>`;
+    return `<a href="${hit.href}">${escapeHtml(text || String(id).replace(/-/g, ' '))}</a>`;
   };
 }
 

@@ -318,8 +318,9 @@
 
   function performance(node) {
     return {
-      writePenalty: writePenalty(node, 'random'),
-      parallelism:  writeParallelism(node),
+      writePenalty:           writePenalty(node, 'random'),
+      writePenaltySequential: writePenalty(node, 'sequential'),
+      parallelism:            writeParallelism(node),
       random:       characterize(node, 'random'),
       sequential:   characterize(node, 'sequential'),
     };

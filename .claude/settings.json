@@ -26,6 +26,10 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/.development/scripts/update-tech-debt-index.py\" >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.development/scripts/generate-kb.js\" >/dev/null 2>&1 || true"
           }
         ]
       }
@@ -36,6 +40,10 @@
           {
             "type": "command",
             "command": "bash -c 'cat | python3 \"$(git rev-parse --show-toplevel)/.development/scripts/session-archive.py\"' || true"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.development/scripts/update-tech-debt-index.py\" >/dev/null 2>&1 || true"
           }
         ]
       }
