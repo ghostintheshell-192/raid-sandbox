@@ -33,6 +33,7 @@ collapsesTo:
 reference:
   faultToleranceAtMinimum: 2
   capacityFormula: "(N − 2) × disk size"
+  capacityTemplate: "(N - 2) * size"  # evaluable, see raid5.yaml
   writePenalty:
     random: 6
     sequential: 1
@@ -52,7 +53,7 @@ description: >
 
 pros:
   - Survives any two simultaneous disk failures
-  - Safe during rebuild: a second failure during rebuild does not cause data loss
+  - "Safe during rebuild: a second failure during rebuild does not cause data loss"
   - Essential for large arrays where rebuild window risk is significant
 
 cons:
@@ -67,3 +68,73 @@ useCases:
 notFor:
   - Small arrays (two disks' worth of overhead hurts efficiency)
   - High-frequency random write workloads
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/planned/knowledge-base.md §5.2). See raid5.yaml for what
+# each field is. Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  short: >
+    RAID 5 with a second parity block per stripe, computed a different way, so
+    that any two disks can fail at once. It keeps all but two disks' worth of
+    space, survives a second failure during a rebuild, and pays for each small
+    write with six disk operations.
+
+  long: |
+    ## What it is
+
+    RAID 6 is the pair *striped + double parity*: the data is dealt across the
+    members ([[striping]]), and every stripe carries two check blocks, *P*, the
+    XOR of the data as in RAID 5, and *Q*, a Reed-Solomon code over the same
+    blocks ([[parity]]). Two blocks give two equations, and two equations recover
+    two unknowns: "RAID-6 supports losing any two drives", in the words of the
+    paper behind the Linux implementation. Which disks hold *P* and *Q* in each
+    stripe is the placement [[algorithm]], the same four names as RAID 5.
+
+    ## What it buys
+
+    The second failure, and the second failure is not a rare
+    event but the ordinary risk of a [[rebuild]]. A RAID 5 that has lost a disk
+    has no tolerance left while the replacement is being written, and the
+    writing takes as long as the disk is large; the 1988 paper's formula has that
+    repair time in its denominator ([[fault-tolerance]]). RAID 6 goes through the
+    same rebuild with one failure still tolerated, and an unreadable sector found
+    on a survivor during it is recomputed instead of lost. That is the whole
+    argument for the level, and the argument gets stronger as disks get larger.
+
+    ## What it pays
+
+    Space and writes. The [[capacity]] is all but two disks'
+    worth, so on four disks it keeps half, the same as a mirror, and only from
+    six disks up does it beat RAID 10 on space. A small write must read the old
+    data, the old *P* and the old *Q*, and write all three back: six operations
+    for one ([[write-penalty]]), the highest of any standard level. A write that
+    covers a whole stripe pays none of the reads, as in RAID 5. And *Q* is
+    arithmetic in a Galois field rather than a plain XOR, so computing it costs
+    more processor time, which is felt on a software engine more than on a
+    controller with an accelerator for it ([[raid-engine]]).
+
+    ## The minimum
+
+    Four disks is the minimum, and here the kernel enforces it: `raid5.c` refuses
+    to start a RAID 6 with fewer, "not enough configured devices (minimum 4)".
+    With three the array would be a three-way mirror under another name, *P* and *Q*
+    both equal to the single data block, which is why nothing is lost by
+    refusing it.
+
+  example: { disks: 4, sizeGB: 2, protocol: SATA, algorithm: left-symmetric }
+
+  worked:
+    capacity: |
+      (N − 2) × disk size
+      N = {N} disks of {size} TB → ({N} − 2) × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      double parity: three members gone is one too many → 3 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      random: read old data, old P and old Q, write all three → {writePenaltyRandom} I/Os
+      sequential: a full stripe computes P and Q once → {writePenaltySequential} I/O
+
+  related: [striping, parity, algorithm, rebuild, fault-tolerance, capacity, write-penalty, raid-engine]
+  confusedWith: [raid5, raid60, raid10]

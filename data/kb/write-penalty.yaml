@@ -1,0 +1,108 @@
+# data/kb/write-penalty.yaml — the third number the redundancy axis carries: what
+# one write costs in disk operations. Writing rules: see segmentation.yaml header.
+
+id: write-penalty
+kind: concept
+name: Write penalty
+short: >
+  How many disk operations one logical write costs. A plain write is one; a mirror
+  writes every copy; a small parity write must read the old data and the old parity
+  before writing the new ones, four operations for single parity and six for
+  double. A write that covers a whole stripe pays no read.
+
+long: |
+  ## The table
+
+  Every write the operating system sends to an array becomes some number of
+  operations on the members. That number, *W*, depends on the [[redundancy]]:
+
+  ```text
+                      small (random) write     full-stripe (sequential) write
+  none                 1                        1
+  mirror, n copies     n                        n          every copy is written
+  parity1  (RAID 5)    4                        1          see below
+  parity2  (RAID 6)    6                        1
+  ```
+
+  For a mirror the cost is simple: two copies, two writes, and nothing sequential
+  changes it. For parity the cost depends on how much of the stripe the write
+  covers, which is why there are two columns.
+
+  ## Where 4 comes from
+
+  A parity block must stay equal to the XOR of its stripe's data ([[parity]]).
+  Change one data block and the parity changes; the 1988 RAID paper gives the rule
+  and counts the operations:
+
+  ```text
+  new parity = (old data ⊕ new data) ⊕ old parity
+
+  1. read  old data        2. read  old parity
+  3. write new data        4. write new parity
+  ```
+
+  "A small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes."
+  Two of the four are reads the write would not otherwise need, and the two writes
+  must wait for them. With two parities, RAID 6, the old *Q* is read and the new
+  *Q* written as well: six.
+
+  ## Two ways to update, and when the penalty vanishes
+
+  The rule above is a *read-modify-write*: it touches only the block being
+  written and the parity. The other way is a *reconstruct-write*: read every data
+  block the write does *not* touch, XOR them with the new data, and write data and
+  parity. Which is cheaper depends on how much of the stripe is being written.
+  `raid5.c` does the count for every stripe it dirties: `rmw`, the blocks it would
+  have to read for a read-modify-write, and `rcw`, the blocks it would have to read
+  for a reconstruct-write, and takes the smaller.
+
+  A write that covers the whole stripe has nothing left to read: `rcw` is zero,
+  the parity is computed from the data in hand, and the cost is one write per
+  member, one of them the parity. This is the second column of the table, and it
+  is what makes RAID 5 and RAID 6 fast for large sequential writes and slow for
+  small scattered ones. Whether a workload's writes fill stripes depends on the
+  [[chunk]] size and on the file system placing its data on stripe boundaries,
+  which is what ext4's `stripe_width` option exists for: "to prevent
+  read-modify-write of the parity in a RAID stripe".
+
+  One consequence of this count matters for the smallest arrays. A RAID 5 of two disks has one
+  data block per stripe: any write to it covers the whole stripe, `rcw` is always
+  zero, and the array writes at a mirror's cost, two operations. The kernel
+  relies on that identity in the other direction: to grow a mirror into a
+  RAID 5 it first relabels the two-disk RAID 1 as a two-disk RAID 5 without
+  moving a byte, then adds disks.
+
+  ## What the number does to throughput
+
+  The penalty divides the array's write rate. With *N* disks each able to do a
+  certain number of operations per second, and *W* operations per write:
+
+  ```text
+  writes per second  ≈  N × (operations per second of one disk) ÷ W
+  ```
+
+  On four disks, RAID 0 writes about four disks' worth, RAID 10 two, RAID 5 one for
+  small writes and nearly four for full stripes, RAID 6 two thirds of one for small
+  writes. Reads pay no penalty. The [[performance]] entry puts the two together.
+
+related: [redundancy, parity, mirroring, chunk, performance, write-hole]
+
+sources:
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "§10 — 'new parity = (old data xor new data) xor old parity'; 'a small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - ref: "drivers/md/raid5.c handle_stripe_dirtying()"
+    note: "rmw++ for each block to read for a read-modify-write, rcw++ for each block to read for a reconstruct-write; 'prefer read-modify-write, but need to get some data' when rmw < rcw; the reconstruct branch otherwise"
+    url: https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c
+  - "specs/implemented/degenerate-levels.md §11.1 — the two-disk RAID 5: rcw = 0 on every write, two operations, a mirror's cost; drivers/md/raid5.c raid5_takeover_raid1() converts a two-device RAID 1 to RAID 5 in place"
+  - ref: "mke2fs(8) man page, -E stripe_width"
+    note: "'This allows the block allocator to prevent read-modify-write of the parity in a RAID stripe if possible when the data is written'"
+    url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
+  - ref: "src/engine/model.js writePenalty()"
+    note: "random: none 1, mirror = the copy count, parity1 4, parity2 6; sequential: parity 1, mirror unchanged; the rule the sandbox computes with (2026-09-06)"
+    url: ../src/engine/model.js
+  - ref: "data/raid-levels/raid5.yaml, raid6.yaml reference.writePenalty"
+    note: "the numbers per level"
+    url: ../data/raid-levels/raid5.yaml
+
+status: written

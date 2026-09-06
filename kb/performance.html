@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance — RAID Sandbox knowledge base</title>
+  <meta name="description" content="How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs,…">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/performance.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Performance",
+    "description": "How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs,…",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/performance.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Performance</span></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Performance</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</p>
+    <h3 id="two-quantities">Two quantities</h3>
+    <p>A single disk is the unit: it serves one request at a time, at its own rate. What an array changes is expressed as a multiple of that disk, and the multiple comes from two numbers, one per axis:</p>
+    <pre class="kb-figure"><code>N   how many disks take part          from the segmentation (striping)
+W   operations per logical write      from the redundancy   (write penalty)
+
+reads   ≈  N  × one disk
+writes  ≈  N ÷ W  × one disk</code></pre>
+    <p>The 1988 RAID paper measured its levels in exactly these terms, &quot;events per second vs single disk&quot;, and drew the two cases that matter: one large read spread over all the disks of a group, and several small reads or writes each on a different disk. Those two cases are the two meanings of <em>N</em>.</p>
+    <h3 id="reads-width-and-fanout">Reads: width and fanout</h3>
+    <p><em>N</em> hides two different things, and a level can have one without the other.</p>
+    <ul>
+      <li><strong>Width</strong>: how many disks one request is spread over. A striped array spreads a large request across the stripe, so the request finishes at the combined bandwidth of the disks it touched. A mirror does not: one read goes to one copy.</li>
+      <li><strong>Fanout</strong>: how many requests can be served at once. A striped array serves as many as it has disks, if the requests land on different ones. A mirror serves as many as it has copies, because <code>md</code> &quot;attempts to distribute read requests across all devices&quot;.</li>
+    </ul>
+    <p>So a two-disk mirror reads one file no faster than a single disk, but two readers at once each get a disk. A four-disk stripe reads one file at four disks&#39; bandwidth. RAID 10 has both: a large read spans the stripe, and any chunk can be read from either of two disks. The far layout of <code>md</code>&#39;s RAID 10 goes further, laying the first copies out as a plain stripe so that &quot;sequential reads over the devices&quot; are &quot;similar to RAID0 in terms of speed&quot;.</p>
+    <h3 id="writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</h3>
+    <p>For writes <em>N</em> is the number of disks one write is spread over, and the rule per segmentation is:</p>
+    <pre class="kb-figure"><code>striped over disks       N = the stripe width
+striped over spans       N = the sum of the spans&#39; widths
+linear, no redundancy    N = 1        one disk is active at a time
+mirror                   N = the width of one copy</code></pre>
+    <p>The mirror line needs care. Every copy is written, but the copies are the same data, and the penalty <em>W</em> already charges for writing them twice; what <em>N</em> measures is how wide each copy&#39;s write is. A mirror of two disks writes at one disk&#39;s width. A mirror of two striped legs, RAID 0+1, writes each copy across the leg&#39;s whole width: on four disks that is two, the same as a RAID 1+0 on the same four disks, which stripes over two mirror pairs. The two arrays write the same disks in the same pattern and get the same number; what separates them is the second failure, which is a <a href="fault-tolerance.html">fault tolerance</a> matter, not speed.</p>
+    <p>Then divide by <em>W</em>. On four disks:</p>
+    <pre class="kb-figure"><code>              N     W (small)   writes      W (full stripe)   writes
+RAID 0        4     1           4 ×         1                 4 ×
+RAID 1 (2)    1     2           0.5 ×       2                 0.5 ×
+RAID 10       4     2           2 ×         2                 2 ×
+RAID 5        4     4           1 ×         1                 4 ×
+RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
+    <p>The two write columns show the effect of parity: RAID 5 and RAID 6 write small scattered blocks at the rate of one disk or less, and large aligned runs at the rate of the whole stripe, because a full-stripe write computes the parity once and reads nothing (<a href="write-penalty.html">write penalty</a>). A mirror pays its two writes either way.</p>
+    <h3 id="random-and-sequential">Random and sequential</h3>
+    <p>This is why any statement about an array&#39;s speed has to say what kind of traffic it means. Large sequential transfers want width: the stripe, and a parity that is amortised over a full stripe. Many small unrelated requests want fanout and a low <em>W</em>: mirrors, and a <a href="chunk.html">chunk</a> large enough that a request stays on one disk. The paper&#39;s two figures, &quot;large transfers vs small transfers in a group of G disks&quot;, are the same distinction, and the reason it separated supercomputer workloads from transaction processing.</p>
+    <h3 id="degraded">Degraded</h3>
+    <p>The numbers above are for a healthy array. After a failure a parity array answers every read of the missing disk by reading the rest of the stripe and recomputing, so its reads slow down and its disks are busier; a mirror simply has one copy fewer to fan out over. The <a href="rebuild.html">rebuild</a> adds its own traffic on top. Fault tolerance says the data survives the failure; it does not say the array stays fast through it.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — Figure 2 &#39;Large transfer vs small transfers in a group of G disks&#39;; the performance metrics &#39;Events/Sec vs Single Disk&#39; in Tables II–VI; large reads and small reads/writes as the two workloads</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID1: &#39;The driver attempts to distribute read requests across all devices to maximise performance&#39;; RAID10 far layout: &#39;MD can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed&#39;</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js</a> — readWidth() and readParallelism() (width vs fanout), writeParallelism() and writePenalty(); read ≈ N×, write ≈ N/W× as multipliers against a single disk</li>
+      <li>tech-debt/mirror-of-stripes-write-parallelism.md — a mirror&#39;s write parallelism is one copy&#39;s width, so RAID 0+1 and RAID 1+0 on the same disks share their write numbers; resolved 2026-09-06, the engine computes it so</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="chunk.html">Chunk, strip and stripe</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#two-quantities">Two quantities</a></li>
+        <li><a href="#reads-width-and-fanout">Reads: width and fanout</a></li>
+        <li><a href="#writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</a></li>
+        <li><a href="#random-and-sequential">Random and sequential</a></li>
+        <li><a href="#degraded">Degraded</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

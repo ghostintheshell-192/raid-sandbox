@@ -33,6 +33,10 @@ collapsesTo:
 reference:
   faultToleranceAtMinimum: 1
   capacityFormula: "(N − 1) × disk size"
+  # The same formula, evaluable (specs/planned/knowledge-base.md §6): the
+  # knowledge-base test evaluates it on `kb.example` and asserts it equals the
+  # engine's capacityGB. Grammar: numbers, N, size, copies, + - * / and parentheses.
+  capacityTemplate: "(N - 1) * size"
   writePenalty:
     random: 4
     sequential: 1
@@ -50,9 +54,9 @@ pros:
   - No single parity disk bottleneck (distributed parity)
 
 cons:
-  - Write penalty: every small write triggers a read-modify-write cycle (4 I/Os)
-  - Rebuild is slow and risky: a second failure during rebuild means total data loss
-  - Rebuild time grows with disk capacity (12–24 h for large drives)
+  - "Write penalty: every small write triggers a read-modify-write cycle (4 I/Os)"
+  - "Rebuild is slow and risky: a second failure during rebuild means total data loss"
+  - "Rebuild time grows with disk capacity: every surviving disk is read end to end"
 
 useCases:
   - File servers and NAS
@@ -62,3 +66,100 @@ useCases:
 notFor:
   - Environments needing tolerance for 2+ simultaneous disk failures
   - Very write-heavy workloads (high parity calculation overhead)
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/planned/knowledge-base.md §5.2). `short` is transcluded;
+# `long` is this level's own story on its page — it applies the concepts, it does
+# not repeat them (they are in data/kb/). `example` is the build the page's
+# worked calculation and "try it" link are made from; `worked` are the derivation
+# lines, with {N} {size} {capacity} {faultTolerance} {writePenaltyRandom}
+# {writePenaltySequential} filled by the generator from the engine on that build.
+# Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  short: >
+    Data striped across every disk, with one parity block per stripe that moves
+    from disk to disk. Any one disk can fail and everything on it is recomputed
+    from the rest by XOR. It keeps all but one disk's worth of space, reads
+    nearly as fast as a plain stripe, and pays for small writes with four disk
+    operations each.
+
+  long: |
+    ## What it is
+
+    RAID 5 is the pair *striped + single parity*: the data is dealt out in chunks
+    across all the members ([[striping]]), and in every stripe one chunk holds
+    the XOR of the others ([[parity]]). It is the fifth level of the 1988 paper,
+    and the one the paper builds up to: the fourth level had put all
+    the parity on one disk, and "the check disk is the bottleneck"; the fifth
+    "distributes the data and check information across all the disks". Which
+    disk holds the parity in which stripe is the placement [[algorithm]], almost
+    always left-symmetric.
+
+    ## What it buys
+
+    Capacity, first. A mirror spends half the disks on copies;
+    RAID 5 spends one disk's worth on parity whatever the count, so on four disks
+    it keeps three quarters, on eight seven eighths. The [[fault-tolerance]] is
+    one disk, on any count, and the disk count is the risk: the more disks, the more
+    space, the more likely a second failure while the first is being rebuilt.
+
+    ## What it pays
+
+    The write. A block changed in place must keep the parity of
+    its stripe true, and to compute the new parity the engine needs two things
+    it does not have in hand: the old data and the old parity. So one logical
+    write becomes four disk operations, in this order:
+
+    1. read the old data block
+    2. read the old parity block
+    3. write the new data block
+    4. write the new parity block, computed as old data ⊕ new data ⊕ old parity
+
+    Two reads the write would not otherwise need, and two writes that must wait
+    for them: this is the [[write-penalty]] of single parity. It is paid by every
+    *small* write, one that changes a block and leaves the rest of the stripe as
+    it was. A write that covers a whole stripe pays none of the reads: every
+    data block is already in hand, the parity is computed from them, and the
+    cost is one write per member. That is the trade. RAID 5 is at its best under
+    large sequential writes and worst under many small scattered ones, and the
+    [[chunk]] size and the file system's alignment decide which of the two a
+    workload gets.
+
+    ## The minimum, and below it
+
+    Three disks is the minimum that makes sense: two data, one parity per
+    stripe. An array *built* with two disks is a different thing from a
+    three-disk array that has *lost* one. The second is a RAID 5 running
+    degraded: every stripe still has a data block and a parity block on the
+    survivors, the missing block is recomputed by XOR on every read, and nothing
+    is a copy of anything. The first has one data block per stripe, and the
+    "parity" of a single block is that block itself: disk 0 and disk 1 hold the
+    same content, and the array is a mirror by another name. The Linux kernel
+    relies on exactly that, on request, when an administrator grows a mirror
+    into a RAID 5: the first step, `raid5_takeover_raid1()`, relabels the
+    two-disk RAID 1 as a two-disk RAID 5 without moving a byte, because on two
+    disks the two layouts are the same; only then are disks added and the data
+    redistributed. Such an array writes at a mirror's cost, two operations. The
+    rebuild after a failure reads every
+    surviving disk end to end; an unreadable sector found then is a block that
+    cannot be recomputed, which is what [[scrubbing]] exists to catch earlier,
+    and a power cut during a parity update leaves a [[write-hole]] that only a
+    protected cache, a journal or a partial parity log closes.
+
+  example: { disks: 4, sizeGB: 2, protocol: SATA, algorithm: left-symmetric }
+
+  worked:
+    capacity: |
+      (N − 1) × disk size
+      N = {N} disks of {size} TB → ({N} − 1) × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      single parity: two members gone is one too many → 2 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      random: read old data, read old parity, write both → {writePenaltyRandom} I/Os
+      sequential: a full stripe computes the parity once → {writePenaltySequential} I/O
+
+  related: [striping, parity, algorithm, write-penalty, chunk, fault-tolerance, rebuild, scrubbing, write-hole]
+  confusedWith: [raid50, raid6]     # RAID 4 has no level file; it is named in the text

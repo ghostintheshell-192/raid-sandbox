@@ -48,7 +48,7 @@ pros:
 
 cons:
   - 25% capacity efficiency (mirror × parity overhead)
-  - Expensive: minimum 6 disks for modest usable capacity
+  - "Expensive: minimum 6 disks for modest usable capacity"
   - Rarely needed outside high-availability niches
 
 useCases:

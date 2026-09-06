@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mirroring — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/mirroring.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Mirroring",
+    "description": "Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/mirroring.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Mirroring</span></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Mirroring</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk&#39;s worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.</p>
+    <h3 id="the-mechanism">The mechanism</h3>
+    <p>A mirror stores the same block in the same place on every member. The Linux <code>md</code> description of RAID 1 says all of it: &quot;each device in a RAID1 array contains exactly the same data. Changes are written to all devices in parallel. Data is read from any one device. The driver attempts to distribute read requests across all devices to maximise performance.&quot; The 1988 RAID paper calls this the first level, &quot;the most expensive option we consider since all disks are duplicated&quot;, where &quot;every write to a data disk is also a write to a check disk&quot;.</p>
+    <p>Nothing is computed. The <a href="raid-engine.html">raid engine</a> takes a write and issues it to every member that is not failed; it takes a read and chooses one member to serve it. In <code>raid1.c</code> that choice weighs whether the read continues a sequential run on some disk, how many requests each disk already has pending, and how far each disk&#39;s head is from the sector; the result is that several readers are spread over several copies.</p>
+    <h3 id="what-it-gives">What it gives</h3>
+    <p>With <em>n</em> copies:</p>
+    <pre class="kb-figure"><code>capacity         one member&#39;s worth            (the smallest, if they differ)
+fault tolerance  n − 1                         all copies but one may fail
+write cost       n operations per write        every copy is written
+read width       1                             one read is served by one disk
+read fanout      n                             n readers can be served at once</code></pre>
+    <p>The two read lines are the point most often misunderstood. A mirror does not make one read faster: a single request goes to a single disk and arrives at that disk&#39;s speed. What it multiplies is the number of requests that can be served at the same time, one per copy. Making one request faster is what <a href="striping.html">striping</a> does. The <a href="performance.html">performance</a> entry explains the two separately.</p>
+    <p>Fault tolerance is where a mirror is strongest: a three-way mirror survives two failures, an <em>n</em>-way mirror <em>n − 1</em>. The number a level is usually quoted with, &quot;RAID 1 tolerates one failure&quot;, is the two-disk case; the rule is the copy count minus one, and the <a href="fault-tolerance.html">fault tolerance</a> entry says why the quoted number describes the smallest configuration, not the level.</p>
+    <h3 id="copies-striped-raid-10">Copies striped: RAID 10</h3>
+    <p>Mirroring and striping combine, and in Linux <code>md</code> they combine as one level, not as a nesting: in RAID 10 &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. The number of copies is a parameter, and the number of devices &quot;need not be a multiple of the number of replica of each data block; however, there must be at least as many devices as replicas&quot;. Where the copies land is the placement <a href="algorithm.html">algorithm</a>:</p>
+    <ul>
+      <li><strong>near</strong>: the copies of a chunk &quot;are laid out consecutively&quot; across the stripe, on adjacent devices</li>
+      <li><strong>far</strong>: the copies are laid out &quot;as far as reasonably possible&quot; from each other, in a second section of every disk, so that the first section reads like a plain stripe; <code>md</code> &quot;can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed&quot;, at the price of &quot;more seeking for writes&quot;</li>
+      <li><strong>offset</strong>: the copies are &quot;striped consecutively&quot;, each copy one stripe below the previous, shifted</li>
+    </ul>
+    <p>With two copies over <em>N</em> disks the numbers change from RAID 1&#39;s:</p>
+    <pre class="kb-figure"><code>capacity         N ÷ 2 members&#39; worth          each block on two disks, not on all
+fault tolerance  1 guaranteed                  the two copies of one chunk may both die
+                                               (more, if the failures miss each other)
+write cost       2 operations per write
+read width       N                             one large read spans the stripe</code></pre>
+    <p>This is the one place where the <a href="segmentation.html">segmentation</a> axis touches capacity and tolerance: a striped mirror is still a mirror, but each block has its copies on two disks out of <em>N</em>, not on every disk. RAID 1E is the same layout on an odd number of disks, and the <a href="capacity.html">capacity</a> and <a href="fault-tolerance.html">fault tolerance</a> entries carry the rules for both.</p>
+    <h3 id="what-it-does-not-protect">What it does not protect</h3>
+    <p>A mirror copies a mistaken write as faithfully as a good one. Deleting a file deletes it on every copy at once; that is what &quot;written to all devices in parallel&quot; means. See <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID1: &#39;each device in a RAID1 array contains exactly the same data. Changes are written to all devices in parallel. Data is read from any one device. The driver attempts to distribute read requests across all devices to maximise performance&#39;; RAID10: &#39;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&#39;; near / far / offset layouts; &#39;there must be at least as many devices as replicas&#39;; far layout: &#39;similar to RAID0 in terms of speed&#39;, &#39;more seeking for writes&#39;</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid1.c">drivers/md/raid1.c read_balance()</a> — the criteria that choose the copy serving a read (sequential continuation, pending load, head distance); raid1_write_request() — the write issued to every non-faulty mirror</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid10.c">drivers/md/raid10.c</a> — header comment: &#39;Each device is divided into far_copies sections. In each section, chunks are laid out in a style similar to raid0, but near_copies copies of each chunk is stored (each on a different drive)&#39;</li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — §7 First Level RAID: Mirrored Disks — &#39;all disks are duplicated (G=1 and C=1), and every write to a data disk is also a write to a check disk&#39;; useable storage capacity 50%</li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — &#39;Two-way mirroring tolerates one drive failure; three-way mirroring tolerates two simultaneous drive failures&#39;</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB() / failuresToKill()</a> — the RAID 1 rule (one copy&#39;s worth, kill every member) and the flat RAID 10 rule (sum ÷ copies, kill all copies of a chunk)</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="algorithm.html">Placement algorithm</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#the-mechanism">The mechanism</a></li>
+        <li><a href="#what-it-gives">What it gives</a></li>
+        <li><a href="#copies-striped-raid-10">Copies striped: RAID 10</a></li>
+        <li><a href="#what-it-does-not-protect">What it does not protect</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

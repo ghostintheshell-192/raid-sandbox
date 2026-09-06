@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fault tolerance — RAID Sandbox knowledge base</title>
+  <meta name="description" content="How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/fault-tolerance.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Fault tolerance",
+    "description": "How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/fault-tolerance.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Fault tolerance</span></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Fault tolerance</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two. In a nested level the worst place matters: a RAID 50 survives one failure per span, but two in the same span lose everything.</p>
+    <h3 id="guaranteed-not-lucky">Guaranteed, not lucky</h3>
+    <p>Fault tolerance is a worst-case number. It answers: if an adversary chose which disks fail, how many could fail before the first byte is lost? A four-disk RAID 10 survives two failures if they hit different mirror pairs, and loses everything if they hit the same pair; its fault tolerance is 1. What an array <em>may</em> survive with luck is a different quantity, and not one to plan on.</p>
+    <p>The number a level is quoted with is its tolerance at its minimum disk count, not a property of the level. &quot;RAID 1 tolerates one failure&quot; is the two-disk mirror; a three-way mirror tolerates two. The rule is what the entry below gives, and the number follows from the array actually built.</p>
+    <h3 id="the-rule-per-redundancy">The rule, per redundancy</h3>
+    <p>It is easiest to count the failures needed to <em>kill</em> a node, and subtract one. For a disk, one failure kills it. For an array, the count depends on the <a href="redundancy.html">redundancy</a> and on how many failures each member takes to kill:</p>
+    <pre class="kb-figure"><code>failures to kill (F)
+
+disk                 1
+none                 the smallest F among the members     any member gone kills it
+mirror  (RAID 1)     the sum of the members&#39; F            every copy must die
+mirror  (RAID 10)    2 (the copy count)                   both copies of one chunk
+parity1              the two smallest F, added            two members gone is one too many
+parity2              the three smallest F, added
+
+fault tolerance = F − 1</code></pre>
+    <p>Over plain disks (every member F = 1) this gives the familiar numbers:</p>
+    <pre class="kb-figure"><code>RAID 0    min(1, 1, …) − 1        = 0
+RAID 1    (1 + 1 + … n copies) − 1 = n − 1
+RAID 10   2 − 1                   = 1
+RAID 5    (1 + 1) − 1             = 1
+RAID 6    (1 + 1 + 1) − 1         = 2</code></pre>
+    <p>Linux <code>md</code> states two of these directly: a RAID 1 array can lose all devices but one, a RAID 6 array &quot;can handle the loss of any two devices&quot;.</p>
+    <h3 id="nesting-where-the-failures-land">Nesting: where the failures land</h3>
+    <p>Apply the rule from the bottom up: first compute F for each span, then use those values as the members&#39; F one level above. A RAID 50 of two RAID 5 spans:</p>
+    <pre class="kb-figure"><code>each span     F = 2           (parity1 over disks: two failures kill it)
+the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
+              tolerance = 2 − 1 = 1</code></pre>
+    <p>One failure, guaranteed. The array will in fact survive a second failure if it lands in the <em>other</em> span, which is why RAID 50 is often described as &quot;one per span&quot;; but the guarantee is one, because the adversary puts the second failure in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The <a href="span.html">span</a> entry describes the RAID 50 case.</p>
+    <h3 id="while-the-tolerance-is-used-up">While the tolerance is used up</h3>
+    <p>After a failure the array runs <em>degraded</em>. Nothing is lost yet, but the tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a stripe with no parity, and every read of the dead member&#39;s blocks is answered by recomputing them from the survivors. The 1988 paper&#39;s reliability model has a term for the window this opens, MTTR, the mean time to repair, and the group&#39;s time to failure divides by it:</p>
+    <pre class="kb-figure"><code>MTTF of a group  =  MTTF of a disk ÷ (G + C)  ×  1 ÷ P(another failure before the dead disk is repaired)
+                 =  MTTF of a disk²  ÷  ((G + C) × (G + C − 1) × MTTR)</code></pre>
+    <p>with <em>G</em> data disks and <em>C</em> check disks in the group. The shorter the repair, the safer the array: this is the <a href="rebuild.html">rebuild</a>, and this formula is why the time a rebuild takes is a reliability number, not only a performance one.</p>
+    <h3 id="what-it-does-not-count">What it does not count</h3>
+    <p>A failure is a disk that stops answering. A deletion, an overwrite, a corrupted block are not failures: the redundancy records them faithfully. Fault tolerance measures survival of hardware, not of data (<a href="raid-is-not-a-backup.html">RAID is not a backup</a>).</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as &#39;the mean time to repair&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID1: data is read from any one device (all but one may fail); RAID6: &#39;can handle the loss of any two devices without data loss&#39;; RAID4/RAID5: one device failure tolerated</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js failuresToKill() / faultTolerance()</a> — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1</li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.faultToleranceAtMinimum</a> — the quoted number, stated there as the level&#39;s tolerance at its minimum disk count, not the array&#39;s</li>
+      <li><a href="../data/intro.yaml">data/intro.yaml parameters.fault-tolerance</a> — the text this entry supersedes</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="span.html">Span</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#guaranteed-not-lucky">Guaranteed, not lucky</a></li>
+        <li><a href="#the-rule-per-redundancy">The rule, per redundancy</a></li>
+        <li><a href="#nesting-where-the-failures-land">Nesting: where the failures land</a></li>
+        <li><a href="#while-the-tolerance-is-used-up">While the tolerance is used up</a></li>
+        <li><a href="#what-it-does-not-count">What it does not count</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

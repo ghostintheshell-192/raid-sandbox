@@ -27,10 +27,11 @@
 
 - [README.md](specs/README.md) — Specs — what is written down, and what is not yet
 
-### specs/implemented/ (3 files)
+### specs/implemented/ (4 files)
 
 - [agnostic-engine.md](specs/implemented/agnostic-engine.md) — The agnostic engine — how the domain moved out of the code
 - [degenerate-levels.md](specs/implemented/degenerate-levels.md) — Degenerate levels — what the player has, next to what they tried to build
+- [knowledge-base.md](specs/implemented/knowledge-base.md) — Knowledge base — one source, two depths, pages that stand alone
 - [raid-sandbox-domain-model.md](specs/implemented/raid-sandbox-domain-model.md) — RAID Sandbox — Domain Model (design backbone)
 
 ### specs/planned/ (2 files)

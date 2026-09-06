@@ -1,0 +1,75 @@
+# data/kb/bbu.yaml — what protects a hardware controller's write cache through a
+# power cut: the object that provides `power-loss-protection` in the component
+# files. The CacheVault mechanism is quoted from Broadcom; the battery variant is
+# described from Broadcom's product page as summarised, not read verbatim, hence
+# `status: to-verify`. Writing rules: see segmentation.yaml header.
+
+id: bbu
+kind: concept
+name: Battery backup unit and flash cache protection
+short: >
+  What lets a hardware RAID controller keep its write cache through a power cut: a
+  battery that powers the cache memory until power returns, or, in newer designs,
+  a supercapacitor that powers the controller just long enough to copy the cache
+  to flash. It is what makes write-back caching safe on a controller, and what
+  closes the write hole there.
+
+long: |
+  ## Why the cache is at risk
+
+  A RAID controller with memory of its own can answer a write as soon as the data
+  is in that memory, and write it to the disks later. This is *write-back*
+  caching, and it is a large part of why a hardware controller is fast on writes:
+  the [[write-penalty]] of a parity update is paid in the background, and small
+  writes can be gathered into full stripes. The cost is a window of risk. Until the
+  cached data reaches the disks, it exists only in volatile memory, and a power
+  cut in that window loses writes the operating system was told had succeeded.
+  For a parity array the loss can be worse than the missing writes: a stripe
+  whose data landed and whose parity did not is the [[write-hole]].
+
+  ## Two ways to keep the cache
+
+  - **A battery backup unit (BBU).** A battery on the controller keeps the cache
+    memory powered while the host is off, for hours, so that the data is still
+    there when power returns and the controller can finish writing it. The
+    battery ages, needs charging and periodic relearning, and while it is not
+    charged the controller is meant to run write-through, answering a write only
+    once it is on disk.
+  - **Flash cache protection.** The newer design does not try to keep the memory
+    alive. A supercapacitor pack "provides power for the backup of your data in
+    case of host power loss or server failure", long enough for the controller to
+    copy the cache to non-volatile flash on the card: "the data is backed up to
+    the NAND flash memory available on the MegaRAID storage adapter". When power
+    returns the cache is read back from flash and the writes complete. Broadcom
+    sells this as CacheVault; the supercapacitor does not age like a battery and
+    holds the data indefinitely once it is in flash.
+
+  Either way, the controller's writes are *protected*: an interrupted stripe
+  write is finished when power returns, not left half done. This is the
+  capability the [[raid-engine]] entry means by a protected cache, and the reason
+  a hardware engine can close the write hole where a driver on the CPU cannot: the
+  driver has no memory that survives the cut. Software and firmware RAID have to
+  protect the whole machine instead, with an uninterruptible power supply, or
+  make the array itself tolerant of the cut with a journal or a partial parity
+  log ([[write-hole]]).
+
+  ## What it does not do
+
+  A protected cache saves the writes that were in flight. It does not make a
+  controller failure survivable: if the card itself dies, the cache and its
+  contents die with it, and the array is only as recoverable as the metadata on
+  the disks allows. It is a power-loss device, not a redundancy device.
+
+related: [raid-engine, write-hole, write-penalty, parity]
+
+sources:
+  - "Broadcom TechDocs, CacheVault Data Protection (9700 series) — 'The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure'; 'The data is backed up to the NAND flash memory available on the MegaRAID storage adapter'"
+  - "Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data 'by providing battery power to the controller'; CacheVault by 'storing cached data in non-volatile flash cache storage'; write-through until the battery is charged — not read verbatim"
+  - ref: "Linux kernel Documentation/driver-api/md/raid5-cache.rst"
+    note: "the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
+    url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
+  - ref: "data/components/engine-roc.yaml"
+    note: "`power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
+    url: ../data/components/engine-roc.yaml
+
+status: to-verify

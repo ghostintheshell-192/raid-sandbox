@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rebuild — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/rebuild.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Rebuild",
+    "description": "Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/rebuild.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Rebuild</span></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Rebuild</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</p>
+    <h3 id="what-it-does">What it does</h3>
+    <p>When a member fails, the <a href="raid-engine.html">raid engine</a> marks it faulty and carries on with the rest: in <code>md</code>, on a write error &quot;the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices&quot;. The array is now <em>degraded</em>: every request is still answered, but the <a href="redundancy.html">redundancy</a> that made the failure survivable is spent. Restoring it means putting a disk in the dead one&#39;s place and filling it, and what fills it depends on the level:</p>
+    <ul>
+      <li>a <strong>mirror</strong> copies the surviving copy block by block</li>
+      <li>a <strong>parity</strong> array reads every stripe&#39;s remaining blocks and recomputes the missing one by XOR (<a href="parity.html">parity</a>), or, for RAID 6 with two missing, solves the two syndromes</li>
+      <li>a striped mirror (<strong>RAID 10</strong>) finds each missing chunk&#39;s other copy and copies it</li>
+    </ul>
+    <p>Broadcom describes the controller&#39;s side the same way: the failed drive&#39;s data is re-created &quot;using the data that is stored on the other drives in the drive group&quot;. The rebuild is a full pass over the array, every stripe, whether or not it held data.</p>
+    <h3 id="who-starts-it">Who starts it</h3>
+    <p>A rebuild needs a target disk. It can be the replacement a person plugs in, or a <em>hot spare</em>: &quot;an extra, unused drive that is part of the disk subsystem&quot;, standing by &quot;ready for service if a drive in an array fails&quot;. With a spare present the engine starts on its own, &quot;automatically and transparently&quot;; <code>md</code> likewise begins recovery onto a spare as soon as a device is marked faulty. A controller distinguishes a <em>global</em> spare, available to any group, from a <em>dedicated</em> one, reserved for a group and used first. What the spare saves is time: the rebuild, and with it the window of risk described below, starts at the moment of failure instead of when someone notices.</p>
+    <h3 id="how-fast-and-at-what-cost">How fast, and at what cost</h3>
+    <p>The rebuild competes with the array&#39;s own traffic for the same disks. Engines throttle it: <code>md</code> &quot;will slow down the rate of recovery if other activity is happening, so that normal access to the array will not be unduly affected&quot;, between a floor and a ceiling set in <code>speed_limit_min</code> and <code>speed_limit_max</code>; a controller offers the same setting as a rebuild rate. A faster rebuild is a slower array, and the other way round.</p>
+    <p>During the rebuild a parity array is at its weakest in two ways. Its reads are slow, because every read of the missing disk&#39;s blocks is a recomputation (<a href="performance.html">performance</a>), and its remaining disks are being read end to end for the rebuild on top of that. And its tolerance is zero: the 1988 RAID paper&#39;s reliability formula has the repair time in its denominator,</p>
+    <pre class="kb-figure"><code>MTTF of a group = MTTF of a disk² ÷ ((G + C) × (G + C − 1) × MTTR)</code></pre>
+    <p>because the array is lost if a second member fails before the first is repaired. MTTR is the rebuild time, and the rebuild time is the disk&#39;s capacity divided by the rate the array can spare, so it grows with the size of the disks. That is the argument for a second parity (<a href="fault-tolerance.html">fault tolerance</a>): RAID 6 can still lose one more disk during the whole rebuild; RAID 5 cannot lose any.</p>
+    <p>A second failure need not be a whole disk. A single unreadable sector on a surviving member, found only when the rebuild reads it, is a block the rebuild cannot recompute. <a href="scrubbing.html">scrubbing</a> exists to find such sectors while the redundancy is still there to fix them.</p>
+    <h3 id="what-the-array-knows">What the array knows</h3>
+    <p>After the rebuild the array is whole again, with the same layout and the same numbers. What it does not know is whether the data it rebuilt was right: it trusts the survivors and the parity as it finds them, which is why an inconsistent stripe left by a <a href="write-hole.html">write hole</a> comes back as a wrong block, and why a rebuild is the moment such a stripe does its damage.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page, RECOVERY</a> — &#39;the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices&#39;; recovery onto a spare by copying (RAID1), parity calculation (RAID4/5/6) or finding the other copy (RAID10); &#39;will slow down the rate of recovery if other activity is happening&#39;; speed_limit_min / speed_limit_max</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667598.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Rebuilds</a> — &#39;The RAID controller re-creates the data using the data that is stored on the other drives in the drive group&#39;; hot spares rebuild &#39;automatically and transparently, at user-defined rebuild rates&#39;</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, same guide, Hot Spares</a> — &#39;A hot spare is an extra, unused drive that is part of the disk subsystem&#39;; &#39;ready for service if a drive in an array fails&#39;; global and dedicated hot spares</li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — MTTR, &#39;the mean time to repair&#39;, in the group MTTF formula; &#39;a disk fails, a replacement disk is switched in electronically&#39;</li>
+      <li><a href="../data/intro.yaml">data/intro.yaml parameters.rebuild-time</a> — the text this entry supersedes</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="scrubbing.html">Scrubbing</a></li>
+      <li><a href="write-hole.html">Write hole</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#what-it-does">What it does</a></li>
+        <li><a href="#who-starts-it">Who starts it</a></li>
+        <li><a href="#how-fast-and-at-what-cost">How fast, and at what cost</a></li>
+        <li><a href="#what-the-array-knows">What the array knows</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

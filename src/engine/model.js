@@ -189,8 +189,9 @@
   //
   // Two canon quantities (storage-design write-penalty table; the parity small-
   // write cost is the Patterson/Gibson/Katz "small-write problem"):
-  //   W (write penalty), from redundancy:  none=1 · mirror=2 · parity1=4 · parity2=6
-  //   N (parallelism),   from segmentation: striped → stripe width · linear → 1
+  //   W (write penalty), from redundancy:  none=1 · mirror=copies · parity1=4 · parity2=6
+  //   N (parallelism),   from segmentation: striped → stripe width · linear → 1 ·
+  //                      mirror → one copy's width (the copies are the same data)
   //
   // We report MULTIPLIERS vs a single disk — read ≈ N×, write ≈ N/W× — not
   // absolute IOPS: IOPS_disk is never a player input, and buckets + "optimize
@@ -207,24 +208,39 @@
   // Write penalty W. For a nested stripe-over-spans the physical writes land in
   // the child spans, so the effective W is the span's, not the top stripe's
   // (RAID 50/60 inherit the parity penalty). Spans are uniform by the recognizer.
+  // A mirror writes every copy, so its W is the copy count times what one copy
+  // costs: a pair of disks → 2, a three-way mirror → 3, a mirror of two RAID 5
+  // spans → 2 × 4, every copy paying its own read-modify-write. The flat striped
+  // mirror (RAID 10 / 1E) has `copies` copies of each chunk → `copies`.
   function writePenalty(node, mode = 'random') {
     if (isDisk(node)) return 1;
     const table = mode === 'sequential'
-      ? { none: 1, mirror: 2, parity1: 1, parity2: 1 }   // parity amortized on full-stripe
-      : { none: 1, mirror: 2, parity1: 4, parity2: 6 };  // random read-modify-write
+      ? { none: 1, parity1: 1, parity2: 1 }   // parity amortized on full-stripe
+      : { none: 1, parity1: 4, parity2: 6 };  // random read-modify-write
+    if (node.redundancy === 'mirror')
+      return isStripedDiskMirror(node)
+        ? copiesOf(node)
+        : node.members.length * Math.max(...node.members.map((m) => writePenalty(m, mode)));
     if (node.redundancy === 'none' && allArrays(node))
       return Math.max(...node.members.map((m) => writePenalty(m, mode)));
     return table[node.redundancy];
   }
 
-  // Stripe width feeding parallel WRITES (linear → 1, the single active member).
+  // Disks ONE write is spread over. Striping spreads it over the stripe; a
+  // concatenation writes one member at a time; a mirror writes every copy, and
+  // the copies are the same data, so what one write is spread over is one copy's
+  // width — a mirror of disks: 1; a mirror of striped legs (RAID 0+1): the leg's
+  // width, the same as the RAID 1+0 over the same disks. The penalty charges for
+  // the copies (tech-debt/mirror-of-stripes-write-parallelism.md).
   function writeParallelism(node) {
     if (isDisk(node)) return 1;
     if (node.segmentation === 'striped')
       return allArrays(node)
         ? sum(node.members.map(writeParallelism))   // nested: sum child widths
         : node.members.length;                       // leaf stripe (incl. flat RAID 10)
-    return 1;                                         // linear
+    if (node.redundancy === 'mirror')
+      return Math.max(...node.members.map(writeParallelism));   // one copy's width
+    return 1;                                         // linear: one member at a time
   }
 
   // Disks serving parallel READS — striping spreads data; mirroring fans copies.
@@ -278,12 +294,14 @@
   /** @returns {PerfClass} */
   function writeClass(node, mode = 'random') {
     if (isDisk(node)) return 'high';
-    if (!topIsStriped(node))                                       // linear: single-disk write path
-      return node.redundancy === 'mirror' ? 'medium' : 'low';
+    if (!topIsStriped(node)) {
+      if (node.redundancy === 'none') return 'low';                // concatenation: one member at a time
+      if (!allArrays(node))           return 'medium';             // a mirror of disks: width 1, every copy written
+    }                                                              // a mirror of arrays writes at a copy's width → by penalty
     const w = writePenalty(node, mode);
-    if (w <= 2) return 'high';                                     // RAID 0 (1), RAID 10 (2)
+    if (w <= 2) return 'high';                                     // RAID 0 (1), RAID 10 (2), RAID 0+1 (2 × 1)
     if (w === 4) return 'medium';                                  // RAID 5/50 (random RMW)
-    return 'low';                                                  // RAID 6/60
+    return 'low';                                                  // RAID 6/60, RAID 51 (2 × 4)
   }
 
   const round2 = (x) => Math.round(x * 100) / 100;
@@ -300,8 +318,9 @@
 
   function performance(node) {
     return {
-      writePenalty: writePenalty(node, 'random'),
-      parallelism:  writeParallelism(node),
+      writePenalty:           writePenalty(node, 'random'),
+      writePenaltySequential: writePenalty(node, 'sequential'),
+      parallelism:            writeParallelism(node),
       random:       characterize(node, 'random'),
       sequential:   characterize(node, 'sequential'),
     };

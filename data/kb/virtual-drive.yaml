@@ -1,0 +1,95 @@
+# data/kb/virtual-drive.yaml — the fourth storage layer, the top of the chain.
+# Migrated from data/intro.yaml `storageLayers`; the Broadcom definition is verified.
+# Writing rules: see segmentation.yaml header.
+
+id: virtual-drive
+kind: concept
+name: Virtual drive
+short: >
+  The logical volume the operating system sees: one block device with a contiguous
+  address space, behaving exactly like a single disk whatever number of disks,
+  spans or RAID levels sit underneath. It need not take the whole span; a span can
+  host several.
+
+long: |
+  A virtual drive is the block device that the operating system, the file system
+  and the applications work with. It has a contiguous address space organized in sectors,
+  with numbering starting from 0, and every request to it goes to the [[raid-engine]], which
+  translates it onto the members by the [[segmentation]] of the [[span]] below and
+  produces whatever the [[redundancy]] asks for. Above the virtual drive nothing
+  knows there is an array: this decoupling of physical layout from logical
+  addressing is what makes RAID transparent to the software running on it.
+
+  ## Container and content
+
+  The three layers nest. A drive group contains disks; a span is some of those
+  disks under one layout; a virtual drive is a slice of the usable capacity that
+  results. RAID 10 shows all three at once, read from the top, what the operating
+  system is given, to the bottom, what is physically there:
+
+  ```text
+  what the operating system sees
+
+            ┌───────────────┐
+            │ virtual drive │
+            └───────┬───────┘
+                    │   a slice of the group's usable capacity
+                    ▼
+  ┌─ drive group: RAID 10, the two spans striped together ────────┐
+  │                                                               │
+  │   ┌─ span 0: RAID 1 ────────┐   ┌─ span 1: RAID 1 ────────┐   │
+  │   │  ┌──────┐   ┌──────┐    │   │  ┌──────┐   ┌──────┐    │   │
+  │   │  │disk 0│   │disk 1│    │   │  │disk 2│   │disk 3│    │   │
+  │   │  └──────┘   └──────┘    │   │  └──────┘   └──────┘    │   │
+  │   └─────────────────────────┘   └─────────────────────────┘   │
+  │                                                               │
+  └───────────────────────────────────────────────────────────────┘
+  ```
+
+  Each span gives its two disks one layout, a mirror. The group holds the two
+  spans and carries the layout that joins them, a stripe across the spans: the
+  mirror is the span's, the stripe is the group's, and the pair is what RAID 10
+  means. The virtual drive is what the whole is presented as; the operating
+  system sees that box and nothing below it. In a flat level (a RAID 5 on four
+  disks) the group holds one span and has no layout of its own. The
+  [[drive-group]] and [[span]] entries describe the two lower layers; this figure
+  is the one they point back to.
+
+  ## It does not have to be the whole span
+
+  In Broadcom's MegaRAID definition, "a virtual drive is a partition in a drive
+  group that is made up of contiguous data segments on the drives", and it can be
+  an entire drive group, several, a portion of one, or parts of several. So a 6 TB
+  span could host a 2 TB virtual drive and leave 4 TB available for another, as
+  long as the total stays within the span's capacity. Each virtual drive is then a
+  separate disk to the operating system.
+
+  ## The same object under other names
+
+  On a controller the operating system is given the virtual drive and nothing
+  else: the member disks are hidden behind it. In Linux software RAID the object is
+  the `md` device, `/dev/md0` and its siblings, and the member disks stay visible
+  beside it. In Windows it is the *storage space* carved from a pool, which Microsoft
+  also calls a virtual disk. Three names, one thing: the block device an array
+  becomes.
+
+related: [span, drive-group, raid-engine, segmentation, redundancy]
+
+sources:
+  - ref: "data/intro.yaml storageLayers.virtual-drive"
+    note: "the text this entry migrates"
+    url: ../data/intro.yaml
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Virtual Drive"
+    note: "'A virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives'; may be an entire drive group, multiple drive groups, a portion, parts of several, or any combination"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667343.html
+  - ref: "Broadcom, same guide, Introduction to RAID"
+    note: "'Virtual drives are drive groups or spanned drive groups that are available to the operating system'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
+  - ref: "md(4) man page"
+    note: "the md device as the array the kernel presents"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Microsoft Learn, Storage Spaces overview"
+    note: "'create virtual disks known as Storage Spaces'"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+
+status: to-verify

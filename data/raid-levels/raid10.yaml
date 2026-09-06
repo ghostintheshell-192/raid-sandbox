@@ -34,6 +34,7 @@ collapsesTo:
 reference:
   faultToleranceAtMinimum: 1
   capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+  capacityTemplate: "N / copies * size"   # evaluable, see raid5.yaml
   writePenalty:
     random: 2
     sequential: 2
@@ -44,7 +45,7 @@ note: >
   RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build).
   The flat form (this file) is mdadm's own RAID 10 level, which supports the
   near/far/offset layout algorithms — none of which decompose into mirror pairs.
-  Nested RAID 1+0 is recognized separately (see raid1plus0.yaml).
+  Nested RAID 1+0 is recognized separately, as its own level.
 
 description: >
   A single flat array with striped mirroring: every chunk is stored on `copies` disks,
@@ -54,7 +55,7 @@ description: >
 pros:
   - Best write performance among redundant RAID levels (mirror penalty only, no RMW)
   - Full read parallelism across all N disks
-  - near/far/offset layouts available under Linux mdadm (software RAID only — §6 constraint)
+  - near/far/offset layouts available under Linux mdadm (software RAID only)
 
 cons:
   - 50% capacity efficiency (copies=2)
@@ -68,3 +69,75 @@ useCases:
 notFor:
   - Large storage on a budget (50% efficiency)
   - Environments where near/far/offset layouts are needed on hardware RAID
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/planned/knowledge-base.md §5.2). See raid5.yaml for what
+# each field is. Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  short: >
+    Striping and mirroring in one flat array: every chunk is stored on two disks,
+    and the chunks are dealt across all of them. It reads like a stripe, writes at
+    a mirror's cost with no parity to compute, keeps half the space, and is
+    guaranteed to survive one failure, more if the failures miss each other.
+
+  long: |
+    ## What it is
+
+    RAID 10 is the pair *striped + mirror*: the data is cut into chunks and dealt
+    across the members ([[striping]]), and each chunk is stored twice, on two
+    different disks ([[mirroring]]). In Linux `md` it is one level, not a
+    nesting: "every datablock is duplicated some number of times, and the
+    resulting collection of datablocks are distributed over multiple drives".
+    Where the second copy lands is the placement [[algorithm]], *near*, *far* or
+    *offset*; near, the default, puts the two copies side by side in the same
+    stripe, which is the same arrangement a hardware controller reaches in a
+    different way, by striping over mirror pairs. That nested form, RAID 1+0, has
+    its own page; with the near layout the two put every block in the same place,
+    and the difference is which engine built it and which other layouts it can
+    offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse
+    arrangement, and its page says why.
+
+    ## What it buys
+
+    Speed, of both kinds. A large read spans the stripe, at the
+    combined bandwidth of all *N* disks; a small read has two disks to choose
+    from; and a write costs two operations, one per copy, with no parity to read
+    or compute ([[write-penalty]]). Among the redundant levels it has the best
+    write numbers, which is why databases and virtual machine hosts run on it
+    ([[performance]]).
+
+    ## What it pays
+
+    Half the space: the [[capacity]] is *N ÷ 2* disks' worth,
+    the same as a two-way mirror, whatever the count. And its
+    [[fault-tolerance]] needs the word *guaranteed*: the array survives one
+    failure for certain, and a second only if it lands on a disk that does not
+    hold the other copy of the same chunks. On four disks with two copies, the
+    second failure lands on the partner of the first in one case out of three; on
+    a controller's RAID 1+0 the same rule reads "one failure per pair". The number
+    to plan on is one.
+
+    ## The disk count
+
+    An even count of disks is the natural shape, one copy per disk per stripe.
+    `md` accepts an odd count too, with the copies wrapping across stripes; that
+    array is what the industry names RAID 1E, and it has its own page. With two
+    disks the distinction disappears: two copies on two devices is a mirror, and
+    the array is a RAID 1 by another name.
+
+  example: { disks: 4, sizeGB: 2, protocol: SATA, algorithm: near }
+
+  worked:
+    capacity: |
+      (N ÷ copies) × disk size
+      N = {N} disks of {size} TB, 2 copies → ({N} ÷ 2) × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      two copies of every chunk: both copies of one chunk → 2 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      every copy is written, no parity → {writePenaltyRandom} I/Os, random or sequential
+
+  related: [striping, mirroring, algorithm, write-penalty, performance, capacity, fault-tolerance]
+  confusedWith: [raid1plus0, raid0plus1, raid1e, raid1]

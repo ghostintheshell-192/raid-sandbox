@@ -1,0 +1,54 @@
+# data/kb/hba.yaml — a physical actor on the control path. Written from the
+# project's component file; the SAS initiator/target vocabulary is from secondary
+# descriptions, hence `status: to-verify`. Writing rules: see segmentation.yaml header.
+
+id: hba
+kind: concept
+name: HBA
+short: >
+  The host bus adapter: the card, or the chipset function, that speaks SATA or SAS
+  to the disks on one side and PCIe to the CPU on the other. It translates the
+  protocol and passes each disk through unchanged, so the operating system sees
+  every one of them. It computes no RAID. A RAID controller card is an HBA with a
+  RAID engine added.
+
+long: |
+  Disks speak SATA or SAS; the CPU speaks PCIe. Something on the path has to
+  speak both, and that is the host bus adapter. In SAS terms it is the
+  *initiator*, the end that issues commands, and each disk a *target*. The HBA
+  takes a read or write from the operating system, sends it down the right lane
+  (through a [[backplane]] if there is one), and returns the answer. What it does
+  not do is change what the operating system sees: with an HBA alone, every
+  [[physical-disks|physical disk]] appears as itself, and any RAID is done by
+  something else: the operating system ([[raid-engine]], software RAID) or a
+  firmware (firmware RAID).
+
+  On a desktop the HBA is not a card: the chipset's SATA controller is one. On a
+  server it is usually a PCIe card with two or four SAS connectors, each carrying
+  four lanes.
+
+  The reason the HBA has its own entry, rather than being folded into "the
+  controller", is that the difference between an HBA and a RAID controller is
+  the difference between software and hardware RAID. A hardware RAID card is an
+  HBA *and* a RAID-on-Chip on the same board: the HBA part talks to the disks,
+  the engine part builds the array and hands the operating system a
+  [[virtual-drive]] instead of the disks. Take the engine away and what is left is
+  an HBA. This is also why the two can look alike in a slot, and why what a card
+  *is* has to be read from what it does, not from where it sits.
+
+  NVMe disks need no HBA: they are PCIe devices themselves, which is what makes
+  them fast and what leaves them outside the SAS path.
+
+related: [backplane, physical-disks, raid-engine, virtual-drive]
+
+sources:
+  - ref: "data/components/hba.yaml"
+    note: "'Translates SATA/SAS electrical protocol and passes raw disk commands unchanged to the CPU over PCIe. The OS sees individual physical disks'; the constraint that an HBA alone cannot host the RAID engine"
+    url: ../data/components/hba.yaml
+  - ref: "data/components/engine-roc.yaml"
+    note: "a hardware RAID card 'includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor'"
+    url: ../data/components/engine-roc.yaml
+  - ".development/reference/decisions/001-engine-identity-not-position.md — hardware and firmware RAID cards occupy the same slot; what distinguishes them is what the object is"
+  - "SAS expander descriptions (secondary): 'Expanders facilitate the connection of one or more Initiators to one or more Targets' — the initiator/target vocabulary, not yet checked against the SAS specification"
+
+status: to-verify

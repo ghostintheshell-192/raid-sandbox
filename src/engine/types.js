@@ -55,7 +55,7 @@
  * @typedef {Recognition & {
  *   diskCount: number, capacityGB: number, rawCapacityGB: number, faultTolerance: number,
  *   readClass: PerfClass, writeClass: PerfClass,
- *   performance: { writePenalty: number, parallelism: number, random: PerfProfile, sequential: PerfProfile },
+ *   performance: { writePenalty: number, writePenaltySequential: number, parallelism: number, random: PerfProfile, sequential: PerfProfile },
  *   runs: Recognition & { tree: TreeNode, trace: Rewrite[] }
  * }} Analysis
  */

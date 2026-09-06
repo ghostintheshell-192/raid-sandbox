@@ -1,13 +1,22 @@
 ---
 type: bug
 priority: low
-status: open
+status: resolved
 discovered: 2026-09-05
 related: [raid0plus1-difference-not-surfaced.md]
 related_decision: null
 ---
 
 # A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
+
+> **Resolved 2026-09-06** on `feature/knowledge-base`, by Option A, one step further than
+> written: `writeParallelism` of a mirror is one copy's width, `writeClass` short-circuits
+> only a mirror of *disks*, **and** `writePenalty` of a mirror is the copy count times
+> one copy's own penalty (a pair 2, a three-way mirror 3, a mirror of RAID 5 spans 2 × 4)
+> instead of the constant 2. The last step was forced by the knowledge base, whose
+> write-penalty entry states the rule as *n* copies → *n* writes and could not disagree
+> with the engine. Hand-derived values in `tests/model-perf.test.js` [8]; the `database`
+> decision is recorded in `tests/challenge.test.js`.
 
 ## Problem
 

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Span — RAID Sandbox knowledge base</title>
+  <meta name="description" content="A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/span.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Span",
+    "description": "A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/span.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Span</span></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Span</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-lede">A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies. A drive group can hold several spans, each with its own independent layout, and the nested levels are spans striped together.</p>
+    <p>A span is the layer at which the two axes are chosen. Take some or all of a <a href="drive-group.html">drive group</a>&#39;s disks and give them one <a href="segmentation.html">segmentation</a> and one <a href="redundancy.html">redundancy</a>: that set is a span, and the pair of choices is its RAID level. The simplest span has no layout at all, disks joined end to end with no redundancy, which is JBOD. The figure under <a href="virtual-drive.html">virtual drive</a> shows where the span sits: inside the drive group, under the virtual drives carved from it.</p>
+    <h3 id="spans-inside-levels">Spans inside levels</h3>
+    <p>The nested levels make the layer visible. RAID 50 stripes across two or more RAID 5 spans, and each span independently tolerates one disk failure. But the top-level stripe needs every span to reconstruct data, so two failures in the <em>same</em> span destroy that span, and with it the whole array, even though the other spans are physically intact. A two-span RAID 50 therefore survives one failure per span, two in total as long as they land in different spans, but not two failures landing in the same span. The same reading gives RAID 10 (spans of mirrors, striped) and RAID 60 (spans of RAID 6, striped).</p>
+    <h3 id="the-word-as-vendors-use-it">The word as vendors use it</h3>
+    <p>The vendor usage is Broadcom&#39;s: &quot;disk spanning allows multiple drives to function like one large drive&quot;, the spanned levels are &quot;RAID 00, RAID 10, RAID 50, and RAID 60&quot;, and inside such a drive group &quot;the span numbering starts from Span 0, Span 1, Span 2, and so on&quot;. A RAID 10 there is built &quot;by spanning two or more contiguous RAID 1 virtual drives&quot;, and can hold up to eight spans. So in a controller&#39;s vocabulary a span is one leg of a nested level, and a flat level (RAID 5 on four disks) is a drive group with one layout and no separate spans. These pages use the word for both: the flat case is a drive group with a single span.</p>
+    <p>Linux <code>md</code> does not use the word at all. A RAID 50 there is two <code>md</code> RAID 5 devices given as members to an <code>md</code> RAID 0: the spans are arrays in their own right, each with its own device name, and the nesting is explicit.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="../data/intro.yaml">data/intro.yaml storageLayers.span</a> — the text this entry migrates</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667525.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning</a> — &#39;Disk spanning allows multiple drives to function like one large drive&#39;; spanned drive groups: &#39;RAID 00, RAID 10, RAID 50, and RAID 60&#39;; &#39;the span numbering starts from Span 0, Span 1, Span 2, and so on&#39;</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, same guide, RAID 10 Drive Groups</a> — &#39;Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives&#39;; a maximum of 8 spans</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js</a> — an array&#39;s members are disks or arrays: the nesting as the sandbox computes it</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="drive-group.html">Drive group</a></li>
+      <li><a href="virtual-drive.html">Virtual drive</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#spans-inside-levels">Spans inside levels</a></li>
+        <li><a href="#the-word-as-vendors-use-it">The word as vendors use it</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

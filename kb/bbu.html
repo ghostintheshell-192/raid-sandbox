@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery backup unit and flash cache protection — RAID Sandbox knowledge base</title>
+  <meta name="description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the…">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/bbu.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Battery backup unit and flash cache protection",
+    "description": "What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the…",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/bbu.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Battery backup unit and flash cache protection</span></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Battery backup unit and flash cache protection</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-lede">What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
+    <h3 id="why-the-cache-is-at-risk">Why the cache is at risk</h3>
+    <p>A RAID controller with memory of its own can answer a write as soon as the data is in that memory, and write it to the disks later. This is <em>write-back</em> caching, and it is a large part of why a hardware controller is fast on writes: the <a href="write-penalty.html">write penalty</a> of a parity update is paid in the background, and small writes can be gathered into full stripes. The cost is a window of risk. Until the cached data reaches the disks, it exists only in volatile memory, and a power cut in that window loses writes the operating system was told had succeeded. For a parity array the loss can be worse than the missing writes: a stripe whose data landed and whose parity did not is the <a href="write-hole.html">write hole</a>.</p>
+    <h3 id="two-ways-to-keep-the-cache">Two ways to keep the cache</h3>
+    <ul>
+      <li><strong>A battery backup unit (BBU).</strong> A battery on the controller keeps the cache memory powered while the host is off, for hours, so that the data is still there when power returns and the controller can finish writing it. The battery ages, needs charging and periodic relearning, and while it is not charged the controller is meant to run write-through, answering a write only once it is on disk.</li>
+      <li><strong>Flash cache protection.</strong> The newer design does not try to keep the memory alive. A supercapacitor pack &quot;provides power for the backup of your data in case of host power loss or server failure&quot;, long enough for the controller to copy the cache to non-volatile flash on the card: &quot;the data is backed up to the NAND flash memory available on the MegaRAID storage adapter&quot;. When power returns the cache is read back from flash and the writes complete. Broadcom sells this as CacheVault; the supercapacitor does not age like a battery and holds the data indefinitely once it is in flash.</li>
+    </ul>
+    <p>Either way, the controller&#39;s writes are <em>protected</em>: an interrupted stripe write is finished when power returns, not left half done. This is the capability the <a href="raid-engine.html">raid engine</a> entry means by a protected cache, and the reason a hardware engine can close the write hole where a driver on the CPU cannot: the driver has no memory that survives the cut. Software and firmware RAID have to protect the whole machine instead, with an uninterruptible power supply, or make the array itself tolerant of the cut with a journal or a partial parity log (<a href="write-hole.html">write hole</a>).</p>
+    <h3 id="what-it-does-not-do">What it does not do</h3>
+    <p>A protected cache saves the writes that were in flight. It does not make a controller failure survivable: if the card itself dies, the cache and its contents die with it, and the array is only as recoverable as the metadata on the disks allows. It is a power-loss device, not a redundancy device.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>Broadcom TechDocs, CacheVault Data Protection (9700 series) — &#39;The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure&#39;; &#39;The data is backed up to the NAND flash memory available on the MegaRAID storage adapter&#39;</li>
+      <li>Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data &#39;by providing battery power to the controller&#39;; CacheVault by &#39;storing cached data in non-volatile flash cache storage&#39;; write-through until the battery is charged — not read verbatim</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst">Linux kernel Documentation/driver-api/md/raid5-cache.rst</a> — the write-through journal: &#39;the data will be flushed onto RAID disks&#39; only after it is safe on the cache device; the write hole as data and parity that &#39;don&#39;t match&#39; after an unclean shutdown</li>
+      <li><a href="../data/components/engine-roc.yaml">data/components/engine-roc.yaml</a> — `power-loss-protection` as the capability a RoC claims: &#39;an interrupted stripe write is replayed when power returns, which is what closes the write hole&#39;</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="write-hole.html">Write hole</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="parity.html">Parity</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#why-the-cache-is-at-risk">Why the cache is at risk</a></li>
+        <li><a href="#two-ways-to-keep-the-cache">Two ways to keep the cache</a></li>
+        <li><a href="#what-it-does-not-do">What it does not do</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+# data/kb/redundancy.yaml — the second axis: how the data survives a failed member.
+# The two techniques have their own entries (mirroring, parity); this one says why
+# redundancy exists, what it costs and what it carries. Writing rules: see
+# segmentation.yaml header.
+
+id: redundancy
+kind: concept
+name: Redundancy
+short: >
+  How an array keeps its data readable when a member fails: by storing more than
+  the data itself. Two techniques do it. Mirroring keeps whole copies on separate
+  disks; parity keeps a computed summary from which any one missing block, or two
+  with a second parity, can be rebuilt. Redundancy always costs capacity; the
+  question is how much, and how many failures it buys.
+
+long: |
+  ## The problem it answers
+
+  A disk fails, eventually. Put many disks together and the array fails as soon as
+  any one of them does, so it fails sooner. The paper that named RAID put it as a
+  formula, with MTTF ("mean time to failure"):
+
+  ```text
+  MTTF of a disk array = MTTF of a single disk ÷ number of disks in the array
+  ```
+
+  Their example: 100 disks rated at 30,000 hours each give an array rated at
+  300 hours, "less than 2 weeks". Their conclusion: "Without fault tolerance, large
+  arrays of inexpensive disks are too unreliable to be useful." Striping makes the
+  loss total, because every disk carries a piece of every file ([[striping]]); a
+  linear array loses only what was on the dead disk, but that is still data lost.
+
+  Redundancy is the answer: store, beside the data, enough extra information that
+  the contents of a failed member can be recomputed from the survivors. The levels
+  the paper defined are the ways to do this at different costs, and every RAID
+  level since is one of two techniques, or a nesting of them.
+
+  ## Two techniques
+
+  - **Mirroring.** Every block is stored whole on two or more disks. Nothing is
+    computed: a write goes to every copy, a read is served by any one. Lose all
+    copies but one and the data is still there. The cost is the copies themselves:
+    two disks hold one disk's worth. See [[mirroring]].
+  - **Parity.** For every stripe of data blocks, one extra block holds their XOR.
+    Any single block of the stripe, data or parity, can be recomputed from the
+    others. The cost is one block per stripe, whatever the stripe's width: on ten
+    disks, a tenth of the space. A second parity block, computed differently,
+    covers two failures at the cost of a second block. See [[parity]].
+
+  Redundancy is the second of the two axes ([[segmentation]] is the first) that need
+  to be addressed when deciding what RAID to use. On this axis a level is one of
+  four things:
+
+  ```text
+  none      RAID 0, JBOD             no extra information; any failure loses data
+  mirror    RAID 1, RAID 10          n copies of every block
+  parity1   RAID 5 (and RAID 4)      one parity block per stripe
+  parity2   RAID 6                   two parity blocks per stripe, P and Q
+  ```
+
+  A nested level is one of these built over spans that are themselves one of
+  these: RAID 50 is `none` over `parity1` spans, RAID 51 is `mirror` over
+  `parity1` spans, RAID 60 is `none` over `parity2` spans. The nesting is what
+  makes their numbers different from the flat levels', and the [[span]] entry
+  shows why.
+
+  ## What depends on this axis
+
+  Three numbers follow from the redundancy alone, and each has its own entry:
+
+  - [[capacity]]: how much of the raw space is left for data
+  - [[fault-tolerance]]: how many members can fail, in the worst place, before
+    data is lost
+  - [[write-penalty]]: how many disk operations one write costs, because every
+    copy must be written and every parity kept consistent
+
+  Segmentation determines none of these. It determines the speed. The one place
+  where the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance
+  depend on how the copies are laid out ([[mirroring]]).
+
+  ## What it does not do
+
+  Redundancy protects against a disk failing. It does not protect against the data
+  being wrong: a deletion, an overwrite, a corrupted file are written to every copy
+  and folded into every parity block as faithfully as good data is, because to the
+  [[raid-engine]] they are writes like any other. An array with redundancy is not a
+  backup; the reasons are collected under [[raid-is-not-a-backup|RAID is not a backup]].
+
+  Nor does it make the array whole again by itself. After a failure the array runs
+  *degraded*, serving reads by recomputing what the dead member held, until the
+  member is replaced and the engine has written it back from the redundancy: the
+  [[rebuild]]. Until then the array has no tolerance left.
+
+related: [segmentation, mirroring, parity, capacity, fault-tolerance, write-penalty, rebuild, raid-is-not-a-backup, span, raid-engine]
+
+sources:
+  - ref: "David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988"
+    note: "§5: 'MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array'; the 100-disk example; 'Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful'; §6: 'break the arrays into reliability groups, with each group having extra check disks containing redundant information'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - ref: "md(4) man page"
+    note: "RAID1: 'each device in a RAID1 array contains exactly the same data'; RAID5: parity blocks 'distributed across all devices'; RAID6: 'can handle the loss of any two devices'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Microsoft Learn, Storage Spaces overview"
+    note: "mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - ref: "src/engine/model.js"
+    note: "the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis"
+    url: ../src/engine/model.js
+
+status: written

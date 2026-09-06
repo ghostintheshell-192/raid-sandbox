@@ -69,6 +69,20 @@ test('database NOT satisfied by RAID 5 (write penalty)', () => {
   eq(w.actual, 'medium');
 });
 
+// tech-debt/mirror-of-stripes-write-parallelism.md, resolved: a mirror of two
+// striped legs writes at the leg's width, so RAID 0+1 satisfies `database` —
+// read high, write high, one failure survived. What makes it the worse answer
+// (the second failure) is not in the requirement vocabulary; the level-advisory
+// soft rule says so in the sandbox instead. Recorded here so it is a decision,
+// not a surprise.
+test('database IS satisfied by RAID 0+1 over 4 disks (the recorded decision)', () => {
+  const raid0plus1 = M.array('linear', 'mirror',
+    [M.array('striped', 'none', disks(2)), M.array('striped', 'none', disks(2))]);
+  const r = C.checkChallenge(CH.database, ev(raid0plus1));
+  assert(r.satisfied, `expected satisfied; failing reqs: ` +
+    r.requirements.filter((x) => !x.met).map((x) => `${x.label} (got ${x.actual})`).join(', '));
+});
+
 test('balanced NOT satisfied by RAID 10 (capacity bar)', () => {
   const r = C.checkChallenge(CH.balanced, ev(M.array('striped', 'mirror', disks(4))));
   assert(!r.satisfied);

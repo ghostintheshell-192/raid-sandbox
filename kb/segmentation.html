@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Segmentation — RAID Sandbox knowledge base</title>
+  <meta name="description" content="How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn;">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/segmentation.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Segmentation",
+    "description": "How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn;",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/segmentation.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><span class="kb-side-item active" aria-current="page">Segmentation</span></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Segmentation</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
+    <h3 id="preliminary-concepts">Preliminary Concepts</h3>
+    <p>An array is a set of disks presented as one. Its members are disks, or, in the nested levels, smaller arrays; here the members are disks. The operating system does not see the members. It sees one block device, and it addresses it the way it addresses any disk: by sector number, the <em>logical block address</em> (LBA), counting from 0 to the last sector. Each member disk has its own sector numbers, also counting from 0. So on every read and every write something has to translate the array&#39;s sector number into a member and a sector on that member: array sector <em>s</em> becomes member <em>m</em>, sector <em>t</em>.</p>
+    <p>That translation is done by the <a href="raid-engine.html">raid engine</a>, wherever it lives: the firmware of a RAID-on-Chip on a hardware controller, or the operating system&#39;s driver in software RAID (<code>md</code> in Linux, Storage Spaces in Windows). The rule it applies is the <strong>array&#39;s layout</strong>, chosen once, by whoever creates the array (with <code>mdadm --level</code>, in the controller&#39;s configuration utility, as the resiliency type of a storage space), and fixed from then on. Segmentation is the part of that layout that says where the data goes, and every standard RAID level is built on one of two answers:</p>
+    <ul>
+      <li>Linear</li>
+      <li>Striped</li>
+    </ul>
+    <h3 id="segmentation-types">Segmentation types</h3>
+    <p><strong>Linear: the members joined end to end.</strong> The array&#39;s address space is the first member&#39;s sectors, then the second&#39;s, then the third&#39;s. The translation is a lookup: the engine keeps the sector where each member&#39;s range starts, finds the member <em>m</em> whose range contains <em>s</em>, and subtracts:</p>
+    <pre class="kb-figure"><code>m = the member with start(m) ≤ s &lt; start(m + 1)
+t = s − start(m)</code></pre>
+    <pre class="kb-figure"><code>linear, three disks of 100, 200 and 150 sectors
+
+array sector   0 …  99  → disk 0, sector s
+array sector 100 … 299  → disk 1, sector s − 100
+array sector 300 … 449  → disk 2, sector s − 300
+
+sector 250 → disk 1, sector 150</code></pre>
+    <p>Data written from the start fills disk 0 before disk 1 is touched. Linux <code>md</code> calls this mode <em>linear</em> and describes it as simply catenating the space of each drive into one large virtual drive. It takes disks of any size, and it can grow later by appending one more. What it does not do is make anything faster: one request lands on one disk, so the array reads and writes at the speed of a single disk. Linux does not count it as a RAID level, and neither does this knowledge base: it is the layout of JBOD (Just a Bunch of Disks).</p>
+    <p><strong>Striped: the members laid side by side.</strong> Picture the members as columns, each with its own sectors from 0 downwards. The data is cut into pieces of a fixed size, the <a href="chunk.html">chunk</a> (set when the array is created; 512 KiB by default in <code>mdadm</code>), and the chunks are dealt out across the columns: chunk 0 to disk 0, chunk 1 to disk 1, and so on, wrapping back to disk 0 once every member has one. One round of chunks, one per member, is a <em>stripe</em>; the next stripe sits just below it in every column.</p>
+    <p>The translation is arithmetic. With <em>C</em> the chunk size in sectors and <em>N</em> the number of members, array sector <em>s</em> lands on member <em>m</em>, sector <em>t</em>:</p>
+    <pre class="kb-figure"><code>chunk  = s div C        which chunk s is in
+offset = s mod C        where inside that chunk
+m      = chunk mod N    the member: chunks go round the members in turn
+row    = chunk div N    the stripe: one full round per row
+t      = row × C + offset</code></pre>
+    <pre class="kb-figure"><code>striped, three disks, chunk = 4 sectors
+
+┌──────────┬──────────┬──────────┐
+│ chunk 0  │ chunk 1  │ chunk 2  │  stripe 0   disk sectors 0 … 3
+│ chunk 3  │ chunk 4  │ chunk 5  │  stripe 1   disk sectors 4 … 7
+│ chunk 6  │ chunk 7  │ chunk 8  │  stripe 2   disk sectors 8 … 11
+└──────────┴──────────┴──────────┘
+   disk 0     disk 1     disk 2
+
+s = 13, C = 4, N = 3
+chunk = 13 div 4 = 3     offset = 13 mod 4 = 1
+m     = 3 mod 3  = 0     row    = 3 div 3  = 1
+t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
+    <p>A request larger than a chunk now spans several members, and they serve it at the same time: a striped array can use all of its members for one request, a linear array uses one disk. This is where the speed of a striped array comes from. The cost is that every disk holds a piece of every file. Lose one disk and every file larger than a chunk has a piece missing: none survives whole. Linux <code>md</code> calls this mode <code>raid0</code>; Windows Storage Spaces calls it a <em>simple space</em> and describes it the same way, data striped across the drives with no resiliency.</p>
+    <h3 id="remarks">Remarks</h3>
+    <p><strong>Segmentation and <a href="redundancy.html">Redundancy</a> are two separate things.</strong> How the data is split and how it is protected are chosen independently, and a level is named by the pair. Striping alone is not &quot;RAID 0&quot;: RAID 5 stripes, RAID 6 stripes, RAID 10 stripes. The RAID levels are characterized by both concepts:</p>
+    <ul>
+      <li>striped + no redundancy is RAID 0; linear + no redundancy is JBOD, a plain concatenation</li>
+      <li>striped + mirror is RAID 10 (or RAID 1E, with an odd number of disks); linear + mirror is RAID 1, where nothing is cut and every member holds the whole run</li>
+      <li>striped + parity is RAID 5 or RAID 6; linear + parity does not exist, because a parity block is computed over a stripe, and without striping there is no stripe to compute it over</li>
+    </ul>
+    <p>RAID 1 shows the linear case at its simplest: <code>mdadm</code> does not even accept a chunk size for it, because there is nothing to cut. The chunk size is a striping parameter, meaningful for RAID 0, 4, 5, 6 and 10 and no other level.</p>
+    <p>So the segmentation axis determines two things: the name, when there is no redundancy (RAID 0 and JBOD differ on this axis alone), and how many disks one request can use. It does not determine capacity or fault tolerance: those come from the <a href="redundancy.html">redundancy</a> axis, with one exception, the flat striped mirror of RAID 10, explained under <a href="mirroring.html">mirroring</a>.</p>
+    <p>One practical consequence: striping needs every member to contribute the same amount of space, because every stripe takes one chunk from each. Linux <code>raid0</code> copes with unequal disks by splitting the array into zones: the stripe runs across all disks until the smallest is full, then continues across the larger ones only. Linear never needs equal members, so it has no such problem; it has none of the speed either.</p>
+    <p>Linux <code>md</code> is quoted throughout these pages, and not only here, because its source is public and every rule can be read and checked; hardware controllers and Windows are documented by their vendors without the source. Where they differ, the page says so. See <a href="why-linux-md.html">why Linux md is the reference</a>.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — LINEAR: &#39;simply catenates the available space on each drive to form one large virtual drive&#39;; RAID0: &#39;assigns the first chunk of the array to the first device, the second chunk to the second device, and so on until all drives have been assigned one chunk&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --chunk</a> — &#39;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&#39;; &#39;The default when creating an array is 512KB&#39;</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid0.c">drivers/md/raid0.c map_sector()</a> — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/md-linear.c">drivers/md/md-linear.c linear_conf() / which_dev()</a> — each device&#39;s end_sector is the previous one&#39;s plus its own size; a sector is served by the device whose range contains it</li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — simple spaces: &#39;Data is striped across multiple drives&#39;, &#39;no resiliency or redundancy&#39;</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js writeParallelism() / readWidth()</a> — striped → the stripe width, linear → 1: the rule the sandbox computes with</li>
+      <li><a href="../src/engine/layout.js">src/engine/layout.js placeStripe() / placeLinear()</a> — the two grids the sandbox draws; and the refusal of linear + parity (&#39;parity requires striping&#39;)</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="chunk.html">Chunk, strip and stripe</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="drive-group.html">Drive group</a></li>
+      <li><a href="span.html">Span</a></li>
+      <li><a href="why-linux-md.html">Why Linux md is the reference</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#preliminary-concepts">Preliminary Concepts</a></li>
+        <li><a href="#segmentation-types">Segmentation types</a></li>
+        <li><a href="#remarks">Remarks</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

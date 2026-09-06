@@ -1,0 +1,334 @@
+/* ------------------------------------------------------------------ */
+/* KNOWLEDGE BASE — the generated pages under kb/                       */
+/*                                                                      */
+/* Loaded after styles.css, which supplies the palette, the JetBrains   */
+/* Mono face and the body reset. Kept as its own file rather than a     */
+/* section of styles.css because these rules are for documents that     */
+/* carry no application chrome at all: the sandbox never loads them,    */
+/* and the pages that do load them load nothing else of the game.       */
+/*                                                                      */
+/* The knowledge base is the mobile front door (ADR-003): one column on   */
+/* a phone, and the pre blocks scroll sideways inside their own box, the  */
+/* page body never does. On a wide screen the reading column keeps its   */
+/* measure (a line of prose past ~75 characters reads worse, not better) */
+/* and the width goes to the structure: the map as a fixed column beside  */
+/* the text, and a grid of cards on the map page.                         */
+/* ------------------------------------------------------------------ */
+
+.kb-body {
+  padding: 1.5rem 1rem 3rem;
+  overflow-x: hidden;
+}
+
+.kb-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.kb-main {
+  max-width: 72ch;
+  font-size: 1.05rem;     /* monospace reads dense: a larger body and a looser line */
+  line-height: 1.75;
+}
+.kb-page:not(.kb-page--side) .kb-main { max-width: none; }
+
+/* --- the side column: the map beside the text, from 1100px up ------ */
+
+.kb-side { display: none; }
+
+@media (min-width: 1100px) {
+  .kb-page--side {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 72ch);
+    column-gap: 3.5rem;
+    align-items: start;
+  }
+  .kb-toc { display: none; }
+  .kb-side {
+    display: block;
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding-right: 1rem;
+    border-right: 1px solid var(--accent-dim);
+    font-size: 0.78rem;
+  }
+  /* the top nav duplicates the side column there; keep only the sandbox link */
+  .kb-page--side .kb-nav { display: none; }
+}
+
+.kb-side-home { margin: 0 0 1rem; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.72rem; }
+.kb-side-home a { color: var(--accent-cyan); text-decoration: none; }
+.kb-side-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 1.1rem 0 0.4rem;
+}
+.kb-side-list { list-style: none; margin: 0; padding: 0; }
+.kb-side-list li { margin: 0 0 0.25rem; }
+.kb-side-item { color: var(--text-secondary); text-decoration: none; transition: color var(--transition); }
+.kb-side-item:hover { color: var(--text-primary); }
+.kb-side-item.active { color: var(--accent-cyan); }
+
+/* --- header + nav --------------------------------------------------- */
+
+.kb-header { margin-bottom: 1.25rem; }
+
+.kb-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent-cyan);
+}
+
+.kb-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.kb-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  padding-bottom: 0.6rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--accent-border);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kb-nav-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.kb-nav-item:hover { color: var(--text-primary); }
+.kb-nav-item.active { color: var(--accent-cyan); }
+
+/* --- links: the accent, never the browser's blue on a dark ground ----- */
+
+.kb-main a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-border);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--transition);
+}
+.kb-main a:hover { text-decoration-color: var(--accent-cyan); }
+.kb-main a:visited { color: var(--accent-hover); }
+
+/* --- sections ------------------------------------------------------- */
+
+.kb-section { margin-bottom: 2.75rem; }
+
+.kb-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  padding-bottom: 0.35rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--accent-dim);
+}
+
+.kb-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.6rem;
+}
+
+.kb-section p { margin-bottom: 0.9rem; }
+.kb-section ul, .kb-section ol { margin: 0 0 1rem 1.2rem; }
+.kb-section li { margin-bottom: 0.35rem; }
+
+/* Anchors are the way in from a level page's "read more" link. */
+.kb-concept { scroll-margin-top: 1rem; }
+
+/* --- transcluded short forms, ledes, flags -------------------------- */
+
+.kb-lede {
+  font-size: 1rem;
+  border-left: 2px solid var(--accent-cyan);
+  padding-left: 0.9rem;
+}
+
+.kb-short {
+  border-left: 2px solid var(--accent-border);
+  padding-left: 0.9rem;
+  color: var(--text-primary);
+}
+
+.kb-more { font-size: 0.8rem; }
+.kb-try { font-weight: 600; }
+
+.kb-flag {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--color-parity);
+  border: 1px solid var(--color-parity);
+  border-radius: var(--radius);
+  padding: 0.15rem 0.5rem;
+}
+
+.kb-caption, .kb-source, .kb-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.kb-note { margin-top: 0.9rem; }
+
+.kb-tag {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  padding: 0 0.35rem;
+  vertical-align: 0.1em;
+}
+
+/* --- monospace blocks: grids, worked calculations, text figures ------ */
+/*  Every space in these is content — the grids and the figures are      */
+/*  aligned by column. They scroll inside their own box so a narrow      */
+/*  screen never widens the page.                                        */
+
+.kb-grid, .kb-worked, .kb-figure {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.kb-grid code, .kb-worked code, .kb-figure code { font-family: var(--font); }
+
+.kb-section code {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 0.05rem 0.3rem;
+  font-size: 0.9em;
+}
+.kb-grid code, .kb-worked code, .kb-figure code { background: none; padding: 0; font-size: inherit; }
+
+/* --- definition lists: algorithms, components, minimums, glossary ---- */
+
+.kb-defs { margin-bottom: 1rem; }
+.kb-defs dt {
+  font-weight: 600;
+  margin-top: 1rem;
+}
+.kb-defs dd {
+  margin: 0.25rem 0 0;
+  color: var(--text-primary);
+}
+
+.kb-notes { margin: 1rem 0 1rem 1.2rem; }
+
+/* --- the side column's groups: native <details>, no script ---------- */
+
+.kb-side-group { margin: 0 0 0.6rem; }
+.kb-side-group > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--accent-dim);
+}
+.kb-side-group > summary::-webkit-details-marker { display: none; }
+.kb-side-group > summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 1em;
+  color: var(--accent-cyan);
+  transition: transform var(--transition);
+}
+.kb-side-group[open] > summary::before { transform: rotate(90deg); }
+.kb-side-group > summary:hover { color: var(--text-primary); }
+.kb-side-group > .kb-side-list { padding: 0.4rem 0 0.2rem 1em; }
+
+/* --- the right column: this page's own sections, from 1400px up ----- */
+
+@media (min-width: 1400px) {
+  .kb-page--side.kb-page--toc {
+    grid-template-columns: 15rem minmax(0, 72ch) 13rem;
+  }
+  .kb-toc {
+    display: block;
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding-left: 1rem;
+    border-left: 1px solid var(--accent-dim);
+    font-size: 0.76rem;
+  }
+}
+.kb-toc-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+.kb-toc-list { list-style: none; margin: 0; padding: 0; }
+.kb-toc-list li { margin: 0 0 0.3rem; }
+.kb-toc-list a { color: var(--text-secondary); text-decoration: none; }
+.kb-toc-list a:hover { color: var(--text-primary); }
+
+/* the section a reader jumped to from the right column shows it */
+.kb-section:target > h2, .kb-section :target { color: var(--accent-cyan); }
+.kb-section h3 { scroll-margin-top: 1rem; }
+
+/* --- the map's cards: a grid that fills the width, one column narrow - */
+
+.kb-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.7rem;
+}
+.kb-cards li {
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 0.8rem 1rem;
+}
+.kb-cards h3 { margin: 0 0 0.3rem; font-size: 0.95rem; }
+.kb-cards h3 a { text-decoration: none; }
+.kb-cards h3 a:hover { text-decoration: underline; }
+.kb-cards p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+.kb-links { list-style: none; margin-left: 0; padding: 0; }
+.kb-links li { display: inline-block; margin: 0 0.9rem 0.35rem 0; font-size: 0.85rem; }
+
+.kb-sources { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* --- footer --------------------------------------------------------- */
+
+.kb-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--accent-dim);
+  font-size: 0.8rem;
+}
+.kb-footer a { color: var(--text-secondary); text-decoration: none; }
+.kb-footer a:hover { color: var(--accent-cyan); }
+.kb-footer a:visited { color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .kb-body { padding: 1rem 0.75rem 2.5rem; }
+  .kb-title { font-size: 1.3rem; }
+  .kb-grid, .kb-worked, .kb-figure { font-size: 0.72rem; }
+}

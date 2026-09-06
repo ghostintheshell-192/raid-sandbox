@@ -1,0 +1,108 @@
+# data/kb/raid-engine.yaml — the actor every axis-B concept names: the thing that
+# turns a layout into disk operations. Writing rules: see segmentation.yaml header.
+#
+# Axis A in one entry. The three places the engine lives are stated with their
+# sources; the internals of a RAID-on-Chip (own processor, protected cache) are
+# taken from the project's component files and not yet checked against vendor
+# documentation, hence `status: to-verify`.
+
+id: raid-engine
+kind: concept
+name: RAID engine
+short: >
+  The component that turns a RAID layout into disk operations. It owns the array's
+  metadata, translates every request from the array's addresses to the members',
+  writes the copies or computes the parity, and keeps serving when a disk fails. It
+  is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating
+  system's own driver, or a boot firmware working with that driver.
+
+long: |
+  ## The role
+
+  Whatever runs a RAID array has the same list of jobs, and the list is the
+  definition of the engine:
+
+  - **Keep the metadata.** Which disks belong to the array, in what order, with what
+    layout, and in what state. Linux `md` writes it on each member as a *superblock*;
+    a controller keeps its own format on the disks and in its memory.
+  - **Translate addresses.** Every read and write arrives for the array's sectors
+    and must be turned into the members' sectors, by the rule of the
+    [[segmentation]].
+  - **Produce the redundancy.** Write every copy of a mirrored block, compute the
+    [[parity]] of a stripe and write it, keep the two consistent.
+  - **Survive a failure.** When a member dies, keep answering from the survivors
+    (a *degraded* array) and, given a replacement, [[rebuild]] the missing member
+    from what the redundancy holds.
+  - **Present the result.** Upstream, the array is one block device: a
+    [[virtual-drive]] when a controller presents it, an `md` device when the
+    operating system does.
+
+  ## Where it lives: three answers
+
+  The [[physical-disks]] reach the operating system along one path: [[backplane]],
+  [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
+  three ways, and the way is what the industry names *hardware*, *software* and
+  *firmware* (or *fake*) RAID.
+
+  **Hardware RAID.** A controller card carries the HBA and a *RAID-on-Chip* (RoC), a
+  processor dedicated to the list above, with its own memory as write cache. The
+  operating system never sees the member disks: what it is given is the controller's
+  virtual drive. In Broadcom's MegaRAID vocabulary, "virtual drives are drive groups
+  or spanned drive groups that are available to the operating system".
+
+  **Software RAID.** No engine object on the path. The HBA passes the disks through
+  and the operating system's driver is the engine: `md` in Linux (configured with
+  `mdadm`), Storage Spaces in Windows. The CPU does the computing, the OS sees every
+  member disk and, beside them, the array device it made.
+
+  **Firmware RAID, called fake RAID once its wiring is understood.** A chip on the
+  motherboard, or a cheap add-in card, that holds the array's metadata and a boot
+  firmware, an *option ROM* in the system BIOS which, in Intel's words, manages the
+  drives and RAID volumes "before the operating system loads". That is what it is
+  for: the machine can boot from the array. Once the OS is up, its driver does the
+  engine's work on the CPU, exactly as in software RAID. Linux shows this directly:
+  `mdadm` runs Intel Rapid Storage volumes as `md` arrays with an *external*
+  metadata format, `imsm`, "supported by an option-rom on some platforms". The
+  metadata is the firmware's; the computing is the operating system's.
+
+  ## What tells them apart
+
+  Not the wiring. A hardware controller and a firmware-RAID card can sit in the same
+  PCIe slot, and on a chipset the firmware engine and the CPU may share a die. What
+  separates the three is two questions: who owns the metadata, and who computes.
+
+  - hardware: the controller owns it and computes it
+  - firmware: the firmware owns it, the CPU computes it
+  - software: the operating system owns it and computes it
+
+  Two consequences follow from the same fact. A hardware engine's write cache can
+  be protected against power loss (a [[bbu|BBU]] or flash), which is what closes the
+  parity [[write-hole]]; a driver on the CPU has no such cache, so software and
+  firmware RAID rely on the machine's own power protection. And a hardware engine
+  needs no driver to make the array readable, while a firmware array is unreachable
+  without one: with the OS driver missing, the option ROM alone cannot serve it.
+
+related: [segmentation, parity, rebuild, virtual-drive, physical-disks, backplane, hba, bbu, write-hole, why-linux-md]
+
+sources:
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Introduction to RAID"
+    note: "'Virtual drives are drive groups or spanned drive groups that are available to the operating system'; Virtual Drive — 'a partition in a drive group that is made up of contiguous data segments on the drives'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
+  - ref: "Intel, Option ROM Information for Intel RAID Controller Hub"
+    note: "'The option ROM manages Serial ATA hard drives and RAID volumes that are attached to an Intel RAID Controller hub before the operating system loads'; 'integrated with the system BIOS'"
+    url: https://www.intel.com/content/www/us/en/support/articles/000006106/technologies.html
+  - ref: "mdadm(8) man page, --metadata=imsm"
+    note: "'Use the Intel(R) Matrix Storage Manager metadata format. This creates a CONTAINER which is managed in a similar manner to DDF, and is supported by an option-rom on some platforms'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+  - ref: "md(4) man page"
+    note: "the superblock as the per-device metadata of a native md array"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Microsoft Learn, Storage Spaces overview"
+    note: "Storage Spaces as the operating system's own pooling and resiliency layer"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+  - ".development/reference/decisions/001-engine-identity-not-position.md — the ownership/computation distinction; its RoC internals (own processor, protected cache) are stated there as not yet verified against a primary source"
+  - ref: "data/components/engine-roc.yaml, engine-metadata.yaml, os-linux.yaml, os-windows.yaml"
+    note: "the three engine cases as the sandbox models them"
+    url: ../data/components/engine-roc.yaml
+
+status: to-verify

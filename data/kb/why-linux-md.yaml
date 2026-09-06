@@ -1,0 +1,70 @@
+# data/kb/why-linux-md.yaml — the note every page links when it quotes Linux `md`:
+# why one implementation is the reference, and what that does not mean.
+# Writing rules: see segmentation.yaml header.
+
+id: why-linux-md
+kind: concept
+name: Why Linux md is the reference
+short: >
+  These pages take the Linux `md` driver as their reference implementation because
+  its source is public: every rule stated here can be read and checked in the code,
+  function by function. Hardware controllers and Windows Storage Spaces are described
+  from their vendors' documentation, and the page says clearly where they differ
+  from `md`.
+
+long: |
+  Linux `md` is the reference of these pages for one reason: its source can be
+  read, and that makes every rule stated here accountable.
+
+  ## Checking the sources
+
+  The Linux kernel is published under the GPL-2.0 licence, and the `md` driver is
+  the directory `drivers/md/` of its source tree: `raid0.c`, `raid1.c`, `raid5.c`
+  (which also implements RAID 4 and RAID 6), `raid10.c`, `md-linear.c`. When a page
+  here says how a sector is mapped to a disk, where the parity of a stripe goes, or
+  what the driver does with two disks where a level asks for three, the sentence
+  points at the function that does it, and anyone can open the file and see whether
+  the sentence is true. A controller's firmware and Windows' driver do the same
+  jobs, but their code is not published; what can be checked about them is their
+  documentation, which describes behaviour and does not show it.
+
+  ## The vocabulary is not the reference
+
+  RAID is not a Linux thing. The same layouts run on a controller card, under
+  Windows Storage Spaces, in a NAS appliance, and they were defined before any of
+  these existed. Taking `md` as the reference for *rules* does not make its *words*
+  the standard.
+  Each family names the same things its own way, and the pages give both:
+
+  - the piece of data on one disk is a [[chunk]] in `md`, a *strip* on most
+    controllers
+  - the device the array becomes is an `md` device in Linux, a [[virtual-drive]] on a
+    controller, a *storage space* in Windows
+  - disks joined end to end are *linear* in `md`, a *spanned volume* or a *simple
+    space* elsewhere, and JBOD in common speech
+
+  ## Where md is not the reference
+
+  Some things exist only outside it. A protected write cache and its [[bbu|BBU]] are
+  controller hardware, and what a page says about them comes from the vendor. What
+  Storage Spaces does for crash consistency is Microsoft's to document, and the page
+  quotes Microsoft or stays silent. Every entry lists its sources, and the list
+  shows which kind of source each sentence rests on.
+
+related: [raid-engine, chunk, virtual-drive, bbu, segmentation]
+
+sources:
+  - ref: "Linux kernel source, COPYING"
+    note: "'SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note'"
+    url: https://github.com/torvalds/linux/blob/master/COPYING
+  - ref: "Linux kernel source, drivers/md/"
+    note: "raid0.c, raid1.c, raid5.c, raid10.c, md-linear.c"
+    url: https://github.com/torvalds/linux/tree/master/drivers/md
+  - ref: "md(4) man page"
+    note: "the levels md implements: LINEAR, RAID0, RAID1, RAID4, RAID5, RAID6, RAID10"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Microsoft Learn, Storage Spaces overview"
+    note: "'simple', 'mirror' and 'parity' as the resiliency types of a storage space"
+    url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
+
+status: written

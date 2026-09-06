@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID 10 — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/raid10.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "RAID 10",
+    "description": "Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/raid10.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--level">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><span class="kb-side-item active" aria-current="page">RAID 10</span></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">RAID 10</h1>
+    <p class="kb-subtitle">striped + mirror</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section" id="what-it-is">
+    <p class="kb-lede">Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
+    <h3 id="what-it-is">What it is</h3>
+    <p>RAID 10 is the pair <em>striped + mirror</em>: the data is cut into chunks and dealt across the members (<a href="striping.html">striping</a>), and each chunk is stored twice, on two different disks (<a href="mirroring.html">mirroring</a>). In Linux <code>md</code> it is one level, not a nesting: &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. Where the second copy lands is the placement <a href="algorithm.html">algorithm</a>, <em>near</em>, <em>far</em> or <em>offset</em>; near, the default, puts the two copies side by side in the same stripe, which is the same arrangement a hardware controller reaches in a different way, by striping over mirror pairs. That nested form, RAID 1+0, has its own page; with the near layout the two put every block in the same place, and the difference is which engine built it and which other layouts it can offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse arrangement, and its page says why.</p>
+    <h3 id="what-it-buys">What it buys</h3>
+    <p>Speed, of both kinds. A large read spans the stripe, at the combined bandwidth of all <em>N</em> disks; a small read has two disks to choose from; and a write costs two operations, one per copy, with no parity to read or compute (<a href="write-penalty.html">write penalty</a>). Among the redundant levels it has the best write numbers, which is why databases and virtual machine hosts run on it (<a href="performance.html">performance</a>).</p>
+    <h3 id="what-it-pays">What it pays</h3>
+    <p>Half the space: the <a href="capacity.html">capacity</a> is <em>N ÷ 2</em> disks&#39; worth, the same as a two-way mirror, whatever the count. And its <a href="fault-tolerance.html">fault tolerance</a> needs the word <em>guaranteed</em>: the array survives one failure for certain, and a second only if it lands on a disk that does not hold the other copy of the same chunks. On four disks with two copies, the second failure lands on the partner of the first in one case out of three; on a controller&#39;s RAID 1+0 the same rule reads &quot;one failure per pair&quot;. The number to plan on is one.</p>
+    <h3 id="the-disk-count">The disk count</h3>
+    <p>An even count of disks is the natural shape, one copy per disk per stripe. <code>md</code> accepts an odd count too, with the copies wrapping across stripes; that array is what the industry names RAID 1E, and it has its own page. With two disks the distinction disappears: two copies on two devices is a mirror, and the array is a RAID 1 by another name.</p>
+  </section>
+  <section class="kb-section" id="segmentation">
+    <h2>Segmentation</h2>
+    <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
+    <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
+    <p class="kb-caption">RAID 10 · 4 disks · near</p>
+    <pre class="kb-grid"><code>          disk 0  disk 1  disk 2  disk 3
+stripe 0      D0     D0&#39;      D1     D1&#39;
+stripe 1      D2     D2&#39;      D3     D3&#39;
+stripe 2      D4     D4&#39;      D5     D5&#39;
+stripe 3      D6     D6&#39;      D7     D7&#39;</code></pre>
+  </section>
+  <section class="kb-section" id="redundancy">
+    <h2>Redundancy</h2>
+    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
+    <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
+    <pre class="kb-worked"><code>(N ÷ copies) × disk size
+N = 4 disks of 2 TB, 2 copies → (4 ÷ 2) × 2 TB = 4 TB usable
+
+the members an adversary must kill, minus one
+two copies of every chunk: both copies of one chunk → 2 → tolerance 1
+
+one logical write costs
+every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
+  </section>
+  <section class="kb-section" id="algorithm">
+    <h2>Algorithm</h2>
+    <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
+    <p class="kb-more"><a href="algorithm.html">Read more — Placement algorithm</a></p>
+    <dl class="kb-defs">
+      <dt>RAID10 Far</dt>
+      <dd>The array is split into two equal sections on each disk. The first section holds the original copies in pure RAID0 order. The second section (physically far away on disk) holds the mirror copies, shifted right by near_copies positions — so each chunk&#39;s copy lives on a different disk than the original.</dd>
+      <dt>RAID10 Near <span class="kb-tag">default</span></dt>
+      <dd>Each chunk is stored near_copies times on adjacent physical disks within the same stripe. With near=2 and 4 disks: disk 0 and disk 1 hold the same data (span 0), disk 2 and disk 3 hold the next chunk (span 1).</dd>
+      <dt>RAID10 Offset</dt>
+      <dd>A compromise between near and far. Copies are placed in immediately adjacent stripes rather than a distant section. Consecutive stripe pairs form a unit: the even stripe holds originals, the odd stripe holds copies shifted right by near_copies=1. Each chunk and its copy are on different disks and in adjacent stripe positions.</dd>
+    </dl>
+  </section>
+  <section class="kb-section" id="where-it-runs">
+    <h2>Where it runs</h2>
+    <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
+    <p class="kb-more"><a href="raid-engine.html">Read more — RAID engine</a></p>
+    <dl class="kb-defs">
+      <dt>RAID Engine (RoC)</dt>
+      <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>
+      <dt>RAID Engine (RoC, tri-mode)</dt>
+      <dd>A RAID-on-Chip controller whose ports speak SAS, SATA and NVMe alike (Broadcom MegaRAID 9500/9600 &quot;tri-mode&quot;, Adaptec SmartRAID 3200). NVMe drives plug straight into it — no HBA, no SAS/SATA backplane in between — and it still builds the array itself and exposes one virtual drive to the OS. It is the one way hardware RAID over NVMe exists.</dd>
+      <dt>RAID Engine (metadata)</dt>
+      <dd>A dedicated chip placed between the HBA and the CPU (on the motherboard or near it) that owns the RAID metadata and boot firmware — no compute silicon of its own. The OS still sees individual disks (unlike hardware RAID) but uses a driver to participate in RAID operations; the actual parity computation runs on the CPU. The canonical example is Intel RST (Rapid Storage Technology) on Intel chipsets. Also known as &quot;motherboard RAID&quot;, &quot;BIOS RAID&quot;, or, once its wiring reveals what it is, &quot;fake RAID&quot;.</dd>
+      <dt>OS — Linux</dt>
+      <dd>Linux operating system managing the RAID array in software. Uses mdadm (for traditional RAID 0/1/5/6/10) or ZFS (with integrated volume management and checksums). The CPU computes all parity; no dedicated hardware required.</dd>
+      <dt>OS — Windows</dt>
+      <dd>Windows operating system managing RAID in software via Storage Spaces (Windows 8+/Server 2012+) or legacy Disk Management (dynamic volumes). Storage Spaces supports mirroring, striping, and parity spaces with optional journaling for crash consistency.</dd>
+    </dl>
+    <ul class="kb-notes">
+      <li>RAID 10 uses the &quot;far / near / offset&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="below-the-minimum">
+    <h2>Below the minimum</h2>
+    <dl class="kb-defs">
+      <dt>Minimum for the level</dt>
+      <dd>4 disks</dd>
+      <dt>The real system still starts it at</dt>
+      <dd>2 disks<br><span class="kb-source">drivers/md/raid10.c setup_conf(): the only bound on the device count is copies ≤ raid_disks, so a 2-device near-2 array starts</span></dd>
+      <dt>With 2 disks it is linear + mirror</dt>
+      <dd>two copies over two disks: every chunk sits on both, there is nothing left to stripe across<br><span class="kb-source">drivers/md/raid10.c setup_conf(): copies == raid_disks is accepted; with 2 copies on 2 devices each device holds every chunk, near or far</span></dd>
+    </dl>
+  </section>
+  <section class="kb-section" id="in-practice">
+    <h2>In practice</h2>
+    <h3>Good at</h3>
+    <ul>
+      <li>Best write performance among redundant RAID levels (mirror penalty only, no RMW)</li>
+      <li>Full read parallelism across all N disks</li>
+      <li>near/far/offset layouts available under Linux mdadm (software RAID only)</li>
+    </ul>
+    <h3>Costs</h3>
+    <ul>
+      <li>50% capacity efficiency (copies=2)</li>
+      <li>near/far/offset require Linux mdadm; hardware/fake RAID → use nested RAID 1+0</li>
+    </ul>
+    <h3>Used for</h3>
+    <ul>
+      <li>High-traffic databases</li>
+      <li>Virtualization hosts</li>
+      <li>Any workload needing both performance and fault tolerance</li>
+    </ul>
+    <h3>Not for</h3>
+    <ul>
+      <li>Large storage on a budget (50% efficiency)</li>
+      <li>Environments where near/far/offset layouts are needed on hardware RAID</li>
+    </ul>
+    <p class="kb-note">RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build). The flat form (this file) is mdadm&#39;s own RAID 10 level, which supports the near/far/offset layout algorithms — none of which decompose into mirror pairs. Nested RAID 1+0 is recognized separately, as its own level.</p>
+  </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../index.html#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwibWlycm9yIiwibmVhciIsWyJkMSIsImQyIiwiZDMiLCJkNCJdXV0sW10sW11d">Open this example in the sandbox</a></p>
+    <p class="kb-caption">A desktop link: below the desktop breakpoint the sandbox is not offered (ADR-003).</p>
+  </section>
+  <section class="kb-section" id="see-also">
+    <h2>See also</h2>
+    <h3>Related</h3>
+    <ul class="kb-links">
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="algorithm.html">Placement algorithm</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+    </ul>
+    <h3>Often confused with</h3>
+    <ul class="kb-links">
+      <li>RAID 1+0</li>
+      <li>RAID 0+1</li>
+      <li>RAID 1E</li>
+      <li><a href="raid1.html">RAID 1</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#what-it-is">What it is</a></li>
+        <li><a href="#what-it-buys">What it buys</a></li>
+        <li><a href="#what-it-pays">What it pays</a></li>
+        <li><a href="#the-disk-count">The disk count</a></li>
+        <li><a href="#segmentation">Segmentation</a></li>
+        <li><a href="#redundancy">Redundancy</a></li>
+        <li><a href="#algorithm">Algorithm</a></li>
+        <li><a href="#where-it-runs">Where it runs</a></li>
+        <li><a href="#below-the-minimum">Below the minimum</a></li>
+        <li><a href="#in-practice">In practice</a></li>
+        <li><a href="#try-it">Try it</a></li>
+        <li><a href="#see-also">See also</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

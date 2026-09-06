@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drive group — RAID Sandbox knowledge base</title>
+  <meta name="description" content="The set of physical disks a controller gathers together to work with. A drive group is a pool, not a layout: it marks off &quot;these disks are mine to arrange&quot;, and the arranging, striping, mirroring or…">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/drive-group.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Drive group",
+    "description": "The set of physical disks a controller gathers together to work with. A drive group is a pool, not a layout: it marks off \"these disks are mine to arrange\", and the arranging, striping, mirroring or…",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/drive-group.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Drive group</span></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Drive group</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-lede">The set of physical disks a controller gathers together to work with. A drive group is a pool, not a layout: it marks off &quot;these disks are mine to arrange&quot;, and the arranging, striping, mirroring or parity, happens one layer down.</p>
+    <p>Forming a drive group is a gathering step. The <a href="raid-engine.html">raid engine</a> takes a set of <a href="physical-disks.html">physical disks</a> under itself, and from that point on it can divide them up as it likes. A drive group by itself has no striping, no mirroring, no parity of its own; it just says which disks belong together. The layout is applied in the <a href="span.html">span</a>, and what the operating system is finally given is a <a href="virtual-drive.html">virtual drive</a>. The one layout a group does carry is the stripe that joins its spans in a nested level: a RAID 10 group is two or more mirror spans, striped together at the group.</p>
+    <p>The words are a controller vendor&#39;s. In Broadcom&#39;s MegaRAID documentation &quot;a drive group is a group of physical drives. These drives are managed in partitions that are known as virtual drives&quot;, and a drive group carries a RAID level: a RAID 1 drive group is two disks, a RAID 10 drive group is several RAID 1 sets spanned together. Linux <code>md</code> has no separate word for it: the set of devices given to <code>mdadm --create</code> is the group and the array at once. Windows Storage Spaces calls its gathering step a <em>storage pool</em>, from which storage spaces are carved.</p>
+    <p>Why keep the layer at all, if some systems do not name it? Because the gathering and the layout are two decisions, and they can differ: one group of eight disks can hold two spans of four with different layouts, or one virtual drive that uses part of the group and leaves the rest free. Seeing the pool as its own layer is what makes those cases easy to describe. The figure under <a href="virtual-drive.html">virtual drive</a> shows the three layers nested, with such a group as the outer box.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="../data/intro.yaml">data/intro.yaml storageLayers.drive-group</a> — the text this entry migrates</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Drive Group</a> — &#39;A drive group is a group of physical drives. These drives are managed in partitions that are known as virtual drives&#39;</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, same guide, RAID 10 Drive Groups</a> — &#39;Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives&#39;</li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — &#39;aggregate multiple physical drives into a single logical storage pool, from which you can create virtual disks known as Storage Spaces&#39;</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="physical-disks.html">Physical disks</a></li>
+      <li><a href="span.html">Span</a></li>
+      <li><a href="virtual-drive.html">Virtual drive</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

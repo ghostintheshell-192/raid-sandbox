@@ -1,0 +1,58 @@
+# data/kb/backplane.yaml — a physical actor on the control path. Written from the
+# project's component file and secondary descriptions (a vendor manual, patent
+# text); no primary specification read yet, hence `status: to-verify`.
+# Writing rules: see segmentation.yaml header.
+
+id: backplane
+kind: concept
+name: Backplane
+short: >
+  The board the disks plug into, on the path between them and the HBA or the
+  controller. A passive backplane only routes the SATA or SAS signals from each
+  disk bay to a connector; an active one carries a SAS expander, a switch that
+  lets one cable reach many disks. Either way it stores nothing and computes no
+  RAID.
+
+long: |
+  In a server or a disk shelf the [[physical-disks]] do not cable to the
+  controller one by one. They slide into bays, and the bays are connectors on a
+  board at the back of the cage: the backplane. Its job is electrical, to carry
+  each disk's signal lines to a connector the [[hba|HBA]] or the RAID controller
+  cables to, and to bring power and the bay's status lights.
+
+  Two kinds exist, and the difference is whether anything on the board processes
+  commands:
+
+  - **Passive.** Connectors and traces, one lane per bay. A cable from the
+    controller carries four lanes, so a passive backplane serves four bays per
+    connector, and a larger cage needs more cables.
+  - **Active.** The board carries a SAS *expander*, a switch between the
+    controller's lanes and the bays. One four-lane cable then reaches every disk
+    in the cage, and the expander routes each command to its target. The
+    expander only forwards commands; it is not a [[raid-engine]], and it keeps
+    no data.
+
+  NVMe disks are the case that steps around it: they speak PCIe, and in the
+  simplest wiring they reach the bus without a SAS backplane in between
+  ([[physical-disks]]).
+
+  Why name it at all, if it computes nothing? Because it is a failure domain. A
+  backplane that dies takes every disk on it off the path at once, however the
+  disks are laid out. The practice that follows is to spread the members of one
+  [[span]] across backplanes where the cage allows it, so that no single board
+  holds both copies of a mirror or two members of a parity stripe.
+
+related: [physical-disks, hba, raid-engine, span]
+
+sources:
+  - ref: "data/components/backplane.yaml"
+    note: "'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
+    url: ../data/components/backplane.yaml
+  - ref: "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections"
+    note: "the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
+    url: https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72
+  - ref: "US patent 7,275,935 (Universal backplane connection)"
+    note: "'Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality'; 'passive backplanes contain almost no computing circuitry' (secondary)"
+    url: https://patents.google.com/patent/US7275935
+
+status: to-verify

@@ -2,15 +2,19 @@
 
 ## Project State
 
-**Last Updated**: 2026-09-05
+**Last Updated**: 2026-09-06
 
 **Current Phase**: Live in its own repo. Extracted from the personal-site repo and
 deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-deploy from
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: none open. The **degenerate-levels spec** is implemented (PRs #35–#37,
-2026-09-05, now `specs/implemented/degenerate-levels.md`): below its minimum a level
+**Active Work**: the **knowledge base** (roadmap item 3) is built on `feature/knowledge-base`
+and waits for its PR — an MVP by Valentina's word: 31 static pages generated from the data,
+24 concepts with their sources, five level pages with the engine's numbers, one page per
+concept, the map as a folding column beside the text. What remains of the spec's §9 is
+the other nine levels and the components page. Before that: the **degenerate-levels spec**
+is implemented (PRs #35–#37, 2026-09-05, now `specs/implemented/degenerate-levels.md`): below its minimum a level
 collapses into a simpler one, the panel shows what was built next to what runs, and the
 diff between them is the trace of rewrites the level files declare. The **agnostic-engine
 plan** (2026-09-02) is complete and its technical queue closed (2026-09-04/05). What
@@ -19,6 +23,24 @@ its own (`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
 
+- **The knowledge base, generated from the data** (`feature/knowledge-base`, 2026-09-06,
+  spec and implementation the same day, `specs/implemented/knowledge-base.md`): 24
+  concept entries in `data/kb/` — the four storage layers, the two axes and their
+  techniques, the three numbers, rebuild, scrubbing, the write hole, "RAID is not a
+  backup", the physical actors — every sentence with a fact checked against a primary
+  source read that day (the man pages, `raid0/1/5/10.c`, the 1988 paper, Anvin's RAID-6
+  paper, Microsoft Learn, the MegaRAID guide, Intel, US-CERT) and 107 of 114 sources
+  linked; a `kb:` block on levels 0/1/5/6/10 with the worked calculation filled from the
+  engine; `generate-kb.js` (Node, vendored js-yaml, a markdown subset, an evaluator for
+  `capacityTemplate`) writes 31 pages at commit time, tracked and served static —
+  `kb.html` redirects, `kb.js` is gone, the sitemap lists them; three suites
+  (`kb-data`, `kb-worked`, `kb-generator`: 336 tests) keep data, engine and pages
+  aligned. The engine changed where the pages contradicted it: a mirror's write
+  parallelism is one copy's width and its penalty the copy count, so RAID 0+1 writes
+  like RAID 1+0 (`mirror-of-stripes-write-parallelism` resolved). Layout decided with
+  Valentina reading as a learner: one page per concept, a `<details>` map beside the
+  text, the page's sections on the right, the accent for links, a footer for the site's
+  navigation on every page including the sandbox's. 22 headless suites - 2026-09-06
 - **Desktop only** ([ADR-003](reference/decisions/003-desktop-only.md), 2026-09-05):
   below 900px the game is no longer offered — `index.html` hides the canvases and shows
   a short notice saying what RAID Sandbox is, that it needs a desktop browser, and
@@ -149,10 +171,11 @@ decision.
    in `data/`), the decided first channel (hover a violation → highlight its nodes),
    and the engine's discarded `reason` strings. The data-driven engine made this
    cheaper: tooltips already come from `ui:` blocks. **M**
-3. **Knowledge base rework** — didactic, deeper than in-game, not a wiki. Same source
-   as the icons, two depths, linked both ways. Crosses the SEO ceiling (content not in
-   the served HTML): decide whether KB prose stays runtime-loaded or is written into
-   the page. Start: `kb.html`/`kb.js`, `data/intro.yaml`, the SEO item below. **L**
+3. **Knowledge base rework** — **MVP DONE 2026-09-06** (`specs/implemented/knowledge-base.md`):
+   one source, two depths, generated at commit time, 31 pages. Left, §9.3–9.4: the `kb:`
+   block on the other nine levels (1E, 1+0, 0+1, 50, 60, 51, 61, 100, JBOD) and the
+   components page; RAID 4 needs a model decision first (§14). The SEO ceiling is gone
+   with it: the text is in the served HTML. **M** for what remains
 4. **The verdict, drawn** — a dashed box around the pieces that form the controller,
    coloured by verdict, the ADR-001 lesson with no words. Start:
    `specs/planned/derived-controller.md` ("the dashed box is the verdict, drawn"),
@@ -186,13 +209,14 @@ decision.
 
 Small, any time:
 
-- **Phantom back links** — `index.html` and `kb.html` both carry "← back" to
-  `ghostintheshell-192.github.io`; a "made by" link in the footer is honest, an arrow
-  is not. **S**
+- ~~**Phantom back links**~~ — gone 2026-09-06 with the KB: `index.html` has a footer
+  (knowledge base · author), `kb.html` is a redirect.
 - **Contact form** — the site is static and stays so: `mailto:` + a link to GitHub
   issues is the honest baseline; a third-party form service adds a host to the path
   (the js-yaml argument); a Vercel function would be the first server-side code. **S**
-- **SEO: the content is not in the served HTML** — folds into item 3. **M**
+- ~~**SEO: the content is not in the served HTML**~~ — closed by item 3 (2026-09-06):
+  the knowledge base is static HTML with a `TechArticle` per page and a sitemap; what
+  remains is Search Console (the property is still not shared with the MCP account).
 - **Google Fonts is the last third-party blocking request** — self-host JetBrains Mono. **S**
 - ~~**Push + PR flow**~~ — decided 2026-09-04 and written into `workflow.md` (PR #17):
   a PR per branch, merged from GitHub, so the `headless` check is a gate. One caveat
@@ -207,10 +231,6 @@ See `.development/tech-debt/`:
   the player builds (roadmap item 2).
 - `capacity-approximate-on-mixed-disks.md` — open (medium): usable capacity is
   approximate when an array mixes disk sizes.
-- `mirror-of-stripes-write-parallelism.md` — open (low): a mirror of striped legs
-  writes as one disk, so RAID 0+1 gets `writeMult 0.5` and `writeClass medium` against
-  1+0's `1` / `high`. Fixing it lets 0+1 satisfy the `database` challenge — a domain
-  decision, taken on purpose, recorded there.
 - `physical-layer-canvas-has-no-touch-picker.md` — open (low, re-scoped by ADR-003): the physical
   layer has drag-and-drop only, the data layer also click-to-build; take up with item 9.
 - `automation-not-checked-on-windows.md` — open (low): hooks and dev scripts are

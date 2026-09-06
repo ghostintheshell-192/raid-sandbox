@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backplane — RAID Sandbox knowledge base</title>
+  <meta name="description" content="The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector;">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/backplane.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Backplane",
+    "description": "The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector;",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/backplane.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Backplane</span></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Backplane</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-lede">The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector; an active one carries a SAS expander, a switch that lets one cable reach many disks. Either way it stores nothing and computes no RAID.</p>
+    <p>In a server or a disk shelf the <a href="physical-disks.html">physical disks</a> do not cable to the controller one by one. They slide into bays, and the bays are connectors on a board at the back of the cage: the backplane. Its job is electrical, to carry each disk&#39;s signal lines to a connector the <a href="hba.html">HBA</a> or the RAID controller cables to, and to bring power and the bay&#39;s status lights.</p>
+    <p>Two kinds exist, and the difference is whether anything on the board processes commands:</p>
+    <ul>
+      <li><strong>Passive.</strong> Connectors and traces, one lane per bay. A cable from the controller carries four lanes, so a passive backplane serves four bays per connector, and a larger cage needs more cables.</li>
+      <li><strong>Active.</strong> The board carries a SAS <em>expander</em>, a switch between the controller&#39;s lanes and the bays. One four-lane cable then reaches every disk in the cage, and the expander routes each command to its target. The expander only forwards commands; it is not a <a href="raid-engine.html">raid engine</a>, and it keeps no data.</li>
+    </ul>
+    <p>NVMe disks are the case that steps around it: they speak PCIe, and in the simplest wiring they reach the bus without a SAS backplane in between (<a href="physical-disks.html">physical disks</a>).</p>
+    <p>Why name it at all, if it computes nothing? Because it is a failure domain. A backplane that dies takes every disk on it off the path at once, however the disks are laid out. The practice that follows is to spread the members of one <a href="span.html">span</a> across backplanes where the cage allows it, so that no single board holds both copies of a mirror or two members of a parity stripe.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="../data/components/backplane.yaml">data/components/backplane.yaml</a> — &#39;Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data&#39;; the note on spreading a span across backplanes</li>
+      <li><a href="https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72">Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections</a> — the backplane as what the controller&#39;s cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)</li>
+      <li><a href="https://patents.google.com/patent/US7275935">US patent 7,275,935 (Universal backplane connection)</a> — &#39;Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality&#39;; &#39;passive backplanes contain almost no computing circuitry&#39; (secondary)</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="physical-disks.html">Physical disks</a></li>
+      <li><a href="hba.html">HBA</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="span.html">Span</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,107 @@
+# data/kb/rebuild.yaml — restoring redundancy after a failure: what is written back,
+# from what, and why the time it takes is a reliability number.
+# Writing rules: see segmentation.yaml header.
+
+id: rebuild
+kind: concept
+name: Rebuild
+short: >
+  Writing a replaced disk back from the redundancy: copying the surviving mirror,
+  or recomputing every stripe from data and parity. Until it finishes the array is
+  degraded, slower, and one failure away from loss. The time it takes is a
+  reliability number, and a hot spare is what lets it start with nobody present.
+
+long: |
+  ## What it does
+
+  When a member fails, the [[raid-engine]] marks it faulty and carries on with
+  the rest: in `md`, on a write error "the md driver will immediately disable
+  that device (marking it as faulty) and continues operation on the remaining
+  devices". The array is now *degraded*: every request is still answered, but
+  the [[redundancy]] that made the failure survivable is spent. Restoring it
+  means putting a disk in the dead one's place and filling it, and what fills
+  it depends on the level:
+
+  - a **mirror** copies the surviving copy block by block
+  - a **parity** array reads every stripe's remaining blocks and recomputes the
+    missing one by XOR ([[parity]]), or, for RAID 6 with two missing, solves the
+    two syndromes
+  - a striped mirror (**RAID 10**) finds each missing chunk's other copy and
+    copies it
+
+  Broadcom describes the controller's side the same way: the failed drive's
+  data is re-created "using the data that is stored on the other drives in the
+  drive group". The rebuild is a full pass over the array, every stripe, whether
+  or not it held data.
+
+  ## Who starts it
+
+  A rebuild needs a target disk. It can be the replacement a person plugs in,
+  or a *hot spare*: "an extra, unused drive that is part of the disk subsystem",
+  standing by "ready for service if a drive in an array fails". With a spare
+  present the engine starts on its own, "automatically and transparently"; `md`
+  likewise begins recovery onto a spare as soon as a device is marked faulty. A
+  controller distinguishes a *global* spare, available to any group, from a
+  *dedicated* one, reserved for a group and used first. What the spare saves is
+  time: the rebuild, and with it the window of risk described below, starts at
+  the moment of failure instead of when someone notices.
+
+  ## How fast, and at what cost
+
+  The rebuild competes with the array's own traffic for the same disks. Engines
+  throttle it: `md` "will slow down the rate of recovery if other activity is
+  happening, so that normal access to the array will not be unduly affected",
+  between a floor and a ceiling set in `speed_limit_min` and `speed_limit_max`;
+  a controller offers the same setting as a rebuild rate. A faster rebuild is a
+  slower array, and the other way round.
+
+  During the rebuild a parity array is at its weakest in two ways. Its reads are
+  slow, because every read of the missing disk's blocks is a recomputation
+  ([[performance]]), and its remaining disks are being read end to end for the
+  rebuild on top of that. And its tolerance is zero: the 1988 RAID paper's
+  reliability formula has the repair time in its denominator,
+
+  ```text
+  MTTF of a group = MTTF of a disk² ÷ ((G + C) × (G + C − 1) × MTTR)
+  ```
+
+  because the array is lost if a second member fails before the first is
+  repaired. MTTR is the rebuild time, and the rebuild time is the disk's
+  capacity divided by the rate the array can spare, so it grows with the size
+  of the disks. That is the argument for a second parity ([[fault-tolerance]]):
+  RAID 6 can still lose one more disk during the whole rebuild; RAID 5 cannot
+  lose any.
+
+  A second failure need not be a whole disk. A single unreadable sector on a
+  surviving member, found only when the rebuild reads it, is a block the
+  rebuild cannot recompute. [[scrubbing]] exists to find such sectors while the
+  redundancy is still there to fix them.
+
+  ## What the array knows
+
+  After the rebuild the array is whole again, with the same layout and the same
+  numbers. What it does not know is whether the data it rebuilt was right: it
+  trusts the survivors and the parity as it finds them, which is why an
+  inconsistent stripe left by a [[write-hole]] comes back as a wrong block, and
+  why a rebuild is the moment such a stripe does its damage.
+
+related: [redundancy, parity, fault-tolerance, performance, scrubbing, write-hole, raid-engine]
+
+sources:
+  - ref: "md(4) man page, RECOVERY"
+    note: "'the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices'; recovery onto a spare by copying (RAID1), parity calculation (RAID4/5/6) or finding the other copy (RAID10); 'will slow down the rate of recovery if other activity is happening'; speed_limit_min / speed_limit_max"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Rebuilds"
+    note: "'The RAID controller re-creates the data using the data that is stored on the other drives in the drive group'; hot spares rebuild 'automatically and transparently, at user-defined rebuild rates'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667598.html
+  - ref: "Broadcom, same guide, Hot Spares"
+    note: "'A hot spare is an extra, unused drive that is part of the disk subsystem'; 'ready for service if a drive in an array fails'; global and dedicated hot spares"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "MTTR, 'the mean time to repair', in the group MTTF formula; 'a disk fails, a replacement disk is switched in electronically'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - ref: "data/intro.yaml parameters.rebuild-time"
+    note: "the text this entry supersedes"
+    url: ../data/intro.yaml
+
+status: written

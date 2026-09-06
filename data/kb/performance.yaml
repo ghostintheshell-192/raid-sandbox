@@ -1,0 +1,126 @@
+# data/kb/performance.yaml — reads and writes relative to one disk, from the two
+# axes. The write-parallelism rule for a mirror of striped legs stated here is
+# the engine's since 2026-09-06 (tech-debt/mirror-of-stripes-write-parallelism.md,
+# resolved). Writing rules: see segmentation.yaml header.
+
+id: performance
+kind: concept
+name: Performance
+short: >
+  How fast an array reads and writes, relative to one disk. Two quantities decide
+  it: how many disks take part in a request, which comes from the segmentation, and
+  how many operations one write costs, which comes from the redundancy. Reads scale
+  with the disks that can serve them; writes scale with the disks divided by the
+  penalty.
+
+long: |
+  ## Two quantities
+
+  A single disk is the unit: it serves one request at a time, at its own rate.
+  What an array changes is expressed as a multiple of that disk, and the multiple
+  comes from two numbers, one per axis:
+
+  ```text
+  N   how many disks take part          from the segmentation (striping)
+  W   operations per logical write      from the redundancy   (write penalty)
+
+  reads   ≈  N  × one disk
+  writes  ≈  N ÷ W  × one disk
+  ```
+
+  The 1988 RAID paper measured its levels in exactly these terms, "events per
+  second vs single disk", and drew the two cases that matter: one large read
+  spread over all the disks of a group, and several small reads or writes each on
+  a different disk. Those two cases are the two meanings of *N*.
+
+  ## Reads: width and fanout
+
+  *N* hides two different things, and a level can have one without the other.
+
+  - **Width**: how many disks one request is spread over. A striped array spreads a
+    large request across the stripe, so the request finishes at the combined
+    bandwidth of the disks it touched. A mirror does not: one read goes to one
+    copy.
+  - **Fanout**: how many requests can be served at once. A striped array serves
+    as many as it has disks, if the requests land on different ones. A mirror
+    serves as many as it has copies, because `md` "attempts to distribute read
+    requests across all devices".
+
+  So a two-disk mirror reads one file no faster than a single disk, but two
+  readers at once each get a disk. A four-disk stripe reads one file at four
+  disks' bandwidth. RAID 10 has both: a large read spans the stripe, and any chunk
+  can be read from either of two disks. The far layout of `md`'s RAID 10 goes further, laying the first
+  copies out as a plain stripe so that "sequential reads over the devices" are
+  "similar to RAID0 in terms of speed".
+
+  ## Writes: parallelism divided by penalty
+
+  For writes *N* is the number of disks one write is spread over, and the rule per
+  segmentation is:
+
+  ```text
+  striped over disks       N = the stripe width
+  striped over spans       N = the sum of the spans' widths
+  linear, no redundancy    N = 1        one disk is active at a time
+  mirror                   N = the width of one copy
+  ```
+
+  The mirror line needs care. Every copy is written, but the copies are the same
+  data, and the penalty *W* already charges for writing them twice; what *N*
+  measures is how wide each copy's write is. A mirror of two disks writes at one
+  disk's width. A mirror of two striped legs, RAID 0+1, writes each copy across
+  the leg's whole width: on four disks that is two, the same as a RAID 1+0 on the
+  same four disks, which stripes over two mirror pairs. The two arrays write the
+  same disks in the same pattern and get the same number; what separates them is
+  the second failure, which is a [[fault-tolerance]] matter, not speed.
+
+  Then divide by *W*. On four disks:
+
+  ```text
+                N     W (small)   writes      W (full stripe)   writes
+  RAID 0        4     1           4 ×         1                 4 ×
+  RAID 1 (2)    1     2           0.5 ×       2                 0.5 ×
+  RAID 10       4     2           2 ×         2                 2 ×
+  RAID 5        4     4           1 ×         1                 4 ×
+  RAID 6        4     6           0.67 ×      1                 4 ×
+  ```
+
+  The two write columns show the effect of parity: RAID 5 and RAID 6 write small
+  scattered blocks at the rate of one disk or less, and large aligned runs at the
+  rate of the whole stripe, because a full-stripe write computes the parity once
+  and reads nothing ([[write-penalty]]). A mirror pays its two writes either way.
+
+  ## Random and sequential
+
+  This is why any statement about an array's speed has to say what kind of
+  traffic it means. Large sequential transfers want width: the stripe, and a
+  parity that is amortised over a full stripe. Many small unrelated requests want
+  fanout and a low *W*: mirrors, and a [[chunk]] large enough that a request stays
+  on one disk. The paper's two figures, "large transfers vs small transfers in a
+  group of G disks", are the same distinction, and the reason it separated
+  supercomputer workloads from transaction processing.
+
+  ## Degraded
+
+  The numbers above are for a healthy array. After a failure a parity array
+  answers every read of the missing disk by reading the rest of the stripe and
+  recomputing, so its reads slow down and its disks are busier; a mirror simply
+  has one copy fewer to fan out over. The [[rebuild]] adds its own traffic on top.
+  Fault tolerance says the data survives the failure; it does not say the array
+  stays fast through it.
+
+related: [striping, segmentation, redundancy, write-penalty, mirroring, chunk, fault-tolerance, rebuild]
+
+sources:
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "Figure 2 'Large transfer vs small transfers in a group of G disks'; the performance metrics 'Events/Sec vs Single Disk' in Tables II–VI; large reads and small reads/writes as the two workloads"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - ref: "md(4) man page"
+    note: "RAID1: 'The driver attempts to distribute read requests across all devices to maximise performance'; RAID10 far layout: 'MD can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "src/engine/model.js"
+    note: "readWidth() and readParallelism() (width vs fanout), writeParallelism() and writePenalty(); read ≈ N×, write ≈ N/W× as multipliers against a single disk"
+    url: ../src/engine/model.js
+  - "tech-debt/mirror-of-stripes-write-parallelism.md — a mirror's write parallelism is one copy's width, so RAID 0+1 and RAID 1+0 on the same disks share their write numbers; resolved 2026-09-06, the engine computes it so"
+
+status: written

@@ -29,6 +29,10 @@ absorbsNested:
 reference:
   faultToleranceAtMinimum: 1
   capacityFormula: "disk size (one copy's worth, regardless of disk count)"
+  capacityTemplate: "size"            # evaluable, see raid5.yaml
+  writePenalty:
+    random: 2
+    sequential: 2
 
 defaultAlgorithm: null
 
@@ -62,3 +66,72 @@ useCases:
 notFor:
   - Large storage pools (high capacity overhead)
   - High-throughput write workloads
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/planned/knowledge-base.md §5.2). See raid5.yaml for what
+# each field is. Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  short: >
+    Every disk holds a full copy of the data, written in step. A read is served
+    by any one copy, a write goes to all of them, and the array survives as long
+    as one copy is left. It keeps one disk's worth of space however many disks it
+    has, and it is the simplest redundancy there is.
+
+  long: |
+    ## What it is
+
+    RAID 1 is the pair *linear + mirror*: nothing is cut into chunks, and every
+    member holds the whole ([[mirroring]]). It is the first level of the 1988
+    paper, "the most expensive option we consider since all disks are
+    duplicated", and every other level is a cheaper answer to the same problem. There is
+    no layout to choose and no chunk size, because there is nothing to place:
+    `mdadm` does not accept a chunk size for it.
+
+    ## What it buys
+
+    The strongest [[fault-tolerance]] per disk: with *n* copies,
+    *n − 1* failures. The number the level is quoted with, one, is the two-disk
+    case; a three-way mirror survives two, and Windows Storage Spaces offers
+    both as two-way and three-way mirror spaces. It also gives a kind of speed
+    that is easy to misunderstand. One read is served by one disk, at that disk's
+    speed; but *n* readers at once can each have a copy, because the engine
+    spreads requests over the members ([[performance]]). A mirror serves more
+    readers, it does not serve a reader faster.
+
+    ## What it pays
+
+    Space: the [[capacity]] is one disk's worth, whatever the
+    count, so two disks keep half and three a third. And every write is written
+    *n* times, at the speed of the slowest copy ([[write-penalty]]). There is no
+    parity to compute and no read-before-write, which is why a mirror's small
+    writes cost less than a parity array's.
+
+    ## Two things that follow
+
+    Two things follow from "every member holds the whole". A mirror of mirrors is
+    just a mirror with more copies, which is why a nested level whose spans have
+    shrunk to two-disk mirrors is recognized as one wide RAID 1. And a RAID 5 on two disks *is* a
+    RAID 1: with one data block per stripe the parity is that block. The Linux
+    kernel uses this to grow a mirror into a RAID 5: it first relabels the
+    two-disk RAID 1 as a two-disk RAID 5, moving nothing because the two layouts
+    are identical on two disks, and only then adds disks. The [[rebuild]] is the
+    simplest of any level, a copy from the
+    surviving member; and, like every redundancy, it copies a deletion as
+    faithfully as anything else ([[raid-is-not-a-backup|RAID is not a backup]]).
+
+  example: { disks: 2, sizeGB: 2, protocol: SATA, algorithm: null }
+
+  worked:
+    capacity: |
+      disk size, one copy's worth
+      N = {N} disks of {size} TB → {size} TB usable, whatever N is
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      mirror: every copy must die → {N} → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      every copy is written → {writePenaltyRandom} I/Os, random or sequential
+
+  related: [mirroring, segmentation, redundancy, capacity, fault-tolerance, write-penalty, performance, rebuild, raid-is-not-a-backup]
+  confusedWith: [raid10, raid1e]

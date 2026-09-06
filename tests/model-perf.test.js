@@ -150,4 +150,44 @@ test('a one-disk array reads like the disk it is → high, not low', () => {
 });
 
 // ---------------------------------------------------------------------------
+console.log('\n[8] Mirror of arrays — a write goes to EVERY copy, spread over one copy’s width');
+
+// Derivation (tech-debt/mirror-of-stripes-write-parallelism.md, resolved): the
+// copies are the same data, so one write is spread over one leg's width — 2 of
+// 4 here — and the penalty charges the copies: W = copies × the leg's own W.
+//   RAID 0+1: N 2, W 2 × 1 = 2 → writeMult 1    RAID 1+0: N 1 + 1 = 2, W 2 → 1
+test('RAID 0+1 writes like RAID 1+0: parallelism 2, penalty 2, writeMult 1', () => {
+  const a = M.performance(RAID0plus1), b = M.performance(RAID1plus0);
+  eq(a.parallelism, 2);  eq(a.writePenalty, 2);  eq(a.random.writeMult, 1);
+  eq(b.parallelism, 2);  eq(b.writePenalty, 2);  eq(b.random.writeMult, 1);
+});
+test('RAID 0+1 and RAID 1+0 over 8 disks agree too → parallelism 4, writeMult 2', () => {
+  eq(M.performance(RAID0plus1_8).random.writeMult, 2);
+  eq(M.performance(RAID1plus0_8).random.writeMult, 2);
+});
+test('RAID 0+1 lands in the same write class as RAID 1+0 (high) — the database challenge', () => {
+  eq(M.analyze(RAID0plus1).writeClass, 'high');
+  eq(M.analyze(RAID0plus1).writeClass, M.analyze(RAID1plus0).writeClass);
+});
+// A mirror of parity spans pays every copy's read-modify-write: RAID 51 → W 2 × 4 = 8
+// over one leg's width 3 → 3/8 = 0.375 → low, worse than the RAID 5 it doubles (as it
+// should be: twice the work). Sequential amortises the parity: W 2 × 1 = 2 → 1.5, high.
+test('RAID 51: penalty 8, parallelism 3, random writeMult 0.38 → low; sequential 1.5 → high', () => {
+  const p = M.performance(RAID51);
+  eq(p.writePenalty, 8);  eq(p.parallelism, 3);
+  eq(p.random.writeMult, 0.38);      eq(p.random.writeClass, 'low');
+  eq(p.sequential.writeMult, 1.5);   eq(p.sequential.writeClass, 'high');
+});
+test('RAID 61: penalty 2 × 6 = 12, parallelism 4 → writeMult 0.33, low', () => {
+  const p = M.performance(RAID61);
+  eq(p.writePenalty, 12);  eq(p.random.writeMult, 0.33);  eq(p.random.writeClass, 'low');
+});
+// The same rule on disks: every copy is written, so a three-way mirror pays 3.
+test('RAID 1 three-way: penalty 3, writeMult 0.33, still write medium (width stays 1)', () => {
+  const R1x3 = M.array('linear', 'mirror', disks(3));
+  const p = M.performance(R1x3);
+  eq(p.writePenalty, 3);  eq(p.random.writeMult, 0.33);  eq(p.random.writeClass, 'medium');
+});
+
+// ---------------------------------------------------------------------------
 finish();

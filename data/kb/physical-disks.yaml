@@ -1,0 +1,59 @@
+# data/kb/physical-disks.yaml — the first of the four storage layers (the Map's spine,
+# spec §5.3). Migrated from data/intro.yaml `storageLayers`, whose text had no sources;
+# the interface facts added here are stated from the project's component files and
+# not yet checked against the specifications, hence `status: to-verify`.
+# Writing rules: see segmentation.yaml header.
+
+id: physical-disks
+kind: concept
+name: Physical disks
+short: >
+  The raw drives, hard disks or SSDs, each with its own capacity and its own
+  interface: SATA, SAS or NVMe. On its own a disk just holds data, with no
+  protection and no help from anything above it. Every layer above exists to turn
+  a set of them into something more useful than one disk at a time.
+
+long: |
+  A physical disk is one device: a spinning hard drive or a solid-state drive, with
+  a capacity, an interface, and an address space of its own, sectors numbered from
+  0 to the last (the [[segmentation]] entry says how an array maps its sectors onto
+  these). It is the basic unit of everything on these pages: a [[drive-group]] gathers
+  disks, a [[span]] lays them out, a [[virtual-drive]] is what they are presented as.
+
+  ## The interface is part of the path
+
+  The interface a disk speaks decides how it reaches the [[raid-engine]]:
+
+  - **SATA** and **SAS** disks plug into a [[backplane]] or directly into a
+    controller, and their commands are carried by an [[hba|HBA]], which translates
+    the disk protocol to what the host bus speaks.
+  - **NVMe** disks speak PCIe themselves. There is no protocol to translate and no
+    HBA in the way: the disk sits on the same bus as the CPU and the controller
+    cards, which is what makes it fast and what makes it a special case in every
+    layout that assumes a backplane.
+
+  A mixed set is allowed by the layers above, but the interface is chosen per disk
+  and cannot be changed by anything above it.
+
+  ## What a disk contributes
+
+  To an array, a disk is capacity and one unit of parallelism. Its size sets what
+  the layout can use: a striped [[span]] takes the same amount from every member,
+  so a larger disk contributes only as much as the smallest, while a linear one
+  takes each disk whole. Its speed is one disk's speed, and the striping above it
+  is how several such speeds are added.
+
+related: [drive-group, span, virtual-drive, backplane, hba, raid-engine, segmentation]
+
+sources:
+  - ref: "data/intro.yaml storageLayers.physical-disks"
+    note: "the text this entry migrates"
+    url: ../data/intro.yaml
+  - ref: "data/components/backplane.yaml, hba.yaml, pcie-bus.yaml"
+    note: "the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them"
+    url: ../data/components/backplane.yaml
+  - ref: "md(4) man page"
+    note: "RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+
+status: to-verify

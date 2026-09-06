@@ -1,0 +1,121 @@
+# data/kb/fault-tolerance.yaml — the second number the redundancy axis carries: the
+# guaranteed count of failures survived, and why "guaranteed" is the word.
+# Writing rules: see segmentation.yaml header.
+
+id: fault-tolerance
+kind: concept
+name: Fault tolerance
+short: >
+  How many disks can fail, in the worst place, before data is lost. It comes from
+  the redundancy: none tolerates zero, a mirror all copies but one, single parity
+  one, double parity two. In a nested level the worst place matters: a RAID 50
+  survives one failure per span, but two in the same span lose everything.
+
+long: |
+  ## Guaranteed, not lucky
+
+  Fault tolerance is a worst-case number. It answers: if an adversary chose which
+  disks fail, how many could fail before the first byte is lost? A four-disk
+  RAID 10 survives two failures if they hit different mirror pairs, and loses
+  everything if they hit the same pair; its fault tolerance is 1. What an array
+  *may* survive with luck is a different quantity, and not one to plan on.
+
+  The number a level is quoted with is its tolerance at its minimum disk count,
+  not a property of the level. "RAID 1 tolerates one failure" is the two-disk
+  mirror; a three-way mirror tolerates two. The rule is what the entry below
+  gives, and the number follows from the array actually built.
+
+  ## The rule, per redundancy
+
+  It is easiest to count the failures needed to *kill* a node, and subtract one.
+  For a disk, one failure kills it. For an array, the count depends on the
+  [[redundancy]] and on how many failures each member takes to kill:
+
+  ```text
+  failures to kill (F)
+
+  disk                 1
+  none                 the smallest F among the members     any member gone kills it
+  mirror  (RAID 1)     the sum of the members' F            every copy must die
+  mirror  (RAID 10)    2 (the copy count)                   both copies of one chunk
+  parity1              the two smallest F, added            two members gone is one too many
+  parity2              the three smallest F, added
+
+  fault tolerance = F − 1
+  ```
+
+  Over plain disks (every member F = 1) this gives the familiar numbers:
+
+  ```text
+  RAID 0    min(1, 1, …) − 1        = 0
+  RAID 1    (1 + 1 + … n copies) − 1 = n − 1
+  RAID 10   2 − 1                   = 1
+  RAID 5    (1 + 1) − 1             = 1
+  RAID 6    (1 + 1 + 1) − 1         = 2
+  ```
+
+  Linux `md` states two of these directly: a RAID 1 array can lose all devices
+  but one, a RAID 6 array "can handle the loss of any two devices".
+
+  ## Nesting: where the failures land
+
+  Apply the rule from the bottom up: first compute F for each span, then use those
+  values as the members' F one level above. A RAID 50 of two RAID 5 spans:
+
+  ```text
+  each span     F = 2           (parity1 over disks: two failures kill it)
+  the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
+                tolerance = 2 − 1 = 1
+  ```
+
+  One failure, guaranteed. The array will in fact survive a second failure if it
+  lands in the *other* span, which is why RAID 50 is often described as "one per
+  span"; but the guarantee is one, because the adversary puts the second failure
+  in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes
+  three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The
+  [[span]] entry describes the RAID 50 case.
+
+  ## While the tolerance is used up
+
+  After a failure the array runs *degraded*. Nothing is lost yet, but the
+  tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a
+  stripe with no parity, and every read of the dead member's blocks is answered by
+  recomputing them from the survivors. The 1988 paper's reliability model has a
+  term for the window this opens, MTTR, the mean time to repair, and the group's
+  time to failure divides by it:
+
+  ```text
+  MTTF of a group  =  MTTF of a disk ÷ (G + C)  ×  1 ÷ P(another failure before the dead disk is repaired)
+                   =  MTTF of a disk²  ÷  ((G + C) × (G + C − 1) × MTTR)
+  ```
+
+  with *G* data disks and *C* check disks in the group. The shorter the repair,
+  the safer the array: this is the [[rebuild]], and this formula is why the time a
+  rebuild takes is a reliability number, not only a performance one.
+
+  ## What it does not count
+
+  A failure is a disk that stops answering. A deletion, an overwrite, a corrupted
+  block are not failures: the redundancy records them faithfully. Fault tolerance
+  measures survival of hardware, not of data ([[raid-is-not-a-backup|RAID is not a backup]]).
+
+related: [redundancy, mirroring, parity, capacity, span, rebuild, raid-is-not-a-backup]
+
+sources:
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "§6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as 'the mean time to repair'"
+    url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
+  - ref: "md(4) man page"
+    note: "RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "src/engine/model.js failuresToKill() / faultTolerance()"
+    note: "the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
+    url: ../src/engine/model.js
+  - ref: "data/raid-levels/*.yaml reference.faultToleranceAtMinimum"
+    note: "the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
+    url: ../data/raid-levels/raid5.yaml
+  - ref: "data/intro.yaml parameters.fault-tolerance"
+    note: "the text this entry supersedes"
+    url: ../data/intro.yaml
+
+status: written

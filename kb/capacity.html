@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capacity — RAID Sandbox knowledge base</title>
+  <meta name="description" content="How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members;">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/capacity.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Capacity",
+    "description": "How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members;",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/capacity.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Capacity</span></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Capacity</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member&#39;s worth for each parity block in the stripe.</p>
+    <h3 id="the-rule-per-redundancy">The rule, per redundancy</h3>
+    <p>Usable capacity depends on the <a href="redundancy.html">redundancy</a> and on nothing else, with one exception noted below. With <em>N</em> members of size <em>s</em> each:</p>
+    <pre class="kb-figure"><code>none      RAID 0, JBOD     N × s          nothing is held back
+mirror    RAID 1           s              one copy&#39;s worth, however many copies
+mirror    RAID 10          N × s ÷ 2      two copies of each block, spread over N
+parity1   RAID 5           (N − 1) × s    one block per stripe is parity
+parity2   RAID 6           (N − 2) × s    two blocks per stripe are P and Q</code></pre>
+    <p>Worked on four disks of 2 TB, raw 8 TB:</p>
+    <pre class="kb-figure"><code>RAID 0    4 × 2       = 8 TB
+RAID 1    2           = 2 TB      (a four-way mirror)
+RAID 10   4 × 2 ÷ 2   = 4 TB
+RAID 5    (4 − 1) × 2 = 6 TB
+RAID 6    (4 − 2) × 2 = 4 TB</code></pre>
+    <p>The parity lines show why parity is the cheaper redundancy: its cost is one block per stripe, whatever the width, so the share it takes shrinks as the stripe widens. On ten disks RAID 5 keeps 90 % of the raw space; a mirror keeps 50 % on any count. The 1988 RAID paper gives the same figures as &quot;useable storage capacity&quot;, 50 % for its first level and 91 % or 96 % for its fifth on groups of 10 or 25. <code>md</code> states the RAID 6 line as a count: &quot;it requires N+2 drives to store N drives worth of data&quot;.</p>
+    <p>RAID 10 is the exception to &quot;redundancy and nothing else&quot;: it is a mirror, but its copies are striped over the set, so each block sits on two disks out of <em>N</em> rather than on all of them. This is the one place the <a href="segmentation.html">segmentation</a> axis touches capacity, and the <a href="mirroring.html">mirroring</a> entry has the layout.</p>
+    <h3 id="members-of-different-sizes">Members of different sizes</h3>
+    <p>The rules above assume equal members. When they differ, a striped or mirrored layout can use of each member only what the smallest offers, because every stripe takes one chunk from each and every copy must fit on each: a mirror of 2 TB and 4 TB holds 2 TB, and a RAID 5 over 2, 2, 2 and 4 TB holds 6, not 8. Linux <code>raid0</code> is the one layout that recovers the difference, by continuing the stripe over the larger disks once the smaller are full (<a href="segmentation.html">segmentation</a>); a linear array takes each member whole. So for a parity or mirror layout the safe rule is the smallest member&#39;s size times the count, and a controller applies exactly that.</p>
+    <h3 id="nesting">Nesting</h3>
+    <p>Capacity composes bottom-up: compute each <a href="span.html">span</a>, then apply the group&#39;s rule to the spans as if they were disks. A RAID 50 of two RAID 5 spans, each four disks of 2 TB:</p>
+    <pre class="kb-figure"><code>each span      (4 − 1) × 2  = 6 TB
+the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</code></pre>
+    <p>A RAID 51 over the same spans, a mirror of them, keeps one span&#39;s worth: 6 TB.</p>
+    <h3 id="what-it-is-not">What it is not</h3>
+    <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. What differs between them is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages show both.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — &#39;Useable Storage Capacity Percentage&#39; per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID6: &#39;it requires N+2 drives to store N drives worth of data&#39;; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB()</a> — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes</li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.capacityFormula</a> — the formulas in words, per level</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="span.html">Span</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#the-rule-per-redundancy">The rule, per redundancy</a></li>
+        <li><a href="#members-of-different-sizes">Members of different sizes</a></li>
+        <li><a href="#nesting">Nesting</a></li>
+        <li><a href="#what-it-is-not">What it is not</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

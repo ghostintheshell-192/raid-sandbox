@@ -22,6 +22,10 @@ minDisksToRunSource: "structural — an array of one member is that member; the 
 reference:
   faultToleranceAtMinimum: 0
   capacityFormula: "N × disk size"
+  capacityTemplate: "N * size"        # evaluable, see raid5.yaml
+  writePenalty:
+    random: 1
+    sequential: 1
 
 defaultAlgorithm: null
 
@@ -40,10 +44,10 @@ description: >
 
 pros:
   - Maximum read and write throughput (all disks active in parallel)
-  - Full utilization: no disk space lost to parity or mirroring
+  - "Full utilization: no disk space lost to parity or mirroring"
 
 cons:
-  - Zero fault tolerance: one disk failure destroys all data
+  - "Zero fault tolerance: one disk failure destroys all data"
   - The more disks, the higher the probability of a failure
 
 useCases:
@@ -55,3 +59,74 @@ notFor:
   - Anything you cannot afford to lose
   - Production databases
   - Long-term storage
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/planned/knowledge-base.md §5.2). See raid5.yaml for what
+# each field is. Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  short: >
+    Data dealt out in chunks across every disk and nothing else: no copy, no
+    parity. Every disk works on every large request, so it is the fastest layout
+    there is and uses all the space; and any one disk failing loses everything on
+    all of them.
+
+  long: |
+    ## What it is
+
+    RAID 0 is the pair *striped + no redundancy*: the data is cut into chunks and
+    dealt across the members in turn ([[striping]]), and that is all. The 1988
+    paper that named RAID defines five levels, from mirroring upward; a stripe
+    with no redundancy is not one of them, and the name came later, for exactly
+    the case the paper opens with: an array whose time to failure is one disk's
+    divided by the number of disks ([[redundancy]]).
+
+    ## What it buys
+
+    Every advantage of striping, with nothing subtracted. One large request is
+    spread over all *N* disks and arrives at their combined bandwidth; *N* small
+    requests at unrelated addresses are served at once; every byte of every disk
+    holds data, so the [[capacity]] is the sum. The [[write-penalty]] is one: a
+    write is one write. No other layout matches it on any of these, which is why
+    it is the reference the others are measured against ([[performance]]).
+
+    ## What it pays
+
+    A [[fault-tolerance]] of zero, and zero is worse than it sounds. A linear array that loses a disk loses the files that were on that
+    disk; a stripe that loses a disk loses every file larger than a chunk, because
+    each of them had a piece there. The array does not become smaller, it becomes
+    unreadable. And the more disks, the sooner: ten disks fail, between them, ten
+    times as often as one.
+
+    ## Where it belongs
+
+    The level is right for data that can be lost or remade:
+    scratch space for editing, render caches, a build directory, anything whose
+    source is elsewhere. The [[chunk]] size is its one parameter, and the only
+    decision after the disk count. Two disks is the minimum, because an array of
+    one member is that member; there is no smaller array it could become.
+
+    ## The same thing under other names
+
+    Linux `md` calls it `raid0` and copes with disks of unequal size by
+    continuing the stripe over the larger ones once the smaller are full
+    ([[segmentation]]); Windows Storage Spaces calls it a *simple space*, "data
+    striped across multiple drives" with "no resiliency or redundancy". JBOD is
+    the linear equivalent: the same absence of redundancy, none of the speed, and
+    a failure that costs the files of one disk instead of all of them.
+
+  example: { disks: 4, sizeGB: 2, protocol: SATA, algorithm: null }
+
+  worked:
+    capacity: |
+      N × disk size
+      N = {N} disks of {size} TB → {N} × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      no redundancy: any one member gone kills it → 1 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      no copies and no parity → {writePenaltyRandom} I/O, random or sequential
+
+  related: [striping, segmentation, chunk, redundancy, capacity, fault-tolerance, performance]
+  confusedWith: [jbod, raid10]
