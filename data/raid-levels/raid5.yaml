@@ -77,6 +77,8 @@ notFor:
 # Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How RAID 5 works: striping, rotating parity and the write penalty"
   short: >
     Data striped across every disk, with one parity block per stripe that moves
     from disk to disk. Any one disk can fail and everything on it is recomputed

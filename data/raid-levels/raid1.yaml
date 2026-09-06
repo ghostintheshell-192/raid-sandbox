@@ -72,6 +72,8 @@ notFor:
 # each field is. Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How RAID 1 works: mirroring, reads, writes and what a mirror survives"
   short: >
     Every disk holds a full copy of the data, written in step. A read is served
     by any one copy, a write goes to all of them, and the array survives as long

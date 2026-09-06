@@ -74,6 +74,8 @@ notFor:
 # each field is. Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How RAID 6 works: double parity and surviving two disk failures"
   short: >
     RAID 5 with a second parity block per stripe, computed a different way, so
     that any two disks can fail at once. It keeps all but two disks' worth of
