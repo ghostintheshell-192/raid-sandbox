@@ -33,5 +33,7 @@ run_generator "ARCHITECTURE.md"      bash "$SCRIPTS/generate-architecture.sh"
 run_generator "INDEX.md"             python3 "$SCRIPTS/generate-index.py"
 run_generator "tech-debt/README.md"  python3 "$SCRIPTS/update-tech-debt-index.py"
 # The knowledge base is derived documentation too, only its output is served to
-# readers instead of read in the repo (specs/planned/knowledge-base.md §7).
-run_generator "kb/"                  node "$SCRIPTS/generate-kb.js"
+# readers instead of read in the repo (specs/planned/knowledge-base.md §7). The
+# same run also (re)writes sitemap.xml at the repo root, from the same list of
+# pages, so the two cannot go stale relative to each other.
+run_generator "kb/ + sitemap.xml"    node "$SCRIPTS/generate-kb.js"

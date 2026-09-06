@@ -33,8 +33,11 @@ const root      = path.join(__dirname, '..');
 const generator = path.join(root, '.development', 'scripts', 'generate-kb.js');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kb-generator-'));
+// --sitemap redirects sitemap.xml the same way --out redirects the pages, so
+// this run never touches the real, tracked sitemap.xml at the repo root.
+const sitemapOf = (dir) => `${dir}.sitemap.xml`;
 const runInto = (dir) => {
-  try { execFileSync('node', [generator, '--out', dir], { encoding: 'utf8', cwd: root }); }
+  try { execFileSync('node', [generator, '--out', dir, '--sitemap', sitemapOf(dir)], { encoding: 'utf8', cwd: root }); }
   catch (e) {
     console.error('the generator failed:', (e.stderr || e.stdout || e.message).toString());
     process.exit(1);
@@ -207,6 +210,38 @@ for (const [name, html] of pages) {
     assert(/<meta name="twitter:card" content="summary_large_image">/.test(html), `${name}: no twitter:card`);
   });
 }
+
+// ---------------------------------------------------------------------------
+console.log('\n[5] sitemap.xml is generated, not hand-maintained');
+
+const sitemapA = fs.readFileSync(sitemapOf(outA), 'utf8');
+
+test('sitemap.xml is byte-identical on a second run', () => {
+  eq(fs.readFileSync(sitemapOf(outB), 'utf8'), sitemapA);
+});
+
+test('the tracked sitemap.xml is what the generator produces right now', () => {
+  const tracked = path.join(root, 'sitemap.xml');
+  assert(fs.existsSync(tracked), 'sitemap.xml is not in the repository');
+  eq(fs.readFileSync(tracked, 'utf8'), sitemapA,
+    'sitemap.xml is stale — run .development/automation/docs-update.sh');
+});
+
+test('sitemap.xml lists exactly the generated pages, home and kb/ included, no duplicates', () => {
+  const locs = [...sitemapA.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  eq(new Set(locs).size, locs.length);
+  const expected = new Set([
+    'https://raid-sandbox.dev/',
+    'https://raid-sandbox.dev/kb/',
+    ...pageNames.filter((n) => n !== 'index.html').map((n) => `https://raid-sandbox.dev/kb/${n}`),
+  ]);
+  eq([...locs].sort().join('\n'), [...expected].sort().join('\n'));
+});
+
+test('sitemap.xml carries no <lastmod>, <changefreq> or <priority>', () => {
+  for (const forbidden of ['lastmod', 'changefreq', 'priority'])
+    assert(!sitemapA.includes(`<${forbidden}>`), `sitemap.xml has a <${forbidden}>, which this generator never dates`);
+});
 
 fs.rmSync(tmp, { recursive: true, force: true });
 finish();

@@ -38,11 +38,16 @@ echo -e "${BLUE}[Derived Docs]${NC}"
 # the map, the concepts page and the glossary, and removes a page it no longer
 # produces. Staging the directory picks up all three cases (changed, created,
 # deleted) in one `git add`.
+#
+# `sitemap.xml` is generate-kb.js's output too (it lists the same pages), so it
+# is staged the same way and for the same reason: a page added or removed by a
+# commit must not leave the sitemap stale one commit behind.
 GENERATED=(
     ".development/ARCHITECTURE.md"
     ".development/INDEX.md"
     ".development/tech-debt/README.md"
     "kb"
+    "sitemap.xml"
 )
 
 # Add unconditionally: `git add` on an unchanged tracked file is a no-op, so
