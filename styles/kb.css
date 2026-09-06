@@ -327,6 +327,11 @@
 .kb-footer a { color: var(--text-secondary); text-decoration: none; }
 .kb-footer a:hover { color: var(--accent-cyan); }
 .kb-footer a:visited { color: var(--text-secondary); }
+.kb-footer .cookie-settings {
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: var(--text-secondary); cursor: pointer;
+}
+.kb-footer .cookie-settings:hover { color: var(--accent-cyan); }
 
 @media (max-width: 600px) {
   .kb-body { padding: 1rem 0.75rem 2.5rem; }
