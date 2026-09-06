@@ -97,7 +97,7 @@
     </li>
     <li>
       <h3><a href="virtual-drive.html">Virtual drive</a></h3>
-      <p>The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
+      <p>The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk. It behaves that way whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
     </li>
     </ul>
   </section>
@@ -135,7 +135,7 @@
     </li>
     <li>
       <h3><a href="striping.html">Striping</a></h3>
-      <p>Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</p>
+      <p>Cutting data into fixed-size chunks and dealing them out across several disks in turn. One large request is then served by all of them at once, and many small requests by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</p>
     </li>
     <li>
       <h3><a href="chunk.html">Chunk, strip and stripe</a></h3>
@@ -187,7 +187,7 @@
     </li>
     <li>
       <h3><a href="bbu.html">Battery backup unit and flash cache protection</a></h3>
-      <p>What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
+      <p>A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
     </li>
     <li>
       <h3><a href="raid-is-not-a-backup.html">RAID is not a backup</a></h3>
@@ -207,7 +207,7 @@
     </li>
     <li>
       <h3><a href="why-linux-md.html">Why Linux md is the reference</a></h3>
-      <p>These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
+      <p>These pages take the Linux `md` driver as their reference implementation because its source is public. Every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
     </li>
     </ul>
   </section>

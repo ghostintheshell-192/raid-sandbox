@@ -6,11 +6,11 @@ id: why-linux-md
 kind: concept
 name: Why Linux md is the reference
 short: >
-  These pages take the Linux `md` driver as their reference implementation because
-  its source is public: every rule stated here can be read and checked in the code,
-  function by function. Hardware controllers and Windows Storage Spaces are described
-  from their vendors' documentation, and the page says clearly where they differ
-  from `md`.
+  These pages take the Linux `md` driver as their reference implementation
+  because its source is public. Every rule stated here can be read and checked
+  in the code, function by function. Hardware controllers and Windows Storage
+  Spaces are described from their vendors' documentation, and the page says
+  clearly where they differ from `md`.
 
 long: |
   Linux `md` is the reference of these pages for one reason: its source can be

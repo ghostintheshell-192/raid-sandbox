@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Virtual drive — RAID Sandbox knowledge base</title>
-  <meta name="description" content="The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath.">
+  <meta name="description" content="The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/virtual-drive.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/virtual-drive.html">
   <meta property="og:title" content="Virtual drive — RAID Sandbox knowledge base">
-  <meta property="og:description" content="The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath.">
+  <meta property="og:description" content="The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Virtual drive",
-    "description": "The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.",
+    "description": "The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk. It behaves that way whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/virtual-drive.html",
     "isPartOf": {
@@ -127,7 +127,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag">Not yet checked against a primary source</p>
-    <p class="kb-lede">The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
+    <p class="kb-lede">The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk. It behaves that way whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
     <p>A virtual drive is the block device that the operating system, the file system and the applications work with. It has a contiguous address space organized in sectors, with numbering starting from 0, and every request to it goes to the <a href="raid-engine.html">raid engine</a>, which translates it onto the members by the <a href="segmentation.html">segmentation</a> of the <a href="span.html">span</a> below and produces whatever the <a href="redundancy.html">redundancy</a> asks for. Above the virtual drive nothing knows there is an array: this decoupling of physical layout from logical addressing is what makes RAID transparent to the software running on it.</p>
     <h2 id="container-and-content">Container and content</h2>
     <p>The three layers nest. A drive group contains disks; a span is some of those disks under one layout; a virtual drive is a slice of the usable capacity that results. RAID 10 shows all three at once, read from the top, what the operating system is given, to the bottom, what is physically there:</p>

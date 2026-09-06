@@ -8,10 +8,9 @@ kind: concept
 name: Striping
 short: >
   Cutting data into fixed-size chunks and dealing them out across several disks in
-  turn, so that one large request is served by all of them at once and many small
-  requests are served by different disks at the same time. It multiplies speed by
-  the number of disks and multiplies the chance of losing everything by the same
-  number.
+  turn. One large request is then served by all of them at once, and many small
+  requests by different disks at the same time. It multiplies speed by the number
+  of disks and multiplies the chance of losing everything by the same number.
 
 long: |
   Striping is one of the two answers to [[segmentation]], and the one every RAID

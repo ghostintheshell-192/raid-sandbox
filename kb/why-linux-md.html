@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Why Linux md is the reference — RAID Sandbox knowledge base</title>
-  <meta name="description" content="These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function.">
+  <meta name="description" content="These pages take the Linux `md` driver as their reference implementation because its source is public.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/why-linux-md.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/why-linux-md.html">
   <meta property="og:title" content="Why Linux md is the reference — RAID Sandbox knowledge base">
-  <meta property="og:description" content="These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function.">
+  <meta property="og:description" content="These pages take the Linux `md` driver as their reference implementation because its source is public.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Why Linux md is the reference",
-    "description": "These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors' documentation, and the page says clearly where they differ from `md`.",
+    "description": "These pages take the Linux `md` driver as their reference implementation because its source is public. Every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors' documentation, and the page says clearly where they differ from `md`.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/why-linux-md.html",
     "isPartOf": {
@@ -126,7 +126,7 @@
   </nav>
 
   <section class="kb-section kb-concept" id="what-it-is">
-    <p class="kb-lede">These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
+    <p class="kb-lede">These pages take the Linux `md` driver as their reference implementation because its source is public. Every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
     <p>Linux <code>md</code> is the reference of these pages for one reason: its source can be read, and that makes every rule stated here accountable.</p>
     <h2 id="checking-the-sources">Checking the sources</h2>
     <p>The Linux kernel is published under the GPL-2.0 licence, and the <code>md</code> driver is the directory <code>drivers/md/</code> of its source tree: <code>raid0.c</code>, <code>raid1.c</code>, <code>raid5.c</code> (which also implements RAID 4 and RAID 6), <code>raid10.c</code>, <code>md-linear.c</code>. When a page here says how a sector is mapped to a disk, where the parity of a stripe goes, or what the driver does with two disks where a level asks for three, the sentence points at the function that does it, and anyone can open the file and see whether the sentence is true. A controller&#39;s firmware and Windows&#39; driver do the same jobs, but their code is not published; what can be checked about them is their documentation, which describes behaviour and does not show it.</p>
