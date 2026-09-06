@@ -320,6 +320,7 @@
 
 .kb-footer {
   margin-top: 3rem;
+  text-align: center; /* the consent widget sits bottom-left: keep the links out from under it */
   padding-top: 1rem;
   border-top: 1px solid var(--accent-dim);
   font-size: 0.8rem;

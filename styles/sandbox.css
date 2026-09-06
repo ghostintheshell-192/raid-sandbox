@@ -27,6 +27,7 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 .sbc-header h1 { font-size: 1.1rem; margin: 0; color: var(--accent-cyan); }
 .sbc-footer {
   padding: .45rem 1.2rem;
+  text-align: center; /* the consent widget sits bottom-left: keep the links out from under it */
   border-top: 1px solid rgba(128,128,128,.2);
   font-size: .75rem;
   color: var(--text-secondary);
