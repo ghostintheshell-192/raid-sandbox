@@ -122,7 +122,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</p>
-    <h3 id="two-quantities">Two quantities</h3>
+    <h2 id="two-quantities">Two quantities</h2>
     <p>A single disk is the unit: it serves one request at a time, at its own rate. What an array changes is expressed as a multiple of that disk, and the multiple comes from two numbers, one per axis:</p>
     <pre class="kb-figure"><code>N   how many disks take part          from the segmentation (striping)
 W   operations per logical write      from the redundancy   (write penalty)
@@ -130,14 +130,14 @@ W   operations per logical write      from the redundancy   (write penalty)
 reads   ≈  N  × one disk
 writes  ≈  N ÷ W  × one disk</code></pre>
     <p>The 1988 RAID paper measured its levels in exactly these terms, &quot;events per second vs single disk&quot;, and drew the two cases that matter: one large read spread over all the disks of a group, and several small reads or writes each on a different disk. Those two cases are the two meanings of <em>N</em>.</p>
-    <h3 id="reads-width-and-fanout">Reads: width and fanout</h3>
+    <h2 id="reads-width-and-fanout">Reads: width and fanout</h2>
     <p><em>N</em> hides two different things, and a level can have one without the other.</p>
     <ul>
       <li><strong>Width</strong>: how many disks one request is spread over. A striped array spreads a large request across the stripe, so the request finishes at the combined bandwidth of the disks it touched. A mirror does not: one read goes to one copy.</li>
       <li><strong>Fanout</strong>: how many requests can be served at once. A striped array serves as many as it has disks, if the requests land on different ones. A mirror serves as many as it has copies, because <code>md</code> &quot;attempts to distribute read requests across all devices&quot;.</li>
     </ul>
     <p>So a two-disk mirror reads one file no faster than a single disk, but two readers at once each get a disk. A four-disk stripe reads one file at four disks&#39; bandwidth. RAID 10 has both: a large read spans the stripe, and any chunk can be read from either of two disks. The far layout of <code>md</code>&#39;s RAID 10 goes further, laying the first copies out as a plain stripe so that &quot;sequential reads over the devices&quot; are &quot;similar to RAID0 in terms of speed&quot;.</p>
-    <h3 id="writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</h3>
+    <h2 id="writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</h2>
     <p>For writes <em>N</em> is the number of disks one write is spread over, and the rule per segmentation is:</p>
     <pre class="kb-figure"><code>striped over disks       N = the stripe width
 striped over spans       N = the sum of the spans&#39; widths
@@ -152,9 +152,9 @@ RAID 10       4     2           2 ×         2                 2 ×
 RAID 5        4     4           1 ×         1                 4 ×
 RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
     <p>The two write columns show the effect of parity: RAID 5 and RAID 6 write small scattered blocks at the rate of one disk or less, and large aligned runs at the rate of the whole stripe, because a full-stripe write computes the parity once and reads nothing (<a href="write-penalty.html">write penalty</a>). A mirror pays its two writes either way.</p>
-    <h3 id="random-and-sequential">Random and sequential</h3>
+    <h2 id="random-and-sequential">Random and sequential</h2>
     <p>This is why any statement about an array&#39;s speed has to say what kind of traffic it means. Large sequential transfers want width: the stripe, and a parity that is amortised over a full stripe. Many small unrelated requests want fanout and a low <em>W</em>: mirrors, and a <a href="chunk.html">chunk</a> large enough that a request stays on one disk. The paper&#39;s two figures, &quot;large transfers vs small transfers in a group of G disks&quot;, are the same distinction, and the reason it separated supercomputer workloads from transaction processing.</p>
-    <h3 id="degraded">Degraded</h3>
+    <h2 id="degraded">Degraded</h2>
     <p>The numbers above are for a healthy array. After a failure a parity array answers every read of the missing disk by reading the rest of the stripe and recomputing, so its reads slow down and its disks are busier; a mirror simply has one copy fewer to fan out over. The <a href="rebuild.html">rebuild</a> adds its own traffic on top. Fault tolerance says the data survives the failure; it does not say the array stays fast through it.</p>
   </section>
   <section class="kb-section" id="sources">

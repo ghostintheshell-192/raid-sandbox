@@ -134,6 +134,7 @@
   padding-bottom: 0.35rem;
   margin-bottom: 1rem;
   border-bottom: 1px solid var(--accent-dim);
+  scroll-margin-top: 1rem;
 }
 
 .kb-section h3 {

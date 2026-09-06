@@ -123,16 +123,16 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
     <p>Linux <code>md</code> is the reference of these pages for one reason: its source can be read, and that makes every rule stated here accountable.</p>
-    <h3 id="checking-the-sources">Checking the sources</h3>
+    <h2 id="checking-the-sources">Checking the sources</h2>
     <p>The Linux kernel is published under the GPL-2.0 licence, and the <code>md</code> driver is the directory <code>drivers/md/</code> of its source tree: <code>raid0.c</code>, <code>raid1.c</code>, <code>raid5.c</code> (which also implements RAID 4 and RAID 6), <code>raid10.c</code>, <code>md-linear.c</code>. When a page here says how a sector is mapped to a disk, where the parity of a stripe goes, or what the driver does with two disks where a level asks for three, the sentence points at the function that does it, and anyone can open the file and see whether the sentence is true. A controller&#39;s firmware and Windows&#39; driver do the same jobs, but their code is not published; what can be checked about them is their documentation, which describes behaviour and does not show it.</p>
-    <h3 id="the-vocabulary-is-not-the-reference">The vocabulary is not the reference</h3>
+    <h2 id="the-vocabulary-is-not-the-reference">The vocabulary is not the reference</h2>
     <p>RAID is not a Linux thing. The same layouts run on a controller card, under Windows Storage Spaces, in a NAS appliance, and they were defined before any of these existed. Taking <code>md</code> as the reference for <em>rules</em> does not make its <em>words</em> the standard. Each family names the same things its own way, and the pages give both:</p>
     <ul>
       <li>the piece of data on one disk is a <a href="chunk.html">chunk</a> in <code>md</code>, a <em>strip</em> on most controllers</li>
       <li>the device the array becomes is an <code>md</code> device in Linux, a <a href="virtual-drive.html">virtual drive</a> on a controller, a <em>storage space</em> in Windows</li>
       <li>disks joined end to end are <em>linear</em> in <code>md</code>, a <em>spanned volume</em> or a <em>simple space</em> elsewhere, and JBOD in common speech</li>
     </ul>
-    <h3 id="where-md-is-not-the-reference">Where md is not the reference</h3>
+    <h2 id="where-md-is-not-the-reference">Where md is not the reference</h2>
     <p>Some things exist only outside it. A protected write cache and its <a href="bbu.html">BBU</a> are controller hardware, and what a page says about them comes from the vendor. What Storage Spaces does for crash consistency is Microsoft&#39;s to document, and the page quotes Microsoft or stays silent. Every entry lists its sources, and the list shows which kind of source each sentence rests on.</p>
   </section>
   <section class="kb-section" id="sources">

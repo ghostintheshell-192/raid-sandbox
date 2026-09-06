@@ -122,14 +122,14 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
-    <h3 id="preliminary-concepts">Preliminary Concepts</h3>
+    <h2 id="preliminary-concepts">Preliminary Concepts</h2>
     <p>An array is a set of disks presented as one. Its members are disks, or, in the nested levels, smaller arrays; here the members are disks. The operating system does not see the members. It sees one block device, and it addresses it the way it addresses any disk: by sector number, the <em>logical block address</em> (LBA), counting from 0 to the last sector. Each member disk has its own sector numbers, also counting from 0. So on every read and every write something has to translate the array&#39;s sector number into a member and a sector on that member: array sector <em>s</em> becomes member <em>m</em>, sector <em>t</em>.</p>
     <p>That translation is done by the <a href="raid-engine.html">raid engine</a>, wherever it lives: the firmware of a RAID-on-Chip on a hardware controller, or the operating system&#39;s driver in software RAID (<code>md</code> in Linux, Storage Spaces in Windows). The rule it applies is the <strong>array&#39;s layout</strong>, chosen once, by whoever creates the array (with <code>mdadm --level</code>, in the controller&#39;s configuration utility, as the resiliency type of a storage space), and fixed from then on. Segmentation is the part of that layout that says where the data goes, and every standard RAID level is built on one of two answers:</p>
     <ul>
       <li>Linear</li>
       <li>Striped</li>
     </ul>
-    <h3 id="segmentation-types">Segmentation types</h3>
+    <h2 id="segmentation-types">Segmentation types</h2>
     <p><strong>Linear: the members joined end to end.</strong> The array&#39;s address space is the first member&#39;s sectors, then the second&#39;s, then the third&#39;s. The translation is a lookup: the engine keeps the sector where each member&#39;s range starts, finds the member <em>m</em> whose range contains <em>s</em>, and subtracts:</p>
     <pre class="kb-figure"><code>m = the member with start(m) ≤ s &lt; start(m + 1)
 t = s − start(m)</code></pre>
@@ -162,7 +162,7 @@ chunk = 13 div 4 = 3     offset = 13 mod 4 = 1
 m     = 3 mod 3  = 0     row    = 3 div 3  = 1
 t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
     <p>A request larger than a chunk now spans several members, and they serve it at the same time: a striped array can use all of its members for one request, a linear array uses one disk. This is where the speed of a striped array comes from. The cost is that every disk holds a piece of every file. Lose one disk and every file larger than a chunk has a piece missing: none survives whole. Linux <code>md</code> calls this mode <code>raid0</code>; Windows Storage Spaces calls it a <em>simple space</em> and describes it the same way, data striped across the drives with no resiliency.</p>
-    <h3 id="remarks">Remarks</h3>
+    <h2 id="remarks">Remarks</h2>
     <p><strong>Segmentation and <a href="redundancy.html">Redundancy</a> are two separate things.</strong> How the data is split and how it is protected are chosen independently, and a level is named by the pair. Striping alone is not &quot;RAID 0&quot;: RAID 5 stripes, RAID 6 stripes, RAID 10 stripes. The RAID levels are characterized by both concepts:</p>
     <ul>
       <li>striped + no redundancy is RAID 0; linear + no redundancy is JBOD, a plain concatenation</li>

@@ -101,11 +101,13 @@ function render(markdown, ctx) {
       continue;
     }
 
-    // heading — `##` in the source is an h3 on the page: the entry's own name
-    // is the h2, so the author's top level nests one below it.
+    // heading — `##` in the source is an h2 on the page: the page's own title
+    // (the entry's name) is the h1, and the generator's own sections (kb.css
+    // `.kb-section h2`) are h2 too, so the author's top level sits at the same
+    // depth as those and no page skips from h1 straight to h3.
     const heading = HEADING.exec(line);
     if (heading) {
-      const level = Math.min(heading[1].length + 1, 6);
+      const level = Math.min(heading[1].length, 6);
       const text  = heading[2].trim();
       const id    = ctx.headingId ? ` id="${escapeHtml(ctx.headingId(text))}"` : '';
       out.push(`<h${level}${id}>${renderInline(text, ctx)}</h${level}>`);

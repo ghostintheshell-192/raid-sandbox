@@ -122,22 +122,22 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Redundancy keeps an array running when a disk fails. It does nothing for the other ways data is lost: a deletion, an overwrite, malware, a failed controller, fire, a second failure during a rebuild. A backup is a separate copy, made at a point in time, kept where the array&#39;s failures cannot reach it.</p>
-    <h3 id="what-redundancy-answers">What redundancy answers</h3>
+    <h2 id="what-redundancy-answers">What redundancy answers</h2>
     <p>One question: what happens when a disk stops working? <a href="redundancy.html">redundancy</a> answers it by keeping enough extra information on the other disks that the array keeps serving, and a <a href="rebuild.html">rebuild</a> makes it whole again. This is <em>availability</em>: the system stays up through a hardware failure. It is worth a great deal, and it is the only thing redundancy provides.</p>
-    <h3 id="what-it-does-not-answer">What it does not answer</h3>
+    <h2 id="what-it-does-not-answer">What it does not answer</h2>
     <ul>
       <li><strong>A write that should not have happened.</strong> A deleted file, an overwritten document, a database corrupted by a bug, a disk encrypted by ransomware: each is a write, and the <a href="raid-engine.html">raid engine</a> does with it what it does with every write, copies it to every mirror and folds it into every parity block, at once. There is no earlier version anywhere in the array. Redundancy reproduces every write faithfully, and here that faithfulness is the problem.</li>
       <li><strong>The whole array at once.</strong> The disks share a controller, a power supply, a chassis, a room. A controller that fails, a power surge, a flood, a theft take every member together, and the redundancy among them is irrelevant. An array is one failure domain.</li>
       <li><strong>The second failure.</strong> Fault tolerance is a count, and the count is used up by the first failure until the rebuild completes (<a href="fault-tolerance.html">fault tolerance</a>). A second disk lost in that window, or one unreadable sector on a survivor, ends the array; the <a href="write-hole.html">write hole</a> can end it quietly.</li>
       <li><strong>Time.</strong> Nothing in an array remembers what the data was last week.</li>
     </ul>
-    <h3 id="what-a-backup-is">What a backup is</h3>
+    <h2 id="what-a-backup-is">What a backup is</h2>
     <p>A copy that is <em>separate</em>: on other media, and so not written to by the same engine at the same instant; <em>elsewhere</em>, and so not in the same failure domain; and <em>from a point in time</em>, and so still holding what has since been deleted or corrupted. The US-CERT guidance states it as a rule of three:</p>
     <pre class="kb-figure"><code>3 – Keep 3 copies of any important file: 1 primary and 2 backups.
 2 – Keep the files on 2 different media types to protect against different types of hazards.
 1 – Store 1 copy offsite (e.g., outside your home or business facility).</code></pre>
     <p>A mirrored disk is not a second copy in that sense: it is the same copy, written twice, in the same place, by the same engine.</p>
-    <h3 id="the-two-together">The two together</h3>
+    <h2 id="the-two-together">The two together</h2>
     <p>RAID and backup are not alternatives; they answer different questions. An array keeps a service running while a disk is replaced, so that the failure is an event and not an outage. A backup is what the service is restored from when the array, or what was written to it, is gone. A system that needs both has both, and neither replaces the other.</p>
   </section>
   <section class="kb-section" id="sources">

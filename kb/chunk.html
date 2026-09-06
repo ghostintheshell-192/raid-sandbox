@@ -122,7 +122,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls a chunk and most controllers a strip. Its size is fixed when the array is created and it is the unit striping deals out, so it sets how many disks one request touches. A stripe is one round of chunks, one per member.</p>
-    <h3 id="three-words-for-two-things">Three words for two things</h3>
+    <h2 id="three-words-for-two-things">Three words for two things</h2>
     <p>Striping cuts data into pieces and deals them across disks. There are two things to name, the piece and the row, and each vendor names them differently.</p>
     <ul>
       <li><strong>Chunk, or strip: the piece on one disk.</strong> Linux <code>md</code> says <em>chunk</em>; <code>mdadm</code> sets it with <code>--chunk</code>. Broadcom&#39;s MegaRAID says <em>strip</em>: &quot;the strip size is the portion of a stripe that resides on a single drive&quot;. Same thing.</li>
@@ -134,9 +134,9 @@
 stripe width  = N
 stripe size   = C × (N − P)      the data a full stripe carries</code></pre>
     <p>The word to be careful with is the middle one, <em>stripe size</em>. Outside the vendor documents it is used for either the piece or the row, and the two differ by a factor of <em>N − P</em>. When a document gives one number, check which it means before doing arithmetic with it.</p>
-    <h3 id="the-numbers">The numbers</h3>
+    <h2 id="the-numbers">The numbers</h2>
     <p>The chunk is chosen when the array is created and cannot be changed without rewriting it. In <code>mdadm</code> the default is 512 KB; RAID 4, 5, 6 and 10 need a power of two, at least 4 KB, and the option is &quot;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&quot;: RAID 1 and linear have no chunk, because they cut nothing. MegaRAID controllers take strips &quot;from a minimum of 64 KB to 1 MB&quot;.</p>
-    <h3 id="what-the-size-does">What the size does</h3>
+    <h2 id="what-the-size-does">What the size does</h2>
     <p>The chunk size is the main tuning parameter, and it determines which of the two performance advantages of <a href="striping.html">striping</a> an array gets. A request smaller than a chunk touches one disk; a request of <em>R</em> sectors touches about <em>R ÷ C</em> disks, up to <em>N</em>. A small chunk spreads one request over many disks and gives it their combined bandwidth, at the cost of every disk doing a small piece of work for it. A large chunk keeps one request on one disk and leaves the others free for other requests, which is what a workload of many small, unrelated accesses wants.</p>
     <p>Under parity the size of the row matters as much as the size of the piece. A write that covers a whole stripe, <em>C × (N − P)</em> of data aligned to the stripe&#39;s start, lets the <a href="raid-engine.html">raid engine</a> compute the parity from what it is writing; a smaller write must read what it does not have first, the read-modify-write behind the <a href="write-penalty.html">write penalty</a>. This is why the file system above the array can be given the two numbers: the ext4 file system takes the chunk as its <code>stride</code> (&quot;the number of blocks read or written to disk before moving to the next disk, which is sometimes referred to as the chunk size&quot;) and the row as its <code>stripe_width</code> (typically &quot;stride-size × N, where N is the number of data-bearing disks&quot;), and uses them to place its data so that writes fill stripes and &quot;prevent read-modify-write of the parity&quot;.</p>
   </section>

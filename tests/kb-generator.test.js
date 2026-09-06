@@ -243,5 +243,19 @@ test('sitemap.xml carries no <lastmod>, <changefreq> or <priority>', () => {
     assert(!sitemapA.includes(`<${forbidden}>`), `sitemap.xml has a <${forbidden}>, which this generator never dates`);
 });
 
+// ---------------------------------------------------------------------------
+console.log('\n[6] heading levels never skip');
+
+for (const [name, html] of pages) {
+  test(`${name}: no heading skips a level (h1 → h2 → h3, never h1 → h3)`, () => {
+    const levels = [...html.matchAll(/<h([1-6])\b/g)].map((m) => Number(m[1]));
+    let prev = 0;
+    for (const level of levels) {
+      assert(level <= prev + 1, `${name}: a heading jumps from h${prev} to h${level} with no h${prev + 1} between`);
+      prev = level;
+    }
+  });
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 finish();

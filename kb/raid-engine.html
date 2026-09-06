@@ -123,7 +123,7 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
-    <h3 id="the-role">The role</h3>
+    <h2 id="the-role">The role</h2>
     <p>Whatever runs a RAID array has the same list of jobs, and the list is the definition of the engine:</p>
     <ul>
       <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own format on the disks and in its memory.</li>
@@ -132,12 +132,12 @@
       <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em>degraded</em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
       <li><strong>Present the result.</strong> Upstream, the array is one block device: a <a href="virtual-drive.html">virtual drive</a> when a controller presents it, an <code>md</code> device when the operating system does.</li>
     </ul>
-    <h3 id="where-it-lives-three-answers">Where it lives: three answers</h3>
+    <h2 id="where-it-lives-three-answers">Where it lives: three answers</h2>
     <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the PCIe bus, the CPU, the OS. The engine sits on that path in one of three ways, and the way is what the industry names <em>hardware</em>, <em>software</em> and <em>firmware</em> (or <em>fake</em>) RAID.</p>
     <p><strong>Hardware RAID.</strong> A controller card carries the HBA and a <em>RAID-on-Chip</em> (RoC), a processor dedicated to the list above, with its own memory as write cache. The operating system never sees the member disks: what it is given is the controller&#39;s virtual drive. In Broadcom&#39;s MegaRAID vocabulary, &quot;virtual drives are drive groups or spanned drive groups that are available to the operating system&quot;.</p>
     <p><strong>Software RAID.</strong> No engine object on the path. The HBA passes the disks through and the operating system&#39;s driver is the engine: <code>md</code> in Linux (configured with <code>mdadm</code>), Storage Spaces in Windows. The CPU does the computing, the OS sees every member disk and, beside them, the array device it made.</p>
     <p><strong>Firmware RAID, called fake RAID once its wiring is understood.</strong> A chip on the motherboard, or a cheap add-in card, that holds the array&#39;s metadata and a boot firmware, an <em>option ROM</em> in the system BIOS which, in Intel&#39;s words, manages the drives and RAID volumes &quot;before the operating system loads&quot;. That is what it is for: the machine can boot from the array. Once the OS is up, its driver does the engine&#39;s work on the CPU, exactly as in software RAID. Linux shows this directly: <code>mdadm</code> runs Intel Rapid Storage volumes as <code>md</code> arrays with an <em>external</em> metadata format, <code>imsm</code>, &quot;supported by an option-rom on some platforms&quot;. The metadata is the firmware&#39;s; the computing is the operating system&#39;s.</p>
-    <h3 id="what-tells-them-apart">What tells them apart</h3>
+    <h2 id="what-tells-them-apart">What tells them apart</h2>
     <p>Not the wiring. A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and on a chipset the firmware engine and the CPU may share a die. What separates the three is two questions: who owns the metadata, and who computes.</p>
     <ul>
       <li>hardware: the controller owns it and computes it</li>

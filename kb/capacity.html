@@ -122,7 +122,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member&#39;s worth for each parity block in the stripe.</p>
-    <h3 id="the-rule-per-redundancy">The rule, per redundancy</h3>
+    <h2 id="the-rule-per-redundancy">The rule, per redundancy</h2>
     <p>Usable capacity depends on the <a href="redundancy.html">redundancy</a> and on nothing else, with one exception noted below. With <em>N</em> members of size <em>s</em> each:</p>
     <pre class="kb-figure"><code>none      RAID 0, JBOD     N × s          nothing is held back
 mirror    RAID 1           s              one copy&#39;s worth, however many copies
@@ -137,14 +137,14 @@ RAID 5    (4 − 1) × 2 = 6 TB
 RAID 6    (4 − 2) × 2 = 4 TB</code></pre>
     <p>The parity lines show why parity is the cheaper redundancy: its cost is one block per stripe, whatever the width, so the share it takes shrinks as the stripe widens. On ten disks RAID 5 keeps 90 % of the raw space; a mirror keeps 50 % on any count. The 1988 RAID paper gives the same figures as &quot;useable storage capacity&quot;, 50 % for its first level and 91 % or 96 % for its fifth on groups of 10 or 25. <code>md</code> states the RAID 6 line as a count: &quot;it requires N+2 drives to store N drives worth of data&quot;.</p>
     <p>RAID 10 is the exception to &quot;redundancy and nothing else&quot;: it is a mirror, but its copies are striped over the set, so each block sits on two disks out of <em>N</em> rather than on all of them. This is the one place the <a href="segmentation.html">segmentation</a> axis touches capacity, and the <a href="mirroring.html">mirroring</a> entry has the layout.</p>
-    <h3 id="members-of-different-sizes">Members of different sizes</h3>
+    <h2 id="members-of-different-sizes">Members of different sizes</h2>
     <p>The rules above assume equal members. When they differ, a striped or mirrored layout can use of each member only what the smallest offers, because every stripe takes one chunk from each and every copy must fit on each: a mirror of 2 TB and 4 TB holds 2 TB, and a RAID 5 over 2, 2, 2 and 4 TB holds 6, not 8. Linux <code>raid0</code> is the one layout that recovers the difference, by continuing the stripe over the larger disks once the smaller are full (<a href="segmentation.html">segmentation</a>); a linear array takes each member whole. So for a parity or mirror layout the safe rule is the smallest member&#39;s size times the count, and a controller applies exactly that.</p>
-    <h3 id="nesting">Nesting</h3>
+    <h2 id="nesting">Nesting</h2>
     <p>Capacity composes bottom-up: compute each <a href="span.html">span</a>, then apply the group&#39;s rule to the spans as if they were disks. A RAID 50 of two RAID 5 spans, each four disks of 2 TB:</p>
     <pre class="kb-figure"><code>each span      (4 − 1) × 2  = 6 TB
 the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</code></pre>
     <p>A RAID 51 over the same spans, a mirror of them, keeps one span&#39;s worth: 6 TB.</p>
-    <h3 id="what-it-is-not">What it is not</h3>
+    <h2 id="what-it-is-not">What it is not</h2>
     <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. What differs between them is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages show both.</p>
   </section>
   <section class="kb-section" id="sources">

@@ -122,9 +122,9 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
-    <h3 id="what-the-level-leaves-open">What the level leaves open</h3>
+    <h2 id="what-the-level-leaves-open">What the level leaves open</h2>
     <p>RAID 5 says: one parity block per stripe. It does not say on which disk. Put it on the same disk every stripe and that disk is the check disk of RAID 4, the bottleneck the fifth level was invented to remove (<a href="parity.html">parity</a>). So the parity rotates, and two questions remain: which way does it move from one stripe to the next, and where does the data start once the parity has taken its place? Each pair of answers is a <em>layout</em>, and the <a href="raid-engine.html">raid engine</a> applies it in the same address arithmetic it uses for the <a href="segmentation.html">segmentation</a>.</p>
-    <h3 id="the-parity-layouts">The parity layouts</h3>
+    <h2 id="the-parity-layouts">The parity layouts</h2>
     <p><code>mdadm</code> names four for RAID 5 and RAID 6, from two independent choices:</p>
     <ul>
       <li><strong>left</strong> or <strong>right</strong>: the parity of stripe 0 is on the last disk and moves one disk to the left each stripe, or on the first disk and moves right</li>
@@ -141,9 +141,9 @@ stripe 2    D8       P        D6       D7
 stripe 3    P        D9       D10      D11</code></pre>
     <p>Read the data in order and it walks every disk in turn, D3 on disk 3 then D4 on disk 0, with no disk visited twice in a row: that is the advantage of <em>symmetric</em>, and why it is the default. The asymmetric layouts restart at disk 0 every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a sequential read uses the disks less evenly. Left-symmetric is also the layout hardware controllers use, under the name the SNIA Disk Data Format gives it, <em>rotating parity N with data continuation</em>; <code>mdadm</code> lists it a second time as <code>ddf-N-continue</code> for that reason. An array built by a controller and one built by <code>md</code> with the default layout put every block in the same place.</p>
     <p>RAID 6 uses the same four names and adds the second parity, <em>Q</em>, next to <em>P</em>; where exactly, to the left or the right of it, is one more convention, and the two families differ on it.</p>
-    <h3 id="the-mirror-layouts">The mirror layouts</h3>
+    <h2 id="the-mirror-layouts">The mirror layouts</h2>
     <p>RAID 10 has its own question: where do the copies of a chunk go? In <code>mdadm</code> the answer is a letter and a number, <code>n2</code>, <code>f2</code>, <code>o2</code>: <em>near</em>, <em>far</em> or <em>offset</em> copies, and how many. The <a href="mirroring.html">mirroring</a> entry describes the three. Near, the default, puts the copies side by side in the same stripe, which is what a controller&#39;s RAID 10 does by spanning mirror pairs; far and offset exist only where <code>md</code> builds the array, because only <code>md</code> defines them. That is the one place where the <a href="raid-engine.html">raid engine</a> on the path restricts the layout: a controller cannot be asked for a far layout.</p>
-    <h3 id="what-the-choice-changes-and-what-it-does-not">What the choice changes, and what it does not</h3>
+    <h2 id="what-the-choice-changes-and-what-it-does-not">What the choice changes, and what it does not</h2>
     <p>Capacity and fault tolerance are the same under every layout: the same blocks are stored, only their places differ. What changes is the speed profile (how evenly a sequential read walks the disks, how far a write&#39;s copies are from each other) and compatibility: the layout is part of the array&#39;s metadata, and an array assembled with the wrong layout returns garbage, because every block is looked for in the wrong place. That is why a layout is chosen at creation and recorded, and why <code>mdadm</code> refuses to guess it.</p>
   </section>
   <section class="kb-section" id="sources">
