@@ -81,6 +81,9 @@ kernel rules and never regenerated from the engine.
 - `collapses-oracle.test.js` — the content algebra (engine/content.js) against the declared `collapsesTo` rules, in both directions (degenerate-levels §6, §10). Run with: node collapses-oracle.test.js
 - `components-data.test.js` — validates the REAL component YAML files and keeps the headless fixture aligned with them. Run with: node components-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and...
 - `graph.test.js` — headless tests for the control-path graph module. Run with: node graph.test.js
+- `kb-data.test.js` — validates the REAL knowledge-base data: data/kb/*.yaml and the `kb:` block on the level files. Run with: node kb-data.test.js   (uses python3 + pyyaml to read YAML; this repo is zero-dependency and No...
+- `kb-generator.test.js` — the knowledge-base generator's output is a build artefact that is COMMITTED, so it has to behave like one. Run with: node kb-generator.test.js   (uses python3 + pyyaml to read the YAML the pages are c...
+- `kb-worked.test.js` — the worked calculation on a knowledge-base level page cannot contradict the engine. Run with: node kb-worked.test.js   (uses python3 + pyyaml to read YAML, like the other data suites.)
 - `layout-golden.test.js` — golden-table verification for all parity algorithms. Run with: node layout-golden.test.js
 - `levels-oracle.test.js` — the hand-written recognizer as ORACLE for the data-driven one. Run with: node levels-oracle.test.js
 - `levels.test.js` — headless tests for the level catalogue and the shape matcher (engine/levels.js). Run with: node levels.test.js

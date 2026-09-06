@@ -1,0 +1,213 @@
+/* ------------------------------------------------------------------ */
+/* KNOWLEDGE BASE — the generated pages under kb/                       */
+/*                                                                      */
+/* Loaded after styles.css, which supplies the palette, the JetBrains   */
+/* Mono face and the body reset. Kept as its own file rather than a     */
+/* section of styles.css because these rules are for documents that     */
+/* carry no application chrome at all: the sandbox never loads them,    */
+/* and the pages that do load them load nothing else of the game.       */
+/*                                                                      */
+/* The knowledge base is the mobile front door (ADR-003), so the layout */
+/* is one column at every width; only the pre blocks scroll sideways,   */
+/* inside their own box, and the page body never does.                  */
+/* ------------------------------------------------------------------ */
+
+.kb-body {
+  padding: 1.5rem 1rem 3rem;
+  overflow-x: hidden;
+}
+
+.kb-page {
+  max-width: 70ch;
+  margin: 0 auto;
+}
+
+/* --- header + nav --------------------------------------------------- */
+
+.kb-header { margin-bottom: 1.25rem; }
+
+.kb-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent-cyan);
+}
+
+.kb-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.kb-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  padding-bottom: 0.6rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--accent-border);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kb-nav-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.kb-nav-item:hover { color: var(--text-primary); }
+.kb-nav-item.active { color: var(--accent-cyan); }
+
+/* --- sections ------------------------------------------------------- */
+
+.kb-section { margin-bottom: 2.75rem; }
+
+.kb-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  padding-bottom: 0.35rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--accent-dim);
+}
+
+.kb-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.6rem;
+}
+
+.kb-section p { margin-bottom: 0.9rem; }
+.kb-section ul, .kb-section ol { margin: 0 0 1rem 1.2rem; }
+.kb-section li { margin-bottom: 0.35rem; }
+
+/* Anchors are the way in from a level page's "read more" link. */
+.kb-concept { scroll-margin-top: 1rem; }
+
+/* --- transcluded short forms, ledes, flags -------------------------- */
+
+.kb-lede {
+  font-size: 1rem;
+  border-left: 2px solid var(--accent-cyan);
+  padding-left: 0.9rem;
+}
+
+.kb-short {
+  border-left: 2px solid var(--accent-border);
+  padding-left: 0.9rem;
+  color: var(--text-primary);
+}
+
+.kb-more { font-size: 0.8rem; }
+.kb-more a, .kb-links a, .kb-try {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-dim);
+}
+.kb-more a:hover, .kb-links a:hover, .kb-try:hover { border-bottom-color: var(--accent-cyan); }
+
+.kb-flag {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--color-parity);
+  border: 1px solid var(--color-parity);
+  border-radius: var(--radius);
+  padding: 0.15rem 0.5rem;
+}
+
+.kb-caption, .kb-source, .kb-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.kb-note { margin-top: 0.9rem; }
+
+.kb-tag {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  padding: 0 0.35rem;
+  vertical-align: 0.1em;
+}
+
+/* --- monospace blocks: grids, worked calculations, text figures ------ */
+/*  Every space in these is content — the grids and the figures are      */
+/*  aligned by column. They scroll inside their own box so a narrow      */
+/*  screen never widens the page.                                        */
+
+.kb-grid, .kb-worked, .kb-figure {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.kb-grid code, .kb-worked code, .kb-figure code { font-family: var(--font); }
+
+.kb-section code {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 0.05rem 0.3rem;
+  font-size: 0.9em;
+}
+.kb-grid code, .kb-worked code, .kb-figure code { background: none; padding: 0; font-size: inherit; }
+
+/* --- definition lists: algorithms, components, minimums, glossary ---- */
+
+.kb-defs { margin-bottom: 1rem; }
+.kb-defs dt {
+  font-weight: 600;
+  margin-top: 1rem;
+}
+.kb-defs dd {
+  margin: 0.25rem 0 0;
+  color: var(--text-primary);
+}
+
+.kb-notes { margin: 1rem 0 1rem 1.2rem; }
+
+/* --- the map's cards ------------------------------------------------ */
+
+.kb-cards { list-style: none; margin: 0; padding: 0; }
+.kb-cards li {
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.6rem;
+}
+.kb-cards h3 { margin: 0 0 0.3rem; font-size: 0.95rem; }
+.kb-cards h3 a { color: var(--accent-cyan); text-decoration: none; }
+.kb-cards h3 a:hover { text-decoration: underline; }
+.kb-cards p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+.kb-links { list-style: none; margin-left: 0; padding: 0; }
+.kb-links li { display: inline-block; margin: 0 0.9rem 0.35rem 0; font-size: 0.85rem; }
+
+.kb-sources { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* --- footer --------------------------------------------------------- */
+
+.kb-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--accent-dim);
+  font-size: 0.8rem;
+}
+.kb-footer a { color: var(--text-secondary); text-decoration: none; }
+.kb-footer a:hover { color: var(--accent-cyan); }
+
+@media (max-width: 600px) {
+  .kb-body { padding: 1rem 0.75rem 2.5rem; }
+  .kb-title { font-size: 1.3rem; }
+  .kb-grid, .kb-worked, .kb-figure { font-size: 0.72rem; }
+}
