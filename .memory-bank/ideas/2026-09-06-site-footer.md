@@ -1,11 +1,16 @@
 ---
 captured: 2026-09-06
-status: open
+status: dropped
 context: "knowledge-base layout review on feature/knowledge-base — the KB pages got a footer (sandbox link · knowledge base · author); index.html has its own header/footer"
 tags: [site, ui, footer, kb]
 ---
 
 # One footer for every page of the site
+
+> **Done the same evening (2026-09-06)**, not promoted: `index.html` got a footer
+> row with the knowledge-base link and the author, the KB pages already had theirs.
+> What is left of the idea — one source of truth for the footer's content — is
+> still open, and small.
 
 The generated knowledge-base pages carry a footer with the sandbox link, the
 knowledge-base link and the author's name. `index.html` has its own header and
