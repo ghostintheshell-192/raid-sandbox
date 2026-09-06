@@ -76,7 +76,7 @@ notFor:
 # ---------------------------------------------------------------------------
 kb:
   # The title for search results and the browser tab — not the page heading (that stays `name`).
-  searchTitle: "How RAID 10 works: striped mirrors and what they survive"
+  searchTitle: "How RAID 10 works: striped mirrors, near, far and offset layouts"
   short: >
     Striping and mirroring in one flat array: every chunk is stored on two disks,
     and the chunks are dealt across all of them. It reads like a stripe, writes at
