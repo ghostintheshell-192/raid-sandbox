@@ -156,7 +156,7 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 10 is the pair <em>striped + mirror</em>: the data is cut into chunks and dealt across the members (<a href="striping.html">striping</a>), and each chunk is stored twice, on two different disks (<a href="mirroring.html">mirroring</a>). In Linux <code>md</code> it is one level, not a nesting: &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. Where the second copy lands is the placement <a href="algorithm.html">algorithm</a>, <em>near</em>, <em>far</em> or <em>offset</em>; near, the default, puts the two copies side by side in the same stripe, which is the same arrangement a hardware controller reaches in a different way, by striping over mirror pairs. That nested form, RAID 1+0, has its own page; with the near layout the two put every block in the same place, and the difference is which engine built it and which other layouts it can offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse arrangement, and its page says why.</p>

@@ -676,7 +676,11 @@ function levelPage(def, ctx) {
   };
 
   // 1 — the level's own story, under its class in words and its short form.
-  out.push('  <section class="kb-section" id="what-it-is">');
+  // No id on the section itself: kb.long always opens with "## What it is",
+  // whose rendered heading already gets that id (headingId: slug below) —
+  // giving the wrapper the same id would duplicate it (invalid HTML) and make
+  // the anchor resolve to the section instead of the heading it names.
+  out.push('  <section class="kb-section">');
   out.push(`    <p class="kb-lede">${escapeHtml(shortOf(def))}</p>`);
   if (def.kb.long) out.push(indent(md(def.kb.long, `${where}: kb.long`), 4));
   out.push('  </section>');

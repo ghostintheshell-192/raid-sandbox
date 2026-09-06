@@ -156,7 +156,7 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">Every disk holds a full copy of the data, written in step. A read is served by any one copy, a write goes to all of them, and the array survives as long as one copy is left. It keeps one disk&#39;s worth of space however many disks it has, and it is the simplest redundancy there is.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 1 is the pair <em>linear + mirror</em>: nothing is cut into chunks, and every member holds the whole (<a href="mirroring.html">mirroring</a>). It is the first level of the 1988 paper, &quot;the most expensive option we consider since all disks are duplicated&quot;, and every other level is a cheaper answer to the same problem. There is no layout to choose and no chunk size, because there is nothing to place: <code>mdadm</code> does not accept a chunk size for it.</p>

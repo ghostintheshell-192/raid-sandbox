@@ -156,7 +156,7 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">RAID 5 with a second parity block per stripe, computed a different way, so that any two disks can fail at once. It keeps all but two disks&#39; worth of space, survives a second failure during a rebuild, and pays for each small write with six disk operations.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="striping.html">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="parity.html">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="algorithm.html">algorithm</a>, the same four names as RAID 5.</p>

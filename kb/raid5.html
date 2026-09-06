@@ -156,7 +156,7 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk&#39;s worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 5 is the pair <em>striped + single parity</em>: the data is dealt out in chunks across all the members (<a href="striping.html">striping</a>), and in every stripe one chunk holds the XOR of the others (<a href="parity.html">parity</a>). It is the fifth level of the 1988 paper, and the one the paper builds up to: the fourth level had put all the parity on one disk, and &quot;the check disk is the bottleneck&quot;; the fifth &quot;distributes the data and check information across all the disks&quot;. Which disk holds the parity in which stripe is the placement <a href="algorithm.html">algorithm</a>, almost always left-symmetric.</p>

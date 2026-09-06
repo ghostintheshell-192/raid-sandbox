@@ -5,7 +5,7 @@
  * the pages are compared against; it runs the generator as a subprocess, so the
  * vendored parser stays inside that process and this suite keeps no dependency.)
  *
- * Four properties, each one a way a generated page has gone wrong before:
+ * Five properties, each one a way a generated page has gone wrong before:
  *
  *   1. DETERMINISM. Two runs on the same input produce the same bytes. Without
  *      it every commit carries a diff nobody wrote, and the pre-commit hook
@@ -22,7 +22,10 @@
  *      phone gets). The JSON-LD block (data, not code) and the Cookiebot /
  *      Consent Mode / gtag.js analytics block — byte-identical on every page,
  *      index.html is its source of truth — are the only <script> tags a page
- *      may carry; nothing else runs.
+ *      may carry; nothing else runs;
+ *   5. NO DUPLICATE ID. Every id in a page is unique. The knowledge base's
+ *      in-page anchors and "On this page" column both link to `#id`s the
+ *      generator assigns, and a collision means the wrong element wins.
  */
 
 const fs = require('fs');
@@ -291,6 +294,19 @@ for (const [name, html] of pages) {
       assert(level <= prev + 1, `${name}: a heading jumps from h${prev} to h${level} with no h${prev + 1} between`);
       prev = level;
     }
+  });
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n[7] no id is duplicated on a page');
+
+for (const [name, html] of pages) {
+  test(`${name}: every id is unique`, () => {
+    const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+    const seen = new Set();
+    const dupes = new Set();
+    for (const id of ids) (seen.has(id) ? dupes : seen).add(id);
+    assert(dupes.size === 0, `${name}: id "${[...dupes][0]}" is used more than once`);
   });
 }
 
