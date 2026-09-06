@@ -177,7 +177,10 @@ for (const [name, html] of pages) {
     const ld = JSON.parse(m[1]);
     eq(ld['@type'], 'TechArticle');
     assert(ld.headline && ld.description && ld.url, 'headline, description and url are required');
-    assert(ld.url.endsWith(`/kb/${name}`), `url "${ld.url}" does not name this page`);
+    // kb/index.html is the map, linked everywhere as the directory `kb/`, not
+    // as the file — every other page names itself.
+    if (name === 'index.html') eq(ld.url, 'https://raid-sandbox.dev/kb/');
+    else assert(ld.url.endsWith(`/kb/${name}`), `url "${ld.url}" does not name this page`);
     for (const forbidden of ['datePublished', 'dateModified', 'aggregateRating', 'reviewCount', 'review'])
       assert(!(forbidden in ld), `${name}: JSON-LD claims ${forbidden}, which this project does not have`);
   });

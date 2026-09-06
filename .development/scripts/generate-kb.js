@@ -486,13 +486,20 @@ function pageToc(toc) {
   ].join('\n');
 }
 
+// kb/index.html is the map: the sitemap and the home page both link to it as
+// the directory `kb/`, not the file, so its canonical, og:url and JSON-LD url
+// have to say the same thing rather than a URL nothing else ever points at.
+// Every other page is a file of its own — the directory form makes no sense
+// for it.
+const pageUrl = (file) => file === 'index.html' ? `${SITE}/kb/` : `${SITE}/kb/${file}`;
+
 function chrome({ file, title, description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
     : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
     .concat([`      <a class="kb-nav-item" href="../index.html">Sandbox</a>`]).join('\n');
 
-  const url = `${SITE}/kb/${file}`;
+  const url = pageUrl(file);
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
