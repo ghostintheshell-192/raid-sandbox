@@ -130,7 +130,7 @@
       <dt><a href="backplane.html">Backplane</a></dt>
       <dd>The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector; an active one carries a SAS expander, a switch that lets one cable reach many disks. Either way it stores nothing and computes no RAID.</dd>
       <dt><a href="bbu.html">Battery backup unit and flash cache protection</a></dt>
-      <dd>What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</dd>
+      <dd>A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</dd>
       <dt><a href="capacity.html">Capacity</a></dt>
       <dd>How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member&#39;s worth for each parity block in the stripe.</dd>
       <dt><a href="chunk.html">Chunk, strip and stripe</a></dt>
@@ -176,11 +176,11 @@
       <dt><a href="span.html">Span</a></dt>
       <dd>A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies. A drive group can hold several spans, each with its own independent layout, and the nested levels are spans striped together.</dd>
       <dt><a href="striping.html">Striping</a></dt>
-      <dd>Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</dd>
+      <dd>Cutting data into fixed-size chunks and dealing them out across several disks in turn. One large request is then served by all of them at once, and many small requests by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</dd>
       <dt><a href="virtual-drive.html">Virtual drive</a></dt>
-      <dd>The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</dd>
+      <dd>The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk. It behaves that way whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</dd>
       <dt><a href="why-linux-md.html">Why Linux md is the reference</a></dt>
-      <dd>These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</dd>
+      <dd>These pages take the Linux `md` driver as their reference implementation because its source is public. Every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</dd>
       <dt><a href="write-hole.html">Write hole</a></dt>
       <dd>The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</dd>
       <dt><a href="write-penalty.html">Write penalty</a></dt>

@@ -65,6 +65,8 @@ notFor:
 # each field is. Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How RAID 0 works: striping, speed and the risk of losing everything"
   short: >
     Data dealt out in chunks across every disk and nothing else: no copy, no
     parity. Every disk works on every large request, so it is the fastest layout

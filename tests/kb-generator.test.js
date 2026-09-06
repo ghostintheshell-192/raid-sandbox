@@ -250,6 +250,44 @@ for (const [name, html] of pages) {
 }
 
 // ---------------------------------------------------------------------------
+console.log('\n[4b] a level\'s searchTitle wins in <title> / og:title only — the heading stays `name`');
+
+const PY_LEVELS = `
+import yaml, json, os, sys
+base = sys.argv[1]
+dir = os.path.join(base, 'data', 'raid-levels')
+out = {}
+for f in sorted(os.listdir(dir)):
+    if f.endswith('.yaml') and f != 'index.yaml':
+        with open(os.path.join(dir, f)) as fh:
+            doc = yaml.safe_load(fh)
+        kb = doc.get('kb') or {}
+        out[doc['id']] = { 'name': doc['name'], 'searchTitle': kb.get('searchTitle') }
+print(json.dumps(out))
+`;
+let levelTitles;
+try {
+  levelTitles = JSON.parse(execFileSync('python3', ['-c', PY_LEVELS, root], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }));
+} catch (e) {
+  console.error('Could not read data/raid-levels via python3/pyyaml:', e.message);
+  process.exit(1);
+}
+
+for (const [name, html] of pages) {
+  const id = name.replace(/\.html$/, '');
+  const entry = levelTitles[id];
+  if (!entry || !entry.searchTitle) continue;   // not a level page, or one with no searchTitle
+  test(`${name}: kb.searchTitle drives <title>/og:title, and <h1> keeps the level's name`, () => {
+    const titleTag = /<title>([^<]*)<\/title>/.exec(html)[1];
+    const ogTitle  = /<meta property="og:title" content="([^"]*)"/.exec(html)[1];
+    const h1       = /<h1 class="kb-title">([^<]*)<\/h1>/.exec(html)[1];
+    eq(titleTag, `${entry.searchTitle} — RAID Sandbox`);
+    eq(ogTitle, `${entry.searchTitle} — RAID Sandbox`);
+    eq(h1, entry.name);
+  });
+}
+
+// ---------------------------------------------------------------------------
 console.log('\n[5] sitemap.xml is generated, not hand-maintained');
 
 const sitemapA = fs.readFileSync(sitemapOf(outA), 'utf8');

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Battery backup unit and flash cache protection — RAID Sandbox knowledge base</title>
-  <meta name="description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash.">
+  <meta name="description" content="A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/bbu.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/bbu.html">
   <meta property="og:title" content="Battery backup unit and flash cache protection — RAID Sandbox knowledge base">
-  <meta property="og:description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash.">
+  <meta property="og:description" content="A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Battery backup unit and flash cache protection",
-    "description": "What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.",
+    "description": "A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/bbu.html",
     "isPartOf": {
@@ -127,7 +127,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag">Not yet checked against a primary source</p>
-    <p class="kb-lede">What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
+    <p class="kb-lede">A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
     <h2 id="why-the-cache-is-at-risk">Why the cache is at risk</h2>
     <p>A RAID controller with memory of its own can answer a write as soon as the data is in that memory, and write it to the disks later. This is <em>write-back</em> caching, and it is a large part of why a hardware controller is fast on writes: the <a href="write-penalty.html">write penalty</a> of a parity update is paid in the background, and small writes can be gathered into full stripes. The cost is a window of risk. Until the cached data reaches the disks, it exists only in volatile memory, and a power cut in that window loses writes the operating system was told had succeeded. For a parity array the loss can be worse than the missing writes: a stripe whose data landed and whose parity did not is the <a href="write-hole.html">write hole</a>.</p>
     <h2 id="two-ways-to-keep-the-cache">Two ways to keep the cache</h2>

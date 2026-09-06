@@ -6,10 +6,10 @@ id: virtual-drive
 kind: concept
 name: Virtual drive
 short: >
-  The logical volume the operating system sees: one block device with a contiguous
-  address space, behaving exactly like a single disk whatever number of disks,
-  spans or RAID levels sit underneath. It need not take the whole span; a span can
-  host several.
+  The logical volume the operating system sees: one block device with a
+  contiguous address space, behaving exactly like a single disk. It behaves that
+  way whatever number of disks, spans or RAID levels sit underneath. It need not
+  take the whole span; a span can host several.
 
 long: |
   A virtual drive is the block device that the operating system, the file system

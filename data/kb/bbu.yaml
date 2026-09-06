@@ -8,11 +8,11 @@ id: bbu
 kind: concept
 name: Battery backup unit and flash cache protection
 short: >
-  What lets a hardware RAID controller keep its write cache through a power cut: a
-  battery that powers the cache memory until power returns, or, in newer designs,
-  a supercapacitor that powers the controller just long enough to copy the cache
-  to flash. It is what makes write-back caching safe on a controller, and what
-  closes the write hole there.
+  A battery or supercapacitor that lets a hardware RAID controller keep its write
+  cache through a power cut. The battery powers the cache memory until power
+  returns; the supercapacitor, in newer designs, powers the controller just long
+  enough to copy the cache to flash. It is what makes write-back caching safe on a
+  controller, and what closes the write hole there.
 
 long: |
   ## Why the cache is at risk

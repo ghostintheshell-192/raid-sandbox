@@ -162,6 +162,13 @@ for (const id of [...pageIds].sort()) {
     assert(!b.short.includes('**') && !b.short.includes('[['), 'kb.short must carry no markdown');
   });
 
+  test(`${id}.yaml: kb.searchTitle, when present, is a short plain sentence fragment`, () => {
+    if (b.searchTitle === undefined) return;
+    assert(typeof b.searchTitle === 'string' && b.searchTitle.trim(), 'kb.searchTitle must be a non-empty string');
+    assert(b.searchTitle.length <= 70, `kb.searchTitle must be at most 70 characters (got ${b.searchTitle.length})`);
+    assert(!b.searchTitle.endsWith('.'), 'kb.searchTitle must not end with a period');
+  });
+
   test(`${id}.yaml: kb.related and every [[reference]] in kb.long resolve`, () => {
     for (const rid of b.related) assert(resolves(rid), `kb.related "${rid}" names no entry and no level page`);
     for (const rid of references(b.long)) assert(resolves(rid), `[[${rid}]] names no entry and no level page`);

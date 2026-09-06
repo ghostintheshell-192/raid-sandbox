@@ -67,17 +67,22 @@
   <!-- header -->
   <header class="sbc-header">
     <h1>RAID Sandbox</h1>
-    <label style="font-size:.78rem; opacity:.8; display:flex; align-items:center; gap:.35rem;">
-      mode
-      <select id="mode-select" class="sbc-mode-select">
-        <option value="sandbox">Sandbox mode</option>
-        <option value="challenge">Challenge mode</option>
-      </select>
-    </label>
-    <button id="btn-clear" class="sbc-clear-btn" type="button" title="Clear the whole canvas">⟲ Clear</button>
-    <button id="btn-share" class="sbc-clear-btn" type="button" title="Copy a link to this build">⧉ Share</button>
-    <span class="sbc-header-hint" style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
-    <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
+    <p class="sbc-intro">Build a RAID array out of disks and controllers, then watch where
+      data and parity actually land. The level is not picked from a list: it is worked
+      out from what you built, and the layouts follow the Linux <code>md</code> kernel rules.</p>
+    <div class="sbc-toolbar">
+      <label style="font-size:.78rem; opacity:.8; display:flex; align-items:center; gap:.35rem;">
+        mode
+        <select id="mode-select" class="sbc-mode-select">
+          <option value="sandbox">Sandbox mode</option>
+          <option value="challenge">Challenge mode</option>
+        </select>
+      </label>
+      <button id="btn-clear" class="sbc-clear-btn" type="button" title="Clear the whole canvas">⟲ Clear</button>
+      <button id="btn-share" class="sbc-clear-btn" type="button" title="Copy a link to this build">⧉ Share</button>
+      <span class="sbc-header-hint" style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
+      <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
+    </div>
   </header>
 
   <!-- sidebar -->

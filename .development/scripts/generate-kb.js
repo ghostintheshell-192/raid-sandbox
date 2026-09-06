@@ -704,9 +704,13 @@ function levelPage(def, ctx) {
   section('see-also', 'See also', seeAlso(def, ctx));
 
   const full = shortOf(def);
+  // The search-facing title is optional: when a level's kb: block carries one,
+  // it wins in <title> and og:title only — the <h1> (`heading` below) and the
+  // JSON-LD headline stay `def.name`, so the page itself never says something
+  // its own heading does not.
   return chrome({
     file: `${def.id}.html`,
-    title: `${def.name} — RAID Sandbox knowledge base`,
+    title: def.kb.searchTitle ? `${def.kb.searchTitle} — RAID Sandbox` : `${def.name} — RAID Sandbox knowledge base`,
     description: metaDescription(full),
     fullDescription: full,
     heading: def.name,
