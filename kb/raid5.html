@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID 5 — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/raid5.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "RAID 5",
+    "description": "Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/raid5.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body">
+
+<div class="kb-page">
+
+  <header class="kb-header">
+    <h1 class="kb-title">RAID 5</h1>
+    <p class="kb-subtitle">striped + single parity</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="concepts.html">Concepts</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section" id="what-it-is">
+    <p class="kb-lede">Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk&#39;s worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.</p>
+    <p>RAID 5 is the pair <em>striped + single parity</em>: the data is dealt out in chunks across all the members (<a href="concepts.html#striping">Striping</a>), and in every stripe one chunk holds the XOR of the others (<a href="concepts.html#parity">Parity</a>). It is the fifth level of the 1988 paper, and the one the paper was written to arrive at: the fourth level had put all the parity on one disk, and &quot;the check disk is the bottleneck&quot;; the fifth &quot;distributes the data and check information across all the disks&quot;. Which disk holds the parity in which stripe is the placement <a href="concepts.html#algorithm">Placement algorithm</a>, almost always left-symmetric.</p>
+    <p>What the level buys is capacity. A mirror spends half the disks on copies; RAID 5 spends one disk&#39;s worth on parity whatever the count, so on four disks it keeps three quarters, on eight seven eighths. The <a href="concepts.html#fault-tolerance">Fault tolerance</a> is one disk, on any count, and the count is the trap: the more disks, the more space, the more likely a second failure while the first is being rebuilt.</p>
+    <p>What it pays is the small write: one block changed inside a stripe while the rest stays as it was. The parity of that stripe must change with it, and to compute the new parity the engine needs two things it does not have in hand, the old data and the old parity. So one logical write becomes four disk operations: read the old data, read the old parity, then write the new data and write the new parity (<a href="concepts.html#write-penalty">Write penalty</a>). A write that covers a whole stripe costs none of the reads, because every data block is already in hand and the parity is computed from them. So RAID 5 is at its best under large sequential writes and worst under many small scattered ones, and the <a href="concepts.html#chunk">Chunk, strip and stripe</a> size and the file system&#39;s alignment decide which of the two a workload gets.</p>
+    <p>Three disks is the minimum that makes sense: two data, one parity per stripe. With two disks the &quot;parity&quot; of a single data block is that block itself, and the array is a mirror by another name; the Linux kernel treats it as one, converting a two-disk RAID 1 into a two-disk RAID 5 in place, and writes to it at a mirror&#39;s cost. The rebuild after a failure reads every surviving disk end to end; an unreadable sector found then is a block that cannot be recomputed, which is what <a href="concepts.html#scrubbing">Scrubbing</a> exists to catch earlier, and a power cut during a parity update leaves a <a href="concepts.html#write-hole">Write hole</a> that only a protected cache, a journal or a partial parity log closes.</p>
+  </section>
+  <section class="kb-section" id="segmentation">
+    <h2>Segmentation</h2>
+    <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
+    <p class="kb-more"><a href="concepts.html#segmentation">Read more — Segmentation</a></p>
+    <p class="kb-caption">RAID 5 · 4 disks · left-symmetric</p>
+    <pre class="kb-grid"><code>          disk 0  disk 1  disk 2  disk 3
+stripe 0      D0      D1      D2       P
+stripe 1      D4      D5       P      D3
+stripe 2      D8       P      D6      D7
+stripe 3       P      D9     D10     D11</code></pre>
+  </section>
+  <section class="kb-section" id="redundancy">
+    <h2>Redundancy</h2>
+    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
+    <p class="kb-more"><a href="concepts.html#redundancy">Read more — Redundancy</a></p>
+    <pre class="kb-worked"><code>(N − 1) × disk size
+N = 4 disks of 2 TB → (4 − 1) × 2 TB = 6 TB usable
+
+the members an adversary must kill, minus one
+single parity: two members gone is one too many → 2 → tolerance 1
+
+one logical write costs
+random: read old data, read old parity, write both → 4 I/Os
+sequential: a full stripe computes the parity once → 1 I/O</code></pre>
+  </section>
+  <section class="kb-section" id="algorithm">
+    <h2>Algorithm</h2>
+    <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
+    <p class="kb-more"><a href="concepts.html#algorithm">Read more — Placement algorithm</a></p>
+    <dl class="kb-defs">
+      <dt>Left Asymmetric</dt>
+      <dd>Parity rotates leftward (same direction as left-symmetric). Data fills from disk 0 each stripe, going right and skipping the parity position — it does NOT continue from where the previous stripe left off.</dd>
+      <dt>Left Symmetric <span class="kb-tag">default</span></dt>
+      <dd>Parity rotates leftward (starts at the rightmost disk, moves one position left each stripe). Data fills from immediately right of parity, wrapping around — so consecutive data segments span all disks evenly.</dd>
+      <dt>Right Asymmetric</dt>
+      <dd>Parity rotates rightward (starts at disk 0, moves one position right each stripe). Data fills from disk 0 each stripe, going right and skipping the parity position.</dd>
+      <dt>Right Symmetric</dt>
+      <dd>Parity rotates rightward (starts at disk 0, moves one position right each stripe). Data fills from immediately right of parity, wrapping around. Mirror image of left-symmetric: same sequential-read locality, opposite parity rotation direction.</dd>
+    </dl>
+  </section>
+  <section class="kb-section" id="where-it-runs">
+    <h2>Where it runs</h2>
+    <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
+    <p class="kb-more"><a href="concepts.html#raid-engine">Read more — RAID engine</a></p>
+    <dl class="kb-defs">
+      <dt>RAID Engine (RoC)</dt>
+      <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>
+      <dt>RAID Engine (RoC, tri-mode)</dt>
+      <dd>A RAID-on-Chip controller whose ports speak SAS, SATA and NVMe alike (Broadcom MegaRAID 9500/9600 &quot;tri-mode&quot;, Adaptec SmartRAID 3200). NVMe drives plug straight into it — no HBA, no SAS/SATA backplane in between — and it still builds the array itself and exposes one virtual drive to the OS. It is the one way hardware RAID over NVMe exists.</dd>
+      <dt>RAID Engine (metadata)</dt>
+      <dd>A dedicated chip placed between the HBA and the CPU (on the motherboard or near it) that owns the RAID metadata and boot firmware — no compute silicon of its own. The OS still sees individual disks (unlike hardware RAID) but uses a driver to participate in RAID operations; the actual parity computation runs on the CPU. The canonical example is Intel RST (Rapid Storage Technology) on Intel chipsets. Also known as &quot;motherboard RAID&quot;, &quot;BIOS RAID&quot;, or, once its wiring reveals what it is, &quot;fake RAID&quot;.</dd>
+      <dt>OS — Linux</dt>
+      <dd>Linux operating system managing the RAID array in software. Uses mdadm (for traditional RAID 0/1/5/6/10) or ZFS (with integrated volume management and checksums). The CPU computes all parity; no dedicated hardware required.</dd>
+      <dt>OS — Windows</dt>
+      <dd>Windows operating system managing RAID in software via Storage Spaces (Windows 8+/Server 2012+) or legacy Disk Management (dynamic volumes). Storage Spaces supports mirroring, striping, and parity spaces with optional journaling for crash consistency.</dd>
+    </dl>
+    <h3>The write hole</h3>
+    <dl class="kb-defs">
+      <dt>RAID Engine (metadata)</dt>
+      <dd>The parity for each stripe is computed on the CPU and written after the data, so a power cut between the two can leave a stripe whose parity no longer matches, and a later rebuild trusts it. This chip owns the array metadata but has no write cache of its own to protect, so on fake RAID nothing here holds the write — that job falls to a UPS.</dd>
+      <dt>OS — Linux</dt>
+      <dd>Parity is computed from the data and written as a separate step, so a power cut between the two can leave a stripe whose parity no longer matches its data — and a later rebuild recomputes a missing disk from that wrong parity without noticing. Linux md can close this write hole with a journal device, or with mdadm&#39;s --consistency-policy=ppl on RAID 5; without one, a software parity array needs a UPS or a controller with a battery-backed write cache.</dd>
+      <dt>OS — Windows</dt>
+      <dd>Parity is computed on the CPU and written as a separate step, so a power cut between the two can leave a stripe whose parity no longer matches its data — and a later rebuild recomputes a missing disk from it without noticing. Nothing on a software path holds the write until both halves are safe; a UPS, or a controller with a battery-backed write cache, is what closes the gap.</dd>
+    </dl>
+  </section>
+  <section class="kb-section" id="below-the-minimum">
+    <h2>Below the minimum</h2>
+    <dl class="kb-defs">
+      <dt>Minimum for the level</dt>
+      <dd>3 disks</dd>
+      <dt>The real system still starts it at</dt>
+      <dd>2 disks<br><span class="kb-source">drivers/md/raid5.c raid5_takeover_raid1(): a 2-device RAID 1 is converted to RAID 5 in place (any other count is refused); mdadm creates 2-device RAID 5</span></dd>
+      <dt>With 2 disks it is linear + mirror</dt>
+      <dd>with one data block per stripe the parity is that block itself — the second disk holds a copy<br><span class="kb-source">drivers/md/raid5.c raid5_takeover_raid1(): the kernel turns a 2-disk RAID 1 into a 2-disk RAID 5 in place, ALGORITHM_LEFT_SYMMETRIC, no data moved</span></dd>
+    </dl>
+  </section>
+  <section class="kb-section" id="in-practice">
+    <h2>In practice</h2>
+    <h3>Good at</h3>
+    <ul>
+      <li>Good balance of performance, capacity efficiency, and fault tolerance</li>
+      <li>Read performance close to RAID 0 (N−1 disks serve data per stripe)</li>
+      <li>No single parity disk bottleneck (distributed parity)</li>
+    </ul>
+    <h3>Costs</h3>
+    <ul>
+      <li>[object Object]</li>
+      <li>[object Object]</li>
+      <li>[object Object]</li>
+    </ul>
+    <h3>Used for</h3>
+    <ul>
+      <li>File servers and NAS</li>
+      <li>General-purpose storage</li>
+      <li>The classic &quot;balanced&quot; RAID choice</li>
+    </ul>
+    <h3>Not for</h3>
+    <ul>
+      <li>Environments needing tolerance for 2+ simultaneous disk failures</li>
+      <li>Very write-heavy workloads (high parity calculation overhead)</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../index.html#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwicGFyaXR5MSIsImxlZnQtc3ltbWV0cmljIixbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open this example in the sandbox</a></p>
+    <p class="kb-caption">A desktop link: below the desktop breakpoint the sandbox is not offered (ADR-003).</p>
+  </section>
+  <section class="kb-section" id="see-also">
+    <h2>See also</h2>
+    <h3>Related</h3>
+    <ul class="kb-links">
+      <li><a href="concepts.html#striping">Striping</a></li>
+      <li><a href="concepts.html#parity">Parity</a></li>
+      <li><a href="concepts.html#algorithm">Placement algorithm</a></li>
+      <li><a href="concepts.html#write-penalty">Write penalty</a></li>
+      <li><a href="concepts.html#chunk">Chunk, strip and stripe</a></li>
+      <li><a href="concepts.html#fault-tolerance">Fault tolerance</a></li>
+      <li><a href="concepts.html#rebuild">Rebuild</a></li>
+      <li><a href="concepts.html#scrubbing">Scrubbing</a></li>
+      <li><a href="concepts.html#write-hole">Write hole</a></li>
+    </ul>
+    <h3>Often confused with</h3>
+    <ul class="kb-links">
+      <li>RAID 50</li>
+      <li><a href="raid6.html">RAID 6</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+</div>
+
+</body>
+</html>

@@ -33,10 +33,16 @@ echo -e "${BLUE}[Derived Docs]${NC}"
 # staged on none, left modified in the working tree instead. The conflict on
 # parallel branches that motivated ignoring them is handled now by the
 # merge=generated driver in .gitattributes.
+#
+# `kb` is a directory, not a file: generate-kb.js writes one page per level plus
+# the map, the concepts page and the glossary, and removes a page it no longer
+# produces. Staging the directory picks up all three cases (changed, created,
+# deleted) in one `git add`.
 GENERATED=(
     ".development/ARCHITECTURE.md"
     ".development/INDEX.md"
     ".development/tech-debt/README.md"
+    "kb"
 )
 
 # Add unconditionally: `git add` on an unchanged tracked file is a no-op, so
@@ -47,7 +53,7 @@ GENERATED=(
 # and the hook announced the docs were already current.
 STAGED=()
 for file in "${GENERATED[@]}"; do
-    [[ -f "$PROJECT_ROOT/$file" ]] || continue
+    [[ -e "$PROJECT_ROOT/$file" ]] || continue
     git add "$PROJECT_ROOT/$file"
     STAGED+=("$PROJECT_ROOT/$file")
 done
