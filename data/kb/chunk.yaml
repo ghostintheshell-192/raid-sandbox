@@ -1,0 +1,85 @@
+# data/kb/chunk.yaml — the unit of striping and the three words around it (chunk /
+# strip, stripe, stripe width), each vendor's usage quoted. Writing rules: see
+# segmentation.yaml header.
+
+id: chunk
+kind: concept
+name: Chunk, strip and stripe
+short: >
+  The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls
+  a chunk and most controllers a strip. Its size is fixed when the array is created
+  and it is the unit striping deals out, so it sets how many disks one request
+  touches. A stripe is one round of chunks, one per member.
+
+long: |
+  ## Three words for two things
+
+  Striping cuts data into pieces and deals them across disks, and the vocabulary
+  around it has one piece and one row, named differently by each family.
+
+  - **Chunk, or strip: the piece on one disk.** Linux `md` says *chunk*; `mdadm`
+    sets it with `--chunk`. Broadcom's MegaRAID says *strip*: "the strip size is
+    the portion of a stripe that resides on a single drive". Same thing.
+  - **Stripe: the row.** One chunk from every member, at the same sector on each.
+    Broadcom's *stripe size* is "the length of the interleaved data segments that
+    the RAID controller writes across multiple drives, not including parity
+    drives": the strip size times the number of *data* disks. Their example: a
+    stripe holding 1 MB with 64 KB on each drive has a stripe size of 1 MB and a
+    strip size of 64 KB.
+  - **Stripe width: the number of disks.** "The number of drives that are involved
+    in a drive group where striping is implemented": a four-disk drive group has a
+    stripe width of four.
+
+  With *C* the chunk size, *N* the members and *P* the members holding [[parity]] in a
+  stripe:
+
+  ```text
+  strip size    = C
+  stripe width  = N
+  stripe size   = C × (N − P)      the data a full stripe carries
+  ```
+
+  The trap is the middle word. Outside the vendor documents "stripe size" is used
+  for either the piece or the row, and the two differ by a factor of *N − P*. When
+  a document gives one number, check which it means before doing arithmetic with
+  it.
+
+  ## The numbers
+
+  The chunk is chosen when the array is created and cannot be changed without
+  rewriting it. In `mdadm` the default is 512 KB; RAID 4, 5, 6 and 10 need a power
+  of two, at least 4 KB, and the option is "only meaningful for RAID0, RAID4,
+  RAID5, RAID6, and RAID10": RAID 1 and linear have no chunk, because they cut
+  nothing. MegaRAID controllers take strips "from a minimum of 64 KB to 1 MB".
+
+  ## What the size does
+
+  The chunk is the knob between the two kinds of speed that [[striping]] buys. A
+  request smaller than a chunk touches one disk; a request of *R* sectors touches
+  about *R ÷ C* disks, up to *N*. A small chunk spreads one request over many disks
+  and gives it their combined bandwidth, at the cost of every disk doing a small
+  piece of work for it. A large chunk keeps one request on one disk and leaves the
+  others free for other requests, which is what a workload of many small,
+  unrelated accesses wants.
+
+  Under parity the row matters as much as the piece. A write that covers a whole
+  stripe, *C × (N − P)* of data aligned to the stripe's start, lets the
+  [[raid-engine]] compute the parity from what it is writing; a smaller write must
+  read what it does not have first, the read-modify-write behind the
+  [[write-penalty]]. This is why the layer above can be told the numbers: the ext4
+  file system takes the chunk as its `stride` ("the number of blocks read or
+  written to disk before moving to the next disk, which is sometimes referred to as
+  the chunk size") and the row as its `stripe_width` (typically "stride-size × N,
+  where N is the number of data-bearing disks"), and uses them to place its data so
+  that writes fill stripes and "prevent read-modify-write of the parity".
+
+related: [striping, segmentation, parity, write-penalty, raid-engine]
+
+sources:
+  - "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'; 'RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB'"
+  - "md(4) man page — RAID0: 'configured at creation with a Chunk Size which must be at least 4 kibibytes'; chunks assigned to devices in turn"
+  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping — strip size, stripe size and stripe width, quoted; strips 'from a minimum of 64 KB to 1 MB'"
+  - "mke2fs(8) man page, -E stride= and stripe_width= — quoted"
+  - "src/engine/layout.js — the grids the sandbox draws are one chunk per cell, one stripe per row"
+
+status: written

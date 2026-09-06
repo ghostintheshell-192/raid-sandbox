@@ -1,0 +1,47 @@
+# data/kb/drive-group.yaml — the second storage layer. Migrated from data/intro.yaml
+# `storageLayers`; the Broadcom definition is verified, the rest is the migrated text.
+# Writing rules: see segmentation.yaml header.
+
+id: drive-group
+kind: concept
+name: Drive group
+short: >
+  The set of physical disks a controller gathers together to work with. A drive
+  group is a pool, not a layout: it marks off "these disks are mine to arrange",
+  and the arranging, striping, mirroring or parity, happens one layer down.
+
+long: |
+  Forming a drive group is a gathering step. The [[raid-engine]] takes a set of
+  [[physical-disks]] under itself, and from that point on it can carve them up as it
+  likes. A drive group by itself has no striping, no mirroring, no parity of its
+  own; it just says which disks belong together. The layout is applied in the
+  [[span]], and what the operating system is finally given is a [[virtual-drive]].
+  The one layout a group does carry is the stripe that joins its spans in a nested
+  level: a RAID 10 group is two or more mirror spans, striped together at the
+  group.
+
+  The words are a controller vendor's. In Broadcom's MegaRAID documentation "a drive
+  group is a group of physical drives. These drives are managed in partitions that
+  are known as virtual drives", and a drive group carries a RAID level: a RAID 1
+  drive group is two disks, a RAID 10 drive group is several RAID 1 sets spanned
+  together. Linux `md` has no separate word for it: the set of devices given to
+  `mdadm --create` is the group and the array at once. Windows Storage Spaces calls
+  its gathering step a *storage pool*, from which storage spaces are carved.
+
+  Why keep the layer at all, if some systems do not name it? Because the gathering
+  and the layout are two decisions, and they can differ: one group of eight disks
+  can hold two spans of four with different layouts, or one virtual drive that uses
+  part of the group and leaves the rest free. Seeing the pool as its own layer is
+  what makes those cases readable.
+  The figure under [[virtual-drive]] shows the three layers nested, with such a
+  group as the outer box.
+
+related: [physical-disks, span, virtual-drive, raid-engine]
+
+sources:
+  - "data/intro.yaml storageLayers.drive-group — the text this entry migrates"
+  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Drive Group — 'A drive group is a group of physical drives. These drives are managed in partitions that are known as virtual drives'"
+  - "Broadcom, same guide, RAID 10 Drive Groups — 'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'"
+  - "Microsoft Learn, Storage Spaces overview — 'aggregate multiple physical drives into a single logical storage pool, from which you can create virtual disks known as Storage Spaces'"
+
+status: to-verify

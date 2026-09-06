@@ -1,0 +1,57 @@
+# data/kb/span.yaml — the third storage layer, where a layout actually applies.
+# Migrated from data/intro.yaml `storageLayers`; the Broadcom usage is verified.
+# Writing rules: see segmentation.yaml header.
+
+id: span
+kind: concept
+name: Span
+short: >
+  A set of disks sharing one layout: one striping, mirroring or parity scheme. A
+  span is where a RAID level actually applies. A drive group can hold several
+  spans, each with its own independent layout, and the nested levels are spans
+  striped together.
+
+long: |
+  A span is the layer at which the two axes are chosen. Take some or all of a
+  [[drive-group]]'s disks and give them one [[segmentation]] and one [[redundancy]]:
+  that set is a span, and the pair of choices is its RAID level. The simplest span
+  has no layout at all, disks joined end to end with no redundancy, which is JBOD.
+  The figure under [[virtual-drive]] shows where the span sits: inside the drive
+  group, under the virtual drives carved from it.
+
+  ## Spans inside levels
+
+  The nested levels make the layer visible. RAID 50 stripes across two or more
+  RAID 5 spans, and each span independently tolerates one disk failure. But the
+  top-level stripe needs every span to reconstruct data, so two failures in the
+  *same* span destroy that span, and with it the whole array, even though the
+  other spans are physically intact. A two-span RAID 50 therefore survives one
+  failure per span, two in total as long as they land in different spans, but not
+  two failures landing in the same span. The same reading gives RAID 10 (spans of
+  mirrors, striped) and RAID 60 (spans of RAID 6, striped).
+
+  ## The word in the field
+
+  The vendor usage is Broadcom's: "disk spanning allows multiple drives to function
+  like one large drive", the spanned levels are "RAID 00, RAID 10, RAID 50, and
+  RAID 60", and inside such a drive group "the span numbering starts from Span 0,
+  Span 1, Span 2, and so on". A RAID 10 there is built "by spanning two or more
+  contiguous RAID 1 virtual drives", and can hold up to eight spans. So in a
+  controller's vocabulary a span is one leg of a nested level, and a flat level
+  (RAID 5 on four disks) is a drive group with one layout and no spans to speak of.
+  These pages use the word for both: the flat case is a drive group with a single
+  span.
+
+  Linux `md` does not use the word at all. A RAID 50 there is two `md` RAID 5
+  devices given as members to an `md` RAID 0: the spans are arrays in their own
+  right, each with its own device name, and the nesting is explicit.
+
+related: [drive-group, virtual-drive, segmentation, redundancy, fault-tolerance]
+
+sources:
+  - "data/intro.yaml storageLayers.span — the text this entry migrates"
+  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Spanning — 'Disk spanning allows multiple drives to function like one large drive'; spanned drive groups: 'RAID 00, RAID 10, RAID 50, and RAID 60'; 'the span numbering starts from Span 0, Span 1, Span 2, and so on'"
+  - "Broadcom, same guide, RAID 10 Drive Groups — 'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'; a maximum of 8 spans"
+  - "src/engine/model.js — an array's members are disks or arrays: the nesting as the sandbox computes it"
+
+status: to-verify
