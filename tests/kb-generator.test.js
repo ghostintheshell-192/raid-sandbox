@@ -181,6 +181,28 @@ for (const [name, html] of pages) {
     for (const forbidden of ['datePublished', 'dateModified', 'aggregateRating', 'reviewCount', 'review'])
       assert(!(forbidden in ld), `${name}: JSON-LD claims ${forbidden}, which this project does not have`);
   });
+
+  test(`${name}: Open Graph and Twitter card are present and consistent`, () => {
+    const attr = (prop) => {
+      const re = new RegExp(`<meta property="${prop}" content="([^"]*)"`);
+      const hit = re.exec(html);
+      return hit ? hit[1] : null;
+    };
+    const titleTag = /<title>([^<]*)<\/title>/.exec(html)[1];
+    const descTag  = /<meta name="description" content="([^"]*)"/.exec(html)[1];
+    const canonical = /<link rel="canonical" href="([^"]*)"/.exec(html)[1];
+
+    eq(attr('og:type'), 'article');
+    assert(attr('og:site_name'), `${name}: no og:site_name`);
+    eq(attr('og:url'), canonical);
+    eq(attr('og:title'), titleTag);
+    eq(attr('og:description'), descTag);
+    eq(attr('og:image'), 'https://raid-sandbox.dev/assets/og-image.png');
+    eq(attr('og:image:width'), '1200');
+    eq(attr('og:image:height'), '630');
+    assert(attr('og:image:alt'), `${name}: no og:image:alt`);
+    assert(/<meta name="twitter:card" content="summary_large_image">/.test(html), `${name}: no twitter:card`);
+  });
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

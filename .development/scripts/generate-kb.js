@@ -138,6 +138,13 @@ function loadData() {
  * JSON-LD rather than restated here: the `isPartOf` and `author` of every
  * generated page are then the same facts the home page already publishes, and
  * they cannot drift (the no-unverifiable-claims rule).
+ *
+ * The Open Graph / Twitter identity is copied the same way, from index.html's
+ * own `<meta property="og:...">` tags: `og:site_name` and the `og:image`
+ * quadruple. A generated page has no figure of its own, so the site's one
+ * preview image (the same the home page uses) is the only honest choice —
+ * copying it, rather than hardcoding it here, is what keeps the two from
+ * drifting if the image is ever replaced.
  */
 function readSiteIdentity() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -146,8 +153,23 @@ function readSiteIdentity() {
   let ld;
   try { ld = JSON.parse(m[1]); } catch (e) { fail(`index.html: the JSON-LD block does not parse (${e.message})`); }
   if (!ld.name || !ld.url) fail('index.html: the JSON-LD block has no name/url');
+
+  const ogMeta = (property) => {
+    const re = new RegExp(`<meta property="${property}" content="([^"]*)"`);
+    const hit = re.exec(html);
+    if (!hit || !hit[1]) fail(`index.html: no <meta property="${property}"> to copy into the knowledge base pages`);
+    return hit[1];
+  };
+  const og = {
+    siteName:    ogMeta('og:site_name'),
+    image:       ogMeta('og:image'),
+    imageWidth:  ogMeta('og:image:width'),
+    imageHeight: ogMeta('og:image:height'),
+    imageAlt:    ogMeta('og:image:alt'),
+  };
+
   return { app: { '@type': ld['@type'] || 'WebApplication', name: ld.name, url: ld.url },
-           author: ld.author || null, publisher: ld.publisher || null };
+           author: ld.author || null, publisher: ld.publisher || null, og };
 }
 
 // ---------------------------------------------------------------------------
@@ -470,13 +492,14 @@ function chrome({ file, title, description, heading, subtitle, body, ctx, side =
     : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
     .concat([`      <a class="kb-nav-item" href="../index.html">Sandbox</a>`]).join('\n');
 
+  const url = `${SITE}/kb/${file}`;
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: heading,
     description,
     inLanguage: 'en',
-    url: `${SITE}/kb/${file}`,
+    url,
     isPartOf: { '@type': ctx.site.app['@type'], name: ctx.site.app.name, url: ctx.site.app.url },
   };
   if (ctx.site.author) ld.author = ctx.site.author;
@@ -489,8 +512,23 @@ function chrome({ file, title, description, heading, subtitle, body, ctx, side =
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
-  <link rel="canonical" href="${SITE}/kb/${file}">
+  <link rel="canonical" href="${url}">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="${escapeHtml(ctx.site.og.siteName)}">
+  <meta property="og:url" content="${url}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:image" content="${escapeHtml(ctx.site.og.image)}">
+  <meta property="og:image:width" content="${escapeHtml(ctx.site.og.imageWidth)}">
+  <meta property="og:image:height" content="${escapeHtml(ctx.site.og.imageHeight)}">
+  <meta property="og:image:alt" content="${escapeHtml(ctx.site.og.imageAlt)}">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
