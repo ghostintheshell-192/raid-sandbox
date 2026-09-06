@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RAID 5 — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.">
+  <meta name="description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/raid5.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/raid5.html">
   <meta property="og:title" content="RAID 5 — RAID Sandbox knowledge base">
-  <meta property="og:description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.">
+  <meta property="og:description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "RAID 5",
-    "description": "Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.",
+    "description": "Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk's worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/raid5.html",
     "isPartOf": {

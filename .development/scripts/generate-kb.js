@@ -181,14 +181,44 @@ function readSiteIdentity() {
 const plain = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 const shortOf = (entry) => plain(entry.kind ? entry.short : entry.kb.short);
 
-/** A meta description: one or two sentences of the short form, never invented. */
-function metaDescription(text, limit = 200) {
+// A cheap guard against the one abbreviation the sentence-boundary regex
+// below would otherwise misread as a sentence end (a period, a space, a
+// capital letter): "e.g. Something" reads exactly like two sentences to that
+// rule. A short, known list is enough — the alternative (a real abbreviation
+// dictionary) is not worth it for a handful of knowledge-base authors.
+const ABBREVIATIONS = ['e.g', 'i.e', 'etc', 'vs', 'cf'];
+const endsWithAbbreviation = (textBeforePunctuation) => {
+  const lower = textBeforePunctuation.toLowerCase();
+  return ABBREVIATIONS.some((abbr) => lower.endsWith(abbr));
+};
+
+/**
+ * A meta description: whole sentences from the start of `short`, kept while
+ * the result stays within `limit` characters (search engines truncate a
+ * `<meta name="description">` around 160) — never a mid-sentence cut, and
+ * never empty: the first sentence is kept even if it alone runs past the
+ * limit, because search engines truncating on their own reads better than a
+ * cut we chose ourselves. A sentence ends at ". ", "! " or "? " followed by a
+ * capital letter — cheap enough that a data file never has to spell one out.
+ */
+function metaDescription(text, limit = 160) {
   const s = plain(text);
-  if (s.length <= limit) return s;
-  const cut = s.slice(0, limit);
-  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '));
-  if (stop > limit / 2) return cut.slice(0, stop + 1);
-  return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+  const boundary = /[.!?] (?=[A-Z])/g;
+  // Every sentence but the last ends right before a capital letter that
+  // starts the next one, which is what `boundary` finds; the last sentence's
+  // end has nothing after it to match on, so it is added explicitly — without
+  // it, a two-sentence `short` could never keep its second sentence at all.
+  const cuts = [];
+  let m;
+  while ((m = boundary.exec(s))) {
+    if (endsWithAbbreviation(s.slice(0, m.index))) continue;
+    cuts.push(m.index + 1);   // include the punctuation, drop the space after it
+  }
+  cuts.push(s.length);
+
+  let end = cuts[0];           // the first sentence is kept regardless of length
+  for (let i = 1; i < cuts.length && cuts[i] <= limit; i++) end = cuts[i];
+  return s.slice(0, end);
 }
 
 const classWords = (shape) => {
@@ -493,7 +523,12 @@ function pageToc(toc) {
 // for it.
 const pageUrl = (file) => file === 'index.html' ? `${SITE}/kb/` : `${SITE}/kb/${file}`;
 
-function chrome({ file, title, description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
+// `description` (capped at a sentence boundary, metaDescription()) feeds the
+// meta tag and og:description, both of which real crawlers truncate anyway.
+// `fullDescription` feeds the JSON-LD `description`, which is not a snippet
+// shown in a results list but the page's own first lines restated — cutting
+// it the same way would just be losing text nothing forced us to lose.
+function chrome({ file, title, description, fullDescription = description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
     : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
@@ -504,7 +539,7 @@ function chrome({ file, title, description, heading, subtitle, body, ctx, side =
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: heading,
-    description,
+    description: fullDescription,
     inLanguage: 'en',
     url,
     isPartOf: { '@type': ctx.site.app['@type'], name: ctx.site.app.name, url: ctx.site.app.url },
@@ -659,11 +694,12 @@ function levelPage(def, ctx) {
   // 9 — related concepts, and the levels this one is confused with
   section('see-also', 'See also', seeAlso(def, ctx));
 
-  const description = metaDescription(shortOf(def));
+  const full = shortOf(def);
   return chrome({
     file: `${def.id}.html`,
     title: `${def.name} — RAID Sandbox knowledge base`,
-    description,
+    description: metaDescription(full),
+    fullDescription: full,
     heading: def.name,
     subtitle: escapeHtml(classWords(def.shape)),
     body: out.join('\n'),
@@ -777,6 +813,7 @@ function mapPage(ctx) {
     file: 'index.html',
     title: 'RAID knowledge base — the map',
     description: metaDescription(summary),
+    fullDescription: summary,
     heading: 'RAID knowledge base',
     subtitle: 'Map',
     body: out.join('\n'),
@@ -832,6 +869,7 @@ function conceptPage(entry, ctx) {
     file: `${entry.id}.html`,
     title: `${entry.name} — RAID Sandbox knowledge base`,
     description: metaDescription(shortOf(entry)),
+    fullDescription: shortOf(entry),
     heading: entry.name,
     subtitle: entry.kind === 'concept' ? 'Concept' : 'Term',
     body: out.join('\n'),

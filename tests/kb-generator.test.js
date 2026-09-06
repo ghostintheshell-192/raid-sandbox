@@ -31,6 +31,7 @@ const { test, assert, eq, finish } = require('./test-helpers.js');
 
 const root      = path.join(__dirname, '..');
 const generator = path.join(root, '.development', 'scripts', 'generate-kb.js');
+const { metaDescription } = require(generator);
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kb-generator-'));
 // --sitemap redirects sitemap.xml the same way --out redirects the pages, so
@@ -51,6 +52,23 @@ runInto(outB);
 
 const pageNames = fs.readdirSync(outA).filter((f) => f.endsWith('.html')).sort();
 const pages = new Map(pageNames.map((f) => [f, fs.readFileSync(path.join(outA, f), 'utf8')]));
+
+// ---------------------------------------------------------------------------
+console.log('\n[0] metaDescription: whole sentences, capped at a boundary');
+
+test('metaDescription: drops a second sentence that would push past the limit', () => {
+  eq(metaDescription('The first sentence is short. The second one alone would still fit within the limit on its own, but not once added to the first.', 100),
+    'The first sentence is short.');
+});
+
+test('metaDescription: keeps every whole sentence that still fits within the limit', () => {
+  eq(metaDescription('One. Two. Three.', 100), 'One. Two. Three.');
+});
+
+test('metaDescription: keeps the first sentence even when it alone runs past the limit', () => {
+  const oneLongSentence = 'This single sentence runs on for a good while, well past a hundred characters, with no period anywhere before its very end.';
+  eq(metaDescription(oneLongSentence, 100), oneLongSentence);
+});
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] the generator is deterministic');
@@ -186,6 +204,14 @@ for (const [name, html] of pages) {
     else assert(ld.url.endsWith(`/kb/${name}`), `url "${ld.url}" does not name this page`);
     for (const forbidden of ['datePublished', 'dateModified', 'aggregateRating', 'reviewCount', 'review'])
       assert(!(forbidden in ld), `${name}: JSON-LD claims ${forbidden}, which this project does not have`);
+  });
+
+  test(`${name}: the meta description is a whole-sentence prefix of the full JSON-LD description`, () => {
+    const meta = unescape(/<meta name="description" content="([^"]*)"/.exec(html)[1]);
+    const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
+    const ld = JSON.parse(m[1]);
+    assert(ld.description.startsWith(meta), `${name}: the meta description is not a prefix of the full JSON-LD description`);
+    assert(/[.!?]$/.test(meta), `${name}: the meta description does not end at a sentence boundary`);
   });
 
   test(`${name}: Open Graph and Twitter card are present and consistent`, () => {

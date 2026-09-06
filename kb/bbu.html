@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Battery backup unit and flash cache protection — RAID Sandbox knowledge base</title>
-  <meta name="description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the…">
+  <meta name="description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/bbu.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/bbu.html">
   <meta property="og:title" content="Battery backup unit and flash cache protection — RAID Sandbox knowledge base">
-  <meta property="og:description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the…">
+  <meta property="og:description" content="What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Battery backup unit and flash cache protection",
-    "description": "What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the…",
+    "description": "What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/bbu.html",
     "isPartOf": {
