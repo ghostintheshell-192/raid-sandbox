@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAID is not a backup — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Redundancy keeps an array running when a disk fails. It does nothing for the other ways data is lost: a deletion, an overwrite, malware, a failed controller, fire, a second failure during a rebuild.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/raid-is-not-a-backup.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "RAID is not a backup",
+    "description": "Redundancy keeps an array running when a disk fails. It does nothing for the other ways data is lost: a deletion, an overwrite, malware, a failed controller, fire, a second failure during a rebuild.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/raid-is-not-a-backup.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><span class="kb-side-item active" aria-current="page">RAID is not a backup</span></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">RAID is not a backup</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">Redundancy keeps an array running when a disk fails. It does nothing for the other ways data is lost: a deletion, an overwrite, malware, a failed controller, fire, a second failure during a rebuild. A backup is a separate copy, made at a point in time, kept where the array&#39;s failures cannot reach it.</p>
+    <h3 id="what-redundancy-answers">What redundancy answers</h3>
+    <p>One question: what happens when a disk stops working? <a href="redundancy.html">redundancy</a> answers it by keeping enough extra information on the other disks that the array keeps serving, and a <a href="rebuild.html">rebuild</a> makes it whole again. This is <em>availability</em>: the system stays up through a hardware failure. It is worth a great deal, and it is all it is.</p>
+    <h3 id="what-it-does-not-answer">What it does not answer</h3>
+    <ul>
+      <li><strong>A write that should not have happened.</strong> A deleted file, an overwritten document, a database corrupted by a bug, a disk encrypted by ransomware: each is a write, and the <a href="raid-engine.html">raid engine</a> does with it what it does with every write, copies it to every mirror and folds it into every parity block, at once. There is no earlier version anywhere in the array. Redundancy is faithful, and faithfulness is the problem.</li>
+      <li><strong>The whole array at once.</strong> The disks share a controller, a power supply, a chassis, a room. A controller that fails, a power surge, a flood, a theft take every member together, and the redundancy among them is irrelevant. An array is one failure domain.</li>
+      <li><strong>The second failure.</strong> Fault tolerance is a count, and the count is spent by the first failure until the rebuild completes (<a href="fault-tolerance.html">fault tolerance</a>). A second disk lost in that window, or one unreadable sector on a survivor, ends the array; the <a href="write-hole.html">write hole</a> can end it quietly.</li>
+      <li><strong>Time.</strong> Nothing in an array remembers what the data was last week.</li>
+    </ul>
+    <h3 id="what-a-backup-is">What a backup is</h3>
+    <p>A copy that is <em>separate</em>: on other media, and so not written to by the same engine at the same instant; <em>elsewhere</em>, and so not in the same failure domain; and <em>from a point in time</em>, and so still holding what has since been deleted or corrupted. The US-CERT guidance states it as a rule of three:</p>
+    <pre class="kb-figure"><code>3 – Keep 3 copies of any important file: 1 primary and 2 backups.
+2 – Keep the files on 2 different media types to protect against different types of hazards.
+1 – Store 1 copy offsite (e.g., outside your home or business facility).</code></pre>
+    <p>A mirrored disk is not a second copy in that sense: it is the same copy, written twice, in the same place, by the same hand.</p>
+    <h3 id="the-two-together">The two together</h3>
+    <p>RAID and backup are not alternatives; they answer different questions. An array keeps a service running while a disk is replaced, so that the failure is an event and not an outage. A backup is what the service is restored from when the array, or what was written to it, is gone. A system that needs both has both, and neither excuses the other.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>Paul Ruggiero, Matthew A. Heckathorn — Data Backup Options, US-CERT / Carnegie Mellon University, 2012 — the 3-2-1 rule, quoted; &#39;Saving just one backup file may not be enough to safeguard your information&#39;</li>
+      <li>md(4) man page — RAID1: &#39;Changes are written to all devices in parallel&#39; (the faithfulness of a mirror)</li>
+      <li>data/kb/redundancy.yaml, fault-tolerance.yaml, write-hole.yaml — the mechanisms this entry relies on, with their own sources</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="write-hole.html">Write hole</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#what-redundancy-answers">What redundancy answers</a></li>
+        <li><a href="#what-it-does-not-answer">What it does not answer</a></li>
+        <li><a href="#what-a-backup-is">What a backup is</a></li>
+        <li><a href="#the-two-together">The two together</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

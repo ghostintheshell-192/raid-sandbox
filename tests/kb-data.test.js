@@ -135,6 +135,12 @@ const WORKED = ['capacity', 'faultTolerance', 'writePenalty'];
 for (const id of [...pageIds].sort()) {
   const doc = levelFiles[id];
   const b = doc.kb;
+  test(`${id}.yaml: pros, cons, useCases, notFor are text (a ": " makes YAML read a mapping)`, () => {
+    for (const field of ['pros', 'cons', 'useCases', 'notFor'])
+      for (const x of doc[field] || [])
+        assert(typeof x === 'string', `${id}: ${field} has a non-text item — quote it: ${JSON.stringify(x)}`);
+  });
+
   test(`${id}.yaml: kb has short, long, example, worked, related, confusedWith`, () => {
     assert(typeof b.short === 'string' && b.short.trim(), 'kb.short is required');
     assert(typeof b.long === 'string' && b.long.trim(), 'kb.long is required');

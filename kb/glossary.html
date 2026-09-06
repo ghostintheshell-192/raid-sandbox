@@ -40,9 +40,59 @@
   }
   </script>
 </head>
-<body class="kb-body">
+<body class="kb-body kb-body--page">
 
-<div class="kb-page">
+<div class="kb-page kb-page--side">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
 
   <header class="kb-header">
     <h1 class="kb-title">Glossary</h1>
@@ -51,36 +101,35 @@
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
       <a class="kb-nav-item" href="index.html">Map</a>
-      <a class="kb-nav-item" href="concepts.html">Concepts</a>
       <span class="kb-nav-item active" aria-current="page">Glossary</span>
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
   <section class="kb-section" id="glossary">
     <dl class="kb-defs">
-      <dt><a href="concepts.html#backplane">Backplane</a></dt>
+      <dt><a href="backplane.html">Backplane</a></dt>
       <dd>The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector; an active one carries a SAS expander, a switch that lets one cable reach many disks. Either way it stores nothing and computes no RAID.</dd>
-      <dt><a href="concepts.html#bbu">Battery backup unit and flash cache protection</a></dt>
+      <dt><a href="bbu.html">Battery backup unit and flash cache protection</a></dt>
       <dd>What lets a hardware RAID controller keep its write cache through a power cut: a battery that powers the cache memory until power returns, or, in newer designs, a supercapacitor that powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</dd>
-      <dt><a href="concepts.html#capacity">Capacity</a></dt>
+      <dt><a href="capacity.html">Capacity</a></dt>
       <dd>How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member&#39;s worth for each parity block in the stripe.</dd>
-      <dt><a href="concepts.html#chunk">Chunk, strip and stripe</a></dt>
+      <dt><a href="chunk.html">Chunk, strip and stripe</a></dt>
       <dd>The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls a chunk and most controllers a strip. Its size is fixed when the array is created and it is the unit striping deals out, so it sets how many disks one request touches. A stripe is one round of chunks, one per member.</dd>
-      <dt><a href="concepts.html#drive-group">Drive group</a></dt>
+      <dt><a href="drive-group.html">Drive group</a></dt>
       <dd>The set of physical disks a controller gathers together to work with. A drive group is a pool, not a layout: it marks off &quot;these disks are mine to arrange&quot;, and the arranging, striping, mirroring or parity, happens one layer down.</dd>
-      <dt><a href="concepts.html#fault-tolerance">Fault tolerance</a></dt>
+      <dt><a href="fault-tolerance.html">Fault tolerance</a></dt>
       <dd>How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two. In a nested level the worst place matters: a RAID 50 survives one failure per span, but two in the same span lose everything.</dd>
-      <dt><a href="concepts.html#hba">HBA</a></dt>
+      <dt><a href="hba.html">HBA</a></dt>
       <dd>The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.</dd>
-      <dt><a href="concepts.html#mirroring">Mirroring</a></dt>
+      <dt><a href="mirroring.html">Mirroring</a></dt>
       <dd>Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk&#39;s worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.</dd>
-      <dt><a href="concepts.html#parity">Parity</a></dt>
+      <dt><a href="parity.html">Parity</a></dt>
       <dd>One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</dd>
-      <dt><a href="concepts.html#performance">Performance</a></dt>
+      <dt><a href="performance.html">Performance</a></dt>
       <dd>How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</dd>
-      <dt><a href="concepts.html#physical-disks">Physical disks</a></dt>
+      <dt><a href="physical-disks.html">Physical disks</a></dt>
       <dd>The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it. Every layer above exists to turn a set of them into something more useful than one disk at a time.</dd>
-      <dt><a href="concepts.html#algorithm">Placement algorithm</a></dt>
+      <dt><a href="algorithm.html">Placement algorithm</a></dt>
       <dd>The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</dd>
       <dt><a href="raid0.html">RAID 0</a></dt>
       <dd>Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space; and any one disk failing loses everything on all of them.</dd>
@@ -92,36 +141,38 @@
       <dd>Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk&#39;s worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.</dd>
       <dt><a href="raid6.html">RAID 6</a></dt>
       <dd>RAID 5 with a second parity block per stripe, computed a different way, so that any two disks can fail at once. It keeps all but two disks&#39; worth of space, survives a second failure during a rebuild, and pays for each small write with six disk operations.</dd>
-      <dt><a href="concepts.html#raid-engine">RAID engine</a></dt>
+      <dt><a href="raid-engine.html">RAID engine</a></dt>
       <dd>The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</dd>
-      <dt><a href="concepts.html#raid-is-not-a-backup">RAID is not a backup</a></dt>
+      <dt><a href="raid-is-not-a-backup.html">RAID is not a backup</a></dt>
       <dd>Redundancy keeps an array running when a disk fails. It does nothing for the other ways data is lost: a deletion, an overwrite, malware, a failed controller, fire, a second failure during a rebuild. A backup is a separate copy, made at a point in time, kept where the array&#39;s failures cannot reach it.</dd>
-      <dt><a href="concepts.html#rebuild">Rebuild</a></dt>
+      <dt><a href="rebuild.html">Rebuild</a></dt>
       <dd>Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</dd>
-      <dt><a href="concepts.html#redundancy">Redundancy</a></dt>
+      <dt><a href="redundancy.html">Redundancy</a></dt>
       <dd>How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</dd>
-      <dt><a href="concepts.html#scrubbing">Scrubbing</a></dt>
+      <dt><a href="scrubbing.html">Scrubbing</a></dt>
       <dd>Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.</dd>
-      <dt><a href="concepts.html#segmentation">Segmentation</a></dt>
+      <dt><a href="segmentation.html">Segmentation</a></dt>
       <dd>How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</dd>
-      <dt><a href="concepts.html#span">Span</a></dt>
+      <dt><a href="span.html">Span</a></dt>
       <dd>A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies. A drive group can hold several spans, each with its own independent layout, and the nested levels are spans striped together.</dd>
-      <dt><a href="concepts.html#striping">Striping</a></dt>
+      <dt><a href="striping.html">Striping</a></dt>
       <dd>Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</dd>
-      <dt><a href="concepts.html#virtual-drive">Virtual drive</a></dt>
+      <dt><a href="virtual-drive.html">Virtual drive</a></dt>
       <dd>The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</dd>
-      <dt><a href="concepts.html#why-linux-md">Why Linux md is the reference</a></dt>
+      <dt><a href="why-linux-md.html">Why Linux md is the reference</a></dt>
       <dd>These pages take the Linux `md` driver as their reference implementation because its source is public: every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</dd>
-      <dt><a href="concepts.html#write-hole">Write hole</a></dt>
+      <dt><a href="write-hole.html">Write hole</a></dt>
       <dd>The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</dd>
-      <dt><a href="concepts.html#write-penalty">Write penalty</a></dt>
+      <dt><a href="write-penalty.html">Write penalty</a></dt>
       <dd>How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four operations for single parity and six for double. A write that covers a whole stripe pays no read.</dd>
     </dl>
   </section>
 
   <footer class="kb-footer">
-    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
+
+  </div>
 
 </div>
 

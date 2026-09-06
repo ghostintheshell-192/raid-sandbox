@@ -53,7 +53,7 @@ description: >
 
 pros:
   - Survives any two simultaneous disk failures
-  - Safe during rebuild: a second failure during rebuild does not cause data loss
+  - "Safe during rebuild: a second failure during rebuild does not cause data loss"
   - Essential for large arrays where rebuild window risk is significant
 
 cons:

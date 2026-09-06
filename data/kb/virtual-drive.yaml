@@ -24,8 +24,8 @@ long: |
 
   The three layers nest. A drive group contains disks; a span is some of those
   disks under one layout; a virtual drive is a slice of the usable capacity that
-  results. RAID 10 shows all three at once, read from the top (what the operating
-  system is given) to the bottom (what is physically there):
+  results. RAID 10 shows all three at once, read from the top, what the operating
+  system is given, to the bottom, what is physically there:
 
   ```text
   what the operating system sees
@@ -44,8 +44,6 @@ long: |
   │   └─────────────────────────┘   └─────────────────────────┘   │
   │                                                               │
   └───────────────────────────────────────────────────────────────┘
-
-  what is physically there
   ```
 
   Each span gives its two disks one layout, a mirror. The group holds the two

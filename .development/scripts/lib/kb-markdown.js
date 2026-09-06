@@ -106,7 +106,9 @@ function render(markdown, ctx) {
     const heading = HEADING.exec(line);
     if (heading) {
       const level = Math.min(heading[1].length + 1, 6);
-      out.push(`<h${level}>${renderInline(heading[2].trim(), ctx)}</h${level}>`);
+      const text  = heading[2].trim();
+      const id    = ctx.headingId ? ` id="${escapeHtml(ctx.headingId(text))}"` : '';
+      out.push(`<h${level}${id}>${renderInline(text, ctx)}</h${level}>`);
       i++;
       continue;
     }
@@ -150,4 +152,14 @@ function render(markdown, ctx) {
   return out.join('\n');
 }
 
-module.exports = { render, renderInline, escapeHtml };
+/** An anchor for a heading: lower-case, words joined by hyphens, nothing else. */
+const slug = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** The `##` headings of a body of markdown, in order, with the ids `slug` gives them. */
+function headingsOf(markdown) {
+  return String(markdown == null ? '' : markdown).split('\n')
+    .map((l) => /^\s*##\s+(.*)$/.exec(l)).filter(Boolean)
+    .map((m) => ({ id: slug(m[1].trim()), title: m[1].trim() }));
+}
+
+module.exports = { render, renderInline, escapeHtml, slug, headingsOf };

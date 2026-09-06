@@ -52,7 +52,7 @@ pros:
 
 cons:
   - 50% capacity efficiency (copies=2)
-  - Niche: supported only by some controllers; less common than RAID 10
+  - "Niche: supported only by some controllers; less common than RAID 10"
 
 useCases:
   - Mirrored redundancy when only an odd number of disks is available

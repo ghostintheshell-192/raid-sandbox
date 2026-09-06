@@ -40,9 +40,59 @@
   }
   </script>
 </head>
-<body class="kb-body">
+<body class="kb-body kb-body--level">
 
-<div class="kb-page">
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><span class="kb-side-item active" aria-current="page">RAID 6</span></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
 
   <header class="kb-header">
     <h1 class="kb-title">RAID 6</h1>
@@ -51,26 +101,25 @@
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
       <a class="kb-nav-item" href="index.html">Map</a>
-      <a class="kb-nav-item" href="concepts.html">Concepts</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
   <section class="kb-section" id="what-it-is">
     <p class="kb-lede">RAID 5 with a second parity block per stripe, computed a different way, so that any two disks can fail at once. It keeps all but two disks&#39; worth of space, survives a second failure during a rebuild, and pays for each small write with six disk operations.</p>
-    <h3>What it is</h3>
-    <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="concepts.html#striping">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="concepts.html#parity">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="concepts.html#algorithm">algorithm</a>, the same four names as RAID 5.</p>
-    <h3>What it buys</h3>
-    <p>The second failure, and the second failure is not a rare event but the ordinary risk of a <a href="concepts.html#rebuild">rebuild</a>. A RAID 5 that has lost a disk has no tolerance left while the replacement is being written, and the writing takes as long as the disk is large; the 1988 paper&#39;s formula has that repair time in its denominator (<a href="concepts.html#fault-tolerance">fault tolerance</a>). RAID 6 goes through the same rebuild with one failure still in hand, and an unreadable sector found on a survivor during it is recomputed instead of lost. That is the whole argument for the level, and it grows with the size of the disks.</p>
-    <h3>What it pays</h3>
-    <p>Space and writes. The <a href="concepts.html#capacity">capacity</a> is all but two disks&#39; worth, so on four disks it keeps half, the same as a mirror, and only from six disks up does it beat RAID 10 on space. A small write must read the old data, the old <em>P</em> and the old <em>Q</em>, and write all three back: six operations for one (<a href="concepts.html#write-penalty">write penalty</a>), the highest of any standard level. A write that covers a whole stripe pays none of the reads, as in RAID 5. And <em>Q</em> is arithmetic in a Galois field rather than a plain XOR, so computing it costs more processor time, which is felt on a software engine more than on a controller with an accelerator for it (<a href="concepts.html#raid-engine">raid engine</a>).</p>
-    <h3>The minimum</h3>
+    <h3 id="what-it-is">What it is</h3>
+    <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="striping.html">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="parity.html">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="algorithm.html">algorithm</a>, the same four names as RAID 5.</p>
+    <h3 id="what-it-buys">What it buys</h3>
+    <p>The second failure, and the second failure is not a rare event but the ordinary risk of a <a href="rebuild.html">rebuild</a>. A RAID 5 that has lost a disk has no tolerance left while the replacement is being written, and the writing takes as long as the disk is large; the 1988 paper&#39;s formula has that repair time in its denominator (<a href="fault-tolerance.html">fault tolerance</a>). RAID 6 goes through the same rebuild with one failure still in hand, and an unreadable sector found on a survivor during it is recomputed instead of lost. That is the whole argument for the level, and it grows with the size of the disks.</p>
+    <h3 id="what-it-pays">What it pays</h3>
+    <p>Space and writes. The <a href="capacity.html">capacity</a> is all but two disks&#39; worth, so on four disks it keeps half, the same as a mirror, and only from six disks up does it beat RAID 10 on space. A small write must read the old data, the old <em>P</em> and the old <em>Q</em>, and write all three back: six operations for one (<a href="write-penalty.html">write penalty</a>), the highest of any standard level. A write that covers a whole stripe pays none of the reads, as in RAID 5. And <em>Q</em> is arithmetic in a Galois field rather than a plain XOR, so computing it costs more processor time, which is felt on a software engine more than on a controller with an accelerator for it (<a href="raid-engine.html">raid engine</a>).</p>
+    <h3 id="the-minimum">The minimum</h3>
     <p>Four disks is the minimum, and here the kernel enforces it: <code>raid5.c</code> refuses to start a RAID 6 with fewer, &quot;not enough configured devices (minimum 4)&quot;. With three the array would be a three-way mirror in disguise, <em>P</em> and <em>Q</em> both equal to the single data block, which is why nothing is lost by refusing it.</p>
   </section>
   <section class="kb-section" id="segmentation">
     <h2>Segmentation</h2>
     <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
-    <p class="kb-more"><a href="concepts.html#segmentation">Read more — Segmentation</a></p>
+    <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
     <p class="kb-caption">RAID 6 · 4 disks · left-symmetric</p>
     <pre class="kb-grid"><code>          disk 0  disk 1  disk 2  disk 3
 stripe 0      D0      D1       Q       P
@@ -81,7 +130,7 @@ stripe 3       P      D6      D7       Q</code></pre>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
     <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
-    <p class="kb-more"><a href="concepts.html#redundancy">Read more — Redundancy</a></p>
+    <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
     <pre class="kb-worked"><code>(N − 2) × disk size
 N = 4 disks of 2 TB → (4 − 2) × 2 TB = 4 TB usable
 
@@ -95,7 +144,7 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
   <section class="kb-section" id="algorithm">
     <h2>Algorithm</h2>
     <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
-    <p class="kb-more"><a href="concepts.html#algorithm">Read more — Placement algorithm</a></p>
+    <p class="kb-more"><a href="algorithm.html">Read more — Placement algorithm</a></p>
     <dl class="kb-defs">
       <dt>Left Asymmetric</dt>
       <dd>Parity rotates leftward (same direction as left-symmetric). Data fills from disk 0 each stripe, going right and skipping the parity position — it does NOT continue from where the previous stripe left off.</dd>
@@ -110,7 +159,7 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
   <section class="kb-section" id="where-it-runs">
     <h2>Where it runs</h2>
     <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
-    <p class="kb-more"><a href="concepts.html#raid-engine">Read more — RAID engine</a></p>
+    <p class="kb-more"><a href="raid-engine.html">Read more — RAID engine</a></p>
     <dl class="kb-defs">
       <dt>RAID Engine (RoC)</dt>
       <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>
@@ -149,7 +198,7 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
     <h3>Good at</h3>
     <ul>
       <li>Survives any two simultaneous disk failures</li>
-      <li>[object Object]</li>
+      <li>Safe during rebuild: a second failure during rebuild does not cause data loss</li>
       <li>Essential for large arrays where rebuild window risk is significant</li>
     </ul>
     <h3>Costs</h3>
@@ -178,14 +227,14 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
     <h2>See also</h2>
     <h3>Related</h3>
     <ul class="kb-links">
-      <li><a href="concepts.html#striping">Striping</a></li>
-      <li><a href="concepts.html#parity">Parity</a></li>
-      <li><a href="concepts.html#algorithm">Placement algorithm</a></li>
-      <li><a href="concepts.html#rebuild">Rebuild</a></li>
-      <li><a href="concepts.html#fault-tolerance">Fault tolerance</a></li>
-      <li><a href="concepts.html#capacity">Capacity</a></li>
-      <li><a href="concepts.html#write-penalty">Write penalty</a></li>
-      <li><a href="concepts.html#raid-engine">RAID engine</a></li>
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="algorithm.html">Placement algorithm</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
     </ul>
     <h3>Often confused with</h3>
     <ul class="kb-links">
@@ -196,8 +245,28 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
   </section>
 
   <footer class="kb-footer">
-    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#what-it-is">What it is</a></li>
+        <li><a href="#what-it-buys">What it buys</a></li>
+        <li><a href="#what-it-pays">What it pays</a></li>
+        <li><a href="#the-minimum">The minimum</a></li>
+        <li><a href="#segmentation">Segmentation</a></li>
+        <li><a href="#redundancy">Redundancy</a></li>
+        <li><a href="#algorithm">Algorithm</a></li>
+        <li><a href="#where-it-runs">Where it runs</a></li>
+        <li><a href="#below-the-minimum">Below the minimum</a></li>
+        <li><a href="#in-practice">In practice</a></li>
+        <li><a href="#try-it">Try it</a></li>
+        <li><a href="#see-also">See also</a></li>
+      </ul>
+    </aside>
 
 </div>
 

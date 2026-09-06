@@ -1,8 +1,7 @@
 # data/kb/performance.yaml — reads and writes relative to one disk, from the two
-# axes. This entry also states the write-parallelism rule for a mirror of striped
-# legs correctly (tech-debt/mirror-of-stripes-write-parallelism.md: the engine
-# still returns 1 there; the fix is part of this work). Writing rules: see
-# segmentation.yaml header.
+# axes. The write-parallelism rule for a mirror of striped legs stated here is
+# the engine's since 2026-09-06 (tech-debt/mirror-of-stripes-write-parallelism.md,
+# resolved). Writing rules: see segmentation.yaml header.
 
 id: performance
 kind: concept
@@ -22,8 +21,8 @@ long: |
   comes from two numbers, one per axis:
 
   ```text
-  N   how many disks take part          from the segmentation ([[striping]])
-  W   operations per logical write      from the redundancy   ([[write-penalty]])
+  N   how many disks take part          from the segmentation (striping)
+  W   operations per logical write      from the redundancy   (write penalty)
 
   reads   ≈  N  × one disk
   writes  ≈  N ÷ W  × one disk
@@ -116,6 +115,6 @@ sources:
   - "Patterson, Gibson, Katz — A Case for RAID, 1988 — Figure 2 'Large transfer vs small transfers in a group of G disks'; the performance metrics 'Events/Sec vs Single Disk' in Tables II–VI; large reads and small reads/writes as the two workloads"
   - "md(4) man page — RAID1: 'The driver attempts to distribute read requests across all devices to maximise performance'; RAID10 far layout: 'MD can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed'"
   - "src/engine/model.js — readWidth() and readParallelism() (width vs fanout), writeParallelism() and writePenalty(); read ≈ N×, write ≈ N/W× as multipliers against a single disk"
-  - "tech-debt/mirror-of-stripes-write-parallelism.md — a mirror's write parallelism is one copy's width, so RAID 0+1 and RAID 1+0 on the same disks share their write numbers; the engine's current linear branch returns 1 and is corrected in this work"
+  - "tech-debt/mirror-of-stripes-write-parallelism.md — a mirror's write parallelism is one copy's width, so RAID 0+1 and RAID 1+0 on the same disks share their write numbers; resolved 2026-09-06, the engine computes it so"
 
 status: written

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Write hole — RAID Sandbox knowledge base</title>
+  <meta name="description" content="The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the…">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/write-hole.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Write hole",
+    "description": "The gap between writing a stripe's data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the…",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/write-hole.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Write hole</span></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Write hole</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</p>
+    <h3 id="the-mechanism">The mechanism</h3>
+    <p>Updating a parity stripe takes more than one disk operation: the data block and the parity block are on different disks and are written separately (<a href="write-penalty.html">write penalty</a>). If the power fails after one lands and before the other, the stripe is left in a state no single write would produce. The kernel&#39;s own description is short: &quot;for RAID 4/5/6 array, an unclean shutdown can cause data in some stripes to not be in consistent state, eg, data and parity don&#39;t match.&quot;</p>
+    <p>On its own this is not yet data loss. The data block is what was written, or what was there before; the parity is stale. As long as every disk is present the array never reads the parity to answer a request, and a resync after the unclean shutdown recomputes it from the data. The hole opens when a disk is missing. Then the parity is not a spare copy, it is the only way to recover the missing block, and a wrong parity yields a wrong block: &quot;data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect.&quot; The block that was never written to comes back corrupted, silently, because the <a href="rebuild.html">rebuild</a> trusts the parity it finds. And in a degraded array there is &quot;no way to recalculate parity, because one of the disks is missing&quot;.</p>
+    <p>Two things have to coincide: an interrupted write and a missing disk, in either order. That is why the hole is rarely seen and why it is dangerous when it is: a power cut during a rebuild is exactly the coincidence.</p>
+    <h3 id="why-the-array-cannot-see-it">Why the array cannot see it</h3>
+    <p>A parity stripe carries no checksum of itself. XOR can tell that a stripe is inconsistent, by recomputing the parity and comparing, but it cannot tell which block is wrong, and it is never consulted on a read unless a disk is gone. Only a deliberate pass over the whole array finds the mismatches: <a href="scrubbing.html">scrubbing</a>, which <code>md</code> exposes as a <code>check</code> that counts them and a <code>repair</code> that rewrites the parity from the data.</p>
+    <h3 id="what-closes-it">What closes it</h3>
+    <ul>
+      <li><strong>A protected write cache.</strong> On a hardware controller the whole stripe update sits in cache until every part is on disk, and a <a href="bbu.html">BBU</a> or flash module keeps that cache through the cut; when power returns the write is finished, not left half done. This is why the <a href="raid-engine.html">raid engine</a> with such a cache can be silent about the hole, and why the same array on an engine without one cannot.</li>
+      <li><strong>A journal.</strong> Linux <code>md</code> can put a fast device in front of a RAID 4/5/6 array as a write-through cache: &quot;the write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks.&quot; An interrupted stripe is replayed from the journal.</li>
+      <li><strong>A partial parity log.</strong> For RAID 5, <code>md</code> can record, before dispatching a write, the &quot;partial parity&quot; of the stripe, enough to make &quot;parity for the stripe consistent with its state before the write operation, regardless of which chunk writes have completed&quot;; then &quot;if one of the not modified data disks of this stripe is missing, this updated parity can be used to recover its contents&quot;. The log lives on the member disks themselves, needs no extra device, and is enabled with <code>--consistency-policy=ppl</code>.</li>
+      <li><strong>Power that does not fail.</strong> An uninterruptible power supply keeps the machine up long enough to finish its writes. This is the fallback of software and firmware RAID, whose engine is a driver with no memory of its own to protect. Intel&#39;s own note for its firmware RAID says what happens otherwise: after a dirty shutdown, parity &quot;may be inconsistent with the data it is supposed to be protecting&quot; and must be recomputed for every stripe.</li>
+    </ul>
+    <p>Mirrors are not immune to an interrupted write, but they fail more gently: the copies may disagree, and a resync picks one, but there is no computed block to be wrong about a third disk.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>Linux kernel Documentation/driver-api/md/raid5-cache.rst — &#39;For RAID 4/5/6 array, an unclean shutdown can cause data in some stripes to not be in consistent state, eg, data and parity don&#39;t match&#39;; the write-through cache: &#39;The write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks&#39;</li>
+      <li>Linux kernel Documentation/driver-api/md/raid5-ppl.rst — &#39;parity of a particular stripe may become inconsistent with data on other member disks&#39;; in a degraded array &#39;there is no way to recalculate parity, because one of the disks is missing&#39;; &#39;data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect&#39;; PPL records &#39;partial parity before new data and parity are dispatched to disks&#39;</li>
+      <li>md(4) man page, SCRUBBING AND MISMATCHES — &#39;check&#39; records mismatches in md/mismatch_cnt, &#39;repair&#39; corrects them</li>
+      <li>Intel, Parity Initialization for Intel Rapid Storage Technology (support article) — after a dirty shutdown &#39;parity may be inconsistent with the data it is supposed to be protecting&#39; and &#39;must be completely initialized&#39;</li>
+      <li>data/components/os-linux.yaml writeHole.reason — the sentence the sandbox shows, and its kernel references: drivers/md/raid5-ppl.c &#39;Partial Parity Log for closing the RAID5 write hole&#39;; drivers/md/md.c consistency_policy: journal / ppl / bitmap / resync / none</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="scrubbing.html">Scrubbing</a></li>
+      <li><a href="bbu.html">Battery backup unit and flash cache protection</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#the-mechanism">The mechanism</a></li>
+        <li><a href="#why-the-array-cannot-see-it">Why the array cannot see it</a></li>
+        <li><a href="#what-closes-it">What closes it</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

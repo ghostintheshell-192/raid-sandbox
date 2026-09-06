@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual drive — RAID Sandbox knowledge base</title>
+  <meta name="description" content="The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/virtual-drive.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Virtual drive",
+    "description": "The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/virtual-drive.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Virtual drive</span></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Virtual drive</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-lede">The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
+    <p>A virtual drive is the block device that the operating system, the file system and the applications work with. It has a contiguous address space organized in sectors, with numbering starting from 0, and every request to it goes to the <a href="raid-engine.html">raid engine</a>, which translates it onto the members by the <a href="segmentation.html">segmentation</a> of the <a href="span.html">span</a> below and produces whatever the <a href="redundancy.html">redundancy</a> asks for. Above the virtual drive nothing knows there is an array: this decoupling of physical layout from logical addressing is what makes RAID transparent to the software running on it.</p>
+    <h3 id="container-and-content">Container and content</h3>
+    <p>The three layers nest. A drive group contains disks; a span is some of those disks under one layout; a virtual drive is a slice of the usable capacity that results. RAID 10 shows all three at once, read from the top, what the operating system is given, to the bottom, what is physically there:</p>
+    <pre class="kb-figure"><code>what the operating system sees
+
+          ┌───────────────┐
+          │ virtual drive │
+          └───────┬───────┘
+                  │   a slice of the group&#39;s usable capacity
+                  ▼
+┌─ drive group: RAID 10, the two spans striped together ────────┐
+│                                                               │
+│   ┌─ span 0: RAID 1 ────────┐   ┌─ span 1: RAID 1 ────────┐   │
+│   │  ┌──────┐   ┌──────┐    │   │  ┌──────┐   ┌──────┐    │   │
+│   │  │disk 0│   │disk 1│    │   │  │disk 2│   │disk 3│    │   │
+│   │  └──────┘   └──────┘    │   │  └──────┘   └──────┘    │   │
+│   └─────────────────────────┘   └─────────────────────────┘   │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘</code></pre>
+    <p>Each span gives its two disks one layout, a mirror. The group holds the two spans and carries the layout that joins them, a stripe across the spans: the mirror is the span&#39;s, the stripe is the group&#39;s, and the pair is what RAID 10 means. The virtual drive is what the whole is presented as; the operating system sees that box and nothing below it. In a flat level (a RAID 5 on four disks) the group holds one span and has no layout of its own. The <a href="drive-group.html">drive group</a> and <a href="span.html">span</a> entries describe the two lower layers; this figure is the one they point back to.</p>
+    <h3 id="it-does-not-have-to-be-the-whole-span">It does not have to be the whole span</h3>
+    <p>In Broadcom&#39;s MegaRAID definition, &quot;a virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives&quot;, and it can be an entire drive group, several, a portion of one, or parts of several. So a 6 TB span could host a 2 TB virtual drive and leave 4 TB available for another, as long as the total stays within the span&#39;s capacity. Each virtual drive is then a separate disk to the operating system.</p>
+    <h3 id="the-same-object-under-other-names">The same object under other names</h3>
+    <p>On a controller the operating system is given the virtual drive and nothing else: the member disks are hidden behind it. In Linux software RAID the object is the <code>md</code> device, <code>/dev/md0</code> and its siblings, and the member disks stay visible beside it. In Windows it is the <em>storage space</em> carved from a pool, which Microsoft also calls a virtual disk. Three names, one thing: the block device an array becomes.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>data/intro.yaml storageLayers.virtual-drive — the text this entry migrates</li>
+      <li>Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Virtual Drive — &#39;A virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives&#39;; may be an entire drive group, multiple drive groups, a portion, parts of several, or any combination</li>
+      <li>Broadcom, same guide, Introduction to RAID — &#39;Virtual drives are drive groups or spanned drive groups that are available to the operating system&#39;</li>
+      <li>md(4) man page — the md device as the array the kernel presents</li>
+      <li>Microsoft Learn, Storage Spaces overview — &#39;create virtual disks known as Storage Spaces&#39;</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="span.html">Span</a></li>
+      <li><a href="drive-group.html">Drive group</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#container-and-content">Container and content</a></li>
+        <li><a href="#it-does-not-have-to-be-the-whole-span">It does not have to be the whole span</a></li>
+        <li><a href="#the-same-object-under-other-names">The same object under other names</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

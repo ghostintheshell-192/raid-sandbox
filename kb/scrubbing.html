@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrubbing — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/scrubbing.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Scrubbing",
+    "description": "Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/scrubbing.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Scrubbing</span></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Scrubbing</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.</p>
+    <p>A disk can hold a sector it can no longer read without anyone knowing, because nothing has asked for that sector in months. The array does not notice either; the redundancy is only consulted when a read fails. The dangerous moment is a <a href="rebuild.html">rebuild</a>: it reads every surviving block, finds the bad sector, and has no redundancy left to recompute it with. Scrubbing is reading everything <em>now</em>, while the redundancy is still there.</p>
+    <h3 id="two-things-it-finds">Two things it finds</h3>
+    <ul>
+      <li><strong>Unreadable sectors.</strong> A read error on a member during the pass is handled as any read error is: <code>md</code> &quot;will attempt to find the correct data elsewhere (from mirrors or from parity), write it to the failed block, and re-read&quot;. The disk reallocates the sector, and the block is whole again. If that fails, the whole device is marked faulty, which is better learned on a Tuesday afternoon than during a rebuild.</li>
+      <li><strong>Mismatches.</strong> Blocks that read fine but disagree: two copies of a mirror that differ, a parity that is not the XOR of its stripe. <code>md</code> counts them in <code>mismatch_cnt</code> during a <code>check</code>, and rewrites them during a <code>repair</code>, &quot;in the same way that resync repairs arrays&quot;. A mismatch is what a <a href="write-hole.html">write hole</a> leaves behind, and also what a resync after an unclean shutdown fixes for the stripes it reaches.</li>
+    </ul>
+    <h3 id="who-runs-it">Who runs it</h3>
+    <p>In <code>md</code> the pass is started by writing <code>check</code> or <code>repair</code> to the array&#39;s <code>sync_action</code>; distributions schedule it monthly. On a controller it is two background tasks. <em>Patrol read</em> looks for &quot;possible drive errors that could lead to a drive failure&quot;, starts &quot;only when the controller is idle for a defined period of time&quot;, and aims &quot;to protect data integrity by detecting drive failure before the failure can damage data&quot;. A <em>consistency check</em> verifies the redundancy itself, that the copies and the parity agree.</p>
+    <p>Scrubbing costs a full read of every disk, throttled like a rebuild is. What it buys is that the array&#39;s tolerance is real when it is needed, not nominal.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>md(4) man page, SCRUBBING AND MISMATCHES — &#39;check&#39; and &#39;repair&#39; written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; &#39;repair&#39; corrects them as a resync would</li>
+      <li>md(4) man page, RECOVERY — on a read error md will &#39;find the correct data elsewhere&#39;, write it back and re-read; a device that cannot be corrected is marked faulty</li>
+      <li>Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read — &#39;the review of your system for possible drive errors that could lead to a drive failure&#39;; &#39;starts only when the controller is idle for a defined period of time&#39;; &#39;protect data integrity by detecting drive failure before the failure can damage data&#39;</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="write-hole.html">Write hole</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#two-things-it-finds">Two things it finds</a></li>
+        <li><a href="#who-runs-it">Who runs it</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

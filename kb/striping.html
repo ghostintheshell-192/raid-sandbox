@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Striping — RAID Sandbox knowledge base</title>
+  <meta name="description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks…">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/striping.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Striping",
+    "description": "Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks…",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/striping.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Striping</span></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Striping</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</p>
+    <p>Striping is one of the two answers to <a href="segmentation.html">segmentation</a>, and the one every RAID level except RAID 1 and JBOD is built on. That page shows the mechanics: the <a href="chunk.html">chunk</a>, the stripe, the arithmetic that sends a sector to a disk. This one is about what the technique does.</p>
+    <h3 id="two-kinds-of-speed">Two kinds of speed</h3>
+    <p>A disk answers one request at a time, at its own bandwidth. Put <em>N</em> disks side by side and deal the data across them, and two different things get faster.</p>
+    <p><strong>One large request.</strong> A read of many chunks touches many disks, and the <a href="raid-engine.html">raid engine</a> issues the pieces to all of them together. The request finishes when the slowest piece finishes, so the array&#39;s bandwidth for it approaches <em>N</em> times one disk&#39;s. This is the sequential case: video, backups, large files.</p>
+    <p><strong>Many small requests.</strong> A request smaller than a chunk touches one disk. Striping does not make it faster; but the next small request, at an unrelated address, most likely lands on a different disk, and the two are served at the same time. The array does not answer one request faster; it answers <em>N</em> at once. This is the random case: databases, many users, small files.</p>
+    <p>The two are worth telling apart because they are bought differently. Bandwidth for one request comes from the <em>width</em> of the stripe, the number of disks a request spans, and a larger chunk narrows it. Throughput for many requests comes from the <em>number</em> of disks and from requests being spread across them, which a larger chunk helps. The chunk size is the knob between the two, and the <a href="chunk.html">chunk</a> entry says what the defaults are and why.</p>
+    <h3 id="the-price">The price</h3>
+    <p>Every disk holds a piece of everything. A file of any size beyond one chunk is spread over several disks, and the address space as a whole is spread over all of them. If one disk fails, what remains is not &quot;the other files&quot;: it is every file with holes in it. A striped set of <em>N</em> disks with no redundancy fails when <em>any</em> of its disks fails, so it fails, on average, <em>N</em> times as often as one disk.</p>
+    <p>This was known before RAID had a name. Salem and Garcia-Molina described disk striping in 1986 as a way to get bandwidth from several disks, and in 1988 the same authors published on its impact on reliability. The paper that named RAID, by Patterson, Gibson and Katz in the same year, starts from that cost: an array of many cheap disks is fast and fails often, and the levels it defines are the ways to pay for the reliability back. That is why striping and <a href="redundancy.html">redundancy</a> are two separate axes: striping is the speed, redundancy is what is added so that the speed does not come with the <em>N</em>-fold failure rate.</p>
+    <h3 id="striping-under-redundancy">Striping under redundancy</h3>
+    <p>With a <a href="mirroring.html">mirroring</a> layer the striped set is copied, or the stripe is built out of copies (RAID 10). With <a href="parity.html">parity</a> the stripe is the unit the parity is computed over: one chunk per stripe holds the XOR of the others, and the stripe is what a full-stripe write can compute in one go and what a small write has to read back to update. Parity does not exist without a stripe, which is why there is no linear level with parity.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>Kenneth Salem, Hector Garcia-Molina — Disk Striping. ICDE 1986, pp. 336–342</li>
+      <li>Hector Garcia-Molina, Kenneth Salem — The Impact of Disk Striping on Reliability. IEEE Data Engineering Bulletin 11(1), 1988, pp. 26–39</li>
+      <li>David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID). SIGMOD 1988</li>
+      <li>md(4) man page — RAID0: chunks assigned to devices in turn; mdadm(8): the chunk size as the striping parameter</li>
+      <li>src/engine/model.js readWidth() vs readParallelism() — the two kinds of speed, as the sandbox derives them: one request&#39;s width, and the disks serving parallel readers</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="chunk.html">Chunk, strip and stripe</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#two-kinds-of-speed">Two kinds of speed</a></li>
+        <li><a href="#the-price">The price</a></li>
+        <li><a href="#striping-under-redundancy">Striping under redundancy</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parity — RAID Sandbox knowledge base</title>
+  <meta name="description" content="One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed.">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/parity.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Parity",
+    "description": "One extra block per stripe, computed from the stripe's data blocks by XOR, from which any single missing block can be recomputed.",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/parity.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Parity</span></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Parity</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</p>
+    <h3 id="the-arithmetic">The arithmetic</h3>
+    <p>XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has one property that makes it a form of redundancy: applied twice, a value cancels. With data blocks <em>D₀</em>, <em>D₁</em>, <em>D₂</em> and parity <em>P</em> over a stripe:</p>
+    <pre class="kb-figure"><code>P  = D₀ ⊕ D₁ ⊕ D₂                  parity: the XOR of the data blocks
+
+D₁ = D₀ ⊕ D₂ ⊕ P                   any one block is the XOR of all the others
+
+example, one byte per block
+D₀ = 1100 0101
+D₁ = 0011 1010
+D₂ = 1111 0000
+P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 1010  ✓</code></pre>
+    <p>The parity is computed over the blocks that share a stripe, so it needs a stripe: parity exists only under <a href="striping.html">striping</a>, and the <a href="chunk.html">chunk</a> entry says what a full stripe is worth in bytes. Lose the disk that held <em>D₁</em> and every read of <em>D₁</em> is answered by reading the rest of its stripe and XORing; that is the array in <em>degraded</em> mode. Replace the disk, and the same computation, run over every stripe, writes it back: the <a href="rebuild.html">rebuild</a>.</p>
+    <h3 id="where-the-parity-block-lives">Where the parity block lives</h3>
+    <p>The 1988 RAID paper defines the fourth level with one <em>check disk</em> per group, holding the parity of every stripe. It works, and it has one bottleneck: &quot;every write must read and write the check disk&quot;, so the whole array can only complete writes as fast as that one disk. The fifth level is the same parity moved: &quot;the final level RAID distributes the data and check information across all the disks — including the check disks&quot;. Linux <code>md</code> says the same in its own words: RAID 4 is &quot;a RAID0 array with an extra device for storing parity&quot;, the last of the devices; in RAID 5 &quot;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&quot;, which &quot;allows more parallelism when writing&quot; and when reading.</p>
+    <p><em>Which</em> disk holds the parity of stripe <em>k</em> is the placement <a href="algorithm.html">algorithm</a>. The one nearly everything uses, left-symmetric, puts the parity on the last disk for stripe 0 and moves it one disk to the left every stripe, with the data starting just right of it; in <code>raid5.c</code> this is the line <code>pd_idx = data_disks - sector_div(stripe2, raid_disks)</code>. Every disk then carries the same share of parity and of data, and no disk is the check disk.</p>
+    <h3 id="keeping-it-true">Keeping it true</h3>
+    <p>Whenever a data block changes, the parity of its stripe must change with it. The paper gives the rule and its cost:</p>
+    <pre class="kb-figure"><code>new parity = (old data ⊕ new data) ⊕ old parity
+
+a small write, on two disks:     read old data      read old parity
+                                 write new data     write new parity
+                                 → 4 operations for one logical write</code></pre>
+    <p>That is the <em>small-write problem</em>, and the four operations are the <a href="write-penalty.html">write penalty</a> of single parity. There is a second way: read the data blocks the write does <em>not</em> touch, and compute the parity fresh. <code>raid5.c</code> counts both for every stripe it is about to write, <code>rmw</code> (blocks to read for a read-modify-write) and <code>rcw</code> (blocks to read for a reconstruct-write), and takes the cheaper. A write that covers the whole stripe has nothing left to read: <code>rcw</code> is zero, the parity is computed from what is being written, and the penalty disappears. Aligning writes to whole stripes is therefore the way to make parity cheap, which is what the file system&#39;s <code>stripe_width</code> is for.</p>
+    <p>The two writes of that rule are separate disk operations, and a power cut between them leaves a stripe whose parity no longer matches its data. Nothing in the arithmetic detects it; the next rebuild trusts it. This is the <a href="write-hole.html">write hole</a>, and it is why a parity array wants a <a href="raid-engine.html">raid engine</a> whose write cache survives power loss.</p>
+    <h3 id="two-parities">Two parities</h3>
+    <p>One parity block recovers one missing block. To survive two failures a stripe needs a second block that is <em>not</em> another XOR (two XORs of the same blocks carry the same information). RAID 6 computes two <em>syndromes</em>, in H. Peter Anvin&#39;s description for the Linux implementation:</p>
+    <pre class="kb-figure"><code>P = D₀ + D₁ + D₂ + … + Dₙ₋₁                        ordinary XOR parity
+Q = g⁰·D₀ + g¹·D₁ + g²·D₂ + … + gⁿ⁻¹·Dₙ₋₁         a Reed-Solomon code</code></pre>
+    <p>where the arithmetic is that of the Galois field GF(2⁸) and <em>g</em> is a generator of it. With one data disk lost, <em>P</em> recovers it as in RAID 5; with two lost, the two equations are solved together. &quot;RAID-6 supports losing any two drives.&quot; The cost is two blocks per stripe, and a write that touches one data block must update both: six operations instead of four. The field has 255 non-zero elements, so a stripe can hold at most 255 data disks; no real array comes close.</p>
+    <p>Windows Storage Spaces offers the same two shapes as <em>single parity</em> and <em>dual parity</em> spaces, described as &quot;data is striped across multiple drives with parity information for fault tolerance&quot;.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>Patterson, Gibson, Katz — A Case for RAID, 1988, §10 Fourth Level RAID: &#39;new parity = (old data xor new data) xor old parity&#39;; &#39;a small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes&#39;; &#39;The check disk is the bottleneck, and the final level RAID removes this bottleneck&#39;; §11 Fifth Level RAID: &#39;distributes the data and check information across all the disks — including the check disks&#39;</li>
+      <li>md(4) man page — RAID4: &#39;like a RAID0 array with an extra device for storing parity&#39;; RAID5: &#39;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&#39;, &#39;allows more parallelism when writing&#39;; RAID6: &#39;can handle the loss of any two devices without data loss&#39;</li>
+      <li>drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks</li>
+      <li>drivers/md/raid5.c handle_stripe_dirtying() — rmw and rcw counted per stripe; &#39;prefer read-modify-write, but need to get some data&#39;; the reconstruct-write branch taken when rcw is the cheaper</li>
+      <li>H. Peter Anvin — The mathematics of RAID-6 (2004, last updated 2011): &#39;RAID-6 supports losing any two drives. The way this is done is by computing two syndromes, generally referred P and Q&#39;; P as XOR parity, Q as a Reed-Solomon code over GF(2⁸) with generator {02}; 255 data drives at most</li>
+      <li>mke2fs(8) man page, -E stripe_width — &#39;allows the block allocator to prevent read-modify-write of the parity in a RAID stripe&#39;</li>
+      <li>Microsoft Learn, Storage Spaces overview — parity spaces: &#39;Data is striped across multiple drives with parity information for fault tolerance&#39;; single parity and dual parity</li>
+      <li>data/algorithms/left-symmetric.yaml — the rotation as the sandbox draws it</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="striping.html">Striping</a></li>
+      <li><a href="chunk.html">Chunk, strip and stripe</a></li>
+      <li><a href="algorithm.html">Placement algorithm</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="write-hole.html">Write hole</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#the-arithmetic">The arithmetic</a></li>
+        <li><a href="#where-the-parity-block-lives">Where the parity block lives</a></li>
+        <li><a href="#keeping-it-true">Keeping it true</a></li>
+        <li><a href="#two-parities">Two parities</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

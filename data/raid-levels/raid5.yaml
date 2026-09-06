@@ -54,9 +54,9 @@ pros:
   - No single parity disk bottleneck (distributed parity)
 
 cons:
-  - Write penalty: every small write triggers a read-modify-write cycle (4 I/Os)
-  - Rebuild is slow and risky: a second failure during rebuild means total data loss
-  - Rebuild time grows with disk capacity: every surviving disk is read end to end
+  - "Write penalty: every small write triggers a read-modify-write cycle (4 I/Os)"
+  - "Rebuild is slow and risky: a second failure during rebuild means total data loss"
+  - "Rebuild time grows with disk capacity: every surviving disk is read end to end"
 
 useCases:
   - File servers and NAS

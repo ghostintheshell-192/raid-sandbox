@@ -36,8 +36,8 @@ description: >
   simultaneous disk failures. The stripe multiplies throughput across spans.
 
 pros:
-  - Highest fault tolerance: each span survives any two simultaneous failures
-  - Large rebuild window: second failure during rebuild is safe within each span
+  - "Highest fault tolerance: each span survives any two simultaneous failures"
+  - "Large rebuild window: second failure during rebuild is safe within each span"
   - High read throughput (stripe width × span count disks active in parallel)
 
 cons:

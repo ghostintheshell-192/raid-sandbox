@@ -54,7 +54,7 @@ console.log('\n[1] the generator is deterministic');
 
 test('the same input produces the same set of pages', () => {
   eq(fs.readdirSync(outB).filter((f) => f.endsWith('.html')).sort().join(','), pageNames.join(','));
-  assert(pageNames.length >= 4, `expected the map, the concepts page, the glossary and at least one level, got ${pageNames.length}`);
+  assert(pageNames.length >= 4, `expected the map, the glossary, the concepts and at least one level, got ${pageNames.length}`);
 });
 
 for (const name of pageNames) {
@@ -145,10 +145,11 @@ const collapse = (s) => s.replace(/\s+/g, ' ').trim();
 
 for (const [name, html] of pages) {
   if (name === 'index.html' || name === 'glossary.html') continue;
+  const isLevel = html.includes('class="kb-body kb-body--level"');
   test(`${name}: every transcluded short form is the one in data/kb`, () => {
     // A transclusion is a .kb-short paragraph followed by its "read more" link:
-    // the link names the file the text has to have come from.
-    const re = /<p class="kb-short">([\s\S]*?)<\/p>\s*\n\s*<p class="kb-more"><a href="concepts\.html#([^"]+)">/g;
+    // the link names the page — and so the file — the text has to have come from.
+    const re = /<p class="kb-short">([\s\S]*?)<\/p>\s*\n\s*<p class="kb-more"><a href="([^"#]+)\.html">/g;
     let found = 0;
     for (const m of html.matchAll(re)) {
       found++;
@@ -156,7 +157,7 @@ for (const [name, html] of pages) {
       assert(shorts[id] !== undefined, `${name}: transcludes "${id}", which data/kb has no file for`);
       eq(collapse(unescape(m[1])), collapse(shorts[id]));
     }
-    if (name !== 'concepts.html') assert(found > 0, `${name}: a level page transcludes no short form at all`);
+    if (isLevel) assert(found > 0, `${name}: a level page transcludes no short form at all`);
   });
 }
 

@@ -44,10 +44,10 @@ description: >
 
 pros:
   - Maximum read and write throughput (all disks active in parallel)
-  - Full utilization: no disk space lost to parity or mirroring
+  - "Full utilization: no disk space lost to parity or mirroring"
 
 cons:
-  - Zero fault tolerance: one disk failure destroys all data
+  - "Zero fault tolerance: one disk failure destroys all data"
   - The more disks, the higher the probability of a failure
 
 useCases:

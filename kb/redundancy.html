@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redundancy — RAID Sandbox knowledge base</title>
+  <meta name="description" content="How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks;">
+  <link rel="canonical" href="https://raid-sandbox.dev/kb/redundancy.html">
+  <meta name="theme-color" content="#0a0e14">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/kb.css">
+
+  <!-- Only what this page verifiably contains: its own heading, its own first
+       lines, and the application it belongs to — copied from index.html's
+       JSON-LD, not restated. No dates, no ratings, nothing invented. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Redundancy",
+    "description": "How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks;",
+    "inLanguage": "en",
+    "url": "https://raid-sandbox.dev/kb/redundancy.html",
+    "isPartOf": {
+      "@type": "WebApplication",
+      "name": "RAID Sandbox",
+      "url": "https://raid-sandbox.dev/"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Valentina Malavenda"
+    }
+  }
+  </script>
+</head>
+<body class="kb-body kb-body--concept">
+
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><span class="kb-side-item active" aria-current="page">Redundancy</span></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
+
+  <header class="kb-header">
+    <h1 class="kb-title">Redundancy</h1>
+    <p class="kb-subtitle">Concept</p>
+  </header>
+
+  <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
+      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="glossary.html">Glossary</a>
+      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+  </nav>
+
+  <section class="kb-section kb-concept" id="what-it-is">
+    <p class="kb-lede">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
+    <h3 id="the-problem-it-answers">The problem it answers</h3>
+    <p>A disk fails, eventually. Put many disks together and the array fails as soon as any one of them does, so it fails sooner. The paper that named RAID put it as a formula, with MTTF (&quot;mean time to failure&quot;):</p>
+    <pre class="kb-figure"><code>MTTF of a disk array = MTTF of a single disk ÷ number of disks in the array</code></pre>
+    <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes it exactly this bad, because every disk is carrying relevant data (<a href="striping.html">striping</a>); a linear array loses only what was on the dead disk, but that is still data lost.</p>
+    <p>Redundancy is the answer: store, beside the data, enough extra information that the contents of a failed member can be recomputed from the survivors. The levels the paper defined are the ways to do this at different costs, and every RAID level since is one of two techniques, or a nesting of them.</p>
+    <h3 id="two-techniques">Two techniques</h3>
+    <ul>
+      <li><strong>Mirroring.</strong> Every block is stored whole on two or more disks. Nothing is computed: a write goes to every copy, a read is served by any one. Lose all copies but one and the data is still there. The cost is the copies themselves: two disks hold one disk&#39;s worth. See <a href="mirroring.html">mirroring</a>.</li>
+      <li><strong>Parity.</strong> For every stripe of data blocks, one extra block holds their XOR. Any single block of the stripe, data or parity, can be recomputed from the others. The cost is one block per stripe, whatever the stripe&#39;s width: on ten disks, a tenth of the space. A second parity block, computed differently, covers two failures at the cost of a second block. See <a href="parity.html">parity</a>.</li>
+    </ul>
+    <p>Redundancy is the second of the two axes (<a href="segmentation.html">segmentation</a> is the first) that need to be addressed when deciding what RAID to use. On this axis a level is one of four things:</p>
+    <pre class="kb-figure"><code>none      RAID 0, JBOD             no extra information; any failure loses data
+mirror    RAID 1, RAID 10          n copies of every block
+parity1   RAID 5 (and RAID 4)      one parity block per stripe
+parity2   RAID 6                   two parity blocks per stripe, P and Q</code></pre>
+    <p>A nested level is one of these built over spans that are themselves one of these: RAID 50 is <code>none</code> over <code>parity1</code> spans, RAID 51 is <code>mirror</code> over <code>parity1</code> spans, RAID 60 is <code>none</code> over <code>parity2</code> spans. The nesting is what makes their numbers different from the flat levels&#39;, and the <a href="span.html">span</a> entry shows why.</p>
+    <h3 id="what-the-axis-carries">What the axis carries</h3>
+    <p>Three numbers follow from the redundancy alone, and each has its own entry:</p>
+    <ul>
+      <li><a href="capacity.html">capacity</a>: how much of the raw space is left for data</li>
+      <li><a href="fault-tolerance.html">fault tolerance</a>: how many members can fail, in the worst place, before data is lost</li>
+      <li><a href="write-penalty.html">write penalty</a>: how many disk operations one write costs, because every copy must be written and every parity kept consistent</li>
+    </ul>
+    <p>Segmentation carries none of these. It carries the speed, and the one place the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance depend on how the copies are laid out (<a href="mirroring.html">mirroring</a>).</p>
+    <h3 id="what-it-does-not-do">What it does not do</h3>
+    <p>Redundancy protects against a disk failing. It does not protect against the data being wrong: a deletion, an overwrite, a corrupted file are written to every copy and folded into every parity block as faithfully as good data is, because to the <a href="raid-engine.html">raid engine</a> they are writes like any other. An array with redundancy is not a backup; the reasons are collected under <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
+    <p>Nor does it make the array whole again by itself. After a failure the array runs <em>degraded</em>, serving reads by recomputing what the dead member held, until the member is replaced and the engine has written it back from the redundancy: the <a href="rebuild.html">rebuild</a>. Until then the tolerance is spent.</p>
+  </section>
+  <section class="kb-section" id="sources">
+    <h2>Sources</h2>
+    <ul class="kb-sources">
+      <li>David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: &#39;MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array&#39;; the 100-disk example; &#39;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful&#39;; §6: &#39;break the arrays into reliability groups, with each group having extra check disks containing redundant information&#39;</li>
+      <li>md(4) man page — RAID1: &#39;each device in a RAID1 array contains exactly the same data&#39;; RAID5: parity blocks &#39;distributed across all devices&#39;; RAID6: &#39;can handle the loss of any two devices&#39;</li>
+      <li>Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques</li>
+      <li>src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis</li>
+    </ul>
+  </section>
+  <section class="kb-section" id="related">
+    <h2>Related</h2>
+    <ul class="kb-links">
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="parity.html">Parity</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+      <li><a href="span.html">Span</a></li>
+      <li><a href="raid-engine.html">RAID engine</a></li>
+    </ul>
+  </section>
+
+  <footer class="kb-footer">
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+  </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#the-problem-it-answers">The problem it answers</a></li>
+        <li><a href="#two-techniques">Two techniques</a></li>
+        <li><a href="#what-the-axis-carries">What the axis carries</a></li>
+        <li><a href="#what-it-does-not-do">What it does not do</a></li>
+        <li><a href="#sources">Sources</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </aside>
+
+</div>
+
+</body>
+</html>

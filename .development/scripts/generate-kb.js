@@ -3,8 +3,8 @@
  * generate-kb.js — RAID Sandbox: the knowledge base, generated from the data.
  *
  * Reads data/kb/, data/raid-levels/, data/algorithms/, data/components/ and
- * data/intro.yaml, and writes kb/index.html (the Map), kb/concepts.html,
- * kb/glossary.html and one page per level that carries a `kb:` block. The pages
+ * data/intro.yaml, and writes kb/index.html (the Map), kb/glossary.html, one
+ * page per concept and one page per level that carries a `kb:` block. The pages
  * are committed and served static (specs/planned/knowledge-base.md §7), which is
  * why they carry their text in the HTML and load no script at all.
  *
@@ -43,7 +43,7 @@ const Model  = require(path.join(ROOT, 'src', 'engine', 'model.js'));
 const Levels = require(path.join(ROOT, 'src', 'engine', 'levels.js'));
 const Layout = require(path.join(ROOT, 'src', 'engine', 'layout.js'));
 const BuildDoc = require(path.join(ROOT, 'src', 'sandbox', 'build-document.js'));
-const { render, escapeHtml } = require('./lib/kb-markdown.js');
+const { render, escapeHtml, slug, headingsOf } = require('./lib/kb-markdown.js');
 
 const fail = (msg) => { throw new Error(msg); };
 
@@ -376,7 +376,7 @@ const joinOr = (xs) => xs.length < 2 ? (xs[0] || '') : `${xs.slice(0, -1).join('
 
 function target(id, ctx) {
   const entry = ctx.kb.get(id) || ctx.kb.get(String(id).toLowerCase());
-  if (entry) return { href: `concepts.html#${entry.id}`, name: entry.name };
+  if (entry) return { href: `${entry.id}.html`, name: entry.name };
   const level = ctx.pageById.get(id) || ctx.pageById.get(String(id).toLowerCase());
   if (level) return { href: `${level.id}.html`, name: level.name };
   return null;
@@ -398,7 +398,7 @@ function transclude(id, ctx, where) {
   if (!entry) fail(`${where}: the section transcludes "${id}", which data/kb has no file for`);
   return [
     `<p class="kb-short">${escapeHtml(shortOf(entry))}</p>`,
-    `<p class="kb-more"><a href="concepts.html#${entry.id}">Read more — ${escapeHtml(entry.name)}</a></p>`,
+    `<p class="kb-more"><a href="${entry.id}.html">Read more — ${escapeHtml(entry.name)}</a></p>`,
   ].join('\n');
 }
 
@@ -410,11 +410,61 @@ function transclude(id, ctx, where) {
 
 const NAV = [
   { file: 'index.html',    label: 'Map' },
-  { file: 'concepts.html', label: 'Concepts' },
   { file: 'glossary.html', label: 'Glossary' },
 ];
 
-function chrome({ file, title, description, heading, subtitle, body, ctx }) {
+/**
+ * The map again, as a column beside the text: the same three groups in the
+ * same order, the current page marked. It is what a wide screen gets instead of
+ * a wider line of prose — the reading column keeps its measure, the width goes
+ * to the structure. The map page itself has no side column: it IS the map.
+ */
+function sideNav(ctx, file) {
+  const item = (href, name) => href === file
+    ? `          <li><span class="kb-side-item active" aria-current="page">${escapeHtml(name)}</span></li>`
+    : `          <li><a class="kb-side-item" href="${href}">${escapeHtml(name)}</a></li>`;
+  const kbHrefs = (ids) => ids.map((id) => {
+    const e = ctx.kb.get(id);
+    if (!e) fail(`generate-kb.js: the side nav lists "${id}", which data/kb has no file for`);
+    return [`${e.id}.html`, e.name];
+  });
+  // A group is a native <details>: no script, and the keyboard works. The one
+  // that holds the current page opens; the others fold to their title.
+  const group = (title, entries) => {
+    const open = entries.some(([href]) => href === file);
+    return [
+      `      <details class="kb-side-group"${open ? ' open' : ''}>`,
+      `        <summary class="kb-side-title">${title}</summary>`,
+      '        <ul class="kb-side-list">',
+      entries.map(([href, name]) => item(href, name)).join('\n'),
+      '        </ul>',
+      '      </details>',
+    ].join('\n');
+  };
+  return [
+    '    <aside class="kb-side" aria-label="Knowledge base map">',
+    '      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>',
+    group('Storage layers', kbHrefs(LAYER_ORDER)),
+    group('RAID levels', ctx.pages.map((p) => [`${p.id}.html`, p.name])),
+    group('Concepts', kbHrefs(CONCEPT_ORDER)),
+    '    </aside>',
+  ].join('\n');
+}
+
+/** The page's own sections, as a column on the right: "on this page". */
+function pageToc(toc) {
+  if (!toc || !toc.length) return '';
+  return [
+    '    <aside class="kb-toc" aria-label="On this page">',
+    '      <p class="kb-toc-title">On this page</p>',
+    '      <ul class="kb-toc-list">',
+    toc.map((t) => `        <li><a href="#${t.id}">${escapeHtml(t.title)}</a></li>`).join('\n'),
+    '      </ul>',
+    '    </aside>',
+  ].join('\n');
+}
+
+function chrome({ file, title, description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
     : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
@@ -458,9 +508,11 @@ function chrome({ file, title, description, heading, subtitle, body, ctx }) {
 ${JSON.stringify(ld, null, 2).split('\n').map((l) => '  ' + l).join('\n')}
   </script>
 </head>
-<body class="kb-body">
+<body class="kb-body kb-body--${kind}">
 
-<div class="kb-page">
+<div class="kb-page${side ? ' kb-page--side' : ''}${toc && toc.length ? ' kb-page--toc' : ''}">
+${side ? `\n${sideNav(ctx, file)}\n` : ''}
+  <div class="kb-main">
 
   <header class="kb-header">
     <h1 class="kb-title">${escapeHtml(heading)}</h1>
@@ -473,9 +525,11 @@ ${nav}
 ${body}
 
   <footer class="kb-footer">
-    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
+  </div>
+${toc && toc.length ? `\n${pageToc(toc)}\n` : ''}
 </div>
 
 </body>
@@ -493,10 +547,12 @@ function levelPage(def, ctx) {
   const grid  = gridText(def, node);
   const runs  = whereItRuns(def, ctx.components, ctx.algorithms);
   const algos = algorithmsFor(def, ctx.algorithms);
-  const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w), where: w });
+  const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w), where: w, headingId: slug });
   const out   = [];
+  const toc   = headingsOf(def.kb.long);
 
   const section = (id, title, ...parts) => {
+    toc.push({ id, title });
     out.push(`  <section class="kb-section" id="${id}">`);
     out.push(`    <h2>${title}</h2>`);
     for (const part of parts.filter(Boolean)) out.push(indent(part, 4));
@@ -567,6 +623,8 @@ function levelPage(def, ctx) {
     subtitle: escapeHtml(classWords(def.shape)),
     body: out.join('\n'),
     ctx,
+    toc,
+    kind: 'level',
   });
 }
 
@@ -600,6 +658,10 @@ function inPractice(def) {
   for (const [field, label] of PRACTICE_FIELDS) {
     const items = def[field];
     if (!Array.isArray(items) || !items.length) continue;
+    // A list item with a ": " in it is a mapping to YAML, not a sentence; it
+    // would print as [object Object]. The file has to quote it.
+    for (const x of items) if (typeof x !== 'string')
+      fail(`${def.where}: ${field} has an item that is not text (quote it in the YAML): ${JSON.stringify(x)}`);
     parts.push(`<h3>${label}</h3>\n<ul>\n` +
       items.map((x) => `  <li>${escapeHtml(plain(x))}</li>`).join('\n') + '\n</ul>');
   }
@@ -653,13 +715,13 @@ function mapPage(ctx) {
   const kbCard = (id) => {
     const entry = ctx.kb.get(id);
     if (!entry) fail(`generate-kb.js: the map lists "${id}", which data/kb has no file for`);
-    return entryCard({ href: `concepts.html#${entry.id}`, name: entry.name }, shortOf(entry));
+    return entryCard({ href: `${entry.id}.html`, name: entry.name }, shortOf(entry));
   };
 
   group('layers',   'Storage layers', LAYER_ORDER, kbCard);
-  group('concepts', 'Concepts',       CONCEPT_ORDER, kbCard);
   group('levels',   'RAID levels',    ctx.pages.map((p) => p.id),
     (id) => { const p = ctx.pageById.get(id); return entryCard({ href: `${p.id}.html`, name: p.name }, shortOf(p)); });
+  group('concepts', 'Concepts',       CONCEPT_ORDER, kbCard);
 
   out.push('  <section class="kb-section" id="glossary-link">');
   out.push('    <h2>Glossary</h2>');
@@ -674,51 +736,61 @@ function mapPage(ctx) {
     subtitle: 'Map',
     body: out.join('\n'),
     ctx,
+    side: false,
   });
 }
 
-function conceptsPage(ctx) {
+// One page per concept: the title stays in view, the side column marks the
+// page, and the right column lists the page's own sections — so a reader who
+// comes back after a pause knows where they are without scrolling to find out.
+function conceptPage(entry, ctx) {
+  const where = `${entry.where}: long`;
   const out = [];
-  for (const id of [...LAYER_ORDER, ...CONCEPT_ORDER]) {
-    const entry = ctx.kb.get(id);
-    if (!entry) fail(`generate-kb.js: the concepts page lists "${id}", which data/kb has no file for`);
-    if (!entry.long) continue;
-    const where = entry.where;
-    out.push(`  <section class="kb-section kb-concept" id="${entry.id}">`);
-    out.push(`    <h2>${escapeHtml(entry.name)}</h2>`);
-    if (entry.status === 'to-verify')
-      out.push('    <p class="kb-flag">Not yet checked against a primary source</p>');
-    out.push(`    <p class="kb-short">${escapeHtml(shortOf(entry))}</p>`);
-    out.push(indent(render(entry.long, { resolveLink: makeResolver(ctx, `${where}: long`), where: `${where}: long` }), 4));
-    out.push('    <h3>Sources</h3>');
-    out.push('    <ul class="kb-sources">');
-    for (const s of entry.sources) out.push(`      <li>${escapeHtml(plain(s))}</li>`);
-    out.push('    </ul>');
-    const related = (entry.related || []).map((rid) => {
-      const hit = target(rid, ctx);
-      if (!hit) fail(`${where}: related names "${rid}", which has no page`);
-      return `      <li>${link(hit)}</li>`;
-    });
-    if (related.length) {
-      out.push('    <h3>Related</h3>');
-      out.push(`    <ul class="kb-links">\n${related.join('\n')}\n    </ul>`);
-    }
+  out.push('  <section class="kb-section kb-concept" id="what-it-is">');
+  if (entry.status === 'to-verify')
+    out.push('    <p class="kb-flag">Not yet checked against a primary source</p>');
+  out.push(`    <p class="kb-lede">${escapeHtml(shortOf(entry))}</p>`);
+  out.push(indent(render(entry.long, { resolveLink: makeResolver(ctx, where), where, headingId: slug }), 4));
+  out.push('  </section>');
+
+  const toc = headingsOf(entry.long);
+  out.push('  <section class="kb-section" id="sources">');
+  out.push('    <h2>Sources</h2>');
+  out.push('    <ul class="kb-sources">');
+  for (const s of entry.sources) out.push(`      <li>${escapeHtml(plain(s))}</li>`);
+  out.push('    </ul>');
+  out.push('  </section>');
+  toc.push({ id: 'sources', title: 'Sources' });
+
+  const related = (entry.related || []).map((rid) => {
+    const hit = target(rid, ctx);
+    if (!hit) fail(`${entry.where}: related names "${rid}", which has no page`);
+    return `      <li>${link(hit)}</li>`;
+  });
+  if (related.length) {
+    out.push('  <section class="kb-section" id="related">');
+    out.push('    <h2>Related</h2>');
+    out.push(`    <ul class="kb-links">\n${related.join('\n')}\n    </ul>`);
     out.push('  </section>');
+    toc.push({ id: 'related', title: 'Related' });
   }
+
   return chrome({
-    file: 'concepts.html',
-    title: 'Concepts — RAID Sandbox knowledge base',
-    description: 'The long form of every concept in the RAID Sandbox knowledge base, with its sources.',
-    heading: 'Concepts',
-    subtitle: 'The long form of every concept, in reading order',
+    file: `${entry.id}.html`,
+    title: `${entry.name} — RAID Sandbox knowledge base`,
+    description: metaDescription(shortOf(entry)),
+    heading: entry.name,
+    subtitle: entry.kind === 'concept' ? 'Concept' : 'Term',
     body: out.join('\n'),
     ctx,
+    toc,
+    kind: 'concept',
   });
 }
 
 function glossaryPage(ctx) {
   const rows = [
-    ...[...ctx.kb.values()].map((e) => ({ name: e.name, short: shortOf(e), href: `concepts.html#${e.id}` })),
+    ...[...ctx.kb.values()].map((e) => ({ name: e.name, short: shortOf(e), href: `${e.id}.html` })),
     ...ctx.pages.map((p) => ({ name: p.name, short: shortOf(p), href: `${p.id}.html` })),
   ].sort((a, b) => {
     const x = a.name.toLowerCase(), y = b.name.toLowerCase();
@@ -775,8 +847,14 @@ function generate(outDir) {
 
   const files = new Map();
   files.set('index.html', mapPage(ctx));
-  files.set('concepts.html', conceptsPage(ctx));
   files.set('glossary.html', glossaryPage(ctx));
+  for (const id of [...LAYER_ORDER, ...CONCEPT_ORDER]) {
+    const entry = ctx.kb.get(id);
+    if (!entry) fail(`generate-kb.js: the order lists "${id}", which data/kb has no file for`);
+    if (!entry.long) continue;
+    if (ctx.pageById.has(id)) fail(`generate-kb.js: "${id}" is both a concept and a level — the pages would collide`);
+    files.set(`${entry.id}.html`, conceptPage(entry, ctx));
+  }
   for (const def of ctx.pages) files.set(`${def.id}.html`, levelPage(def, ctx));
 
   fs.mkdirSync(outDir, { recursive: true });

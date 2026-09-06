@@ -40,9 +40,59 @@
   }
   </script>
 </head>
-<body class="kb-body">
+<body class="kb-body kb-body--level">
 
-<div class="kb-page">
+<div class="kb-page kb-page--side kb-page--toc">
+
+    <aside class="kb-side" aria-label="Knowledge base map">
+      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Storage layers</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="physical-disks.html">Physical disks</a></li>
+          <li><a class="kb-side-item" href="drive-group.html">Drive group</a></li>
+          <li><a class="kb-side-item" href="span.html">Span</a></li>
+          <li><a class="kb-side-item" href="virtual-drive.html">Virtual drive</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group" open>
+        <summary class="kb-side-title">RAID levels</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
+          <li><span class="kb-side-item active" aria-current="page">RAID 1</span></li>
+          <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
+          <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
+          <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+        </ul>
+      </details>
+      <details class="kb-side-group">
+        <summary class="kb-side-title">Concepts</summary>
+        <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="segmentation.html">Segmentation</a></li>
+          <li><a class="kb-side-item" href="striping.html">Striping</a></li>
+          <li><a class="kb-side-item" href="chunk.html">Chunk, strip and stripe</a></li>
+          <li><a class="kb-side-item" href="algorithm.html">Placement algorithm</a></li>
+          <li><a class="kb-side-item" href="redundancy.html">Redundancy</a></li>
+          <li><a class="kb-side-item" href="mirroring.html">Mirroring</a></li>
+          <li><a class="kb-side-item" href="parity.html">Parity</a></li>
+          <li><a class="kb-side-item" href="capacity.html">Capacity</a></li>
+          <li><a class="kb-side-item" href="fault-tolerance.html">Fault tolerance</a></li>
+          <li><a class="kb-side-item" href="write-penalty.html">Write penalty</a></li>
+          <li><a class="kb-side-item" href="performance.html">Performance</a></li>
+          <li><a class="kb-side-item" href="rebuild.html">Rebuild</a></li>
+          <li><a class="kb-side-item" href="scrubbing.html">Scrubbing</a></li>
+          <li><a class="kb-side-item" href="write-hole.html">Write hole</a></li>
+          <li><a class="kb-side-item" href="bbu.html">Battery backup unit and flash cache protection</a></li>
+          <li><a class="kb-side-item" href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
+          <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
+          <li><a class="kb-side-item" href="hba.html">HBA</a></li>
+          <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
+          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+        </ul>
+      </details>
+    </aside>
+
+  <div class="kb-main">
 
   <header class="kb-header">
     <h1 class="kb-title">RAID 1</h1>
@@ -51,26 +101,25 @@
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
       <a class="kb-nav-item" href="index.html">Map</a>
-      <a class="kb-nav-item" href="concepts.html">Concepts</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
   <section class="kb-section" id="what-it-is">
     <p class="kb-lede">Every disk holds a full copy of the data, written in step. A read is served by any one copy, a write goes to all of them, and the array survives as long as one copy is left. It keeps one disk&#39;s worth of space however many disks it has, and it is the simplest redundancy there is.</p>
-    <h3>What it is</h3>
-    <p>RAID 1 is the pair <em>linear + mirror</em>: nothing is cut into chunks, and every member holds the whole (<a href="concepts.html#mirroring">mirroring</a>). It is the first level of the 1988 paper, &quot;the most expensive option we consider since all disks are duplicated&quot;, and the one every other level is a cheaper answer to. There is no layout to choose and no chunk size, because there is nothing to place: <code>mdadm</code> does not accept a chunk size for it.</p>
-    <h3>What it buys</h3>
-    <p>The strongest <a href="concepts.html#fault-tolerance">fault tolerance</a> per disk: with <em>n</em> copies, <em>n − 1</em> failures. The number the level is quoted with, one, is the two-disk case; a three-way mirror survives two, and Windows Storage Spaces offers both as two-way and three-way mirror spaces. It also buys a kind of speed that is easy to misread. One read is served by one disk, at that disk&#39;s speed; but <em>n</em> readers at once can each have a copy, because the engine spreads requests over the members (<a href="concepts.html#performance">performance</a>). A mirror serves more readers, it does not serve a reader faster.</p>
-    <h3>What it pays</h3>
-    <p>Space: the <a href="concepts.html#capacity">capacity</a> is one disk&#39;s worth, whatever the count, so two disks keep half and three a third. And every write is written <em>n</em> times, at the speed of the slowest copy (<a href="concepts.html#write-penalty">write penalty</a>). There is no parity to compute and no read-before-write, which is why a mirror&#39;s small writes cost less than a parity array&#39;s.</p>
-    <h3>Two things that follow</h3>
-    <p>Two things follow from &quot;every member holds the whole&quot;. A mirror of mirrors is just a mirror with more copies, which is how a nested level whose spans have shrunk to pairs reads as one wide RAID 1. And a RAID 5 on two disks <em>is</em> a RAID 1: with one data block per stripe the parity is that block. The Linux kernel uses this to grow a mirror into a RAID 5: it first relabels the two-disk RAID 1 as a two-disk RAID 5, moving nothing because the two layouts are identical on two disks, and only then adds disks. The <a href="concepts.html#rebuild">rebuild</a> is the simplest of any level, a copy from the surviving member; and, like every redundancy, it copies a deletion as faithfully as anything else (<a href="concepts.html#raid-is-not-a-backup">RAID is not a backup</a>).</p>
+    <h3 id="what-it-is">What it is</h3>
+    <p>RAID 1 is the pair <em>linear + mirror</em>: nothing is cut into chunks, and every member holds the whole (<a href="mirroring.html">mirroring</a>). It is the first level of the 1988 paper, &quot;the most expensive option we consider since all disks are duplicated&quot;, and the one every other level is a cheaper answer to. There is no layout to choose and no chunk size, because there is nothing to place: <code>mdadm</code> does not accept a chunk size for it.</p>
+    <h3 id="what-it-buys">What it buys</h3>
+    <p>The strongest <a href="fault-tolerance.html">fault tolerance</a> per disk: with <em>n</em> copies, <em>n − 1</em> failures. The number the level is quoted with, one, is the two-disk case; a three-way mirror survives two, and Windows Storage Spaces offers both as two-way and three-way mirror spaces. It also buys a kind of speed that is easy to misread. One read is served by one disk, at that disk&#39;s speed; but <em>n</em> readers at once can each have a copy, because the engine spreads requests over the members (<a href="performance.html">performance</a>). A mirror serves more readers, it does not serve a reader faster.</p>
+    <h3 id="what-it-pays">What it pays</h3>
+    <p>Space: the <a href="capacity.html">capacity</a> is one disk&#39;s worth, whatever the count, so two disks keep half and three a third. And every write is written <em>n</em> times, at the speed of the slowest copy (<a href="write-penalty.html">write penalty</a>). There is no parity to compute and no read-before-write, which is why a mirror&#39;s small writes cost less than a parity array&#39;s.</p>
+    <h3 id="two-things-that-follow">Two things that follow</h3>
+    <p>Two things follow from &quot;every member holds the whole&quot;. A mirror of mirrors is just a mirror with more copies, which is how a nested level whose spans have shrunk to pairs reads as one wide RAID 1. And a RAID 5 on two disks <em>is</em> a RAID 1: with one data block per stripe the parity is that block. The Linux kernel uses this to grow a mirror into a RAID 5: it first relabels the two-disk RAID 1 as a two-disk RAID 5, moving nothing because the two layouts are identical on two disks, and only then adds disks. The <a href="rebuild.html">rebuild</a> is the simplest of any level, a copy from the surviving member; and, like every redundancy, it copies a deletion as faithfully as anything else (<a href="raid-is-not-a-backup.html">RAID is not a backup</a>).</p>
   </section>
   <section class="kb-section" id="segmentation">
     <h2>Segmentation</h2>
     <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
-    <p class="kb-more"><a href="concepts.html#segmentation">Read more — Segmentation</a></p>
+    <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
     <p class="kb-caption">RAID 1 · 2 disks</p>
     <pre class="kb-grid"><code>          disk 0  disk 1
 stripe 0      D0     D0&#39;
@@ -81,7 +130,7 @@ stripe 3      D3     D3&#39;</code></pre>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
     <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
-    <p class="kb-more"><a href="concepts.html#redundancy">Read more — Redundancy</a></p>
+    <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
     <pre class="kb-worked"><code>disk size, one copy&#39;s worth
 N = 2 disks of 2 TB → 2 TB usable, whatever N is
 
@@ -94,13 +143,13 @@ every copy is written → 2 I/Os, random or sequential</code></pre>
   <section class="kb-section" id="algorithm">
     <h2>Algorithm</h2>
     <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
-    <p class="kb-more"><a href="concepts.html#algorithm">Read more — Placement algorithm</a></p>
+    <p class="kb-more"><a href="algorithm.html">Read more — Placement algorithm</a></p>
     <p>a plain mirror has no layout to choose — every member holds a full copy</p>
   </section>
   <section class="kb-section" id="where-it-runs">
     <h2>Where it runs</h2>
     <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
-    <p class="kb-more"><a href="concepts.html#raid-engine">Read more — RAID engine</a></p>
+    <p class="kb-more"><a href="raid-engine.html">Read more — RAID engine</a></p>
     <dl class="kb-defs">
       <dt>RAID Engine (RoC)</dt>
       <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>
@@ -157,15 +206,15 @@ every copy is written → 2 I/Os, random or sequential</code></pre>
     <h2>See also</h2>
     <h3>Related</h3>
     <ul class="kb-links">
-      <li><a href="concepts.html#mirroring">Mirroring</a></li>
-      <li><a href="concepts.html#segmentation">Segmentation</a></li>
-      <li><a href="concepts.html#redundancy">Redundancy</a></li>
-      <li><a href="concepts.html#capacity">Capacity</a></li>
-      <li><a href="concepts.html#fault-tolerance">Fault tolerance</a></li>
-      <li><a href="concepts.html#write-penalty">Write penalty</a></li>
-      <li><a href="concepts.html#performance">Performance</a></li>
-      <li><a href="concepts.html#rebuild">Rebuild</a></li>
-      <li><a href="concepts.html#raid-is-not-a-backup">RAID is not a backup</a></li>
+      <li><a href="mirroring.html">Mirroring</a></li>
+      <li><a href="segmentation.html">Segmentation</a></li>
+      <li><a href="redundancy.html">Redundancy</a></li>
+      <li><a href="capacity.html">Capacity</a></li>
+      <li><a href="fault-tolerance.html">Fault tolerance</a></li>
+      <li><a href="write-penalty.html">Write penalty</a></li>
+      <li><a href="performance.html">Performance</a></li>
+      <li><a href="rebuild.html">Rebuild</a></li>
+      <li><a href="raid-is-not-a-backup.html">RAID is not a backup</a></li>
     </ul>
     <h3>Often confused with</h3>
     <ul class="kb-links">
@@ -175,8 +224,28 @@ every copy is written → 2 I/Os, random or sequential</code></pre>
   </section>
 
   <footer class="kb-footer">
-    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
+
+  </div>
+
+    <aside class="kb-toc" aria-label="On this page">
+      <p class="kb-toc-title">On this page</p>
+      <ul class="kb-toc-list">
+        <li><a href="#what-it-is">What it is</a></li>
+        <li><a href="#what-it-buys">What it buys</a></li>
+        <li><a href="#what-it-pays">What it pays</a></li>
+        <li><a href="#two-things-that-follow">Two things that follow</a></li>
+        <li><a href="#segmentation">Segmentation</a></li>
+        <li><a href="#redundancy">Redundancy</a></li>
+        <li><a href="#algorithm">Algorithm</a></li>
+        <li><a href="#where-it-runs">Where it runs</a></li>
+        <li><a href="#below-the-minimum">Below the minimum</a></li>
+        <li><a href="#in-practice">In practice</a></li>
+        <li><a href="#try-it">Try it</a></li>
+        <li><a href="#see-also">See also</a></li>
+      </ul>
+    </aside>
 
 </div>
 
