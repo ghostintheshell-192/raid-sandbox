@@ -90,8 +90,9 @@ for (const id of [...kbIds].sort()) {
     assert(Array.isArray(doc.sources) && doc.sources.length > 0, 'sources is required and cannot be empty');
     for (const s of doc.sources) {
       if (typeof s === 'string') { assert(s.trim(), 'a source cannot be empty'); continue; }
-      assert(s && typeof s.text === 'string' && s.text.trim() && typeof s.url === 'string' && /^(https?:\/\/|\.\.\/)/.test(s.url),
-        `a source is a string, or { text, url } with an http(s) or ../ url: ${JSON.stringify(s)}`);
+      assert(s && typeof s.ref === 'string' && s.ref.trim() && typeof s.url === 'string' && /^(https?:\/\/|\.\.\/)/.test(s.url)
+             && (s.note === undefined || (typeof s.note === 'string' && s.note.trim())),
+        `a source is a string, or { ref, url, note? } with an http(s) or ../ url: ${JSON.stringify(s)}`);
     }
     assert(STATUSES.includes(doc.status), `status "${doc.status}" is not one of ${STATUSES.join(', ')}`);
     assert(Array.isArray(doc.related), 'related is required (an empty list is allowed, a missing one is not)');

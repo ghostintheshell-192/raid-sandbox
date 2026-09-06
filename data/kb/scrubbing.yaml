@@ -50,11 +50,14 @@ long: |
 related: [rebuild, write-hole, parity, mirroring, fault-tolerance]
 
 sources:
-  - text: "md(4) man page, SCRUBBING AND MISMATCHES — 'check' and 'repair' written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; 'repair' corrects them as a resync would"
+  - ref: "md(4) man page, SCRUBBING AND MISMATCHES"
+    note: "'check' and 'repair' written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; 'repair' corrects them as a resync would"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "md(4) man page, RECOVERY — on a read error md will 'find the correct data elsewhere', write it back and re-read; a device that cannot be corrected is marked faulty"
+  - ref: "md(4) man page, RECOVERY"
+    note: "on a read error md will 'find the correct data elsewhere', write it back and re-read; a device that cannot be corrected is marked faulty"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read — 'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read"
+    note: "'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
 
 status: written

@@ -135,10 +135,10 @@ the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</c
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988 — &#39;Useable Storage Capacity Percentage&#39; per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID6: &#39;it requires N+2 drives to store N drives worth of data&#39;; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device</a></li>
-      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB() — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes</a></li>
-      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.capacityFormula — the formulas in words, per level</a></li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — &#39;Useable Storage Capacity Percentage&#39; per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID6: &#39;it requires N+2 drives to store N drives worth of data&#39;; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB()</a> — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes</li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.capacityFormula</a> — the formulas in words, per level</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

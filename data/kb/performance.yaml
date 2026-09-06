@@ -112,11 +112,14 @@ long: |
 related: [striping, segmentation, redundancy, write-penalty, mirroring, chunk, fault-tolerance, rebuild]
 
 sources:
-  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988 — Figure 2 'Large transfer vs small transfers in a group of G disks'; the performance metrics 'Events/Sec vs Single Disk' in Tables II–VI; large reads and small reads/writes as the two workloads"
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "Figure 2 'Large transfer vs small transfers in a group of G disks'; the performance metrics 'Events/Sec vs Single Disk' in Tables II–VI; large reads and small reads/writes as the two workloads"
     url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
-  - text: "md(4) man page — RAID1: 'The driver attempts to distribute read requests across all devices to maximise performance'; RAID10 far layout: 'MD can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed'"
+  - ref: "md(4) man page"
+    note: "RAID1: 'The driver attempts to distribute read requests across all devices to maximise performance'; RAID10 far layout: 'MD can easily spread sequential reads over the devices, making them similar to RAID0 in terms of speed'"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "src/engine/model.js — readWidth() and readParallelism() (width vs fanout), writeParallelism() and writePenalty(); read ≈ N×, write ≈ N/W× as multipliers against a single disk"
+  - ref: "src/engine/model.js"
+    note: "readWidth() and readParallelism() (width vs fanout), writeParallelism() and writePenalty(); read ≈ N×, write ≈ N/W× as multipliers against a single disk"
     url: ../src/engine/model.js
   - "tech-debt/mirror-of-stripes-write-parallelism.md — a mirror's write parallelism is one copy's width, so RAID 0+1 and RAID 1+0 on the same disks share their write numbers; resolved 2026-09-06, the engine computes it so"
 

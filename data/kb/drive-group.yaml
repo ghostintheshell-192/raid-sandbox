@@ -39,13 +39,17 @@ long: |
 related: [physical-disks, span, virtual-drive, raid-engine]
 
 sources:
-  - text: "data/intro.yaml storageLayers.drive-group — the text this entry migrates"
+  - ref: "data/intro.yaml storageLayers.drive-group"
+    note: "the text this entry migrates"
     url: ../data/intro.yaml
-  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Drive Group — 'A drive group is a group of physical drives. These drives are managed in partitions that are known as virtual drives'"
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Drive Group"
+    note: "'A drive group is a group of physical drives. These drives are managed in partitions that are known as virtual drives'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
-  - text: "Broadcom, same guide, RAID 10 Drive Groups — 'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'"
+  - ref: "Broadcom, same guide, RAID 10 Drive Groups"
+    note: "'Configure RAID 10 by spanning two or more contiguous RAID 1 virtual drives'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
-  - text: "Microsoft Learn, Storage Spaces overview — 'aggregate multiple physical drives into a single logical storage pool, from which you can create virtual disks known as Storage Spaces'"
+  - ref: "Microsoft Learn, Storage Spaces overview"
+    note: "'aggregate multiple physical drives into a single logical storage pool, from which you can create virtual disks known as Storage Spaces'"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
 
 status: to-verify

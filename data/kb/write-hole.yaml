@@ -82,15 +82,20 @@ long: |
 related: [parity, write-penalty, rebuild, scrubbing, bbu, raid-engine]
 
 sources:
-  - text: "Linux kernel Documentation/driver-api/md/raid5-cache.rst — 'For RAID 4/5/6 array, an unclean shutdown can cause data in some stripes to not be in consistent state, eg, data and parity don't match'; the write-through cache: 'The write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks'"
+  - ref: "Linux kernel Documentation/driver-api/md/raid5-cache.rst"
+    note: "'For RAID 4/5/6 array, an unclean shutdown can cause data in some stripes to not be in consistent state, eg, data and parity don't match'; the write-through cache: 'The write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks'"
     url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
-  - text: "Linux kernel Documentation/driver-api/md/raid5-ppl.rst — 'parity of a particular stripe may become inconsistent with data on other member disks'; in a degraded array 'there is no way to recalculate parity, because one of the disks is missing'; 'data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect'; PPL records 'partial parity before new data and parity are dispatched to disks'"
+  - ref: "Linux kernel Documentation/driver-api/md/raid5-ppl.rst"
+    note: "'parity of a particular stripe may become inconsistent with data on other member disks'; in a degraded array 'there is no way to recalculate parity, because one of the disks is missing'; 'data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect'; PPL records 'partial parity before new data and parity are dispatched to disks'"
     url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-ppl.rst
-  - text: "md(4) man page, SCRUBBING AND MISMATCHES — 'check' records mismatches in md/mismatch_cnt, 'repair' corrects them"
+  - ref: "md(4) man page, SCRUBBING AND MISMATCHES"
+    note: "'check' records mismatches in md/mismatch_cnt, 'repair' corrects them"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "Intel, Parity Initialization for Intel Rapid Storage Technology (support article) — after a dirty shutdown 'parity may be inconsistent with the data it is supposed to be protecting' and 'must be completely initialized'"
+  - ref: "Intel, Parity Initialization for Intel Rapid Storage Technology (support article)"
+    note: "after a dirty shutdown 'parity may be inconsistent with the data it is supposed to be protecting' and 'must be completely initialized'"
     url: https://www.intel.com/content/www/us/en/support/articles/000006468/technologies.html
-  - text: "data/components/os-linux.yaml writeHole.reason — the sentence the sandbox shows, and its kernel references: drivers/md/raid5-ppl.c 'Partial Parity Log for closing the RAID5 write hole'; drivers/md/md.c consistency_policy: journal / ppl / bitmap / resync / none"
+  - ref: "data/components/os-linux.yaml writeHole.reason"
+    note: "the sentence the sandbox shows, and its kernel references: drivers/md/raid5-ppl.c 'Partial Parity Log for closing the RAID5 write hole'; drivers/md/md.c consistency_policy: journal / ppl / bitmap / resync / none"
     url: ../data/components/os-linux.yaml
 
 status: written

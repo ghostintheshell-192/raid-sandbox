@@ -162,13 +162,13 @@ t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — LINEAR: &#39;simply catenates the available space on each drive to form one large virtual drive&#39;; RAID0: &#39;assigns the first chunk of the array to the first device, the second chunk to the second device, and so on until all drives have been assigned one chunk&#39;</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --chunk: &#39;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&#39;; &#39;The default when creating an array is 512KB&#39;</a></li>
-      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid0.c">drivers/md/raid0.c map_sector() — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled</a></li>
-      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/md-linear.c">drivers/md/md-linear.c linear_conf() / which_dev() — each device&#39;s end_sector is the previous one&#39;s plus its own size; a sector is served by the device whose range contains it</a></li>
-      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview — simple spaces: &#39;Data is striped across multiple drives&#39;, &#39;no resiliency or redundancy&#39;</a></li>
-      <li><a href="../src/engine/model.js">src/engine/model.js writeParallelism() / readWidth() — striped → the stripe width, linear → 1: the rule the sandbox computes with</a></li>
-      <li><a href="../src/engine/layout.js">src/engine/layout.js placeStripe() / placeLinear() — the two grids the sandbox draws; and the refusal of linear + parity (&#39;parity requires striping&#39;)</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — LINEAR: &#39;simply catenates the available space on each drive to form one large virtual drive&#39;; RAID0: &#39;assigns the first chunk of the array to the first device, the second chunk to the second device, and so on until all drives have been assigned one chunk&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --chunk</a> — &#39;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&#39;; &#39;The default when creating an array is 512KB&#39;</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid0.c">drivers/md/raid0.c map_sector()</a> — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/md-linear.c">drivers/md/md-linear.c linear_conf() / which_dev()</a> — each device&#39;s end_sector is the previous one&#39;s plus its own size; a sector is served by the device whose range contains it</li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — simple spaces: &#39;Data is striped across multiple drives&#39;, &#39;no resiliency or redundancy&#39;</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js writeParallelism() / readWidth()</a> — striped → the stripe width, linear → 1: the rule the sandbox computes with</li>
+      <li><a href="../src/engine/layout.js">src/engine/layout.js placeStripe() / placeLinear()</a> — the two grids the sandbox draws; and the refusal of linear + parity (&#39;parity requires striping&#39;)</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

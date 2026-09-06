@@ -84,13 +84,17 @@ long: |
 related: [redundancy, segmentation, mirroring, parity, fault-tolerance, write-penalty, span]
 
 sources:
-  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988 — 'Useable Storage Capacity Percentage' per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)"
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "'Useable Storage Capacity Percentage' per level: 50 % for level 1 (Table II), 91 % and 96 % for level 5 at G = 10 and G = 25 (Table VI)"
     url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
-  - text: "md(4) man page — RAID6: 'it requires N+2 drives to store N drives worth of data'; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device"
+  - ref: "md(4) man page"
+    note: "RAID6: 'it requires N+2 drives to store N drives worth of data'; RAID0 zones over devices of unequal size; LINEAR catenates the whole of each device"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "src/engine/model.js capacityGB() — the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes"
+  - ref: "src/engine/model.js capacityGB()"
+    note: "the rule the sandbox computes with: none → sum; mirror → smallest member (RAID 1) or sum ÷ copies (flat RAID 10); parity1 → sum minus the largest member; parity2 → sum minus the two largest; noted there as exact for equal members and an approximation for mixed sizes"
     url: ../src/engine/model.js
-  - text: "data/raid-levels/*.yaml reference.capacityFormula — the formulas in words, per level"
+  - ref: "data/raid-levels/*.yaml reference.capacityFormula"
+    note: "the formulas in words, per level"
     url: ../data/raid-levels/raid5.yaml
 
 status: written

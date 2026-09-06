@@ -128,11 +128,11 @@ stripe size   = C × (N − P)      the data a full stripe carries</code></pre>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --chunk: &#39;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&#39;; &#39;The default when creating an array is 512KB&#39;; &#39;RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB&#39;</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID0: &#39;configured at creation with a Chunk Size which must be at least 4 kibibytes&#39;; chunks assigned to devices in turn</a></li>
-      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667459.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping — strip size, stripe size and stripe width, quoted; strips &#39;from a minimum of 64 KB to 1 MB&#39;</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man8/mke2fs.8.html">mke2fs(8) man page, -E stride= and stripe_width= — quoted</a></li>
-      <li><a href="../src/engine/layout.js">src/engine/layout.js — the grids the sandbox draws are one chunk per cell, one stripe per row</a></li>
+      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --chunk</a> — &#39;only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10&#39;; &#39;The default when creating an array is 512KB&#39;; &#39;RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID0: &#39;configured at creation with a Chunk Size which must be at least 4 kibibytes&#39;; chunks assigned to devices in turn</li>
+      <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667459.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping</a> — strip size, stripe size and stripe width, quoted; strips &#39;from a minimum of 64 KB to 1 MB&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man8/mke2fs.8.html">mke2fs(8) man page, -E stride= and stripe_width=</a> — quoted</li>
+      <li><a href="../src/engine/layout.js">src/engine/layout.js</a> — the grids the sandbox draws are one chunk per cell, one stripe per row</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

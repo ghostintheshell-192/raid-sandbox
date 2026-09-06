@@ -77,15 +77,20 @@ long: |
 related: [striping, segmentation, parity, write-penalty, raid-engine]
 
 sources:
-  - text: "mdadm(8) man page, --chunk: 'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'; 'RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB'"
+  - ref: "mdadm(8) man page, --chunk"
+    note: "'only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10'; 'The default when creating an array is 512KB'; 'RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power of 2, with minimal chunk size being 4KB'"
     url: https://man7.org/linux/man-pages/man8/mdadm.8.html
-  - text: "md(4) man page — RAID0: 'configured at creation with a Chunk Size which must be at least 4 kibibytes'; chunks assigned to devices in turn"
+  - ref: "md(4) man page"
+    note: "RAID0: 'configured at creation with a Chunk Size which must be at least 4 kibibytes'; chunks assigned to devices in turn"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping — strip size, stripe size and stripe width, quoted; strips 'from a minimum of 64 KB to 1 MB'"
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Striping"
+    note: "strip size, stripe size and stripe width, quoted; strips 'from a minimum of 64 KB to 1 MB'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667459.html
-  - text: "mke2fs(8) man page, -E stride= and stripe_width= — quoted"
+  - ref: "mke2fs(8) man page, -E stride= and stripe_width="
+    note: "quoted"
     url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
-  - text: "src/engine/layout.js — the grids the sandbox draws are one chunk per cell, one stripe per row"
+  - ref: "src/engine/layout.js"
+    note: "the grids the sandbox draws are one chunk per cell, one stripe per row"
     url: ../src/engine/layout.js
 
 status: written

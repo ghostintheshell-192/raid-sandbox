@@ -45,11 +45,14 @@ long: |
 related: [physical-disks, hba, raid-engine, span]
 
 sources:
-  - text: "data/components/backplane.yaml — 'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
+  - ref: "data/components/backplane.yaml"
+    note: "'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
     url: ../data/components/backplane.yaml
-  - text: "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections — the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
+  - ref: "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections"
+    note: "the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
     url: https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72
-  - text: "US patent 7,275,935 (Universal backplane connection) — 'Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality'; 'passive backplanes contain almost no computing circuitry' (secondary)"
+  - ref: "US patent 7,275,935 (Universal backplane connection)"
+    note: "'Active backplanes contain, in addition to the sockets, logical circuitry that performs computing functionality'; 'passive backplanes contain almost no computing circuitry' (secondary)"
     url: https://patents.google.com/patent/US7275935
 
 status: to-verify

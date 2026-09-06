@@ -42,9 +42,11 @@ long: |
 related: [backplane, physical-disks, raid-engine, virtual-drive]
 
 sources:
-  - text: "data/components/hba.yaml — 'Translates SATA/SAS electrical protocol and passes raw disk commands unchanged to the CPU over PCIe. The OS sees individual physical disks'; the constraint that an HBA alone cannot host the RAID engine"
+  - ref: "data/components/hba.yaml"
+    note: "'Translates SATA/SAS electrical protocol and passes raw disk commands unchanged to the CPU over PCIe. The OS sees individual physical disks'; the constraint that an HBA alone cannot host the RAID engine"
     url: ../data/components/hba.yaml
-  - text: "data/components/engine-roc.yaml — a hardware RAID card 'includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor'"
+  - ref: "data/components/engine-roc.yaml"
+    note: "a hardware RAID card 'includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor'"
     url: ../data/components/engine-roc.yaml
   - ".development/reference/decisions/001-engine-identity-not-position.md — hardware and firmware RAID cards occupy the same slot; what distinguishes them is what the object is"
   - "SAS expander descriptions (secondary): 'Expanders facilitate the connection of one or more Initiators to one or more Targets' — the initiator/target vocabulary, not yet checked against the SAS specification"

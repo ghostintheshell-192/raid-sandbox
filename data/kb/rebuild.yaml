@@ -88,15 +88,20 @@ long: |
 related: [redundancy, parity, fault-tolerance, performance, scrubbing, write-hole, raid-engine]
 
 sources:
-  - text: "md(4) man page, RECOVERY — 'the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices'; recovery onto a spare by copying (RAID1), parity calculation (RAID4/5/6) or finding the other copy (RAID10); 'will slow down the rate of recovery if other activity is happening'; speed_limit_min / speed_limit_max"
+  - ref: "md(4) man page, RECOVERY"
+    note: "'the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices'; recovery onto a spare by copying (RAID1), parity calculation (RAID4/5/6) or finding the other copy (RAID10); 'will slow down the rate of recovery if other activity is happening'; speed_limit_min / speed_limit_max"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Rebuilds — 'The RAID controller re-creates the data using the data that is stored on the other drives in the drive group'; hot spares rebuild 'automatically and transparently, at user-defined rebuild rates'"
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Disk Rebuilds"
+    note: "'The RAID controller re-creates the data using the data that is stored on the other drives in the drive group'; hot spares rebuild 'automatically and transparently, at user-defined rebuild rates'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667598.html
-  - text: "Broadcom, same guide, Hot Spares — 'A hot spare is an extra, unused drive that is part of the disk subsystem'; 'ready for service if a drive in an array fails'; global and dedicated hot spares"
+  - ref: "Broadcom, same guide, Hot Spares"
+    note: "'A hot spare is an extra, unused drive that is part of the disk subsystem'; 'ready for service if a drive in an array fails'; global and dedicated hot spares"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
-  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988 — MTTR, 'the mean time to repair', in the group MTTF formula; 'a disk fails, a replacement disk is switched in electronically'"
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "MTTR, 'the mean time to repair', in the group MTTF formula; 'a disk fails, a replacement disk is switched in electronically'"
     url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
-  - text: "data/intro.yaml parameters.rebuild-time — the text this entry supersedes"
+  - ref: "data/intro.yaml parameters.rebuild-time"
+    note: "the text this entry supersedes"
     url: ../data/intro.yaml
 
 status: written

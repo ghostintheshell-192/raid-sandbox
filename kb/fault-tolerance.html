@@ -146,11 +146,11 @@ the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as &#39;the mean time to repair&#39;</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: &#39;can handle the loss of any two devices without data loss&#39;; RAID4/RAID5: one device failure tolerated</a></li>
-      <li><a href="../src/engine/model.js">src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1</a></li>
-      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level&#39;s tolerance at its minimum disk count, not the array&#39;s</a></li>
-      <li><a href="../data/intro.yaml">data/intro.yaml parameters.fault-tolerance — the text this entry supersedes</a></li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as &#39;the mean time to repair&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID1: data is read from any one device (all but one may fail); RAID6: &#39;can handle the loss of any two devices without data loss&#39;; RAID4/RAID5: one device failure tolerated</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js failuresToKill() / faultTolerance()</a> — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1</li>
+      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/*.yaml reference.faultToleranceAtMinimum</a> — the quoted number, stated there as the level&#39;s tolerance at its minimum disk count, not the array&#39;s</li>
+      <li><a href="../data/intro.yaml">data/intro.yaml parameters.fault-tolerance</a> — the text this entry supersedes</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

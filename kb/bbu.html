@@ -124,8 +124,8 @@
     <ul class="kb-sources">
       <li>Broadcom TechDocs, CacheVault Data Protection (9700 series) — &#39;The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure&#39;; &#39;The data is backed up to the NAND flash memory available on the MegaRAID storage adapter&#39;</li>
       <li>Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data &#39;by providing battery power to the controller&#39;; CacheVault by &#39;storing cached data in non-volatile flash cache storage&#39;; write-through until the battery is charged — not read verbatim</li>
-      <li><a href="https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst">Linux kernel Documentation/driver-api/md/raid5-cache.rst — the write-through journal: &#39;the data will be flushed onto RAID disks&#39; only after it is safe on the cache device; the write hole as data and parity that &#39;don&#39;t match&#39; after an unclean shutdown</a></li>
-      <li><a href="../data/components/engine-roc.yaml">data/components/engine-roc.yaml — `power-loss-protection` as the capability a RoC claims: &#39;an interrupted stripe write is replayed when power returns, which is what closes the write hole&#39;</a></li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst">Linux kernel Documentation/driver-api/md/raid5-cache.rst</a> — the write-through journal: &#39;the data will be flushed onto RAID disks&#39; only after it is safe on the cache device; the write hole as data and parity that &#39;don&#39;t match&#39; after an unclean shutdown</li>
+      <li><a href="../data/components/engine-roc.yaml">data/components/engine-roc.yaml</a> — `power-loss-protection` as the capability a RoC claims: &#39;an interrupted stripe write is replayed when power returns, which is what closes the write hole&#39;</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

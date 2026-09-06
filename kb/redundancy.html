@@ -138,10 +138,10 @@ parity2   RAID 6                   two parity blocks per stripe, P and Q</code><
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988, §5: &#39;MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array&#39;; the 100-disk example; &#39;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful&#39;; §6: &#39;break the arrays into reliability groups, with each group having extra check disks containing redundant information&#39;</a></li>
-      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page — RAID1: &#39;each device in a RAID1 array contains exactly the same data&#39;; RAID5: parity blocks &#39;distributed across all devices&#39;; RAID6: &#39;can handle the loss of any two devices&#39;</a></li>
-      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques</a></li>
-      <li><a href="../src/engine/model.js">src/engine/model.js — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis</a></li>
+      <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">David A. Patterson, Garth Gibson, Randy H. Katz — A Case for Redundant Arrays of Inexpensive Disks (RAID), SIGMOD 1988</a> — §5: &#39;MTTF of a Disk Array = MTTF of a Single Disk / Number of Disks in the Array&#39;; the 100-disk example; &#39;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful&#39;; §6: &#39;break the arrays into reliability groups, with each group having extra check disks containing redundant information&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID1: &#39;each device in a RAID1 array contains exactly the same data&#39;; RAID5: parity blocks &#39;distributed across all devices&#39;; RAID6: &#39;can handle the loss of any two devices&#39;</li>
+      <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques</li>
+      <li><a href="../src/engine/model.js">src/engine/model.js</a> — the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

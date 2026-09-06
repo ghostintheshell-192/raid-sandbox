@@ -65,9 +65,11 @@ related: [raid-engine, write-hole, write-penalty, parity]
 sources:
   - "Broadcom TechDocs, CacheVault Data Protection (9700 series) — 'The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure'; 'The data is backed up to the NAND flash memory available on the MegaRAID storage adapter'"
   - "Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data 'by providing battery power to the controller'; CacheVault by 'storing cached data in non-volatile flash cache storage'; write-through until the battery is charged — not read verbatim"
-  - text: "Linux kernel Documentation/driver-api/md/raid5-cache.rst — the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
+  - ref: "Linux kernel Documentation/driver-api/md/raid5-cache.rst"
+    note: "the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
     url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
-  - text: "data/components/engine-roc.yaml — `power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
+  - ref: "data/components/engine-roc.yaml"
+    note: "`power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
     url: ../data/components/engine-roc.yaml
 
 status: to-verify

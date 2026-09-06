@@ -102,15 +102,20 @@ long: |
 related: [redundancy, mirroring, parity, capacity, span, rebuild, raid-is-not-a-backup]
 
 sources:
-  - text: "Patterson, Gibson, Katz — A Case for RAID, 1988, §6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as 'the mean time to repair'"
+  - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
+    note: "§6 and Appendix — MTTF of a group: MTTF_Disk / (G + C) × 1 / (probability of another failure in a group before repairing the dead disk) = MTTF_Disk² / ((G + C) × (G + C − 1) × MTTR); MTTR as 'the mean time to repair'"
     url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
-  - text: "md(4) man page — RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
+  - ref: "md(4) man page"
+    note: "RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - text: "src/engine/model.js failuresToKill() / faultTolerance() — the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
+  - ref: "src/engine/model.js failuresToKill() / faultTolerance()"
+    note: "the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
     url: ../src/engine/model.js
-  - text: "data/raid-levels/*.yaml reference.faultToleranceAtMinimum — the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
+  - ref: "data/raid-levels/*.yaml reference.faultToleranceAtMinimum"
+    note: "the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
     url: ../data/raid-levels/raid5.yaml
-  - text: "data/intro.yaml parameters.fault-tolerance — the text this entry supersedes"
+  - ref: "data/intro.yaml parameters.fault-tolerance"
+    note: "the text this entry supersedes"
     url: ../data/intro.yaml
 
 status: written

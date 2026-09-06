@@ -24,7 +24,11 @@
   max-width: 1200px;
   margin: 0 auto;
 }
-.kb-main { max-width: 72ch; }
+.kb-main {
+  max-width: 72ch;
+  font-size: 1.05rem;     /* monospace reads dense: a larger body and a looser line */
+  line-height: 1.75;
+}
 .kb-page:not(.kb-page--side) .kb-main { max-width: none; }
 
 /* --- the side column: the map beside the text, from 1100px up ------ */
@@ -106,6 +110,19 @@
 .kb-nav-item:hover { color: var(--text-primary); }
 .kb-nav-item.active { color: var(--accent-cyan); }
 
+/* --- links: the accent, never the browser's blue on a dark ground ----- */
+
+.kb-main a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-border);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--transition);
+}
+.kb-main a:hover { text-decoration-color: var(--accent-cyan); }
+.kb-main a:visited { color: var(--accent-hover); }
+
 /* --- sections ------------------------------------------------------- */
 
 .kb-section { margin-bottom: 2.75rem; }
@@ -147,12 +164,7 @@
 }
 
 .kb-more { font-size: 0.8rem; }
-.kb-more a, .kb-links a, .kb-try {
-  color: var(--accent-cyan);
-  text-decoration: none;
-  border-bottom: 1px solid var(--accent-dim);
-}
-.kb-more a:hover, .kb-links a:hover, .kb-try:hover { border-bottom-color: var(--accent-cyan); }
+.kb-try { font-weight: 600; }
 
 .kb-flag {
   display: inline-block;
@@ -294,7 +306,7 @@
   padding: 0.8rem 1rem;
 }
 .kb-cards h3 { margin: 0 0 0.3rem; font-size: 0.95rem; }
-.kb-cards h3 a { color: var(--accent-cyan); text-decoration: none; }
+.kb-cards h3 a { text-decoration: none; }
 .kb-cards h3 a:hover { text-decoration: underline; }
 .kb-cards p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
 
@@ -313,6 +325,7 @@
 }
 .kb-footer a { color: var(--text-secondary); text-decoration: none; }
 .kb-footer a:hover { color: var(--accent-cyan); }
+.kb-footer a:visited { color: var(--text-secondary); }
 
 @media (max-width: 600px) {
   .kb-body { padding: 1rem 0.75rem 2.5rem; }

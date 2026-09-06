@@ -46,11 +46,14 @@ long: |
 related: [drive-group, span, virtual-drive, backplane, hba, raid-engine, segmentation]
 
 sources:
-  - text: "data/intro.yaml storageLayers.physical-disks — the text this entry migrates"
+  - ref: "data/intro.yaml storageLayers.physical-disks"
+    note: "the text this entry migrates"
     url: ../data/intro.yaml
-  - text: "data/components/backplane.yaml, hba.yaml, pcie-bus.yaml — the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them"
+  - ref: "data/components/backplane.yaml, hba.yaml, pcie-bus.yaml"
+    note: "the SATA/SAS path through backplane and HBA, and NVMe on the PCIe bus, as the sandbox models them"
     url: ../data/components/backplane.yaml
-  - text: "md(4) man page — RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each"
+  - ref: "md(4) man page"
+    note: "RAID0 uses each device up to the size of the smallest in the zone; LINEAR catenates the whole of each"
     url: https://man7.org/linux/man-pages/man4/md.4.html
 
 status: to-verify
