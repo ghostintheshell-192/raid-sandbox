@@ -320,6 +320,7 @@
 
 .kb-footer {
   margin-top: 3rem;
+  text-align: center; /* the consent widget sits bottom-left: keep the links out from under it */
   padding-top: 1rem;
   border-top: 1px solid var(--accent-dim);
   font-size: 0.8rem;
@@ -327,6 +328,11 @@
 .kb-footer a { color: var(--text-secondary); text-decoration: none; }
 .kb-footer a:hover { color: var(--accent-cyan); }
 .kb-footer a:visited { color: var(--text-secondary); }
+.kb-footer .cookie-settings {
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: var(--text-secondary); cursor: pointer;
+}
+.kb-footer .cookie-settings:hover { color: var(--accent-cyan); }
 
 @media (max-width: 600px) {
   .kb-body { padding: 1rem 0.75rem 2.5rem; }
