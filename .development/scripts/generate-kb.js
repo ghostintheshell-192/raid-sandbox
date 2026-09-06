@@ -44,6 +44,7 @@ const Levels = require(path.join(ROOT, 'src', 'engine', 'levels.js'));
 const Layout = require(path.join(ROOT, 'src', 'engine', 'layout.js'));
 const BuildDoc = require(path.join(ROOT, 'src', 'sandbox', 'build-document.js'));
 const { render, escapeHtml } = require('./lib/kb-markdown.js');
+const { sequentialPenalty } = require('./lib/write-penalty.js');
 
 const fail = (msg) => { throw new Error(msg); };
 
@@ -280,30 +281,11 @@ function workedText(def, node) {
     capacity:               Model.capacityGB(node),
     faultTolerance:         Model.faultTolerance(node),
     writePenaltyRandom:     perf.writePenalty,
-    writePenaltySequential: sequentialPenalty(perf, def),
+    writePenaltySequential: sequentialPenalty(perf, `${def.where}: kb.worked`),
   };
 
   return WORKED_KEYS.map((key) =>
     fill(String(worked[key]).replace(/\n+$/, ''), values, `${def.where}: kb.worked.${key}`)).join('\n\n');
-}
-
-/**
- * The write penalty on a full-stripe (sequential) write.
- *
- * `performance()` reports the random penalty as a number and the sequential one
- * only inside `sequential.writeMult` — parallelism ÷ penalty, rounded to two
- * decimals. So it is recovered by dividing back. The alternative would be to
- * restate the engine's mode table here, and a domain fact copied into the
- * generator is exactly what ADR-002 forbids; the guard below is what keeps the
- * arithmetic from passing a rounding artefact off as a count of I/Os.
- */
-function sequentialPenalty(perf, def) {
-  if (!perf.sequential.writeMult) fail(`${def.where}: the engine reports a zero sequential write multiplier`);
-  const raw = perf.parallelism / perf.sequential.writeMult;
-  const whole = Math.round(raw);
-  if (Math.abs(raw - whole) > 0.02 || whole < 1)
-    fail(`${def.where}: the sequential write penalty does not come back a whole number (${raw})`);
-  return whole;
 }
 
 // ---------------------------------------------------------------------------
