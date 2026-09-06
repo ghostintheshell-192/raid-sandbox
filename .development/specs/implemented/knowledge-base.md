@@ -1,6 +1,6 @@
 # Knowledge base — one source, two depths, pages that stand alone
 
-**Status:** planned — shaped in conversation 2026-09-05/06, spec written 2026-09-06, not yet implemented
+**Status:** implemented 2026-09-06 (branch `feature/knowledge-base`, one PR) — the first deliverable of §9 and more; see *Implementation notes* at the end for what was decided differently
 **From:** roadmap item 3 (knowledge base rework); [`informative-ui.md`](informative-ui.md) (the inventory, item 2) and [`reference/unspoken-content.md`](../../reference/unspoken-content.md) (the census of what is written and never shown)
 **Builds on:** [ADR-002](../../reference/decisions/002-the-engine-holds-no-domain-facts.md) (facts live in data files), [ADR-003](../../reference/decisions/003-desktop-only.md) (the knowledge base is the mobile front door), the no-unverifiable-claims rule
 **Ground truth:** the engine's own rules (`model.js`) for every number; the Linux `md` source and cited references for every sentence that states a fact
@@ -276,9 +276,67 @@ useful before it is complete:
 | `data/kb/*.yaml` | — | new: one file per concept or term (§5.1) |
 | `data/raid-levels/*.yaml` | prose fields unread | a `kb:` block (§5.2); `reference.capacityFormula` becomes a template |
 | `data/intro.yaml` | the whole KB | the Map's spine; the four layers become terms |
-| `.development/scripts/generate-kb.js` | — | new: the generator (§7), hooked into `04-docs-update` |
+| `.development/scripts/generate-kb.js` | — | new: the generator (§7), hooked into `04-docs-update`; `lib/kb-markdown.js` (the subset), `lib/capacity-template.js` (the evaluator) |
 | `kb/*.html` | — | generated, tracked, served |
 | `kb.html`, `kb.js` | runtime rendering | `kb.html` redirects to `kb/`; `kb.js` goes |
 | `src/engine/model.js` | — | the write-parallelism fix (§6) |
 | `tests/` | `raid-levels-data.test.js` | `kb-data.test.js`, the worked-calculation test, the generator test |
 | `index.html` (later, item 2) | — | the icons read `data/kb` short forms |
+
+## 14. Implementation notes (2026-09-06)
+
+Written the same day, in one long session, with Valentina reading every page as a
+learner. What the implementation decided differently from the sections above, so that
+the spec still describes what exists:
+
+- **One page per concept, not one concepts page (§2).** `kb/concepts.html` was built
+  first and read as one long scroll where the concepts seemed to follow from one another,
+  and where a reader coming back after a pause had lost the title. Every concept is now
+  `kb/<id>.html`; the map is the index; the glossary stays. 31 pages: map, glossary,
+  24 concepts, 5 levels.
+- **The map's order** is layers → levels → concepts (§2 said concepts before levels).
+- **The layout uses the width for structure, not for longer lines.** From 1100px the
+  map stands beside the text as three native `<details>` groups (layers, levels,
+  concepts), the group holding the current page open; from 1400px a right column lists
+  the page's own sections; the reading column keeps a 72-character measure. Links take
+  the accent colour; the body is larger than the sandbox's. A footer carries the site's
+  navigation, on the sandbox page too.
+- **`[[id]]` renders as typed** (hyphens as spaces), `[[id|text]]` overrides — the
+  entry's `name` is used only where a link stands alone. Ids stay readable slugs.
+- **`sources` is `ref` + `note` + `url`** where a public source exists (107 of 114):
+  `ref` names the thing and is the link, `note` is what was taken from it; the man
+  pages, the kernel files, the 1988 paper, Anvin's RAID-6 paper, Microsoft Learn, the
+  MegaRAID guide, Intel's notes, US-CERT; project files with relative links. Plain
+  strings where there is no public source.
+- **`status: to-verify` means at least one sentence unchecked**, not "no sources"
+  (§5.1, §10 said the latter). Eight entries carry it: the four layers migrated from
+  `intro.yaml`, the three physical actors, `raid-engine` (its RoC internals).
+- **The level's `kb:` block** carries `worked` — the three derivation texts with
+  `{N} {size} {capacity} {faultTolerance} {writePenaltyRandom} {writePenaltySequential}`
+  filled from the engine on `example` — and `reference:` gains `capacityTemplate`, the
+  formula in an evaluable grammar (numbers, `N`, `size`, `copies`, `+ - * /`) that
+  `kb-worked.test.js` checks against `capacityGB` (§6). The engine exposes
+  `performance().writePenaltySequential` for the same reason.
+- **The engine changed where the pages contradicted it (§6):** a mirror's write
+  parallelism is one copy's width, and its write penalty is the copy count times one
+  copy's own — a pair 2, a three-way mirror 3, a mirror of RAID 5 spans 2 × 4. RAID 0+1
+  writes like RAID 1+0 and satisfies the `database` challenge (recorded in
+  `challenge.test.js`); RAID 6 @3 pays 3. `tech-debt/mirror-of-stripes-write-parallelism.md`
+  resolved; domain-model spec §4b updated.
+- **§9 progress**: 9.1 and 9.2 done (24 concepts, levels 0/1/5/6/10). 9.5 partly done
+  already: `write-hole`, `scrubbing`, `raid-is-not-a-backup` and `rebuild` are entries;
+  why parity rotates is in `parity` and `algorithm`; degraded-mode performance in
+  `performance`. Left: 9.3 (1E, 1+0, 0+1, 50, 60, 51, 61, 100, JBOD) and 9.4
+  (components). RAID 4 has no level file: it is `striped + parity1` with a fixed parity
+  disk, i.e. a placement algorithm, and the recognizer names by shape — a model decision
+  before a page.
+- **§11 answered**: (1) a concept's `long` runs 250–1150 words, and the criterion is
+  not length but completeness of the steps and plainness of the sentences (Valentina:
+  "the effort must go to the concept, not to the sentence"; every actor named and
+  linked, no metaphor carrying the meaning); (2) the markdown subset is the header of
+  `data/kb/segmentation.yaml`; (3) the results panel link is still open; (4)
+  `intro.yaml` still feeds the map's summary, its four layers are entries now —
+  retirement of `raid-types.yaml` / `element-popups.yaml` still Valentina's call.
+- **Found by the pages**: ten `pros`/`cons` items across six level files were YAML
+  mappings (a `: ` mid-sentence) and printed as `[object Object]`; quoted, refused by
+  the generator, checked by `kb-data.test.js`.
