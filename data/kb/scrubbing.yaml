@@ -1,0 +1,57 @@
+# data/kb/scrubbing.yaml — the background pass that finds what a rebuild would
+# stumble on. One of the "absent concepts" of the census, written with its
+# sources first. Writing rules: see segmentation.yaml header.
+
+id: scrubbing
+kind: concept
+name: Scrubbing
+short: >
+  Reading every block of an array in the background to find errors before a
+  rebuild does: sectors that cannot be read, and copies or parity that no longer
+  match. Linux md calls the pass a check or a repair; controllers call it patrol
+  read and consistency check.
+
+long: |
+  A disk can hold a sector it can no longer read without anyone knowing, because
+  nothing has asked for that sector in months. The array does not notice either;
+  the redundancy is only consulted when a read fails. The dangerous moment is a
+  [[rebuild]]: it reads every surviving block, finds the bad sector, and has no
+  redundancy left to recompute it with. Scrubbing is reading everything *now*,
+  while the redundancy is still there.
+
+  ## Two things it finds
+
+  - **Unreadable sectors.** A read error on a member during the pass is handled
+    as any read error is: `md` "will attempt to find the correct data elsewhere
+    (from mirrors or from parity), write it to the failed block, and re-read".
+    The disk reallocates the sector, and the block is whole again. If that
+    fails, the whole device is marked faulty, which is better learned on a
+    Tuesday afternoon than during a rebuild.
+  - **Mismatches.** Blocks that read fine but disagree: two copies of a mirror
+    that differ, a parity that is not the XOR of its stripe. `md` counts them in
+    `mismatch_cnt` during a `check`, and rewrites them during a `repair`, "in
+    the same way that resync repairs arrays". A mismatch is what a
+    [[write-hole]] leaves behind, and also what a resync after an unclean
+    shutdown fixes for the stripes it reaches.
+
+  ## Who runs it
+
+  In `md` the pass is started by writing `check` or `repair` to the array's
+  `sync_action`; distributions schedule it monthly. On a controller it is two
+  background tasks. *Patrol read* looks for "possible drive errors that could
+  lead to a drive failure", starts "only when the controller is idle for a
+  defined period of time", and aims "to protect data integrity by detecting
+  drive failure before the failure can damage data". A *consistency check*
+  verifies the redundancy itself, that the copies and the parity agree.
+
+  Scrubbing costs a full read of every disk, throttled like a rebuild is. What it
+  buys is that the array's tolerance is real when it is needed, not nominal.
+
+related: [rebuild, write-hole, parity, mirroring, fault-tolerance]
+
+sources:
+  - "md(4) man page, SCRUBBING AND MISMATCHES — 'check' and 'repair' written to md/sync_action; every block read to verify that copies (RAID1/RAID10) match or that parity (RAID4/5/6) is correct; mismatches counted in md/mismatch_cnt; 'repair' corrects them as a resync would"
+  - "md(4) man page, RECOVERY — on a read error md will 'find the correct data elsewhere', write it back and re-read; a device that cannot be corrected is marked faulty"
+  - "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Patrol Read — 'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
+
+status: written

@@ -1,0 +1,72 @@
+# data/kb/raid-is-not-a-backup.yaml — the sentence every RAID guide repeats, with
+# the reasons laid out. One of the "absent concepts" of the census.
+# Writing rules: see segmentation.yaml header.
+
+id: raid-is-not-a-backup
+kind: concept
+name: RAID is not a backup
+short: >
+  Redundancy keeps an array running when a disk fails. It does nothing for the
+  other ways data is lost: a deletion, an overwrite, malware, a failed controller,
+  fire, a second failure during a rebuild. A backup is a separate copy, made at a
+  point in time, kept where the array's failures cannot reach it.
+
+long: |
+  ## What redundancy answers
+
+  One question: what happens when a disk stops working? [[redundancy]] answers it
+  by keeping enough extra information on the other disks that the array keeps
+  serving, and a [[rebuild]] makes it whole again. This is *availability*: the
+  system stays up through a hardware failure. It is worth a great deal, and it
+  is all it is.
+
+  ## What it does not answer
+
+  - **A write that should not have happened.** A deleted file, an overwritten
+    document, a database corrupted by a bug, a disk encrypted by ransomware:
+    each is a write, and the [[raid-engine]] does with it what it does with every
+    write, copies it to every mirror and folds it into every parity block, at
+    once. There is no earlier version anywhere in the array. Redundancy is
+    faithful, and faithfulness is the problem.
+  - **The whole array at once.** The disks share a controller, a power supply,
+    a chassis, a room. A controller that fails, a power surge, a flood, a theft
+    take every member together, and the redundancy among them is irrelevant.
+    An array is one failure domain.
+  - **The second failure.** Fault tolerance is a count, and the count is spent
+    by the first failure until the rebuild completes ([[fault-tolerance]]). A
+    second disk lost in that window, or one unreadable sector on a survivor,
+    ends the array; the [[write-hole]] can end it quietly.
+  - **Time.** Nothing in an array remembers what the data was last week.
+
+  ## What a backup is
+
+  A copy that is *separate*: on other media, and so not written to by the same
+  engine at the same instant; *elsewhere*, and so not in the same failure
+  domain; and *from a point in time*, and so still holding what has since been
+  deleted or corrupted. The US-CERT guidance states it as a rule of three:
+
+  ```text
+  3 – Keep 3 copies of any important file: 1 primary and 2 backups.
+  2 – Keep the files on 2 different media types to protect against different types of hazards.
+  1 – Store 1 copy offsite (e.g., outside your home or business facility).
+  ```
+
+  A mirrored disk is not a second copy in that sense: it is the same copy,
+  written twice, in the same place, by the same hand.
+
+  ## The two together
+
+  RAID and backup are not alternatives; they answer different questions. An
+  array keeps a service running while a disk is replaced, so that the failure is
+  an event and not an outage. A backup is what the service is restored from when
+  the array, or what was written to it, is gone. A system that needs both has
+  both, and neither excuses the other.
+
+related: [redundancy, fault-tolerance, rebuild, write-hole, raid-engine, mirroring]
+
+sources:
+  - "Paul Ruggiero, Matthew A. Heckathorn — Data Backup Options, US-CERT / Carnegie Mellon University, 2012 — the 3-2-1 rule, quoted; 'Saving just one backup file may not be enough to safeguard your information'"
+  - "md(4) man page — RAID1: 'Changes are written to all devices in parallel' (the faithfulness of a mirror)"
+  - "data/kb/redundancy.yaml, fault-tolerance.yaml, write-hole.yaml — the mechanisms this entry relies on, with their own sources"
+
+status: written

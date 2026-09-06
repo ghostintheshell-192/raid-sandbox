@@ -1,0 +1,97 @@
+# data/kb/algorithm.yaml — the placement algorithm: what is left to decide once the
+# level is chosen. Writing rules: see segmentation.yaml header.
+
+id: algorithm
+kind: concept
+name: Placement algorithm
+short: >
+  The rule that says, stripe by stripe, which member holds the parity and where the
+  data starts, or where a mirror's copies go. The level says what is stored; the
+  algorithm says where. Left-symmetric for the parity levels and near for RAID 10
+  are the defaults nearly everything uses. The choice changes speed and
+  compatibility, not capacity or safety.
+
+long: |
+  ## What the level leaves open
+
+  RAID 5 says: one parity block per stripe. It does not say on which disk. Put it
+  on the same disk every stripe and that disk is the check disk of RAID 4, the
+  bottleneck the fifth level was invented to remove ([[parity]]). So the parity
+  rotates, and two questions remain: which way does it move from one stripe to
+  the next, and where does the data start once the parity has taken its place?
+  Each pair of answers is a *layout*, and the [[raid-engine]] applies it in the
+  same address arithmetic it uses for the [[segmentation]].
+
+  ## The parity layouts
+
+  `mdadm` names four for RAID 5 and RAID 6, from two independent choices:
+
+  - **left** or **right**: the parity of stripe 0 is on the last disk and moves
+    one disk to the left each stripe, or on the first disk and moves right
+  - **symmetric** or **asymmetric**: the data of a stripe starts just after the
+    parity and wraps around, so that consecutive chunks continue across the
+    parity position; or it always starts at disk 0 and skips the parity
+
+  With *N* disks, *D* = *N* − 1 data disks and stripe number *k*, `raid5.c`
+  computes left-symmetric as:
+
+  ```text
+  parity disk        p  = D − (k mod N)
+  disk of data d     m  = (p + 1 + d) mod N        d = 0 … D − 1
+  ```
+
+  On four disks, twelve data chunks:
+
+  ```text
+              disk 0   disk 1   disk 2   disk 3
+  stripe 0    D0       D1       D2       P
+  stripe 1    D4       D5       P        D3
+  stripe 2    D8       P        D6       D7
+  stripe 3    P        D9       D10      D11
+  ```
+
+  Read the data in order and it walks every disk in turn, D3 on disk 3 then D4 on
+  disk 0, with no disk visited twice in a row: that is what *symmetric* buys, and
+  why it is the default. The asymmetric layouts restart at disk 0 every stripe
+  (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), which reads less evenly.
+  Left-symmetric is also the layout hardware controllers use, under the name the
+  SNIA Disk Data Format gives it, *rotating parity N with data continuation*;
+  `mdadm` lists it a second time as `ddf-N-continue` for that reason. An array
+  built by a controller and one built by `md` with the default layout put every
+  block in the same place.
+
+  RAID 6 uses the same four names and adds the second parity, *Q*, next to *P*;
+  where exactly, to the left or the right of it, is one more convention, and the
+  two families differ on it.
+
+  ## The mirror layouts
+
+  RAID 10 has its own question: where do the copies of a chunk go? In `mdadm` the
+  answer is a letter and a number, `n2`, `f2`, `o2`: *near*, *far* or *offset*
+  copies, and how many. The [[mirroring]] entry describes the three. Near, the
+  default, puts the copies side by side in the same stripe, which is what a
+  controller's RAID 10 does by spanning mirror pairs; far and offset exist only
+  where `md` builds the array, because only `md` defines them. That is the one
+  place where the [[raid-engine]] on the path restricts the layout: a far layout
+  cannot be asked of a controller.
+
+  ## What the choice changes, and what it does not
+
+  Capacity and fault tolerance are the same under every layout: the same blocks
+  are stored, only their places differ. What changes is the speed profile (how
+  evenly a sequential read walks the disks, how far a write's copies are from each
+  other) and compatibility: the layout is part of the array's metadata, and an
+  array assembled under the wrong one reads garbage. That is why a layout is
+  chosen at creation and recorded, and why `mdadm` refuses to guess it.
+
+related: [parity, mirroring, segmentation, raid-engine, chunk, why-linux-md]
+
+sources:
+  - "mdadm(8) man page, --layout — RAID5/6: 'left-asymmetric, left-symmetric, right-asymmetric, right-symmetric', default left-symmetric; 'parity-first', 'parity-last'; 'ddf-zero-restart, ddf-N-restart, and ddf-N-continue'; RAID10: 'n' near, 'o' offset, 'f' far, followed by the number of copies, default n2"
+  - "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC: pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
+  - "md(4) man page — RAID4: parity on 'the last of the active devices'; RAID5: parity 'distributed across all devices'; RAID10 near, far and offset layouts"
+  - "data/algorithms/*.yaml — the seven layouts as the sandbox draws them: left/right × symmetric/asymmetric, with left-symmetric marked as the DDF convention (ALGORITHM_ROTATING_N_CONTINUE); raid10 near, far, offset"
+  - "data/components/os-linux.yaml — near/far/offset declared as layouts that exist only where the md driver is the engine"
+  - "tests/layout-golden.test.js — the left-symmetric table above, hand-derived from the kernel rule"
+
+status: written

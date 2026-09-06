@@ -7,7 +7,8 @@
 # `long` is markdown, limited to what the generator renders: `##` headings (the
 # generator nests them under the entry's own heading), paragraphs, bulleted and numbered lists, bold,
 # italic, inline code, fenced blocks for text figures, and [[id]] to link another
-# entry of data/kb/ (the generator resolves it to the entry's name and page).
+# entry of data/kb/ (the generator resolves it to the entry's name and page;
+# [[id|text]] links with a different text).
 # No tables, no HTML. Leave a blank line before a list. `short` is plain text.
 #
 # Writing rule (2026-09-06): the text is theory, not the game — the sandbox is never
