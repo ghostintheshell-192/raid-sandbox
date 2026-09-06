@@ -17,7 +17,7 @@ long: |
   In a server or a disk shelf the [[physical-disks]] do not cable to the
   controller one by one. They slide into bays, and the bays are connectors on a
   board at the back of the cage: the backplane. Its job is electrical, to carry
-  each disk's signal lines to a connector the [[hba]] or the RAID controller
+  each disk's signal lines to a connector the [[hba|HBA]] or the RAID controller
   cables to, and to bring power and the bay's status lights.
 
   Two kinds exist, and the difference is whether anything on the board thinks:

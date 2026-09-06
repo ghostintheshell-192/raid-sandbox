@@ -45,7 +45,7 @@ note: >
   RAID 10 is distinct from nested RAID 1+0 (a stripe-over-mirror-pairs build).
   The flat form (this file) is mdadm's own RAID 10 level, which supports the
   near/far/offset layout algorithms — none of which decompose into mirror pairs.
-  Nested RAID 1+0 is recognized separately (see raid1plus0.yaml).
+  Nested RAID 1+0 is recognized separately, as its own level.
 
 description: >
   A single flat array with striped mirroring: every chunk is stored on `copies` disks,
@@ -55,7 +55,7 @@ description: >
 pros:
   - Best write performance among redundant RAID levels (mirror penalty only, no RMW)
   - Full read parallelism across all N disks
-  - near/far/offset layouts available under Linux mdadm (software RAID only — §6 constraint)
+  - near/far/offset layouts available under Linux mdadm (software RAID only)
 
 cons:
   - 50% capacity efficiency (copies=2)
@@ -82,6 +82,8 @@ kb:
     guaranteed to survive one failure, more if the failures miss each other.
 
   long: |
+    ## What it is
+
     RAID 10 is the pair *striped + mirror*: the data is cut into chunks and dealt
     across the members ([[striping]]), and each chunk is stored twice, on two
     different disks ([[mirroring]]). In Linux `md` it is one level, not a
@@ -96,20 +98,26 @@ kb:
     mirror of two stripes, is the same disks in a worse order, and its page says
     why.
 
-    What it buys is speed on both counts. A large read spans the stripe, at the
+    ## What it buys
+
+    Speed, on both counts. A large read spans the stripe, at the
     combined bandwidth of all *N* disks; a small read has two disks to choose
     from; and a write costs two operations, one per copy, with no parity to read
     or compute ([[write-penalty]]). Among the redundant levels it has the best
     write numbers, which is why databases and virtual machine hosts run on it
     ([[performance]]).
 
-    What it pays is half the space: the [[capacity]] is *N ÷ 2* disks' worth,
+    ## What it pays
+
+    Half the space: the [[capacity]] is *N ÷ 2* disks' worth,
     the same as a two-way mirror, whatever the count. And its
     [[fault-tolerance]] needs the word *guaranteed*: the array survives one
     failure for certain, and a second only if it lands on a disk that does not
     hold the other copy of the same chunks. On four disks near-2 that is a coin
     toss; on a controller's RAID 1+0 it is "one per pair". The number to plan on
     is one.
+
+    ## The disk count
 
     An even count of disks is the natural shape, one copy per disk per stripe.
     `md` accepts an odd count too, with the copies wrapping across stripes; that

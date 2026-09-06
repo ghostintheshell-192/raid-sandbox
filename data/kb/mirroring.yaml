@@ -92,7 +92,7 @@ long: |
 
   A mirror copies a mistaken write as faithfully as a good one. Deleting a file
   deletes it on every copy at once; that is what "written to all devices in
-  parallel" means. See [[raid-is-not-a-backup]].
+  parallel" means. See [[raid-is-not-a-backup|RAID is not a backup]].
 
 related: [redundancy, striping, segmentation, algorithm, capacity, fault-tolerance, write-penalty, performance, raid-engine, raid-is-not-a-backup]
 

@@ -45,7 +45,7 @@ long: |
 
   ## Where md is not the reference
 
-  Some things exist only outside it. A protected write cache and its [[bbu]] are
+  Some things exist only outside it. A protected write cache and its [[bbu|BBU]] are
   controller hardware, and what a page says about them comes from the vendor. What
   Storage Spaces does for crash consistency is Microsoft's to document, and the page
   quotes Microsoft or stays silent. Every entry lists its sources, and the list says

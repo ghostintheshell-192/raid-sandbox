@@ -51,7 +51,7 @@ long: |
   ## What closes it
 
   - **A protected write cache.** On a hardware controller the whole stripe
-    update sits in cache until every part is on disk, and a [[bbu]] or flash
+    update sits in cache until every part is on disk, and a [[bbu|BBU]] or flash
     module keeps that cache through the cut; when power returns the write is
     finished, not left half done. This is why the [[raid-engine]] with such a
     cache can be silent about the hole, and why the same array on an engine

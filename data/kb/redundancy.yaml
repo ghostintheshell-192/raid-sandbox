@@ -84,7 +84,7 @@ long: |
   being wrong: a deletion, an overwrite, a corrupted file are written to every copy
   and folded into every parity block as faithfully as good data is, because to the
   [[raid-engine]] they are writes like any other. An array with redundancy is not a
-  backup; the reasons are collected under [[raid-is-not-a-backup]].
+  backup; the reasons are collected under [[raid-is-not-a-backup|RAID is not a backup]].
 
   Nor does it make the array whole again by itself. After a failure the array runs
   *degraded*, serving reads by recomputing what the dead member held, until the

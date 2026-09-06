@@ -97,7 +97,7 @@ long: |
 
   A failure is a disk that stops answering. A deletion, an overwrite, a corrupted
   block are not failures: the redundancy records them faithfully. Fault tolerance
-  measures survival of hardware, not of data ([[raid-is-not-a-backup]]).
+  measures survival of hardware, not of data ([[raid-is-not-a-backup|RAID is not a backup]]).
 
 related: [redundancy, mirroring, parity, capacity, span, rebuild, raid-is-not-a-backup]
 

@@ -40,7 +40,7 @@ long: |
   ## Where it lives: three answers
 
   The [[physical-disks]] reach the operating system along one path: [[backplane]],
-  [[hba]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
+  [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
   three ways, and the way is what the industry names *hardware*, *software* and
   *firmware* (or *fake*) RAID.
 
@@ -76,7 +76,7 @@ long: |
   - software: the operating system owns it and computes it
 
   Two consequences follow from the same fact. A hardware engine's write cache can
-  be protected against power loss (a [[bbu]] or flash), which is what closes the
+  be protected against power loss (a [[bbu|BBU]] or flash), which is what closes the
   parity [[write-hole]]; a driver on the CPU has no such cache, so software and
   firmware RAID rely on the machine's own power protection. And a hardware engine
   needs no driver to make the array readable, while a firmware array is unreachable

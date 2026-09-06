@@ -25,7 +25,7 @@ long: |
   The interface a disk speaks decides how it reaches the [[raid-engine]]:
 
   - **SATA** and **SAS** disks plug into a [[backplane]] or directly into a
-    controller, and their commands are carried by an [[hba]], which translates
+    controller, and their commands are carried by an [[hba|HBA]], which translates
     the disk protocol to what the host bus speaks.
   - **NVMe** disks speak PCIe themselves. There is no protocol to translate and no
     HBA in the way: the disk sits on the same bus as the CPU and the controller

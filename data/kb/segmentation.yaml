@@ -158,7 +158,7 @@ long: |
   Linux `md` is quoted throughout these pages, and not only here, because its
   source is public and every rule can be read and checked; hardware controllers and
   Windows are documented by their vendors without the source. Where they differ,
-  the page says so. See [[why-linux-md]].
+  the page says so. See [[why-linux-md|why Linux md is the reference]].
 
 related: [striping, chunk, redundancy, mirroring, performance, raid-engine, drive-group, span, why-linux-md]
 

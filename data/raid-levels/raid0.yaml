@@ -72,6 +72,8 @@ kb:
     all of them.
 
   long: |
+    ## What it is
+
     RAID 0 is the pair *striped + no redundancy*: the data is cut into chunks and
     dealt across the members in turn ([[striping]]), and that is all. The 1988
     paper that named RAID defines five levels, from mirroring upward; a stripe
@@ -79,25 +81,32 @@ kb:
     the case the paper opens with: an array whose time to failure is one disk's
     divided by the number of disks ([[redundancy]]).
 
-    What it buys is everything striping buys, undivided. One large request is
+    ## What it buys
+
+    Everything striping buys, undivided. One large request is
     spread over all *N* disks and arrives at their combined bandwidth; *N* small
     requests at unrelated addresses are served at once; every byte of every disk
     holds data, so the [[capacity]] is the sum. The [[write-penalty]] is one: a
     write is one write. No other layout matches it on any of these, which is why
     it is the reference the others are measured against ([[performance]]).
 
-    What it pays is the [[fault-tolerance]] of zero, and zero is worse than it
-    sounds. A linear array that loses a disk loses the files that were on that
+    ## What it pays
+
+    A [[fault-tolerance]] of zero, and zero is worse than it sounds. A linear array that loses a disk loses the files that were on that
     disk; a stripe that loses a disk loses every file larger than a chunk, because
     each of them had a piece there. The array does not become smaller, it becomes
     unreadable. And the more disks, the sooner: ten disks fail, between them, ten
     times as often as one.
 
-    So the level has a place, and the place is data that can be lost or remade:
+    ## Where it belongs
+
+    The level has a place, and the place is data that can be lost or remade:
     scratch space for editing, render caches, a build directory, anything whose
     source is elsewhere. The [[chunk]] size is its one parameter, and the only
     decision after the disk count. Two disks is the minimum, because an array of
     one member is that member; there is nothing below it to collapse into.
+
+    ## The same thing under other names
 
     Linux `md` calls it `raid0` and copes with disks of unequal size by
     continuing the stripe over the larger ones once the smaller are full
