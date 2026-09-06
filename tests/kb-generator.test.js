@@ -5,7 +5,7 @@
  * the pages are compared against; it runs the generator as a subprocess, so the
  * vendored parser stays inside that process and this suite keeps no dependency.)
  *
- * Four properties, each one a way a generated page has gone wrong before:
+ * Five properties, each one a way a generated page has gone wrong before:
  *
  *   1. DETERMINISM. Two runs on the same input produce the same bytes. Without
  *      it every commit carries a diff nobody wrote, and the pre-commit hook
@@ -19,8 +19,13 @@
  *      came from. Transclusion that quietly paraphrases is worse than none:
  *      the whole point is that the reader meets the same two sentences;
  *   4. NO SCRIPT. The pages are documents (ADR-003: the knowledge base is what a
- *      phone gets). The only <script> allowed is the JSON-LD block, which is
- *      data, not code.
+ *      phone gets). The JSON-LD block (data, not code) and the Cookiebot /
+ *      Consent Mode / gtag.js analytics block — byte-identical on every page,
+ *      index.html is its source of truth — are the only <script> tags a page
+ *      may carry; nothing else runs;
+ *   5. NO DUPLICATE ID. Every id in a page is unique. The knowledge base's
+ *      in-page anchors and "On this page" column both link to `#id`s the
+ *      generator assigns, and a collision means the wrong element wins.
  */
 
 const fs = require('fs');
@@ -31,10 +36,14 @@ const { test, assert, eq, finish } = require('./test-helpers.js');
 
 const root      = path.join(__dirname, '..');
 const generator = path.join(root, '.development', 'scripts', 'generate-kb.js');
+const { metaDescription } = require(generator);
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kb-generator-'));
+// --sitemap redirects sitemap.xml the same way --out redirects the pages, so
+// this run never touches the real, tracked sitemap.xml at the repo root.
+const sitemapOf = (dir) => `${dir}.sitemap.xml`;
 const runInto = (dir) => {
-  try { execFileSync('node', [generator, '--out', dir], { encoding: 'utf8', cwd: root }); }
+  try { execFileSync('node', [generator, '--out', dir, '--sitemap', sitemapOf(dir)], { encoding: 'utf8', cwd: root }); }
   catch (e) {
     console.error('the generator failed:', (e.stderr || e.stdout || e.message).toString());
     process.exit(1);
@@ -48,6 +57,23 @@ runInto(outB);
 
 const pageNames = fs.readdirSync(outA).filter((f) => f.endsWith('.html')).sort();
 const pages = new Map(pageNames.map((f) => [f, fs.readFileSync(path.join(outA, f), 'utf8')]));
+
+// ---------------------------------------------------------------------------
+console.log('\n[0] metaDescription: whole sentences, capped at a boundary');
+
+test('metaDescription: drops a second sentence that would push past the limit', () => {
+  eq(metaDescription('The first sentence is short. The second one alone would still fit within the limit on its own, but not once added to the first.', 100),
+    'The first sentence is short.');
+});
+
+test('metaDescription: keeps every whole sentence that still fits within the limit', () => {
+  eq(metaDescription('One. Two. Three.', 100), 'One. Two. Three.');
+});
+
+test('metaDescription: keeps the first sentence even when it alone runs past the limit', () => {
+  const oneLongSentence = 'This single sentence runs on for a good while, well past a hundred characters, with no period anywhere before its very end.';
+  eq(metaDescription(oneLongSentence, 100), oneLongSentence);
+});
 
 // ---------------------------------------------------------------------------
 console.log('\n[1] the generator is deterministic');
@@ -162,14 +188,23 @@ for (const [name, html] of pages) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[4] the pages are documents: no code runs on them');
+console.log('\n[4] the pages are documents: only the JSON-LD and the site-wide analytics block run');
+
+// The Cookiebot / Consent Mode / gtag.js block is byte-identical on every page
+// by construction (index.html is the source of truth, copied into the
+// generator's head template) — these four <script> tags, in this order, plus
+// the JSON-LD block are the only code any page may carry.
+const ANALYTICS_SCRIPT_TAGS = [
+  'id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async',
+  'data-cookieconsent="ignore"',
+  'async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"',
+  '',
+];
 
 for (const [name, html] of pages) {
-  test(`${name}: the only <script> is the JSON-LD block`, () => {
+  test(`${name}: no <script> beyond the site-wide analytics block and the JSON-LD block`, () => {
     const tags = [...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1].trim());
-    for (const attrs of tags)
-      assert(attrs === 'type="application/ld+json"', `${name}: <script ${attrs}> — the pages carry no code`);
-    assert(tags.length === 1, `${name}: expected exactly one JSON-LD block, found ${tags.length}`);
+    eq(tags.join('\n'), [...ANALYTICS_SCRIPT_TAGS, 'type="application/ld+json"'].join('\n'));
   });
 
   test(`${name}: the JSON-LD parses and claims only what the page has`, () => {
@@ -177,9 +212,101 @@ for (const [name, html] of pages) {
     const ld = JSON.parse(m[1]);
     eq(ld['@type'], 'TechArticle');
     assert(ld.headline && ld.description && ld.url, 'headline, description and url are required');
-    assert(ld.url.endsWith(`/kb/${name}`), `url "${ld.url}" does not name this page`);
+    // kb/index.html is the map, linked everywhere as the directory `kb/`, not
+    // as the file — every other page names itself.
+    if (name === 'index.html') eq(ld.url, 'https://raid-sandbox.dev/kb/');
+    else assert(ld.url.endsWith(`/kb/${name}`), `url "${ld.url}" does not name this page`);
     for (const forbidden of ['datePublished', 'dateModified', 'aggregateRating', 'reviewCount', 'review'])
       assert(!(forbidden in ld), `${name}: JSON-LD claims ${forbidden}, which this project does not have`);
+  });
+
+  test(`${name}: the meta description is a whole-sentence prefix of the full JSON-LD description`, () => {
+    const meta = unescape(/<meta name="description" content="([^"]*)"/.exec(html)[1]);
+    const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
+    const ld = JSON.parse(m[1]);
+    assert(ld.description.startsWith(meta), `${name}: the meta description is not a prefix of the full JSON-LD description`);
+    assert(/[.!?]$/.test(meta), `${name}: the meta description does not end at a sentence boundary`);
+  });
+
+  test(`${name}: Open Graph and Twitter card are present and consistent`, () => {
+    const attr = (prop) => {
+      const re = new RegExp(`<meta property="${prop}" content="([^"]*)"`);
+      const hit = re.exec(html);
+      return hit ? hit[1] : null;
+    };
+    const titleTag = /<title>([^<]*)<\/title>/.exec(html)[1];
+    const descTag  = /<meta name="description" content="([^"]*)"/.exec(html)[1];
+    const canonical = /<link rel="canonical" href="([^"]*)"/.exec(html)[1];
+
+    eq(attr('og:type'), 'article');
+    assert(attr('og:site_name'), `${name}: no og:site_name`);
+    eq(attr('og:url'), canonical);
+    eq(attr('og:title'), titleTag);
+    eq(attr('og:description'), descTag);
+    eq(attr('og:image'), 'https://raid-sandbox.dev/assets/og-image.png');
+    eq(attr('og:image:width'), '1200');
+    eq(attr('og:image:height'), '630');
+    assert(attr('og:image:alt'), `${name}: no og:image:alt`);
+    assert(/<meta name="twitter:card" content="summary_large_image">/.test(html), `${name}: no twitter:card`);
+  });
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n[5] sitemap.xml is generated, not hand-maintained');
+
+const sitemapA = fs.readFileSync(sitemapOf(outA), 'utf8');
+
+test('sitemap.xml is byte-identical on a second run', () => {
+  eq(fs.readFileSync(sitemapOf(outB), 'utf8'), sitemapA);
+});
+
+test('the tracked sitemap.xml is what the generator produces right now', () => {
+  const tracked = path.join(root, 'sitemap.xml');
+  assert(fs.existsSync(tracked), 'sitemap.xml is not in the repository');
+  eq(fs.readFileSync(tracked, 'utf8'), sitemapA,
+    'sitemap.xml is stale — run .development/automation/docs-update.sh');
+});
+
+test('sitemap.xml lists exactly the generated pages, home and kb/ included, no duplicates', () => {
+  const locs = [...sitemapA.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  eq(new Set(locs).size, locs.length);
+  const expected = new Set([
+    'https://raid-sandbox.dev/',
+    'https://raid-sandbox.dev/kb/',
+    ...pageNames.filter((n) => n !== 'index.html').map((n) => `https://raid-sandbox.dev/kb/${n}`),
+  ]);
+  eq([...locs].sort().join('\n'), [...expected].sort().join('\n'));
+});
+
+test('sitemap.xml carries no <lastmod>, <changefreq> or <priority>', () => {
+  for (const forbidden of ['lastmod', 'changefreq', 'priority'])
+    assert(!sitemapA.includes(`<${forbidden}>`), `sitemap.xml has a <${forbidden}>, which this generator never dates`);
+});
+
+// ---------------------------------------------------------------------------
+console.log('\n[6] heading levels never skip');
+
+for (const [name, html] of pages) {
+  test(`${name}: no heading skips a level (h1 → h2 → h3, never h1 → h3)`, () => {
+    const levels = [...html.matchAll(/<h([1-6])\b/g)].map((m) => Number(m[1]));
+    let prev = 0;
+    for (const level of levels) {
+      assert(level <= prev + 1, `${name}: a heading jumps from h${prev} to h${level} with no h${prev + 1} between`);
+      prev = level;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n[7] no id is duplicated on a page');
+
+for (const [name, html] of pages) {
+  test(`${name}: every id is unique`, () => {
+    const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+    const seen = new Set();
+    const dupes = new Set();
+    for (const id of ids) (seen.has(id) ? dupes : seen).add(id);
+    assert(dupes.size === 0, `${name}: id "${[...dupes][0]}" is used more than once`);
   });
 }
 

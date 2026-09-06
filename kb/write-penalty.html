@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Write penalty — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four…">
+  <meta name="description" content="How many disk operations one logical write costs.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/write-penalty.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/write-penalty.html">
+  <meta property="og:title" content="Write penalty — RAID Sandbox knowledge base">
+  <meta property="og:description" content="How many disk operations one logical write costs.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Write penalty",
-    "description": "How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four…",
+    "description": "How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four operations for single parity and six for double. A write that covers a whole stripe pays no read.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/write-penalty.html",
     "isPartOf": {
@@ -107,7 +158,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four operations for single parity and six for double. A write that covers a whole stripe pays no read.</p>
-    <h3 id="the-table">The table</h3>
+    <h2 id="the-table">The table</h2>
     <p>Every write the operating system sends to an array becomes some number of operations on the members. That number, <em>W</em>, depends on the <a href="redundancy.html">redundancy</a>:</p>
     <pre class="kb-figure"><code>                    small (random) write     full-stripe (sequential) write
 none                 1                        1
@@ -115,18 +166,18 @@ mirror, n copies     n                        n          every copy is written
 parity1  (RAID 5)    4                        1          see below
 parity2  (RAID 6)    6                        1</code></pre>
     <p>For a mirror the cost is simple: two copies, two writes, and nothing sequential changes it. For parity the cost depends on how much of the stripe the write covers, which is why there are two columns.</p>
-    <h3 id="where-4-comes-from">Where 4 comes from</h3>
+    <h2 id="where-4-comes-from">Where 4 comes from</h2>
     <p>A parity block must stay equal to the XOR of its stripe&#39;s data (<a href="parity.html">parity</a>). Change one data block and the parity changes; the 1988 RAID paper gives the rule and counts the operations:</p>
     <pre class="kb-figure"><code>new parity = (old data ⊕ new data) ⊕ old parity
 
 1. read  old data        2. read  old parity
 3. write new data        4. write new parity</code></pre>
     <p>&quot;A small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes.&quot; Two of the four are reads the write would not otherwise need, and the two writes must wait for them. With two parities, RAID 6, the old <em>Q</em> is read and the new <em>Q</em> written as well: six.</p>
-    <h3 id="two-ways-to-update-and-when-the-penalty-vanishes">Two ways to update, and when the penalty vanishes</h3>
+    <h2 id="two-ways-to-update-and-when-the-penalty-vanishes">Two ways to update, and when the penalty vanishes</h2>
     <p>The rule above is a <em>read-modify-write</em>: it touches only the block being written and the parity. The other way is a <em>reconstruct-write</em>: read every data block the write does <em>not</em> touch, XOR them with the new data, and write data and parity. Which is cheaper depends on how much of the stripe is being written. <code>raid5.c</code> does the count for every stripe it dirties: <code>rmw</code>, the blocks it would have to read for a read-modify-write, and <code>rcw</code>, the blocks it would have to read for a reconstruct-write, and takes the smaller.</p>
     <p>A write that covers the whole stripe has nothing left to read: <code>rcw</code> is zero, the parity is computed from the data in hand, and the cost is one write per member, one of them the parity. This is the second column of the table, and it is what makes RAID 5 and RAID 6 fast for large sequential writes and slow for small scattered ones. Whether a workload&#39;s writes fill stripes depends on the <a href="chunk.html">chunk</a> size and on the file system placing its data on stripe boundaries, which is what ext4&#39;s <code>stripe_width</code> option exists for: &quot;to prevent read-modify-write of the parity in a RAID stripe&quot;.</p>
     <p>One consequence of this count matters for the smallest arrays. A RAID 5 of two disks has one data block per stripe: any write to it covers the whole stripe, <code>rcw</code> is always zero, and the array writes at a mirror&#39;s cost, two operations. The kernel relies on that identity in the other direction: to grow a mirror into a RAID 5 it first relabels the two-disk RAID 1 as a two-disk RAID 5 without moving a byte, then adds disks.</p>
-    <h3 id="what-the-number-does-to-throughput">What the number does to throughput</h3>
+    <h2 id="what-the-number-does-to-throughput">What the number does to throughput</h2>
     <p>The penalty divides the array&#39;s write rate. With <em>N</em> disks each able to do a certain number of operations per second, and <em>W</em> operations per write:</p>
     <pre class="kb-figure"><code>writes per second  ≈  N × (operations per second of one disk) ÷ W</code></pre>
     <p>On four disks, RAID 0 writes about four disks&#39; worth, RAID 10 two, RAID 5 one for small writes and nearly four for full stripes, RAID 6 two thirds of one for small writes. Reads pay no penalty. The <a href="performance.html">performance</a> entry puts the two together.</p>

@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Capacity — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members;">
+  <meta name="description" content="How much of the raw disk space an array leaves usable for data.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/capacity.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/capacity.html">
+  <meta property="og:title" content="Capacity — RAID Sandbox knowledge base">
+  <meta property="og:description" content="How much of the raw disk space an array leaves usable for data.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Capacity",
-    "description": "How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members;",
+    "description": "How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member's worth for each parity block in the stripe.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/capacity.html",
     "isPartOf": {
@@ -107,7 +158,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How much of the raw disk space an array leaves usable for data. Raw capacity is the sum of the members; usable capacity is what remains after the redundancy takes its share: nothing for striping or concatenation, all but one copy for a mirror, one member&#39;s worth for each parity block in the stripe.</p>
-    <h3 id="the-rule-per-redundancy">The rule, per redundancy</h3>
+    <h2 id="the-rule-per-redundancy">The rule, per redundancy</h2>
     <p>Usable capacity depends on the <a href="redundancy.html">redundancy</a> and on nothing else, with one exception noted below. With <em>N</em> members of size <em>s</em> each:</p>
     <pre class="kb-figure"><code>none      RAID 0, JBOD     N × s          nothing is held back
 mirror    RAID 1           s              one copy&#39;s worth, however many copies
@@ -122,14 +173,14 @@ RAID 5    (4 − 1) × 2 = 6 TB
 RAID 6    (4 − 2) × 2 = 4 TB</code></pre>
     <p>The parity lines show why parity is the cheaper redundancy: its cost is one block per stripe, whatever the width, so the share it takes shrinks as the stripe widens. On ten disks RAID 5 keeps 90 % of the raw space; a mirror keeps 50 % on any count. The 1988 RAID paper gives the same figures as &quot;useable storage capacity&quot;, 50 % for its first level and 91 % or 96 % for its fifth on groups of 10 or 25. <code>md</code> states the RAID 6 line as a count: &quot;it requires N+2 drives to store N drives worth of data&quot;.</p>
     <p>RAID 10 is the exception to &quot;redundancy and nothing else&quot;: it is a mirror, but its copies are striped over the set, so each block sits on two disks out of <em>N</em> rather than on all of them. This is the one place the <a href="segmentation.html">segmentation</a> axis touches capacity, and the <a href="mirroring.html">mirroring</a> entry has the layout.</p>
-    <h3 id="members-of-different-sizes">Members of different sizes</h3>
+    <h2 id="members-of-different-sizes">Members of different sizes</h2>
     <p>The rules above assume equal members. When they differ, a striped or mirrored layout can use of each member only what the smallest offers, because every stripe takes one chunk from each and every copy must fit on each: a mirror of 2 TB and 4 TB holds 2 TB, and a RAID 5 over 2, 2, 2 and 4 TB holds 6, not 8. Linux <code>raid0</code> is the one layout that recovers the difference, by continuing the stripe over the larger disks once the smaller are full (<a href="segmentation.html">segmentation</a>); a linear array takes each member whole. So for a parity or mirror layout the safe rule is the smallest member&#39;s size times the count, and a controller applies exactly that.</p>
-    <h3 id="nesting">Nesting</h3>
+    <h2 id="nesting">Nesting</h2>
     <p>Capacity composes bottom-up: compute each <a href="span.html">span</a>, then apply the group&#39;s rule to the spans as if they were disks. A RAID 50 of two RAID 5 spans, each four disks of 2 TB:</p>
     <pre class="kb-figure"><code>each span      (4 − 1) × 2  = 6 TB
 the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</code></pre>
     <p>A RAID 51 over the same spans, a mirror of them, keeps one span&#39;s worth: 6 TB.</p>
-    <h3 id="what-it-is-not">What it is not</h3>
+    <h2 id="what-it-is-not">What it is not</h2>
     <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. What differs between them is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages show both.</p>
   </section>
   <section class="kb-section" id="sources">

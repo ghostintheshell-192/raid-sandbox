@@ -44,12 +44,14 @@ curl -fL -o vendor/js-yaml/LICENSE \
 sha256sum vendor/js-yaml/js-yaml.min.js   # update the table above
 ```
 
-Then load `index.html` and `kb.html` in a browser and confirm the YAML-backed
-content still renders. Nothing in `tests/` covers this: the headless suites
-deliberately never parse YAML.
+Then load `index.html` in a browser and confirm the YAML-backed content still
+renders. Nothing in `tests/` covers this: the headless suites deliberately
+never parse YAML.
 
 ## Still on a CDN
 
-`kb.html` also loads **KaTeX 0.16.11** (CSS + two scripts) from jsDelivr. Not
-vendored here: KaTeX ships web fonts, so it is a directory rather than a file,
-and it is worth doing only if the reference content actually uses formulas.
+Nothing, as of the knowledge-base rewrite: the old `kb.html` used to load
+**KaTeX 0.16.11** (CSS + two scripts) from jsDelivr for formulas; that page is
+gone (`kb.html` is now redirected to `kb/` by `vercel.json`), and the
+generated `kb/` pages set formulas as plain monospace text, not LaTeX, so
+nothing pulls KaTeX from anywhere any more.

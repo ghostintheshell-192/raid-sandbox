@@ -138,6 +138,13 @@ function loadData() {
  * JSON-LD rather than restated here: the `isPartOf` and `author` of every
  * generated page are then the same facts the home page already publishes, and
  * they cannot drift (the no-unverifiable-claims rule).
+ *
+ * The Open Graph / Twitter identity is copied the same way, from index.html's
+ * own `<meta property="og:...">` tags: `og:site_name` and the `og:image`
+ * quadruple. A generated page has no figure of its own, so the site's one
+ * preview image (the same the home page uses) is the only honest choice —
+ * copying it, rather than hardcoding it here, is what keeps the two from
+ * drifting if the image is ever replaced.
  */
 function readSiteIdentity() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -146,8 +153,23 @@ function readSiteIdentity() {
   let ld;
   try { ld = JSON.parse(m[1]); } catch (e) { fail(`index.html: the JSON-LD block does not parse (${e.message})`); }
   if (!ld.name || !ld.url) fail('index.html: the JSON-LD block has no name/url');
+
+  const ogMeta = (property) => {
+    const re = new RegExp(`<meta property="${property}" content="([^"]*)"`);
+    const hit = re.exec(html);
+    if (!hit || !hit[1]) fail(`index.html: no <meta property="${property}"> to copy into the knowledge base pages`);
+    return hit[1];
+  };
+  const og = {
+    siteName:    ogMeta('og:site_name'),
+    image:       ogMeta('og:image'),
+    imageWidth:  ogMeta('og:image:width'),
+    imageHeight: ogMeta('og:image:height'),
+    imageAlt:    ogMeta('og:image:alt'),
+  };
+
   return { app: { '@type': ld['@type'] || 'WebApplication', name: ld.name, url: ld.url },
-           author: ld.author || null, publisher: ld.publisher || null };
+           author: ld.author || null, publisher: ld.publisher || null, og };
 }
 
 // ---------------------------------------------------------------------------
@@ -159,14 +181,44 @@ function readSiteIdentity() {
 const plain = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 const shortOf = (entry) => plain(entry.kind ? entry.short : entry.kb.short);
 
-/** A meta description: one or two sentences of the short form, never invented. */
-function metaDescription(text, limit = 200) {
+// A cheap guard against the one abbreviation the sentence-boundary regex
+// below would otherwise misread as a sentence end (a period, a space, a
+// capital letter): "e.g. Something" reads exactly like two sentences to that
+// rule. A short, known list is enough — the alternative (a real abbreviation
+// dictionary) is not worth it for a handful of knowledge-base authors.
+const ABBREVIATIONS = ['e.g', 'i.e', 'etc', 'vs', 'cf'];
+const endsWithAbbreviation = (textBeforePunctuation) => {
+  const lower = textBeforePunctuation.toLowerCase();
+  return ABBREVIATIONS.some((abbr) => lower.endsWith(abbr));
+};
+
+/**
+ * A meta description: whole sentences from the start of `short`, kept while
+ * the result stays within `limit` characters (search engines truncate a
+ * `<meta name="description">` around 160) — never a mid-sentence cut, and
+ * never empty: the first sentence is kept even if it alone runs past the
+ * limit, because search engines truncating on their own reads better than a
+ * cut we chose ourselves. A sentence ends at ". ", "! " or "? " followed by a
+ * capital letter — cheap enough that a data file never has to spell one out.
+ */
+function metaDescription(text, limit = 160) {
   const s = plain(text);
-  if (s.length <= limit) return s;
-  const cut = s.slice(0, limit);
-  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '));
-  if (stop > limit / 2) return cut.slice(0, stop + 1);
-  return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+  const boundary = /[.!?] (?=[A-Z])/g;
+  // Every sentence but the last ends right before a capital letter that
+  // starts the next one, which is what `boundary` finds; the last sentence's
+  // end has nothing after it to match on, so it is added explicitly — without
+  // it, a two-sentence `short` could never keep its second sentence at all.
+  const cuts = [];
+  let m;
+  while ((m = boundary.exec(s))) {
+    if (endsWithAbbreviation(s.slice(0, m.index))) continue;
+    cuts.push(m.index + 1);   // include the punctuation, drop the space after it
+  }
+  cuts.push(s.length);
+
+  let end = cuts[0];           // the first sentence is kept regardless of length
+  for (let i = 1; i < cuts.length && cuts[i] <= limit; i++) end = cuts[i];
+  return s.slice(0, end);
 }
 
 const classWords = (shape) => {
@@ -464,19 +516,32 @@ function pageToc(toc) {
   ].join('\n');
 }
 
-function chrome({ file, title, description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
+// kb/index.html is the map: the sitemap and the home page both link to it as
+// the directory `kb/`, not the file, so its canonical, og:url and JSON-LD url
+// have to say the same thing rather than a URL nothing else ever points at.
+// Every other page is a file of its own — the directory form makes no sense
+// for it.
+const pageUrl = (file) => file === 'index.html' ? `${SITE}/kb/` : `${SITE}/kb/${file}`;
+
+// `description` (capped at a sentence boundary, metaDescription()) feeds the
+// meta tag and og:description, both of which real crawlers truncate anyway.
+// `fullDescription` feeds the JSON-LD `description`, which is not a snippet
+// shown in a results list but the page's own first lines restated — cutting
+// it the same way would just be losing text nothing forced us to lose.
+function chrome({ file, title, description, fullDescription = description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
     : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
     .concat([`      <a class="kb-nav-item" href="../index.html">Sandbox</a>`]).join('\n');
 
+  const url = pageUrl(file);
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: heading,
-    description,
+    description: fullDescription,
     inLanguage: 'en',
-    url: `${SITE}/kb/${file}`,
+    url,
     isPartOf: { '@type': ctx.site.app['@type'], name: ctx.site.app.name, url: ctx.site.app.url },
   };
   if (ctx.site.author) ld.author = ctx.site.author;
@@ -487,10 +552,61 @@ function chrome({ file, title, description, heading, subtitle, body, ctx, side =
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
-  <link rel="canonical" href="${SITE}/kb/${file}">
+  <link rel="canonical" href="${url}">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="${escapeHtml(ctx.site.og.siteName)}">
+  <meta property="og:url" content="${url}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:image" content="${escapeHtml(ctx.site.og.image)}">
+  <meta property="og:image:width" content="${escapeHtml(ctx.site.og.imageWidth)}">
+  <meta property="og:image:height" content="${escapeHtml(ctx.site.og.imageHeight)}">
+  <meta property="og:image:alt" content="${escapeHtml(ctx.site.og.imageAlt)}">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -560,7 +676,11 @@ function levelPage(def, ctx) {
   };
 
   // 1 — the level's own story, under its class in words and its short form.
-  out.push('  <section class="kb-section" id="what-it-is">');
+  // No id on the section itself: kb.long always opens with "## What it is",
+  // whose rendered heading already gets that id (headingId: slug below) —
+  // giving the wrapper the same id would duplicate it (invalid HTML) and make
+  // the anchor resolve to the section instead of the heading it names.
+  out.push('  <section class="kb-section">');
   out.push(`    <p class="kb-lede">${escapeHtml(shortOf(def))}</p>`);
   if (def.kb.long) out.push(indent(md(def.kb.long, `${where}: kb.long`), 4));
   out.push('  </section>');
@@ -614,11 +734,12 @@ function levelPage(def, ctx) {
   // 9 — related concepts, and the levels this one is confused with
   section('see-also', 'See also', seeAlso(def, ctx));
 
-  const description = metaDescription(shortOf(def));
+  const full = shortOf(def);
   return chrome({
     file: `${def.id}.html`,
     title: `${def.name} — RAID Sandbox knowledge base`,
-    description,
+    description: metaDescription(full),
+    fullDescription: full,
     heading: def.name,
     subtitle: escapeHtml(classWords(def.shape)),
     body: out.join('\n'),
@@ -732,6 +853,7 @@ function mapPage(ctx) {
     file: 'index.html',
     title: 'RAID knowledge base — the map',
     description: metaDescription(summary),
+    fullDescription: summary,
     heading: 'RAID knowledge base',
     subtitle: 'Map',
     body: out.join('\n'),
@@ -787,6 +909,7 @@ function conceptPage(entry, ctx) {
     file: `${entry.id}.html`,
     title: `${entry.name} — RAID Sandbox knowledge base`,
     description: metaDescription(shortOf(entry)),
+    fullDescription: shortOf(entry),
     heading: entry.name,
     subtitle: entry.kind === 'concept' ? 'Concept' : 'Term',
     body: out.join('\n'),
@@ -842,6 +965,45 @@ function indent(text, n) {
 }
 
 // ---------------------------------------------------------------------------
+// SITEMAP — built from the same list of pages this run produced, so a page
+// added later cannot be forgotten the way a hand-maintained file can.
+// ---------------------------------------------------------------------------
+
+/**
+ * sitemap.xml: the home page, the map (as the directory `kb/` — its own
+ * canonical, see `pageUrl`), then every other generated page in the order
+ * `generate()` produced it. A bare loc, nothing else: no last-modified date,
+ * change frequency or priority. Google ignores the last two, and the only
+ * last-modified date this script could name — the git commit date of
+ * whichever source file built a page — lags one commit behind under the
+ * pre-commit hook (the commit that changes the source is not yet made when
+ * this runs) and is unavailable in a shallow CI clone; a wrong date is worse
+ * than none.
+ */
+function buildSitemap(pageNames) {
+  const urls = [
+    `${SITE}/`,
+    `${SITE}/kb/`,
+    ...pageNames.filter((name) => name !== 'index.html').map((name) => `${SITE}/kb/${name}`),
+  ];
+  const body = urls.map((u) => `  <url>\n    <loc>${u}</loc>\n  </url>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated by .development/scripts/generate-kb.js from the list of pages it
+     writes — do not edit by hand, run the generator instead. Each entry is a
+     bare loc, nothing else: no last-modified date, change frequency or
+     priority. The only last-modified date this script could name is the git
+     commit date of whichever source file built a page, which is unavailable
+     in a shallow CI clone and lags one commit behind under the pre-commit
+     hook, so a wrong date is worse than none; change frequency and priority
+     are dropped for the same reason Google gives for ignoring them — they
+     carry no information a crawler trusts. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</urlset>
+`;
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -876,10 +1038,17 @@ function generate(outDir) {
 }
 
 function main(argv) {
-  const i = argv.indexOf('--out');
-  const outDir = i >= 0 ? path.resolve(argv[i + 1]) : path.join(ROOT, 'kb');
+  const outFlag = argv.indexOf('--out');
+  const outDir = outFlag >= 0 ? path.resolve(argv[outFlag + 1]) : path.join(ROOT, 'kb');
+  // --sitemap exists so the test suite can redirect this file the same way
+  // --out redirects the pages: sitemap.xml lives at the repo root regardless
+  // of --out, because it is a top-level site file, not part of kb/'s output.
+  const sitemapFlag = argv.indexOf('--sitemap');
+  const sitemapPath = sitemapFlag >= 0 ? path.resolve(argv[sitemapFlag + 1]) : path.join(ROOT, 'sitemap.xml');
+
   const written = generate(outDir);
-  console.log(`generate-kb: ${written.length} pages in ${path.relative(ROOT, outDir) || '.'}`);
+  fs.writeFileSync(sitemapPath, buildSitemap(written), 'utf8');
+  console.log(`generate-kb: ${written.length} pages in ${path.relative(ROOT, outDir) || '.'}, sitemap at ${path.relative(ROOT, sitemapPath) || '.'}`);
 }
 
 if (require.main === module) {
@@ -887,4 +1056,4 @@ if (require.main === module) {
   catch (e) { console.error(`generate-kb: ${e.message}`); process.exit(1); }
 }
 
-module.exports = { generate, LAYER_ORDER, CONCEPT_ORDER };
+module.exports = { generate, buildSitemap, metaDescription, LAYER_ORDER, CONCEPT_ORDER };

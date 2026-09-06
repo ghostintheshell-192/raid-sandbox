@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Mirroring — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there.">
+  <meta name="description" content="Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/mirroring.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/mirroring.html">
+  <meta property="og:title" content="Mirroring — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Mirroring",
-    "description": "Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there.",
+    "description": "Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk's worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/mirroring.html",
     "isPartOf": {
@@ -107,10 +158,10 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk&#39;s worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.</p>
-    <h3 id="the-mechanism">The mechanism</h3>
+    <h2 id="the-mechanism">The mechanism</h2>
     <p>A mirror stores the same block in the same place on every member. The Linux <code>md</code> description of RAID 1 says all of it: &quot;each device in a RAID1 array contains exactly the same data. Changes are written to all devices in parallel. Data is read from any one device. The driver attempts to distribute read requests across all devices to maximise performance.&quot; The 1988 RAID paper calls this the first level, &quot;the most expensive option we consider since all disks are duplicated&quot;, where &quot;every write to a data disk is also a write to a check disk&quot;.</p>
     <p>Nothing is computed. The <a href="raid-engine.html">raid engine</a> takes a write and issues it to every member that is not failed; it takes a read and chooses one member to serve it. In <code>raid1.c</code> that choice weighs whether the read continues a sequential run on some disk, how many requests each disk already has pending, and how far each disk&#39;s head is from the sector; the result is that several readers are spread over several copies.</p>
-    <h3 id="what-it-gives">What it gives</h3>
+    <h2 id="what-it-gives">What it gives</h2>
     <p>With <em>n</em> copies:</p>
     <pre class="kb-figure"><code>capacity         one member&#39;s worth            (the smallest, if they differ)
 fault tolerance  n − 1                         all copies but one may fail
@@ -119,7 +170,7 @@ read width       1                             one read is served by one disk
 read fanout      n                             n readers can be served at once</code></pre>
     <p>The two read lines are the point most often misunderstood. A mirror does not make one read faster: a single request goes to a single disk and arrives at that disk&#39;s speed. What it multiplies is the number of requests that can be served at the same time, one per copy. Making one request faster is what <a href="striping.html">striping</a> does. The <a href="performance.html">performance</a> entry explains the two separately.</p>
     <p>Fault tolerance is where a mirror is strongest: a three-way mirror survives two failures, an <em>n</em>-way mirror <em>n − 1</em>. The number a level is usually quoted with, &quot;RAID 1 tolerates one failure&quot;, is the two-disk case; the rule is the copy count minus one, and the <a href="fault-tolerance.html">fault tolerance</a> entry says why the quoted number describes the smallest configuration, not the level.</p>
-    <h3 id="copies-striped-raid-10">Copies striped: RAID 10</h3>
+    <h2 id="copies-striped-raid-10">Copies striped: RAID 10</h2>
     <p>Mirroring and striping combine, and in Linux <code>md</code> they combine as one level, not as a nesting: in RAID 10 &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. The number of copies is a parameter, and the number of devices &quot;need not be a multiple of the number of replica of each data block; however, there must be at least as many devices as replicas&quot;. Where the copies land is the placement <a href="algorithm.html">algorithm</a>:</p>
     <ul>
       <li><strong>near</strong>: the copies of a chunk &quot;are laid out consecutively&quot; across the stripe, on adjacent devices</li>
@@ -133,7 +184,7 @@ fault tolerance  1 guaranteed                  the two copies of one chunk may b
 write cost       2 operations per write
 read width       N                             one large read spans the stripe</code></pre>
     <p>This is the one place where the <a href="segmentation.html">segmentation</a> axis touches capacity and tolerance: a striped mirror is still a mirror, but each block has its copies on two disks out of <em>N</em>, not on every disk. RAID 1E is the same layout on an odd number of disks, and the <a href="capacity.html">capacity</a> and <a href="fault-tolerance.html">fault tolerance</a> entries carry the rules for both.</p>
-    <h3 id="what-it-does-not-protect">What it does not protect</h3>
+    <h2 id="what-it-does-not-protect">What it does not protect</h2>
     <p>A mirror copies a mistaken write as faithfully as a good one. Deleting a file deletes it on every copy at once; that is what &quot;written to all devices in parallel&quot; means. See <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
   </section>
   <section class="kb-section" id="sources">

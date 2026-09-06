@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Rebuild — RAID Sandbox knowledge base</title>
   <meta name="description" content="Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/rebuild.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/rebuild.html">
+  <meta property="og:title" content="Rebuild — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Rebuild",
-    "description": "Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity.",
+    "description": "Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/rebuild.html",
     "isPartOf": {
@@ -107,7 +158,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</p>
-    <h3 id="what-it-does">What it does</h3>
+    <h2 id="what-it-does">What it does</h2>
     <p>When a member fails, the <a href="raid-engine.html">raid engine</a> marks it faulty and carries on with the rest: in <code>md</code>, on a write error &quot;the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices&quot;. The array is now <em>degraded</em>: every request is still answered, but the <a href="redundancy.html">redundancy</a> that made the failure survivable is spent. Restoring it means putting a disk in the dead one&#39;s place and filling it, and what fills it depends on the level:</p>
     <ul>
       <li>a <strong>mirror</strong> copies the surviving copy block by block</li>
@@ -115,15 +166,15 @@
       <li>a striped mirror (<strong>RAID 10</strong>) finds each missing chunk&#39;s other copy and copies it</li>
     </ul>
     <p>Broadcom describes the controller&#39;s side the same way: the failed drive&#39;s data is re-created &quot;using the data that is stored on the other drives in the drive group&quot;. The rebuild is a full pass over the array, every stripe, whether or not it held data.</p>
-    <h3 id="who-starts-it">Who starts it</h3>
+    <h2 id="who-starts-it">Who starts it</h2>
     <p>A rebuild needs a target disk. It can be the replacement a person plugs in, or a <em>hot spare</em>: &quot;an extra, unused drive that is part of the disk subsystem&quot;, standing by &quot;ready for service if a drive in an array fails&quot;. With a spare present the engine starts on its own, &quot;automatically and transparently&quot;; <code>md</code> likewise begins recovery onto a spare as soon as a device is marked faulty. A controller distinguishes a <em>global</em> spare, available to any group, from a <em>dedicated</em> one, reserved for a group and used first. What the spare saves is time: the rebuild, and with it the window of risk described below, starts at the moment of failure instead of when someone notices.</p>
-    <h3 id="how-fast-and-at-what-cost">How fast, and at what cost</h3>
+    <h2 id="how-fast-and-at-what-cost">How fast, and at what cost</h2>
     <p>The rebuild competes with the array&#39;s own traffic for the same disks. Engines throttle it: <code>md</code> &quot;will slow down the rate of recovery if other activity is happening, so that normal access to the array will not be unduly affected&quot;, between a floor and a ceiling set in <code>speed_limit_min</code> and <code>speed_limit_max</code>; a controller offers the same setting as a rebuild rate. A faster rebuild is a slower array, and the other way round.</p>
     <p>During the rebuild a parity array is at its weakest in two ways. Its reads are slow, because every read of the missing disk&#39;s blocks is a recomputation (<a href="performance.html">performance</a>), and its remaining disks are being read end to end for the rebuild on top of that. And its tolerance is zero: the 1988 RAID paper&#39;s reliability formula has the repair time in its denominator,</p>
     <pre class="kb-figure"><code>MTTF of a group = MTTF of a disk² ÷ ((G + C) × (G + C − 1) × MTTR)</code></pre>
     <p>because the array is lost if a second member fails before the first is repaired. MTTR is the rebuild time, and the rebuild time is the disk&#39;s capacity divided by the rate the array can spare, so it grows with the size of the disks. That is the argument for a second parity (<a href="fault-tolerance.html">fault tolerance</a>): RAID 6 can still lose one more disk during the whole rebuild; RAID 5 cannot lose any.</p>
     <p>A second failure need not be a whole disk. A single unreadable sector on a surviving member, found only when the rebuild reads it, is a block the rebuild cannot recompute. <a href="scrubbing.html">scrubbing</a> exists to find such sectors while the redundancy is still there to fix them.</p>
-    <h3 id="what-the-array-knows">What the array knows</h3>
+    <h2 id="what-the-array-knows">What the array knows</h2>
     <p>After the rebuild the array is whole again, with the same layout and the same numbers. What it does not know is whether the data it rebuilt was right: it trusts the survivors and the parity as it finds them, which is why an inconsistent stripe left by a <a href="write-hole.html">write hole</a> comes back as a wrong block, and why a rebuild is the moment such a stripe does its damage.</p>
   </section>
   <section class="kb-section" id="sources">

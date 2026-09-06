@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>RAID 0 — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space;">
+  <meta name="description" content="Data dealt out in chunks across every disk and nothing else: no copy, no parity.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/raid0.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/raid0.html">
+  <meta property="og:title" content="RAID 0 — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Data dealt out in chunks across every disk and nothing else: no copy, no parity.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "RAID 0",
-    "description": "Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space;",
+    "description": "Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space; and any one disk failing loses everything on all of them.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/raid0.html",
     "isPartOf": {
@@ -105,17 +156,17 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space; and any one disk failing loses everything on all of them.</p>
-    <h3 id="what-it-is">What it is</h3>
+    <h2 id="what-it-is">What it is</h2>
     <p>RAID 0 is the pair <em>striped + no redundancy</em>: the data is cut into chunks and dealt across the members in turn (<a href="striping.html">striping</a>), and that is all. The 1988 paper that named RAID defines five levels, from mirroring upward; a stripe with no redundancy is not one of them, and the name came later, for exactly the case the paper opens with: an array whose time to failure is one disk&#39;s divided by the number of disks (<a href="redundancy.html">redundancy</a>).</p>
-    <h3 id="what-it-buys">What it buys</h3>
+    <h2 id="what-it-buys">What it buys</h2>
     <p>Every advantage of striping, with nothing subtracted. One large request is spread over all <em>N</em> disks and arrives at their combined bandwidth; <em>N</em> small requests at unrelated addresses are served at once; every byte of every disk holds data, so the <a href="capacity.html">capacity</a> is the sum. The <a href="write-penalty.html">write penalty</a> is one: a write is one write. No other layout matches it on any of these, which is why it is the reference the others are measured against (<a href="performance.html">performance</a>).</p>
-    <h3 id="what-it-pays">What it pays</h3>
+    <h2 id="what-it-pays">What it pays</h2>
     <p>A <a href="fault-tolerance.html">fault tolerance</a> of zero, and zero is worse than it sounds. A linear array that loses a disk loses the files that were on that disk; a stripe that loses a disk loses every file larger than a chunk, because each of them had a piece there. The array does not become smaller, it becomes unreadable. And the more disks, the sooner: ten disks fail, between them, ten times as often as one.</p>
-    <h3 id="where-it-belongs">Where it belongs</h3>
+    <h2 id="where-it-belongs">Where it belongs</h2>
     <p>The level is right for data that can be lost or remade: scratch space for editing, render caches, a build directory, anything whose source is elsewhere. The <a href="chunk.html">chunk</a> size is its one parameter, and the only decision after the disk count. Two disks is the minimum, because an array of one member is that member; there is no smaller array it could become.</p>
-    <h3 id="the-same-thing-under-other-names">The same thing under other names</h3>
+    <h2 id="the-same-thing-under-other-names">The same thing under other names</h2>
     <p>Linux <code>md</code> calls it <code>raid0</code> and copes with disks of unequal size by continuing the stripe over the larger ones once the smaller are full (<a href="segmentation.html">segmentation</a>); Windows Storage Spaces calls it a <em>simple space</em>, &quot;data striped across multiple drives&quot; with &quot;no resiliency or redundancy&quot;. JBOD is the linear equivalent: the same absence of redundancy, none of the speed, and a failure that costs the files of one disk instead of all of them.</p>
   </section>
   <section class="kb-section" id="segmentation">

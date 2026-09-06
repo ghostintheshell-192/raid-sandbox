@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Striping — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks…">
+  <meta name="description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/striping.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/striping.html">
+  <meta property="og:title" content="Striping — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Striping",
-    "description": "Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks…",
+    "description": "Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/striping.html",
     "isPartOf": {
@@ -108,15 +159,15 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Cutting data into fixed-size chunks and dealing them out across several disks in turn, so that one large request is served by all of them at once and many small requests are served by different disks at the same time. It multiplies speed by the number of disks and multiplies the chance of losing everything by the same number.</p>
     <p>Striping is one of the two answers to <a href="segmentation.html">segmentation</a>, and the one every RAID level except RAID 1 and JBOD is built on. That page shows the mechanics: the <a href="chunk.html">chunk</a>, the stripe, the arithmetic that sends a sector to a disk. This one is about what the technique does.</p>
-    <h3 id="two-kinds-of-speed">Two kinds of speed</h3>
+    <h2 id="two-kinds-of-speed">Two kinds of speed</h2>
     <p>A disk answers one request at a time, at its own bandwidth. Put <em>N</em> disks side by side and deal the data across them, and two different things get faster.</p>
     <p><strong>One large request.</strong> A read of many chunks touches many disks, and the <a href="raid-engine.html">raid engine</a> issues the pieces to all of them together. The request finishes when the slowest piece finishes, so the array&#39;s bandwidth for it approaches <em>N</em> times one disk&#39;s. This is the sequential case: video, backups, large files.</p>
     <p><strong>Many small requests.</strong> A request smaller than a chunk touches one disk. Striping does not make it faster; but the next small request, at an unrelated address, most likely lands on a different disk, and the two are served at the same time. The array does not answer one request faster; it answers <em>N</em> at once. This is the random case: databases, many users, small files.</p>
     <p>The two must be told apart, because they are obtained in different ways. Bandwidth for one request comes from the <em>width</em> of the stripe, the number of disks one request spans, and a larger chunk reduces that number. Throughput for many requests comes from the <em>number</em> of disks and from the requests being spread across them, and a larger chunk helps that, because each request stays on one disk. The chunk size is the parameter that decides which of the two an array favours, and the <a href="chunk.html">chunk</a> entry says what the defaults are and why.</p>
-    <h3 id="the-cost">The cost</h3>
+    <h2 id="the-cost">The cost</h2>
     <p>Every disk holds a piece of everything. A file of any size beyond one chunk is spread over several disks, and the address space as a whole is spread over all of them. If one disk fails, what remains is not &quot;the other files&quot;: it is every file with holes in it. A striped set of <em>N</em> disks with no redundancy fails when <em>any</em> of its disks fails, so it fails, on average, <em>N</em> times as often as one disk.</p>
     <p>This was known before RAID had a name. Salem and Garcia-Molina described disk striping in 1986 as a way to get bandwidth from several disks, and in 1988 the same authors published on its impact on reliability. The paper that named RAID, by Patterson, Gibson and Katz in the same year, starts from that cost: an array of many cheap disks is fast and fails often, and the levels it defines are the ways to add the reliability back, each at a different cost in disk space and write operations. That is why striping and <a href="redundancy.html">redundancy</a> are two separate axes: striping provides the speed, and redundancy is added so that the speed does not come with an <em>N</em>-fold failure rate.</p>
-    <h3 id="striping-under-redundancy">Striping under redundancy</h3>
+    <h2 id="striping-under-redundancy">Striping under redundancy</h2>
     <p>With a <a href="mirroring.html">mirroring</a> layer the striped set is copied, or the stripe is built out of copies (RAID 10). With <a href="parity.html">parity</a> the stripe is the unit the parity is computed over: one chunk per stripe holds the XOR of the others. A write that covers a whole stripe computes the parity in one step; a small write has to read the old data and the old parity first. Parity does not exist without a stripe, which is why there is no linear level with parity.</p>
   </section>
   <section class="kb-section" id="sources">

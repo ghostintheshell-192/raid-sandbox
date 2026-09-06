@@ -208,7 +208,7 @@ input, same bytes), its output tracked.
   formulas are set as text (monospace, the site's own face), not LaTeX. The `<!-- No JSON-LD
   here on purpose -->` note in `kb.html` says exactly when JSON-LD becomes honest: now.
   `TechArticle` per page, with only what the page verifiably contains.
-- `kb.html` stays as a redirect to `kb/` so the canonical URL and the old links keep working.
+- `kb.html` is redirected to `kb/` by `vercel.json` so the canonical URL and the old links keep working.
 - Every generated page is a plain document: no script needed to read it, single column under
   760px, readable on a phone — it is the mobile front door of ADR-003.
 
@@ -278,7 +278,7 @@ useful before it is complete:
 | `data/intro.yaml` | the whole KB | the Map's spine; the four layers become terms |
 | `.development/scripts/generate-kb.js` | — | new: the generator (§7), hooked into `04-docs-update`; `lib/kb-markdown.js` (the subset), `lib/capacity-template.js` (the evaluator) |
 | `kb/*.html` | — | generated, tracked, served |
-| `kb.html`, `kb.js` | runtime rendering | `kb.html` redirects to `kb/`; `kb.js` goes |
+| `kb.html`, `kb.js` | runtime rendering | `kb.html` redirected to `kb/` by `vercel.json`; `kb.js` goes |
 | `src/engine/model.js` | — | the write-parallelism fix (§6) |
 | `tests/` | `raid-levels-data.test.js` | `kb-data.test.js`, the worked-calculation test, the generator test |
 | `index.html` (later, item 2) | — | the icons read `data/kb` short forms |

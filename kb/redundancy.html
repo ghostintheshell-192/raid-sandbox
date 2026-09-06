@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Redundancy — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks;">
+  <meta name="description" content="How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/redundancy.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/redundancy.html">
+  <meta property="og:title" content="Redundancy — RAID Sandbox knowledge base">
+  <meta property="og:description" content="How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Redundancy",
-    "description": "How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks;",
+    "description": "How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/redundancy.html",
     "isPartOf": {
@@ -107,12 +158,12 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
-    <h3 id="the-problem-it-answers">The problem it answers</h3>
+    <h2 id="the-problem-it-answers">The problem it answers</h2>
     <p>A disk fails, eventually. Put many disks together and the array fails as soon as any one of them does, so it fails sooner. The paper that named RAID put it as a formula, with MTTF (&quot;mean time to failure&quot;):</p>
     <pre class="kb-figure"><code>MTTF of a disk array = MTTF of a single disk ÷ number of disks in the array</code></pre>
     <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes the loss total, because every disk carries a piece of every file (<a href="striping.html">striping</a>); a linear array loses only what was on the dead disk, but that is still data lost.</p>
     <p>Redundancy is the answer: store, beside the data, enough extra information that the contents of a failed member can be recomputed from the survivors. The levels the paper defined are the ways to do this at different costs, and every RAID level since is one of two techniques, or a nesting of them.</p>
-    <h3 id="two-techniques">Two techniques</h3>
+    <h2 id="two-techniques">Two techniques</h2>
     <ul>
       <li><strong>Mirroring.</strong> Every block is stored whole on two or more disks. Nothing is computed: a write goes to every copy, a read is served by any one. Lose all copies but one and the data is still there. The cost is the copies themselves: two disks hold one disk&#39;s worth. See <a href="mirroring.html">mirroring</a>.</li>
       <li><strong>Parity.</strong> For every stripe of data blocks, one extra block holds their XOR. Any single block of the stripe, data or parity, can be recomputed from the others. The cost is one block per stripe, whatever the stripe&#39;s width: on ten disks, a tenth of the space. A second parity block, computed differently, covers two failures at the cost of a second block. See <a href="parity.html">parity</a>.</li>
@@ -123,7 +174,7 @@ mirror    RAID 1, RAID 10          n copies of every block
 parity1   RAID 5 (and RAID 4)      one parity block per stripe
 parity2   RAID 6                   two parity blocks per stripe, P and Q</code></pre>
     <p>A nested level is one of these built over spans that are themselves one of these: RAID 50 is <code>none</code> over <code>parity1</code> spans, RAID 51 is <code>mirror</code> over <code>parity1</code> spans, RAID 60 is <code>none</code> over <code>parity2</code> spans. The nesting is what makes their numbers different from the flat levels&#39;, and the <a href="span.html">span</a> entry shows why.</p>
-    <h3 id="what-depends-on-this-axis">What depends on this axis</h3>
+    <h2 id="what-depends-on-this-axis">What depends on this axis</h2>
     <p>Three numbers follow from the redundancy alone, and each has its own entry:</p>
     <ul>
       <li><a href="capacity.html">capacity</a>: how much of the raw space is left for data</li>
@@ -131,7 +182,7 @@ parity2   RAID 6                   two parity blocks per stripe, P and Q</code><
       <li><a href="write-penalty.html">write penalty</a>: how many disk operations one write costs, because every copy must be written and every parity kept consistent</li>
     </ul>
     <p>Segmentation determines none of these. It determines the speed. The one place where the two axes touch is the striped mirror of RAID 10, whose capacity and tolerance depend on how the copies are laid out (<a href="mirroring.html">mirroring</a>).</p>
-    <h3 id="what-it-does-not-do">What it does not do</h3>
+    <h2 id="what-it-does-not-do">What it does not do</h2>
     <p>Redundancy protects against a disk failing. It does not protect against the data being wrong: a deletion, an overwrite, a corrupted file are written to every copy and folded into every parity block as faithfully as good data is, because to the <a href="raid-engine.html">raid engine</a> they are writes like any other. An array with redundancy is not a backup; the reasons are collected under <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
     <p>Nor does it make the array whole again by itself. After a failure the array runs <em>degraded</em>, serving reads by recomputing what the dead member held, until the member is replaced and the engine has written it back from the redundancy: the <a href="rebuild.html">rebuild</a>. Until then the array has no tolerance left.</p>
   </section>

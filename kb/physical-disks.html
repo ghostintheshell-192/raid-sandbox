@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Physical disks — RAID Sandbox knowledge base</title>
-  <meta name="description" content="The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it.">
+  <meta name="description" content="The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/physical-disks.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/physical-disks.html">
+  <meta property="og:title" content="Physical disks — RAID Sandbox knowledge base">
+  <meta property="og:description" content="The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Physical disks",
-    "description": "The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it.",
+    "description": "The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it. Every layer above exists to turn a set of them into something more useful than one disk at a time.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/physical-disks.html",
     "isPartOf": {
@@ -109,14 +160,14 @@
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">The raw drives, hard disks or SSDs, each with its own capacity and its own interface: SATA, SAS or NVMe. On its own a disk just holds data, with no protection and no help from anything above it. Every layer above exists to turn a set of them into something more useful than one disk at a time.</p>
     <p>A physical disk is one device: a spinning hard drive or a solid-state drive, with a capacity, an interface, and an address space of its own, sectors numbered from 0 to the last (the <a href="segmentation.html">segmentation</a> entry says how an array maps its sectors onto these). It is the basic unit of everything on these pages: a <a href="drive-group.html">drive group</a> gathers disks, a <a href="span.html">span</a> lays them out, a <a href="virtual-drive.html">virtual drive</a> is what they are presented as.</p>
-    <h3 id="the-interface-is-part-of-the-path">The interface is part of the path</h3>
+    <h2 id="the-interface-is-part-of-the-path">The interface is part of the path</h2>
     <p>The interface a disk speaks decides how it reaches the <a href="raid-engine.html">raid engine</a>:</p>
     <ul>
       <li><strong>SATA</strong> and <strong>SAS</strong> disks plug into a <a href="backplane.html">backplane</a> or directly into a controller, and their commands are carried by an <a href="hba.html">HBA</a>, which translates the disk protocol to what the host bus speaks.</li>
       <li><strong>NVMe</strong> disks speak PCIe themselves. There is no protocol to translate and no HBA in the way: the disk sits on the same bus as the CPU and the controller cards, which is what makes it fast and what makes it a special case in every layout that assumes a backplane.</li>
     </ul>
     <p>A mixed set is allowed by the layers above, but the interface is chosen per disk and cannot be changed by anything above it.</p>
-    <h3 id="what-a-disk-contributes">What a disk contributes</h3>
+    <h2 id="what-a-disk-contributes">What a disk contributes</h2>
     <p>To an array, a disk is capacity and one unit of parallelism. Its size sets what the layout can use: a striped <a href="span.html">span</a> takes the same amount from every member, so a larger disk contributes only as much as the smallest, while a linear one takes each disk whole. Its speed is one disk&#39;s speed, and the striping above it is how several such speeds are added.</p>
   </section>
   <section class="kb-section" id="sources">

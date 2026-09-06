@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>RAID 5 — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.">
+  <meta name="description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/raid5.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/raid5.html">
+  <meta property="og:title" content="RAID 5 — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Data striped across every disk, with one parity block per stripe that moves from disk to disk.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "RAID 5",
-    "description": "Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR.",
+    "description": "Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk's worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/raid5.html",
     "isPartOf": {
@@ -105,13 +156,13 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
-  <section class="kb-section" id="what-it-is">
+  <section class="kb-section">
     <p class="kb-lede">Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk&#39;s worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.</p>
-    <h3 id="what-it-is">What it is</h3>
+    <h2 id="what-it-is">What it is</h2>
     <p>RAID 5 is the pair <em>striped + single parity</em>: the data is dealt out in chunks across all the members (<a href="striping.html">striping</a>), and in every stripe one chunk holds the XOR of the others (<a href="parity.html">parity</a>). It is the fifth level of the 1988 paper, and the one the paper builds up to: the fourth level had put all the parity on one disk, and &quot;the check disk is the bottleneck&quot;; the fifth &quot;distributes the data and check information across all the disks&quot;. Which disk holds the parity in which stripe is the placement <a href="algorithm.html">algorithm</a>, almost always left-symmetric.</p>
-    <h3 id="what-it-buys">What it buys</h3>
+    <h2 id="what-it-buys">What it buys</h2>
     <p>Capacity, first. A mirror spends half the disks on copies; RAID 5 spends one disk&#39;s worth on parity whatever the count, so on four disks it keeps three quarters, on eight seven eighths. The <a href="fault-tolerance.html">fault tolerance</a> is one disk, on any count, and the disk count is the risk: the more disks, the more space, the more likely a second failure while the first is being rebuilt.</p>
-    <h3 id="what-it-pays">What it pays</h3>
+    <h2 id="what-it-pays">What it pays</h2>
     <p>The write. A block changed in place must keep the parity of its stripe true, and to compute the new parity the engine needs two things it does not have in hand: the old data and the old parity. So one logical write becomes four disk operations, in this order:</p>
     <ol>
       <li>read the old data block</li>
@@ -120,7 +171,7 @@
       <li>write the new parity block, computed as old data ⊕ new data ⊕ old parity</li>
     </ol>
     <p>Two reads the write would not otherwise need, and two writes that must wait for them: this is the <a href="write-penalty.html">write penalty</a> of single parity. It is paid by every <em>small</em> write, one that changes a block and leaves the rest of the stripe as it was. A write that covers a whole stripe pays none of the reads: every data block is already in hand, the parity is computed from them, and the cost is one write per member. That is the trade. RAID 5 is at its best under large sequential writes and worst under many small scattered ones, and the <a href="chunk.html">chunk</a> size and the file system&#39;s alignment decide which of the two a workload gets.</p>
-    <h3 id="the-minimum-and-below-it">The minimum, and below it</h3>
+    <h2 id="the-minimum-and-below-it">The minimum, and below it</h2>
     <p>Three disks is the minimum that makes sense: two data, one parity per stripe. An array <em>built</em> with two disks is a different thing from a three-disk array that has <em>lost</em> one. The second is a RAID 5 running degraded: every stripe still has a data block and a parity block on the survivors, the missing block is recomputed by XOR on every read, and nothing is a copy of anything. The first has one data block per stripe, and the &quot;parity&quot; of a single block is that block itself: disk 0 and disk 1 hold the same content, and the array is a mirror by another name. The Linux kernel relies on exactly that, on request, when an administrator grows a mirror into a RAID 5: the first step, <code>raid5_takeover_raid1()</code>, relabels the two-disk RAID 1 as a two-disk RAID 5 without moving a byte, because on two disks the two layouts are the same; only then are disks added and the data redistributed. Such an array writes at a mirror&#39;s cost, two operations. The rebuild after a failure reads every surviving disk end to end; an unreadable sector found then is a block that cannot be recomputed, which is what <a href="scrubbing.html">scrubbing</a> exists to catch earlier, and a power cut during a parity update leaves a <a href="write-hole.html">write hole</a> that only a protected cache, a journal or a partial parity log closes.</p>
   </section>
   <section class="kb-section" id="segmentation">

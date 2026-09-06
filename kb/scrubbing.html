@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Scrubbing — RAID Sandbox knowledge base</title>
   <meta name="description" content="Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/scrubbing.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/scrubbing.html">
+  <meta property="og:title" content="Scrubbing — RAID Sandbox knowledge base">
+  <meta property="og:description" content="Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Scrubbing",
-    "description": "Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match.",
+    "description": "Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/scrubbing.html",
     "isPartOf": {
@@ -108,12 +159,12 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.</p>
     <p>A disk can hold a sector it can no longer read without anyone knowing, because nothing has asked for that sector in months. The array does not notice either; the redundancy is only consulted when a read fails. The dangerous moment is a <a href="rebuild.html">rebuild</a>: it reads every surviving block, finds the bad sector, and has no redundancy left to recompute it with. Scrubbing is reading everything <em>now</em>, while the redundancy is still there.</p>
-    <h3 id="two-things-it-finds">Two things it finds</h3>
+    <h2 id="two-things-it-finds">Two things it finds</h2>
     <ul>
       <li><strong>Unreadable sectors.</strong> A read error on a member during the pass is handled as any read error is: <code>md</code> &quot;will attempt to find the correct data elsewhere (from mirrors or from parity), write it to the failed block, and re-read&quot;. The disk reallocates the sector, and the block is whole again. If that fails, the whole device is marked faulty, which is better discovered during a scheduled pass than during a rebuild.</li>
       <li><strong>Mismatches.</strong> Blocks that read fine but disagree: two copies of a mirror that differ, a parity that is not the XOR of its stripe. <code>md</code> counts them in <code>mismatch_cnt</code> during a <code>check</code>, and rewrites them during a <code>repair</code>, &quot;in the same way that resync repairs arrays&quot;. A mismatch is what a <a href="write-hole.html">write hole</a> leaves behind, and also what a resync after an unclean shutdown fixes for the stripes it reaches.</li>
     </ul>
-    <h3 id="who-runs-it">Who runs it</h3>
+    <h2 id="who-runs-it">Who runs it</h2>
     <p>In <code>md</code> the pass is started by writing <code>check</code> or <code>repair</code> to the array&#39;s <code>sync_action</code>; distributions schedule it monthly. On a controller it is two background tasks. <em>Patrol read</em> looks for &quot;possible drive errors that could lead to a drive failure&quot;, starts &quot;only when the controller is idle for a defined period of time&quot;, and aims &quot;to protect data integrity by detecting drive failure before the failure can damage data&quot;. A <em>consistency check</em> verifies the redundancy itself, that the copies and the parity agree.</p>
     <p>Scrubbing costs a full read of every disk, throttled like a rebuild is. What it gives in return is a tolerance that is real when it is needed, not only nominal.</p>
   </section>

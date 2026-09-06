@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Span — RAID Sandbox knowledge base</title>
   <meta name="description" content="A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/span.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/span.html">
+  <meta property="og:title" content="Span — RAID Sandbox knowledge base">
+  <meta property="og:description" content="A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Span",
-    "description": "A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies.",
+    "description": "A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies. A drive group can hold several spans, each with its own independent layout, and the nested levels are spans striped together.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/span.html",
     "isPartOf": {
@@ -109,9 +160,9 @@
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">A set of disks sharing one layout: one striping, mirroring or parity scheme. A span is where a RAID level actually applies. A drive group can hold several spans, each with its own independent layout, and the nested levels are spans striped together.</p>
     <p>A span is the layer at which the two axes are chosen. Take some or all of a <a href="drive-group.html">drive group</a>&#39;s disks and give them one <a href="segmentation.html">segmentation</a> and one <a href="redundancy.html">redundancy</a>: that set is a span, and the pair of choices is its RAID level. The simplest span has no layout at all, disks joined end to end with no redundancy, which is JBOD. The figure under <a href="virtual-drive.html">virtual drive</a> shows where the span sits: inside the drive group, under the virtual drives carved from it.</p>
-    <h3 id="spans-inside-levels">Spans inside levels</h3>
+    <h2 id="spans-inside-levels">Spans inside levels</h2>
     <p>The nested levels make the layer visible. RAID 50 stripes across two or more RAID 5 spans, and each span independently tolerates one disk failure. But the top-level stripe needs every span to reconstruct data, so two failures in the <em>same</em> span destroy that span, and with it the whole array, even though the other spans are physically intact. A two-span RAID 50 therefore survives one failure per span, two in total as long as they land in different spans, but not two failures landing in the same span. The same reading gives RAID 10 (spans of mirrors, striped) and RAID 60 (spans of RAID 6, striped).</p>
-    <h3 id="the-word-as-vendors-use-it">The word as vendors use it</h3>
+    <h2 id="the-word-as-vendors-use-it">The word as vendors use it</h2>
     <p>The vendor usage is Broadcom&#39;s: &quot;disk spanning allows multiple drives to function like one large drive&quot;, the spanned levels are &quot;RAID 00, RAID 10, RAID 50, and RAID 60&quot;, and inside such a drive group &quot;the span numbering starts from Span 0, Span 1, Span 2, and so on&quot;. A RAID 10 there is built &quot;by spanning two or more contiguous RAID 1 virtual drives&quot;, and can hold up to eight spans. So in a controller&#39;s vocabulary a span is one leg of a nested level, and a flat level (RAID 5 on four disks) is a drive group with one layout and no separate spans. These pages use the word for both: the flat case is a drive group with a single span.</p>
     <p>Linux <code>md</code> does not use the word at all. A RAID 50 there is two <code>md</code> RAID 5 devices given as members to an <code>md</code> RAID 0: the spans are arrays in their own right, each with its own device name, and the nesting is explicit.</p>
   </section>

@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Fault tolerance — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two.">
+  <meta name="description" content="How many disks can fail, in the worst place, before data is lost.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/fault-tolerance.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/fault-tolerance.html">
+  <meta property="og:title" content="Fault tolerance — RAID Sandbox knowledge base">
+  <meta property="og:description" content="How many disks can fail, in the worst place, before data is lost.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Fault tolerance",
-    "description": "How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two.",
+    "description": "How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two. In a nested level the worst place matters: a RAID 50 survives one failure per span, but two in the same span lose everything.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/fault-tolerance.html",
     "isPartOf": {
@@ -107,10 +158,10 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two. In a nested level the worst place matters: a RAID 50 survives one failure per span, but two in the same span lose everything.</p>
-    <h3 id="guaranteed-not-lucky">Guaranteed, not lucky</h3>
+    <h2 id="guaranteed-not-lucky">Guaranteed, not lucky</h2>
     <p>Fault tolerance is a worst-case number. It answers: if an adversary chose which disks fail, how many could fail before the first byte is lost? A four-disk RAID 10 survives two failures if they hit different mirror pairs, and loses everything if they hit the same pair; its fault tolerance is 1. What an array <em>may</em> survive with luck is a different quantity, and not one to plan on.</p>
     <p>The number a level is quoted with is its tolerance at its minimum disk count, not a property of the level. &quot;RAID 1 tolerates one failure&quot; is the two-disk mirror; a three-way mirror tolerates two. The rule is what the entry below gives, and the number follows from the array actually built.</p>
-    <h3 id="the-rule-per-redundancy">The rule, per redundancy</h3>
+    <h2 id="the-rule-per-redundancy">The rule, per redundancy</h2>
     <p>It is easiest to count the failures needed to <em>kill</em> a node, and subtract one. For a disk, one failure kills it. For an array, the count depends on the <a href="redundancy.html">redundancy</a> and on how many failures each member takes to kill:</p>
     <pre class="kb-figure"><code>failures to kill (F)
 
@@ -129,18 +180,18 @@ RAID 10   2 − 1                   = 1
 RAID 5    (1 + 1) − 1             = 1
 RAID 6    (1 + 1 + 1) − 1         = 2</code></pre>
     <p>Linux <code>md</code> states two of these directly: a RAID 1 array can lose all devices but one, a RAID 6 array &quot;can handle the loss of any two devices&quot;.</p>
-    <h3 id="nesting-where-the-failures-land">Nesting: where the failures land</h3>
+    <h2 id="nesting-where-the-failures-land">Nesting: where the failures land</h2>
     <p>Apply the rule from the bottom up: first compute F for each span, then use those values as the members&#39; F one level above. A RAID 50 of two RAID 5 spans:</p>
     <pre class="kb-figure"><code>each span     F = 2           (parity1 over disks: two failures kill it)
 the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
               tolerance = 2 − 1 = 1</code></pre>
     <p>One failure, guaranteed. The array will in fact survive a second failure if it lands in the <em>other</em> span, which is why RAID 50 is often described as &quot;one per span&quot;; but the guarantee is one, because the adversary puts the second failure in the same span. A RAID 60 gives 2 by the same arithmetic (each span takes three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The <a href="span.html">span</a> entry describes the RAID 50 case.</p>
-    <h3 id="while-the-tolerance-is-used-up">While the tolerance is used up</h3>
+    <h2 id="while-the-tolerance-is-used-up">While the tolerance is used up</h2>
     <p>After a failure the array runs <em>degraded</em>. Nothing is lost yet, but the tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a stripe with no parity, and every read of the dead member&#39;s blocks is answered by recomputing them from the survivors. The 1988 paper&#39;s reliability model has a term for the window this opens, MTTR, the mean time to repair, and the group&#39;s time to failure divides by it:</p>
     <pre class="kb-figure"><code>MTTF of a group  =  MTTF of a disk ÷ (G + C)  ×  1 ÷ P(another failure before the dead disk is repaired)
                  =  MTTF of a disk²  ÷  ((G + C) × (G + C − 1) × MTTR)</code></pre>
     <p>with <em>G</em> data disks and <em>C</em> check disks in the group. The shorter the repair, the safer the array: this is the <a href="rebuild.html">rebuild</a>, and this formula is why the time a rebuild takes is a reliability number, not only a performance one.</p>
-    <h3 id="what-it-does-not-count">What it does not count</h3>
+    <h2 id="what-it-does-not-count">What it does not count</h2>
     <p>A failure is a disk that stops answering. A deletion, an overwrite, a corrupted block are not failures: the redundancy records them faithfully. Fault tolerance measures survival of hardware, not of data (<a href="raid-is-not-a-backup.html">RAID is not a backup</a>).</p>
   </section>
   <section class="kb-section" id="sources">

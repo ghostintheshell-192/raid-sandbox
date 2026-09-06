@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>RAID engine — RAID Sandbox knowledge base</title>
-  <meta name="description" content="The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the…">
+  <meta name="description" content="The component that turns a RAID layout into disk operations.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/raid-engine.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/raid-engine.html">
+  <meta property="og:title" content="RAID engine — RAID Sandbox knowledge base">
+  <meta property="og:description" content="The component that turns a RAID layout into disk operations.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "RAID engine",
-    "description": "The component that turns a RAID layout into disk operations. It owns the array's metadata, translates every request from the array's addresses to the members', writes the copies or computes the…",
+    "description": "The component that turns a RAID layout into disk operations. It owns the array's metadata, translates every request from the array's addresses to the members', writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system's own driver, or a boot firmware working with that driver.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/raid-engine.html",
     "isPartOf": {
@@ -108,7 +159,7 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag">Not yet checked against a primary source</p>
     <p class="kb-lede">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
-    <h3 id="the-role">The role</h3>
+    <h2 id="the-role">The role</h2>
     <p>Whatever runs a RAID array has the same list of jobs, and the list is the definition of the engine:</p>
     <ul>
       <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own format on the disks and in its memory.</li>
@@ -117,12 +168,12 @@
       <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em>degraded</em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
       <li><strong>Present the result.</strong> Upstream, the array is one block device: a <a href="virtual-drive.html">virtual drive</a> when a controller presents it, an <code>md</code> device when the operating system does.</li>
     </ul>
-    <h3 id="where-it-lives-three-answers">Where it lives: three answers</h3>
+    <h2 id="where-it-lives-three-answers">Where it lives: three answers</h2>
     <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the PCIe bus, the CPU, the OS. The engine sits on that path in one of three ways, and the way is what the industry names <em>hardware</em>, <em>software</em> and <em>firmware</em> (or <em>fake</em>) RAID.</p>
     <p><strong>Hardware RAID.</strong> A controller card carries the HBA and a <em>RAID-on-Chip</em> (RoC), a processor dedicated to the list above, with its own memory as write cache. The operating system never sees the member disks: what it is given is the controller&#39;s virtual drive. In Broadcom&#39;s MegaRAID vocabulary, &quot;virtual drives are drive groups or spanned drive groups that are available to the operating system&quot;.</p>
     <p><strong>Software RAID.</strong> No engine object on the path. The HBA passes the disks through and the operating system&#39;s driver is the engine: <code>md</code> in Linux (configured with <code>mdadm</code>), Storage Spaces in Windows. The CPU does the computing, the OS sees every member disk and, beside them, the array device it made.</p>
     <p><strong>Firmware RAID, called fake RAID once its wiring is understood.</strong> A chip on the motherboard, or a cheap add-in card, that holds the array&#39;s metadata and a boot firmware, an <em>option ROM</em> in the system BIOS which, in Intel&#39;s words, manages the drives and RAID volumes &quot;before the operating system loads&quot;. That is what it is for: the machine can boot from the array. Once the OS is up, its driver does the engine&#39;s work on the CPU, exactly as in software RAID. Linux shows this directly: <code>mdadm</code> runs Intel Rapid Storage volumes as <code>md</code> arrays with an <em>external</em> metadata format, <code>imsm</code>, &quot;supported by an option-rom on some platforms&quot;. The metadata is the firmware&#39;s; the computing is the operating system&#39;s.</p>
-    <h3 id="what-tells-them-apart">What tells them apart</h3>
+    <h2 id="what-tells-them-apart">What tells them apart</h2>
     <p>Not the wiring. A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and on a chipset the firmware engine and the CPU may share a die. What separates the three is two questions: who owns the metadata, and who computes.</p>
     <ul>
       <li>hardware: the controller owns it and computes it</li>

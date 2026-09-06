@@ -3,10 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Cookiebot loads first so its consent decision exists before any Google
+       script can read it, then the Consent Mode default state, then Google's
+       tag. This block is byte-identical on every page (source of truth:
+       index.html, copied into the generator template). -->
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async></script>
+  <!-- Consent Mode v2 default state: Cookiebot's own inline-implementation guide
+       says a default must be set manually and must precede gtag.js — this is
+       that snippet, verbatim, from
+       https://support.cookiebot.com/hc/en-us/articles/360016047000-Implementing-Google-Consent-Mode -->
+  <script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_personalization': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DQR5VQ6VXX');
+  </script>
+
   <title>Parity — RAID Sandbox knowledge base</title>
   <meta name="description" content="One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/parity.html">
   <meta name="theme-color" content="#0a0e14">
+
+  <!-- Social preview. og:url/og:title/og:description mirror what this page
+       already declares above; og:image is the site's own preview image
+       (copied from index.html — see readSiteIdentity), since a knowledge-base
+       page has no figure of its own to offer instead. -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="RAID Sandbox">
+  <meta property="og:url" content="https://raid-sandbox.dev/kb/parity.html">
+  <meta property="og:title" content="Parity — RAID Sandbox knowledge base">
+  <meta property="og:description" content="One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed.">
+  <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A four-disk RAID 5 grid: green data blocks with amber parity walking the diagonal.">
+  <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -25,7 +76,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Parity",
-    "description": "One extra block per stripe, computed from the stripe's data blocks by XOR, from which any single missing block can be recomputed.",
+    "description": "One extra block per stripe, computed from the stripe's data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/parity.html",
     "isPartOf": {
@@ -107,7 +158,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</p>
-    <h3 id="the-arithmetic">The arithmetic</h3>
+    <h2 id="the-arithmetic">The arithmetic</h2>
     <p>XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has one property that makes it useful as redundancy: XOR a value in twice and it cancels out, so any one term of an XOR sum can be recovered from the others. With data blocks <em>D₀</em>, <em>D₁</em>, <em>D₂</em> and parity <em>P</em> over a stripe:</p>
     <pre class="kb-figure"><code>P  = D₀ ⊕ D₁ ⊕ D₂                  parity: the XOR of the data blocks
 
@@ -119,10 +170,10 @@ D₁ = 0011 1010
 D₂ = 1111 0000
 P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 1010  ✓</code></pre>
     <p>The parity is computed over the blocks that share a stripe, so it needs a stripe: parity exists only under <a href="striping.html">striping</a>, and the <a href="chunk.html">chunk</a> entry says how many bytes a full stripe holds. Lose the disk that held <em>D₁</em> and every read of <em>D₁</em> is answered by reading the rest of its stripe and XORing; that is the array in <em>degraded</em> mode. Replace the disk, and the same computation, run over every stripe, writes it back: the <a href="rebuild.html">rebuild</a>.</p>
-    <h3 id="where-the-parity-block-lives">Where the parity block lives</h3>
+    <h2 id="where-the-parity-block-lives">Where the parity block lives</h2>
     <p>The 1988 RAID paper defines the fourth level with one <em>check disk</em> per group, holding the parity of every stripe. It works, and it has one bottleneck: &quot;every write must read and write the check disk&quot;, so the whole array can only complete writes as fast as that one disk. The fifth level keeps the same parity but spreads it: &quot;the final level RAID distributes the data and check information across all the disks — including the check disks&quot;. Linux <code>md</code> says the same in its own words: RAID 4 is &quot;a RAID0 array with an extra device for storing parity&quot;, the last of the devices; in RAID 5 &quot;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&quot;, which &quot;allows more parallelism when writing&quot; and when reading.</p>
     <p><em>Which</em> disk holds the parity of stripe <em>k</em> is the placement <a href="algorithm.html">algorithm</a>. The one nearly everything uses, left-symmetric, puts the parity on the last disk for stripe 0 and moves it one disk to the left every stripe, with the data starting just right of it; in <code>raid5.c</code> this is the line <code>pd_idx = data_disks - sector_div(stripe2, raid_disks)</code>. Every disk then carries the same share of parity and of data, and no disk is the check disk.</p>
-    <h3 id="keeping-the-parity-up-to-date">Keeping the parity up to date</h3>
+    <h2 id="keeping-the-parity-up-to-date">Keeping the parity up to date</h2>
     <p>Whenever a data block changes, the parity of its stripe must change with it. The paper gives the rule and its cost:</p>
     <pre class="kb-figure"><code>new parity = (old data ⊕ new data) ⊕ old parity
 
@@ -131,7 +182,7 @@ a small write, on two disks:     read old data      read old parity
                                  → 4 operations for one logical write</code></pre>
     <p>That is the <em>small-write problem</em>, and the four operations are the <a href="write-penalty.html">write penalty</a> of single parity. There is a second way: read the data blocks the write does <em>not</em> touch, and compute the parity fresh. <code>raid5.c</code> counts both for every stripe it is about to write, <code>rmw</code> (blocks to read for a read-modify-write) and <code>rcw</code> (blocks to read for a reconstruct-write), and takes the cheaper. A write that covers the whole stripe has nothing left to read: <code>rcw</code> is zero, the parity is computed from what is being written, and the penalty disappears. Aligning writes to whole stripes is therefore the way to make parity cheap, which is what the file system&#39;s <code>stripe_width</code> is for.</p>
     <p>The two writes of that rule are separate disk operations, and a power cut between them leaves a stripe whose parity no longer matches its data. Nothing in the arithmetic detects it; the next rebuild trusts it. This is the <a href="write-hole.html">write hole</a>, and it is why a parity array needs a <a href="raid-engine.html">raid engine</a> whose write cache survives power loss.</p>
-    <h3 id="two-parities">Two parities</h3>
+    <h2 id="two-parities">Two parities</h2>
     <p>One parity block recovers one missing block. To survive two failures a stripe needs a second block that is <em>not</em> another XOR (two XORs of the same blocks carry the same information). RAID 6 computes two <em>syndromes</em>, in H. Peter Anvin&#39;s description for the Linux implementation:</p>
     <pre class="kb-figure"><code>P = D₀ + D₁ + D₂ + … + Dₙ₋₁                        ordinary XOR parity
 Q = g⁰·D₀ + g¹·D₁ + g²·D₂ + … + gⁿ⁻¹·Dₙ₋₁         a Reed-Solomon code</code></pre>
