@@ -34,16 +34,6 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 }
 .sbc-footer a { color: var(--text-secondary); text-decoration: none; }
 .sbc-footer a:hover { color: var(--accent-cyan); }
-
-/* "Cookie settings" reopens the consent banner (Cookiebot.renew): the withdrawal
-   of consent has to be as easy to reach as the consent was, and a footer link
-   is that — it is what replaces the floating widget. A button, styled as the
-   links around it, because it runs script rather than going somewhere. */
-.sbc-footer .cookie-settings {
-  background: none; border: 0; padding: 0; margin: 0;
-  font: inherit; color: inherit; cursor: pointer;
-}
-.sbc-footer .cookie-settings:hover { color: var(--accent-cyan); }
 .sbc-status {
   margin-left: auto; font-size: .75rem; opacity: .55;
   font-style: italic;
