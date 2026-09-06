@@ -19,10 +19,8 @@
  *      came from. Transclusion that quietly paraphrases is worse than none:
  *      the whole point is that the reader meets the same two sentences;
  *   4. NO SCRIPT. The pages are documents (ADR-003: the knowledge base is what a
- *      phone gets). The JSON-LD block (data, not code) and the Cookiebot /
- *      Consent Mode / gtag.js analytics block — byte-identical on every page,
- *      index.html is its source of truth — are the only <script> tags a page
- *      may carry; nothing else runs;
+ *      phone gets). The only <script> allowed is the JSON-LD block, which is
+ *      data, not code.
  *   5. NO DUPLICATE ID. Every id in a page is unique. The knowledge base's
  *      in-page anchors and "On this page" column both link to `#id`s the
  *      generator assigns, and a collision means the wrong element wins.
@@ -188,23 +186,14 @@ for (const [name, html] of pages) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[4] the pages are documents: only the JSON-LD and the site-wide analytics block run');
-
-// The Cookiebot / Consent Mode / gtag.js block is byte-identical on every page
-// by construction (index.html is the source of truth, copied into the
-// generator's head template) — these four <script> tags, in this order, plus
-// the JSON-LD block are the only code any page may carry.
-const ANALYTICS_SCRIPT_TAGS = [
-  'id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="11322285-cc73-4d07-a7e8-be34dc027c4e" type="text/javascript" async',
-  'data-cookieconsent="ignore"',
-  'async src="https://www.googletagmanager.com/gtag/js?id=G-DQR5VQ6VXX"',
-  '',
-];
+console.log('\n[4] the pages are documents: no code runs on them');
 
 for (const [name, html] of pages) {
-  test(`${name}: no <script> beyond the site-wide analytics block and the JSON-LD block`, () => {
+  test(`${name}: the only <script> is the JSON-LD block`, () => {
     const tags = [...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1].trim());
-    eq(tags.join('\n'), [...ANALYTICS_SCRIPT_TAGS, 'type="application/ld+json"'].join('\n'));
+    for (const attrs of tags)
+      assert(attrs === 'type="application/ld+json"', `${name}: <script ${attrs}> — the pages carry no code`);
+    assert(tags.length === 1, `${name}: expected exactly one JSON-LD block, found ${tags.length}`);
   });
 
   test(`${name}: the JSON-LD parses and claims only what the page has`, () => {
