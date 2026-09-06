@@ -33,7 +33,7 @@ its own (`reference/engine-robustness-and-extraction.md` §8).
   linked; a `kb:` block on levels 0/1/5/6/10 with the worked calculation filled from the
   engine; `generate-kb.js` (Node, vendored js-yaml, a markdown subset, an evaluator for
   `capacityTemplate`) writes 31 pages at commit time, tracked and served static —
-  `kb.html` redirects, `kb.js` is gone, the sitemap lists them; three suites
+  `kb.html` is redirected by `vercel.json`, `kb.js` is gone, the sitemap lists them; three suites
   (`kb-data`, `kb-worked`, `kb-generator`: 336 tests) keep data, engine and pages
   aligned. The engine changed where the pages contradicted it: a mirror's write
   parallelism is one copy's width and its penalty the copy count, so RAID 0+1 writes
@@ -210,7 +210,7 @@ decision.
 Small, any time:
 
 - ~~**Phantom back links**~~ — gone 2026-09-06 with the KB: `index.html` has a footer
-  (knowledge base · author), `kb.html` is a redirect.
+  (knowledge base · author), `kb.html` is redirected by `vercel.json`.
 - **Contact form** — the site is static and stays so: `mailto:` + a link to GitHub
   issues is the honest baseline; a third-party form service adds a host to the path
   (the js-yaml argument); a Vercel function would be the first server-side code. **S**
