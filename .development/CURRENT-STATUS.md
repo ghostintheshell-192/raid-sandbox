@@ -217,7 +217,9 @@ Small, any time:
 - ~~**SEO: the content is not in the served HTML**~~ — closed by item 3 (2026-09-06):
   the knowledge base is static HTML with a `TechArticle` per page and a sitemap; what
   remains is Search Console (the property is still not shared with the MCP account).
-- **Google Fonts is the last third-party blocking request** — self-host JetBrains Mono. **S**
+- **Google Fonts is the last third-party *blocking* request** — self-host JetBrains Mono.
+  The site also loads two async third parties now (Cookiebot, Google tag), which do not
+  block rendering. **S**
 - ~~**Push + PR flow**~~ — decided 2026-09-04 and written into `workflow.md` (PR #17):
   a PR per branch, merged from GitHub, so the `headless` check is a gate. One caveat
   learned the hard way (PR #32): a chained PR whose base branch is merged first must be
