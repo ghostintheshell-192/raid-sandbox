@@ -76,9 +76,6 @@ long: |
 related: [span, drive-group, raid-engine, segmentation, redundancy]
 
 sources:
-  - ref: "data/intro.yaml storageLayers.virtual-drive"
-    note: "the text this entry migrates"
-    url: ../data/intro.yaml
   - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Virtual Drive"
     note: "'A virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives'; may be an entire drive group, multiple drive groups, a portion, parts of several, or any combination"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667343.html

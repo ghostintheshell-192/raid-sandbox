@@ -75,6 +75,8 @@ notFor:
 # each field is. Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # ADR-004: the page's grid is a golden table drawn, derived by hand from the md rule.
+  status: derived
   # The title for search results and the browser tab — not the page heading (that stays `name`).
   searchTitle: "How RAID 10 works: striped mirrors, near, far and offset layouts"
   short: >
@@ -94,11 +96,16 @@ kb:
     Where the second copy lands is the placement [[algorithm]], *near*, *far* or
     *offset*; near, the default, puts the two copies side by side in the same
     stripe, which is the same arrangement a hardware controller reaches in a
-    different way, by striping over mirror pairs. That nested form, RAID 1+0, has
+    different way, by striping over mirror pairs.[^first-copy] That nested form, RAID 1+0, has
     its own page; with the near layout the two put every block in the same place,
     and the difference is which engine built it and which other layouts it can
     offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse
     arrangement, and its page says why.
+
+    [^first-copy]: In the grids one copy of each chunk is drawn as the original and
+    the other as its copy. The driver makes no such distinction, and the sandbox
+    draws as the original the copy the driver places first. A choice of the
+    sandbox — see [[design-decisions|the model's choices]].
 
     ## What it buys
 

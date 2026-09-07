@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -158,8 +158,6 @@ parity2  (RAID 6)    6                        1</code></pre>
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c">drivers/md/raid5.c handle_stripe_dirtying()</a> — rmw++ for each block to read for a read-modify-write, rcw++ for each block to read for a reconstruct-write; &#39;prefer read-modify-write, but need to get some data&#39; when rmw &lt; rcw; the reconstruct branch otherwise</li>
       <li>specs/implemented/degenerate-levels.md §11.1 — the two-disk RAID 5: rcw = 0 on every write, two operations, a mirror&#39;s cost; drivers/md/raid5.c raid5_takeover_raid1() converts a two-device RAID 1 to RAID 5 in place</li>
       <li><a href="https://man7.org/linux/man-pages/man8/mke2fs.8.html">mke2fs(8) man page, -E stripe_width</a> — &#39;This allows the block allocator to prevent read-modify-write of the parity in a RAID stripe if possible when the data is written&#39;</li>
-      <li><a href="../src/engine/model.js">src/engine/model.js writePenalty()</a> — random: none 1, mirror = the copy count, parity1 4, parity2 6; sequential: parity 1, mirror unchanged; the rule the sandbox computes with (2026-09-06)</li>
-      <li><a href="../data/raid-levels/raid5.yaml">data/raid-levels/raid5.yaml, raid6.yaml reference.writePenalty</a> — the numbers per level</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

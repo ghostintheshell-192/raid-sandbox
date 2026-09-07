@@ -31,5 +31,10 @@ raid6:
                            # Note: mdadm default (ALGORITHM_LEFT_SYMMETRIC) places
                            # Q to the RIGHT of P. Both are valid; this file follows DDF.
 
-source: .personal/segment-allocation-rule-left-symmetric.md
-verificationStatus: verified
+source: >
+  Linux kernel drivers/md/raid5.h (ALGORITHM_LEFT_SYMMETRIC = 2, comment:
+  "Rotating Parity N with Data Continuation") and raid5_compute_sector() in
+  drivers/md/raid5.c; for RAID 6, ALGORITHM_ROTATING_N_CONTINUE = 10 (Q before
+  P, the DDF convention). Derived by hand in
+  .development/reference/golden-tables/left-symmetric.md.
+status: derived

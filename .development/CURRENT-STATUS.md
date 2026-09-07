@@ -2,18 +2,25 @@
 
 ## Project State
 
-**Last Updated**: 2026-09-06
+**Last Updated**: 2026-09-07
 
 **Current Phase**: Live in its own repo. Extracted from the personal-site repo and
 deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-deploy from
 `main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
 forwards its two indexed game URLs here via canonical + refresh stubs.
 
-**Active Work**: the **knowledge base** (roadmap item 3) is built on `feature/knowledge-base`
-and waits for its PR — an MVP by Valentina's word: 31 static pages generated from the data,
-24 concepts with their sources, five level pages with the engine's numbers, one page per
-concept, the map as a folding column beside the text. What remains of the spec's §9 is
-the other nine levels and the components page. Before that: the **degenerate-levels spec**
+**Active Work**: **ADR-004** (2026-09-07, PR #45) — every statement names where its
+truth comes from: *cited / derived / chosen / to verify*. Its implementation is on
+`refactor/every-statement-names-its-source`: the golden tables are derived by hand
+from the kernel rule in `reference/golden-tables/` and the layout suite reads them
+from there; the knowledge base's `sources` is a bibliography of public URLs only, the
+pages carry their state under the heading, the model's choices are footnotes indexed
+on the new `design-decisions` page. What remains: the *to verify* queue — the four
+hardware entries (backplane, HBA, BBU, RAID engine) and the four migrated layers — each
+to be read against its named source. The **knowledge base** itself (roadmap item 3)
+is merged: 31 static pages generated from the data, 24 concepts with their sources,
+five level pages with the engine's numbers. What remains of the spec's §9 is the other
+nine levels and the components page. Before that: the **degenerate-levels spec**
 is implemented (PRs #35–#37, 2026-09-05, now `specs/implemented/degenerate-levels.md`): below its minimum a level
 collapses into a simpler one, the panel shows what was built next to what runs, and the
 diff between them is the trace of rewrites the level files declare. The **agnostic-engine
@@ -22,6 +29,18 @@ waits on a decision, not a task: whether and how to extract the engine into a pr
 its own (`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
+
+- **ADR-004 — every statement names where its truth comes from** (2026-09-07, PR #45
+  and `refactor/every-statement-names-its-source`): four states defined by where a
+  reader would go to check — cited, derived, chosen, to verify — replacing three
+  fields that meant different things (`sources` doing three jobs, `verificationStatus`
+  meaning cited in the data and checked in the test, `status` redefined once). The
+  golden tables now live as hand derivations from `raid5_compute_sector()` and
+  `__raid10_find_phys()` in `reference/golden-tables/` (eleven tables, README grammar,
+  `tests/golden-tables.js` reads them; every table agreed with the one the test held);
+  the knowledge base's 32 project-file sources are gone, the pages are marked, four
+  footnotes carry the model's choices, `why-linux-md` became `design-decisions` in
+  three chapters. 23 suites, 1,890 tests green.
 
 - **The knowledge base, generated from the data** (`feature/knowledge-base`, 2026-09-06,
   spec and implementation the same day, `specs/implemented/knowledge-base.md`): 24

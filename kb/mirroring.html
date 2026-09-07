@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -164,7 +164,6 @@ read width       N                             one large read spans the stripe</
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid10.c">drivers/md/raid10.c</a> — header comment: &#39;Each device is divided into far_copies sections. In each section, chunks are laid out in a style similar to raid0, but near_copies copies of each chunk is stored (each on a different drive)&#39;</li>
       <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — §7 First Level RAID: Mirrored Disks — &#39;all disks are duplicated (G=1 and C=1), and every write to a data disk is also a write to a check disk&#39;; useable storage capacity 50%</li>
       <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — &#39;Two-way mirroring tolerates one drive failure; three-way mirroring tolerates two simultaneous drive failures&#39;</li>
-      <li><a href="../src/engine/model.js">src/engine/model.js capacityGB() / failuresToKill()</a> — the RAID 1 rule (one copy&#39;s worth, kill every member) and the flat RAID 10 rule (sum ÷ copies, kill all copies of a chunk)</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

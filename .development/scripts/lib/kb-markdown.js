@@ -4,9 +4,12 @@
  * The subset is declared once, in the header of data/kb/segmentation.yaml, and
  * this file is the whole implementation of it: `##` headings, paragraphs,
  * bulleted and numbered lists, bold, italic, inline code, fenced ```text
- * blocks, and [[id]] / [[id|text]] cross-references. Nothing else — no tables,
- * no raw HTML, no images, no autolinks. Anything outside the subset is either
- * escaped as plain text or, for a cross-reference that names nothing, an error.
+ * blocks, [[id]] / [[id|text]] cross-references, and footnotes — [^id] in the
+ * text, `[^id]: …` on a line of its own — which render as a numbered "Notes"
+ * section at the end of the body (ADR-004: a design choice of the sandbox is
+ * explained where the reader meets it). Nothing else — no tables, no raw HTML,
+ * no images, no autolinks. Anything outside the subset is either escaped as
+ * plain text or, for a cross-reference or footnote that names nothing, an error.
  *
  * What it does NOT do: resolve links. The caller passes `resolveLink(id, text)`
  * and owns the map from an id to a page — this file holds no domain facts and
@@ -33,7 +36,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 // inside bold is common); code never does — its content is literal.
 // The (?!\s) / (?<!\s) guards keep a lone asterisk in a text line from opening
 // an emphasis run that swallows the rest of the paragraph.
-const INLINE = /`([^`]+)`|\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|\*\*(?!\s)([\s\S]+?)(?<!\s)\*\*|\*(?!\s)([^*\n]+?)(?<!\s)\*/g;
+const INLINE = /`([^`]+)`|\[\^([a-z0-9-]+)\]|\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|\*\*(?!\s)([\s\S]+?)(?<!\s)\*\*|\*(?!\s)([^*\n]+?)(?<!\s)\*/g;
 
 function renderInline(text, ctx) {
   return expand(escapeHtml(text), ctx);
@@ -41,8 +44,12 @@ function renderInline(text, ctx) {
 
 function expand(escaped, ctx) {
   INLINE.lastIndex = 0;
-  return escaped.replace(INLINE, (match, code, linkId, linkText, bold, italic) => {
+  return escaped.replace(INLINE, (match, code, fnId, linkId, linkText, bold, italic) => {
     if (code !== undefined)   return `<code>${code}</code>`;
+    if (fnId !== undefined) {
+      if (!ctx.footnote) throw new Error(`${ctx.where || 'markdown'}: a footnote [^${fnId}] outside a body`);
+      return ctx.footnote(fnId);
+    }
     if (linkId !== undefined) return ctx.resolveLink(unescapeForId(linkId).trim(),
                                                      linkText === undefined ? null : linkText.trim());
     if (bold !== undefined)   return `<strong>${expand(bold, ctx)}</strong>`;
@@ -65,6 +72,39 @@ const FENCE   = /^```(\w*)\s*$/;
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const BULLET  = /^[-*]\s+(.*)$/;
 const NUMBER  = /^\d+\.\s+(.*)$/;
+const FOOTDEF = /^\[\^([a-z0-9-]+)\]:\s*(.*)$/;
+
+// A footnote is referenced in the text as [^id] and defined once, anywhere in
+// the body, as `[^id]: text`. References are numbered in order of first use;
+// the definitions render as an ordered list under a "Notes" heading at the end
+// of the body, each with a link back to its first reference. A reference with
+// no definition, or a definition nobody references, is an error: a note that
+// dangles is a claim nobody can read, or a claim nobody is told about.
+function footnoteState(where) {
+  const order = [];           // ids, in order of first reference
+  const defs  = new Map();    // id → raw markdown
+  return {
+    ref(id) {
+      let n = order.indexOf(id);
+      const first = n < 0;
+      if (first) { order.push(id); n = order.length - 1; }
+      const anchor = first ? ` id="fnref-${id}"` : '';
+      return `<sup class="kb-fn"><a href="#fn-${id}"${anchor}>${n + 1}</a></sup>`;
+    },
+    define(id, text) {
+      if (defs.has(id)) throw new Error(`${where}: footnote [^${id}] is defined twice`);
+      defs.set(id, text);
+    },
+    render(ctx) {
+      for (const id of order) if (!defs.has(id)) throw new Error(`${where}: footnote [^${id}] is referenced but never defined`);
+      for (const id of defs.keys()) if (!order.includes(id)) throw new Error(`${where}: footnote [^${id}] is defined but never referenced`);
+      if (!order.length) return null;
+      const items = order.map((id) =>
+        `  <li id="fn-${id}">${renderInline(defs.get(id), { ...ctx, footnote: undefined })} <a href="#fnref-${id}" class="kb-fn-back" aria-label="Back to the text">↩</a></li>`);
+      return `<section class="kb-footnotes" id="notes">\n<h2>Notes</h2>\n<ol>\n${items.join('\n')}\n</ol>\n</section>`;
+    },
+  };
+}
 
 /**
  * @param {string} markdown
@@ -75,6 +115,8 @@ function render(markdown, ctx) {
   const where = ctx.where || 'markdown';
   const lines = String(markdown == null ? '' : markdown).replace(/\r\n?/g, '\n').split('\n');
   const out = [];
+  const notes = footnoteState(where);
+  ctx = { ...ctx, where, footnote: (id) => notes.ref(id) };
 
   let i = 0;
   while (i < lines.length) {
@@ -140,17 +182,35 @@ function render(markdown, ctx) {
       continue;
     }
 
-    // paragraph — to the next blank line, heading, fence or list
+    // footnote definition — `[^id]: text`, continuing over following lines like
+    // a paragraph; it is kept aside and rendered at the end of the body.
+    const footdef = FOOTDEF.exec(line);
+    if (footdef) {
+      const text = [footdef[2]];
+      i++;
+      while (i < lines.length) {
+        const t = lines[i].trim();
+        if (!t || FENCE.test(t) || HEADING.test(t) || BULLET.test(t) || NUMBER.test(t) || FOOTDEF.test(t)) break;
+        text.push(t);
+        i++;
+      }
+      notes.define(footdef[1], text.join(' '));
+      continue;
+    }
+
+    // paragraph — to the next blank line, heading, fence, list or footnote
     const para = [];
     while (i < lines.length) {
       const t = lines[i].trim();
-      if (!t || FENCE.test(t) || HEADING.test(t) || BULLET.test(t) || NUMBER.test(t)) break;
+      if (!t || FENCE.test(t) || HEADING.test(t) || BULLET.test(t) || NUMBER.test(t) || FOOTDEF.test(t)) break;
       para.push(t);
       i++;
     }
     out.push(`<p>${renderInline(para.join(' '), ctx)}</p>`);
   }
 
+  const notesHtml = notes.render(ctx);
+  if (notesHtml) out.push(notesHtml);
   return out.join('\n');
 }
 
@@ -164,4 +224,10 @@ function headingsOf(markdown) {
     .map((m) => ({ id: slug(m[1].trim()), title: m[1].trim() }));
 }
 
-module.exports = { render, renderInline, escapeHtml, slug, headingsOf };
+/** The ids of the footnotes a body defines, in source order — empty when it has none. */
+function footnotesOf(markdown) {
+  return String(markdown == null ? '' : markdown).split('\n')
+    .map((l) => FOOTDEF.exec(l.trim())).filter(Boolean).map((m) => m[1]);
+}
+
+module.exports = { render, renderInline, escapeHtml, slug, headingsOf, footnotesOf };

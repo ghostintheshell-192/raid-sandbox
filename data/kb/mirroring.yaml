@@ -112,8 +112,5 @@ sources:
   - ref: "Microsoft Learn, Storage Spaces overview"
     note: "'Two-way mirroring tolerates one drive failure; three-way mirroring tolerates two simultaneous drive failures'"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
-  - ref: "src/engine/model.js capacityGB() / failuresToKill()"
-    note: "the RAID 1 rule (one copy's worth, kill every member) and the flat RAID 10 rule (sum ÷ copies, kill all copies of a chunk)"
-    url: ../src/engine/model.js
 
-status: written
+status: cited

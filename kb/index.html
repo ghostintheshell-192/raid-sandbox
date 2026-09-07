@@ -206,8 +206,8 @@
       <p>The board the disks plug into, on the path between them and the HBA or the controller. A passive backplane only routes the SATA or SAS signals from each disk bay to a connector; an active one carries a SAS expander, a switch that lets one cable reach many disks. Either way it stores nothing and computes no RAID.</p>
     </li>
     <li>
-      <h3><a href="why-linux-md.html">Why Linux md is the reference</a></h3>
-      <p>These pages take the Linux `md` driver as their reference implementation because its source is public. Every rule stated here can be read and checked in the code, function by function. Hardware controllers and Windows Storage Spaces are described from their vendors&#39; documentation, and the page says clearly where they differ from `md`.</p>
+      <h3><a href="design-decisions.html">Design decisions</a></h3>
+      <p>These pages take the Linux `md` driver as their reference because its source is public. Every statement is marked by where a reader can check it: a public source, a derivation kept with the code, or not yet. Where a source leaves something open, the choice the sandbox made is a note on the page that rests on it, and this page lists them all.</p>
     </li>
     </ul>
   </section>

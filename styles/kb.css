@@ -177,6 +177,21 @@
   padding: 0.15rem 0.5rem;
 }
 
+.kb-flag a { color: inherit; }
+/* derived: the page rests on a hand derivation the repository holds — a
+   different state from to-verify, so a different colour (ADR-004). */
+.kb-flag-derived { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+
+/* --- footnotes: a design choice explained where the reader meets it --- */
+
+.kb-fn { font-size: 0.7em; line-height: 0; vertical-align: super; }
+.kb-fn a { text-decoration: none; padding: 0 0.15em; }
+.kb-footnotes { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+.kb-footnotes h2 { font-size: 0.9rem; }
+.kb-footnotes ol { padding-left: 1.4rem; }
+.kb-footnotes li { margin: 0.3rem 0; }
+.kb-fn-back { text-decoration: none; margin-left: 0.25rem; }
+
 .kb-caption, .kb-source, .kb-note {
   font-size: 0.78rem;
   color: var(--text-secondary);

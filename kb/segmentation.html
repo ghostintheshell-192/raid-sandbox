@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -177,7 +177,7 @@ t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
     <p>RAID 1 shows the linear case at its simplest: <code>mdadm</code> does not even accept a chunk size for it, because there is nothing to cut. The chunk size is a striping parameter, meaningful for RAID 0, 4, 5, 6 and 10 and no other level.</p>
     <p>So the segmentation axis determines two things: the name, when there is no redundancy (RAID 0 and JBOD differ on this axis alone), and how many disks one request can use. It does not determine capacity or fault tolerance: those come from the <a href="redundancy.html">redundancy</a> axis, with one exception, the flat striped mirror of RAID 10, explained under <a href="mirroring.html">mirroring</a>.</p>
     <p>One practical consequence: striping needs every member to contribute the same amount of space, because every stripe takes one chunk from each. Linux <code>raid0</code> copes with unequal disks by splitting the array into zones: the stripe runs across all disks until the smallest is full, then continues across the larger ones only. Linear never needs equal members, so it has no such problem; it has none of the speed either.</p>
-    <p>Linux <code>md</code> is quoted throughout these pages, and not only here, because its source is public and every rule can be read and checked; hardware controllers and Windows are documented by their vendors without the source. Where they differ, the page says so. See <a href="why-linux-md.html">why Linux md is the reference</a>.</p>
+    <p>Linux <code>md</code> is quoted throughout these pages, and not only here, because its source is public and every rule can be read and checked; hardware controllers and Windows are documented by their vendors without the source. Where they differ, the page says so. See <a href="design-decisions.html">why Linux md is the reference</a>.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
@@ -187,8 +187,6 @@ t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid0.c">drivers/md/raid0.c map_sector()</a> — sector ÷ chunk_sects gives the chunk and the offset in it; the chunk modulo the devices in the zone gives the device; zones are how devices of unequal size are handled</li>
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/md-linear.c">drivers/md/md-linear.c linear_conf() / which_dev()</a> — each device&#39;s end_sector is the previous one&#39;s plus its own size; a sector is served by the device whose range contains it</li>
       <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — simple spaces: &#39;Data is striped across multiple drives&#39;, &#39;no resiliency or redundancy&#39;</li>
-      <li><a href="../src/engine/model.js">src/engine/model.js writeParallelism() / readWidth()</a> — striped → the stripe width, linear → 1: the rule the sandbox computes with</li>
-      <li><a href="../src/engine/layout.js">src/engine/layout.js placeStripe() / placeLinear()</a> — the two grids the sandbox draws; and the refusal of linear + parity (&#39;parity requires striping&#39;)</li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -202,7 +200,7 @@ t     = 1 × 4 + 1 = 5    → disk 0, sector 5</code></pre>
       <li><a href="raid-engine.html">RAID engine</a></li>
       <li><a href="drive-group.html">Drive group</a></li>
       <li><a href="span.html">Span</a></li>
-      <li><a href="why-linux-md.html">Why Linux md is the reference</a></li>
+      <li><a href="design-decisions.html">Design decisions</a></li>
     </ul>
   </section>
 

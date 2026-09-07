@@ -6,13 +6,17 @@
 #
 # `long` is markdown, limited to what the generator renders: `##` headings (the
 # generator nests them under the entry's own heading), paragraphs, bulleted and numbered lists, bold,
-# italic, inline code, fenced blocks for text figures, and [[id]] to link another
+# italic, inline code, fenced blocks for text figures, [[id]] to link another
 # entry of data/kb/ (the generator resolves it to the entry's name and page;
-# [[id|text]] links with a different text).
-# No tables, no HTML. Leave a blank line before a list. `short` is plain text.
+# [[id|text]] links with a different text), and footnotes: [^id] on the sentence,
+# `[^id]: text` on a line of its own, rendered as a numbered "Notes" list at the
+# end of the page. No tables, no HTML. Leave a blank line before a list. `short`
+# is plain text.
 #
-# Writing rule (2026-09-06): the text is theory, not the game — the sandbox is never
-# mentioned in the body, only in `sources`. Every actor on the path is named and
+# Writing rule (2026-09-06, ADR-004 2026-09-07): the text is theory, not the game.
+# `sources` is a bibliography — public URLs, nothing of the project's own — and the
+# sandbox appears in the body only as a footnote, where a sentence rests on a
+# choice the sandbox made rather than on a source. Every actor on the path is named and
 # linked, even where the text does not stop to explain it; it is explained in its
 # own entry. Nothing is compressed to arrive sooner: the steps are shown.
 
@@ -159,9 +163,9 @@ long: |
   Linux `md` is quoted throughout these pages, and not only here, because its
   source is public and every rule can be read and checked; hardware controllers and
   Windows are documented by their vendors without the source. Where they differ,
-  the page says so. See [[why-linux-md|why Linux md is the reference]].
+  the page says so. See [[design-decisions|why Linux md is the reference]].
 
-related: [striping, chunk, redundancy, mirroring, performance, raid-engine, drive-group, span, why-linux-md]
+related: [striping, chunk, redundancy, mirroring, performance, raid-engine, drive-group, span, design-decisions]
 
 sources:
   - ref: "md(4) man page"
@@ -179,11 +183,5 @@ sources:
   - ref: "Microsoft Learn, Storage Spaces overview"
     note: "simple spaces: 'Data is striped across multiple drives', 'no resiliency or redundancy'"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
-  - ref: "src/engine/model.js writeParallelism() / readWidth()"
-    note: "striped → the stripe width, linear → 1: the rule the sandbox computes with"
-    url: ../src/engine/model.js
-  - ref: "src/engine/layout.js placeStripe() / placeLinear()"
-    note: "the two grids the sandbox draws; and the refusal of linear + parity ('parity requires striping')"
-    url: ../src/engine/layout.js
 
-status: written
+status: cited

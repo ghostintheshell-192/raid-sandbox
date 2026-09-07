@@ -94,8 +94,5 @@ sources:
   - ref: "Intel, Parity Initialization for Intel Rapid Storage Technology (support article)"
     note: "after a dirty shutdown 'parity may be inconsistent with the data it is supposed to be protecting' and 'must be completely initialized'"
     url: https://www.intel.com/content/www/us/en/support/articles/000006468/technologies.html
-  - ref: "data/components/os-linux.yaml writeHole.reason"
-    note: "the sentence the sandbox shows, and its kernel references: drivers/md/raid5-ppl.c 'Partial Parity Log for closing the RAID5 write hole'; drivers/md/md.c consistency_policy: journal / ppl / bitmap / resync / none"
-    url: ../data/components/os-linux.yaml
 
-status: written
+status: cited

@@ -77,6 +77,8 @@ notFor:
 # Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # ADR-004: the page's grid is a golden table drawn, derived by hand from the md rule.
+  status: derived
   # The title for search results and the browser tab — not the page heading (that stays `name`).
   searchTitle: "How RAID 5 works: striping, rotating parity and the write penalty"
   short: >

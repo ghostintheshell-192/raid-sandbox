@@ -98,11 +98,5 @@ sources:
   - ref: "mke2fs(8) man page, -E stripe_width"
     note: "'This allows the block allocator to prevent read-modify-write of the parity in a RAID stripe if possible when the data is written'"
     url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
-  - ref: "src/engine/model.js writePenalty()"
-    note: "random: none 1, mirror = the copy count, parity1 4, parity2 6; sequential: parity 1, mirror unchanged; the rule the sandbox computes with (2026-09-06)"
-    url: ../src/engine/model.js
-  - ref: "data/raid-levels/raid5.yaml, raid6.yaml reference.writePenalty"
-    note: "the numbers per level"
-    url: ../data/raid-levels/raid5.yaml
 
-status: written
+status: cited

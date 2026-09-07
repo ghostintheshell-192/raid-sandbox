@@ -60,4 +60,4 @@ sources:
     note: "'the review of your system for possible drive errors that could lead to a drive failure'; 'starts only when the controller is idle for a defined period of time'; 'protect data integrity by detecting drive failure before the failure can damage data'"
     url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html
 
-status: written
+status: cited

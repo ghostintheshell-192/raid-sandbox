@@ -107,7 +107,7 @@
           <li><span class="kb-side-item active" aria-current="page">RAID engine</span></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -126,7 +126,7 @@
   </nav>
 
   <section class="kb-section kb-concept" id="what-it-is">
-    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-flag kb-flag-to-verify">Not yet checked against a primary source — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
     <h2 id="the-role">The role</h2>
     <p>Whatever runs a RAID array has the same list of jobs, and the list is the definition of the engine:</p>
@@ -138,7 +138,7 @@
       <li><strong>Present the result.</strong> Upstream, the array is one block device: a <a href="virtual-drive.html">virtual drive</a> when a controller presents it, an <code>md</code> device when the operating system does.</li>
     </ul>
     <h2 id="where-it-lives-three-answers">Where it lives: three answers</h2>
-    <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the PCIe bus, the CPU, the OS. The engine sits on that path in one of three ways, and the way is what the industry names <em>hardware</em>, <em>software</em> and <em>firmware</em> (or <em>fake</em>) RAID.</p>
+    <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the PCIe bus, the CPU, the OS. The engine sits on that path in one of three ways, and the way is what the industry names <em>hardware</em>, <em>software</em> and <em>firmware</em> (or <em>fake</em>) RAID.<sup class="kb-fn"><a href="#fn-three-cases" id="fnref-three-cases">1</a></sup></p>
     <p><strong>Hardware RAID.</strong> A controller card carries the HBA and a <em>RAID-on-Chip</em> (RoC), a processor dedicated to the list above, with its own memory as write cache. The operating system never sees the member disks: what it is given is the controller&#39;s virtual drive. In Broadcom&#39;s MegaRAID vocabulary, &quot;virtual drives are drive groups or spanned drive groups that are available to the operating system&quot;.</p>
     <p><strong>Software RAID.</strong> No engine object on the path. The HBA passes the disks through and the operating system&#39;s driver is the engine: <code>md</code> in Linux (configured with <code>mdadm</code>), Storage Spaces in Windows. The CPU does the computing, the OS sees every member disk and, beside them, the array device it made.</p>
     <p><strong>Firmware RAID, called fake RAID once its wiring is understood.</strong> A chip on the motherboard, or a cheap add-in card, that holds the array&#39;s metadata and a boot firmware, an <em>option ROM</em> in the system BIOS which, in Intel&#39;s words, manages the drives and RAID volumes &quot;before the operating system loads&quot;. That is what it is for: the machine can boot from the array. Once the OS is up, its driver does the engine&#39;s work on the CPU, exactly as in software RAID. Linux shows this directly: <code>mdadm</code> runs Intel Rapid Storage volumes as <code>md</code> arrays with an <em>external</em> metadata format, <code>imsm</code>, &quot;supported by an option-rom on some platforms&quot;. The metadata is the firmware&#39;s; the computing is the operating system&#39;s.</p>
@@ -150,6 +150,12 @@
       <li>software: the operating system owns it and computes it</li>
     </ul>
     <p>Two consequences follow from the same fact. A hardware engine&#39;s write cache can be protected against power loss (a <a href="bbu.html">BBU</a> or flash), which is what closes the parity <a href="write-hole.html">write hole</a>; a driver on the CPU has no such cache, so software and firmware RAID rely on the machine&#39;s own power protection. And a hardware engine needs no driver to make the array readable, while a firmware array is unreachable without one: with the OS driver missing, the option ROM alone cannot serve it.</p>
+    <section class="kb-footnotes" id="notes">
+    <h2>Notes</h2>
+    <ol>
+      <li id="fn-three-cases">The three cases are how the sandbox models the engine — a computing chip, a metadata-only chip, or the operating system — and which case a build is in is decided by <em>which</em> object sits on the path, not by where it sits. Real products blur the lines; the sandbox draws the case, not the product. See <a href="design-decisions.html">the model&amp;#39;s choices</a>. <a href="#fnref-three-cases" class="kb-fn-back" aria-label="Back to the text">↩</a></li>
+    </ol>
+    </section>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
@@ -160,7 +166,6 @@
       <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — the superblock as the per-device metadata of a native md array</li>
       <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — Storage Spaces as the operating system&#39;s own pooling and resiliency layer</li>
       <li>.development/reference/decisions/001-engine-identity-not-position.md — the ownership/computation distinction; its RoC internals (own processor, protected cache) are stated there as not yet verified against a primary source</li>
-      <li><a href="../data/components/engine-roc.yaml">data/components/engine-roc.yaml, engine-metadata.yaml, os-linux.yaml, os-windows.yaml</a> — the three engine cases as the sandbox models them</li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -175,7 +180,7 @@
       <li><a href="hba.html">HBA</a></li>
       <li><a href="bbu.html">Battery backup unit and flash cache protection</a></li>
       <li><a href="write-hole.html">Write hole</a></li>
-      <li><a href="why-linux-md.html">Why Linux md is the reference</a></li>
+      <li><a href="design-decisions.html">Design decisions</a></li>
     </ul>
   </section>
 
@@ -191,6 +196,7 @@
         <li><a href="#the-role">The role</a></li>
         <li><a href="#where-it-lives-three-answers">Where it lives: three answers</a></li>
         <li><a href="#what-tells-them-apart">What tells them apart</a></li>
+        <li><a href="#notes">Notes</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>
