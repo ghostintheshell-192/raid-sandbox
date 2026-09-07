@@ -1,7 +1,7 @@
 # ADR-004: Every statement names where its truth comes from — cited, derived, chosen, or to verify
 
 **Date**: 2026-09-07
-**Status**: Proposed — draft for discussion on branch `refactor/kb-sources-bibliography-only`
+**Status**: Proposed — the four open questions were settled in discussion on 2026-09-07 (see *Decided in discussion*); pending Valentina's read of the whole
 **Impact**: high
 **Summary**: Every strong statement the project makes — on a knowledge-base page, in a level file, in what the sandbox draws — is in exactly one of four states, defined by *where a reader would go to check it*: **cited** (a public source, in the bibliography), **derived** (by hand from a public rule, in a tracked derivation the tests hold the engine to), **chosen** (a decision made for the game, recorded as such), or **to verify** (a queue, every item with a destination). No state is expressed by linking one of our own files or functions. The repository is public; that is said once, as a sentence, never as a link.
 
@@ -34,10 +34,23 @@ same disease shows in four places:
   `.personal/segment-allocation-rule-left-symmetric.md`, `.personal/golden-raid{50,1e,100}.md`
   and `.personal/distribuzione-segmenti-algoritmi.md` as their authority, from
   `layout.js`, `layout-golden.test.js`, four algorithm files and the `note:` of two level
-  files. `.personal/` is the first line of `.gitignore`. The test asserts the engine
-  against tables whose derivation nobody but the author can open. Paradoxically the one
-  algorithm verified in the strong sense (left-symmetric) is the one with the weakest
-  public trail: the other three cite `raid5_compute_sector()`; it cites the private file.
+  files. `.personal/` is the first line of `.gitignore` — and, it turned out on
+  2026-09-07, those files **no longer exist anywhere**: they were transcriptions of
+  Valentina's notebook pages, placed in `.personal/` for a session so they could be
+  used, and removed since. The paths in the code are fossils. What survives of the hand
+  derivations is their *result* — the tables transcribed into `layout-golden.test.js` —
+  not the derivation itself. Paradoxically the one algorithm verified in the strong
+  sense (left-symmetric) is the one with the weakest public trail: the other three cite
+  `raid5_compute_sector()`; it cites the vanished file.
+- **The hardware claims have been "not yet verified" since ADR-001.** ADR-001
+  (2026-07-30) lists in its Cons that its claims about RST firmware, add-in chips and SoC
+  integration "are written from prior knowledge and not yet verified against a primary
+  source". A file `.personal/2026-07-31-adr-001-hardware-claims-sources.md` — the one
+  file `.personal/` still holds — is the sourcing work started the next day and never
+  brought into the repository. Three later documents (`derived-controller.md`,
+  `degenerate-levels.md`, `unspoken-content.md`) carry the caveat forward unchanged, and
+  the four hardware entries of the knowledge base were written on 2026-09-06 on the
+  same unverified basis. The *to verify* queue of this ADR is that debt, given a home.
 - **`to-verify` was redefined once already** (knowledge-base spec §14: from "no sources"
   to "at least one sentence unchecked") — the same move, one step earlier.
 
@@ -61,7 +74,9 @@ would perform to verify it, not by who performed it:
 
 **cited** is the default and carries no mark: a page whose every sentence is cited shows
 its bibliography and nothing else. The other three are marked on the page, under its
-heading. Marking a single sentence rather than a page is deferred (see *Consequences*).
+heading. A level page, whose grid *is* a golden table drawn, is marked *derived* like the
+algorithm page — for completeness, so that no page that rests on our derivation is
+silent about it. Marking a single sentence rather than a page is deferred (see *Consequences*).
 
 ### 2. The source of truth depends on the kind of statement
 
@@ -120,15 +135,21 @@ The three parity algorithms currently "derived analytically" from an abstraction
 rule are **promoted, not relabelled**: their tables are derived by hand from
 `raid5_compute_sector()` like left-symmetric's, and only then say *derived*.
 
-### 6. The model's choices get a page
+Because the original hand derivations are lost (Context), every reference document is
+a **fresh derivation from the kernel rule**, written without looking at the engine or at
+the test. Where its table agrees with the one transcribed from Valentina's notebook into
+the test, two independent derivations agree — a stronger position than the project has
+had so far. Where they disagree, one of the two is wrong and the kernel decides.
+
+### 6. The model's choices are a chapter of the design-decisions page
 
 What was decided for the game rather than found in a source — Q left of P (the DDF
 convention, where mdadm's default is Q right of P); the three engine cases; the level
 derived from the composition rather than selected; the cross-span stacking convention
-the kernel does not define; RAID 0+1 satisfying the `database` challenge — is listed on
-one knowledge-base page, each item in a sentence, with the ADR named where one exists.
-A page that rests on such a choice links it with the existing `[[id]]` syntax. No new
-tag, no new syntax.
+the kernel does not define; RAID 0+1 satisfying the `database` challenge — is listed in
+one chapter of the page described in §8, each item in a sentence, with the ADR named
+where one exists. A page that rests on such a choice links that chapter with the
+existing `[[id]]` syntax. No new tag, no new syntax.
 
 ### 7. `to verify` is a queue, not a category of truth
 
@@ -140,12 +161,17 @@ the bibliography) for HBA versus RAID controller; Broadcom CacheVault documentat
 cache protection; T10 SES and SFF-8485 for the backplane; IBM Redbooks as the generic
 reputable reference the pages speak at the level of.
 
-### 8. The legend
+### 8. One page, `design-decisions`, in chapters
 
 The page *Why Linux md is the reference* already says the promise ("every rule stated
-here can be read and checked in the code, function by function"). It is extended — or
-given a sibling — with the four states in reader's words and the one sentence about the
-repository. Every marked page links it.
+here can be read and checked in the code, function by function"). It becomes the first
+chapter of a single page, **`design-decisions`**, whose chapters are the things the
+project decided rather than found: *why Linux md is the reference*; *how the pages are
+sourced* — the four states in a reader's words, and the one sentence that the
+repository is public; *the model's choices* (§6). One page keeps the reader's mental
+model in one place; chapters keep it ordered. The id `why-linux-md` retires; the pages
+that link it link the chapter instead (`[[design-decisions|…]]`). Every marked page
+links this page.
 
 ## Rationale
 
@@ -175,8 +201,9 @@ repository. Every marked page links it.
 - `data/kb/*.yaml` — 32 internal source entries removed; the six provenance pointers go
   (the spec and git history carry them); `raid-is-not-a-backup`'s three page
   cross-references go (already in `related:`); `status:` gains the marked states; the
-  four hardware entries stay `to-verify` until read. One new entry for the model's
-  choices; the legend on `why-linux-md` or a sibling.
+  four hardware entries stay `to-verify` until read; the level pages are marked
+  *derived*. `why-linux-md.yaml` becomes `design-decisions.yaml`, with the three
+  chapters of §8; the pages that link `[[why-linux-md]]` link the chapter.
 - `tests/kb-data.test.js` — the URL rule tightens from `^(https?://|\.\./)` to
   `^https?://`.
 - `.development/scripts/generate-kb.js` — renders the page mark next to the heading.
@@ -214,17 +241,21 @@ repository. Every marked page links it.
   marked *cited* is fully cited. The test can enforce the shape of the bibliography, not
   that every sentence has a line in it.
 
-## Open questions (for the discussion, not yet decided)
+## Decided in discussion (2026-09-07)
 
-1. **The names.** *cited / derived / chosen / to verify* are the draft's proposal. The
-   word that goes on the pages is Valentina's to pick.
-2. **Whether *derived* is shown on the level pages** (whose grids are the golden tables
-   drawn) or only on the algorithm page, with the level pages counting as *cited* via the
-   kernel rule.
-3. **Where the legend lives** — extending `why-linux-md`, or a sibling page it links.
-4. **Whether the test reads the reference documents or transcribes them.** The draft
-   decides *reads*, on the project's own precedent; the cost is a small parser and a
-   fixed table grammar in the markdown.
+The draft left four questions open; Valentina settled them the same evening:
+
+1. **The names** are *cited / derived / chosen / to verify*, as proposed.
+2. ***derived* is shown on the level pages too**, for completeness (§1).
+3. **The legend is a page called `design-decisions`, in chapters** — why Linux md, how
+   the pages are sourced, the model's choices — rather than an extension of
+   `why-linux-md` (§8).
+4. **The test reads the reference documents** rather than transcribing them (§5).
+
+Still open, and outside this ADR: whether the *to verify* reading for the hardware
+entries starts from `.personal/2026-07-31-adr-001-hardware-claims-sources.md`, which
+may already hold part of it — Valentina has the file; it has not been read in this
+work.
 
 ## See also
 
