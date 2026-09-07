@@ -5,9 +5,9 @@ purpose: >
   "written from prior knowledge and not yet verified against a primary source"
   (reference/decisions/001-engine-identity-not-position.md, line 105).
   Not a verified conclusion — links + a few pulled quotes to read and judge yourself.
-tracked: 2026-09-07 — moved from .personal/ unchanged, so that the to-verify queue of
-  ADR-004 has its reading list in the repository. Covers ADR-001's three fake-RAID
-  claims; the backplane, HBA and cache-protection entries need their own list.
+tracked: 2026-09-07 — the reading list for the to-verify queue of ADR-004. Covers
+  ADR-001's three fake-RAID claims; the backplane, HBA and cache-protection entries
+  need their own list.
 ---
 
 # ADR-001 hardware claims — sources to read

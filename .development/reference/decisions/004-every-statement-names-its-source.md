@@ -1,7 +1,7 @@
 # ADR-004: Every statement names where its truth comes from — cited, derived, chosen, or to verify
 
 **Date**: 2026-09-07
-**Status**: Proposed — the four open questions were settled in discussion on 2026-09-07 (see *Decided in discussion*); pending Valentina's read of the whole
+**Status**: Proposed (2026-09-07)
 **Impact**: high
 **Summary**: Every strong statement the project makes — on a knowledge-base page, in a level file, in what the sandbox draws — is in exactly one of four states, defined by *where a reader would go to check it*: **cited** (a public source, in the bibliography), **derived** (by hand from a public rule, in a tracked derivation the tests hold the engine to), **chosen** (a decision made for the game, recorded as such), or **to verify** (a queue, every item with a destination). No state is expressed by linking one of our own files or functions. The repository is public; that is said once, as a sentence, never as a link.
 
@@ -11,46 +11,36 @@ The project's founding discipline (`principles.md`) is: *the whole point of the 
 that what it shows is true, not merely self-consistent.* On 2026-09-07 a review of the
 knowledge base written the day before found that the vocabulary the project uses to say
 "this is true" does not distinguish three different acts — **citing** a source,
-**checking** against a source, and **deriving** something ourselves — and that wherever one
-word covered two of them, the project was vouching for itself without meaning to. The
-same disease shows in four places:
+**checking** against a source, and **deriving** something ourselves. One word covering
+two of them is the same conflation in four places:
 
 - **`sources:` on the knowledge-base entries** does three jobs under one name. Of 107
   entries, 32 point at our own files: some as *implementation* (`src/engine/model.js
   capacityGB()` — "the rule the sandbox computes with"), some as *provenance* ("the text
   this entry migrates", six pointers to `data/intro.yaml`), some as the *only* thing
   behind a statement about real hardware (`backplane`, `hba`, `bbu`, `raid-engine` cite
-  `data/components/*.yaml`). A reader who follows the last kind lands on a file that
-  says the same sentence, written by us.
+  `data/components/*.yaml`). The last kind points at a file of the project's own.
 - **`verificationStatus` on the algorithm files** has three values (`verified`,
   `reference-only`, and `status: pending` with a comment that says `layout.js` does not
   implement RAID 10 — it does). All four parity algorithms say `verified`; the header of
   `layout-golden.test.js` says three of them are "derived analytically, internally
   consistent, awaiting independent external verification before being exposed in the
-  production UI". They are exposed. The YAML's `verified` means *cited to the kernel*;
-  the test's means *hand-tabled and checked*. Same word, two meanings.
-- **The ground truth of the whole layout axis is not in the repository.** The golden
-  tables — the one place where the discipline is actually enforced by a test — cite
-  `.personal/segment-allocation-rule-left-symmetric.md`, `.personal/golden-raid{50,1e,100}.md`
-  and `.personal/distribuzione-segmenti-algoritmi.md` as their authority, from
-  `layout.js`, `layout-golden.test.js`, four algorithm files and the `note:` of two level
-  files. `.personal/` is the first line of `.gitignore` — and, it turned out on
-  2026-09-07, those files **no longer exist anywhere**: they were transcriptions of
-  Valentina's notebook pages, placed in `.personal/` for a session so they could be
-  used, and removed since. The paths in the code are fossils. What survives of the hand
-  derivations is their *result* — the tables transcribed into `layout-golden.test.js` —
-  not the derivation itself. Paradoxically the one algorithm verified in the strong
-  sense (left-symmetric) is the one with the weakest public trail: the other three cite
-  `raid5_compute_sector()`; it cites the vanished file.
-- **The hardware claims have been "not yet verified" since ADR-001.** ADR-001
-  (2026-07-30) lists in its Cons that its claims about RST firmware, add-in chips and SoC
+  production UI"; the palette offers all four. The YAML's `verified` means *cited to
+  the kernel*; the test's means *hand-tabled and checked*.
+- **The derivation behind the golden tables is not in the repository.** The tables
+  themselves are in `layout-golden.test.js`, which is where the discipline is enforced.
+  The derivation they were transcribed from is named, by `layout.js`, the test, four
+  algorithm files and the `note:` of two level files, through paths the repository does
+  not contain. Of the four parity algorithm files, three name the kernel function as
+  their source; the fourth, left-symmetric, names one of those paths.
+- **The hardware claims are marked "not yet verified" since ADR-001.** ADR-001
+  (2026-07-30) says in its Cons that its claims about RST firmware, add-in chips and SoC
   integration "are written from prior knowledge and not yet verified against a primary
-  source". A file `.personal/2026-07-31-adr-001-hardware-claims-sources.md` — the one
-  file `.personal/` still holds — is the sourcing work started the next day and never
-  brought into the repository. Three later documents (`derived-controller.md`,
-  `degenerate-levels.md`, `unspoken-content.md`) carry the caveat forward unchanged, and
-  the four hardware entries of the knowledge base were written on 2026-09-06 on the
-  same unverified basis. The *to verify* queue of this ADR is that debt, given a home.
+  source"; three later documents (`derived-controller.md`, `degenerate-levels.md`,
+  `unspoken-content.md`) repeat the caveat, and the four hardware entries of the
+  knowledge base rest on the same claims. A reading list for them, started on
+  2026-07-31, is tracked as `reference/adr-001-hardware-claims-sources.md`. The
+  *to verify* queue of this ADR is where that work lives.
 - **`to-verify` was redefined once already** (knowledge-base spec §14: from "no sources"
   to "at least one sentence unchecked") — the same move, one step earlier.
 
@@ -77,7 +67,7 @@ its bibliography and nothing else. *derived* and *to verify* are marked on the p
 under its heading. *chosen* is different in kind — a page is not chosen, a statement is —
 so it is marked where it bites, as a footnote (§5). A level page, whose grid *is* a
 golden table drawn, is marked *derived* like the algorithm page — for completeness, so
-that no page that rests on our derivation is silent about it. Marking a single sentence rather than a page is deferred (see *Consequences*).
+that no page that rests on our derivation is silent about it. Marking a single sentence, rather than a page, as *derived* or *to verify* is deferred (see *Consequences*).
 
 ### 2. The source of truth depends on the kind of statement
 
@@ -116,18 +106,16 @@ special (odd disks for RAID 1E, RAID 6 at five).
 `layout-golden.test.js` reads its expected grids **from those documents**, so there is
 one copy of every table and the derivation is the authority. The parser is a few lines
 over a fixed grammar, zero dependencies — the same move `kb-worked.test.js` made for
-capacity formulas. Every `.personal/` reference in tracked files is replaced by the
-reference document, and `.personal/` stops being an authority for anything that ships.
+capacity formulas. Every place that names a derivation — `layout.js`, the test, the
+algorithm files, the level files — names the reference document.
 
 The three parity algorithms currently "derived analytically" from an abstraction of the
 rule are **promoted, not relabelled**: their tables are derived by hand from
 `raid5_compute_sector()` like left-symmetric's, and only then say *derived*.
 
-Because the original hand derivations are lost (Context), every reference document is
-a **fresh derivation from the kernel rule**, written without looking at the engine or at
-the test. Where its table agrees with the one transcribed from Valentina's notebook into
-the test, two independent derivations agree — a stronger position than the project has
-had so far. Where they disagree, one of the two is wrong and the kernel decides.
+Every reference document is written from the kernel rule, without looking at the
+engine or at the test. Where its table disagrees with the one the test holds today, the
+kernel decides.
 
 ### 5. The model's choices are footnotes, indexed on the design-decisions page
 
@@ -177,17 +165,13 @@ links this page.
   with the engine (`kb-worked.test.js` does exactly that, and says so). That proves we
   are consistent with ourselves. The chain that matters — page agrees with model, model
   agrees with primary source, therefore page agrees with primary source — holds only
-  where the middle link is *enforced*. Today it is enforced for one algorithm, against a
-  file that does not ship. Section 5 is what makes the chain real for the axis where it
-  can be checked at all.
+  where the middle link is *enforced*. Today it is enforced for one algorithm, against
+  a derivation the repository does not contain. Section 4 is what makes the chain hold
+  for the axis where it can be checked at all.
 - **Because a state named by the reader's act cannot mean two things.** "Verified" can
-  mean cited or checked; "internally verified" says who and hides that the derivation
-  starts from a public rule. *Cited / derived / chosen / to verify* each name one act.
-- **Because a competent reader sees the gap in five minutes.** The reader the project
-  exists for is the one who opens the repository. That reader finds a test whose
-  authority is an absent file, and a data file whose `verified` the test contradicts.
-- **Because the cheapest honest thing is to do the derivation.** Three hand tables from a
-  public function are an evening; a softer label is forever.
+  mean cited or checked. *Cited / derived / chosen / to verify* each name one act.
+- **Because the derivation is bounded work.** One table per layout, from a public
+  function, in a form the test reads.
 
 ## Consequences
 
@@ -205,12 +189,12 @@ links this page.
   next to the heading, and the footnotes (§5).
 - `.development/reference/golden-tables/*.md` — new: one derivation per layout.
 - `tests/layout-golden.test.js` — reads its grids from the reference documents; its
-  header and every table comment name the document, not `.personal/`.
+  header and every table comment name the document.
 - `data/algorithms/*.yaml` — `verificationStatus` replaced by the same four-state
   vocabulary; `source:` names the kernel function and the reference document; the stale
   `status: pending` on the RAID 10 files goes.
 - `src/engine/layout.js`, `data/raid-levels/raid100.yaml`, `raid1e.yaml` — the
-  `.personal/` mentions become the reference document.
+  derivation each names becomes the reference document.
 - `.development/specs/implemented/knowledge-base.md` §14 — the "project files with
   relative links" line is superseded by this ADR.
 
@@ -219,20 +203,18 @@ links this page.
 - One vocabulary for the whole project — pages, data files, tests — where today there
   are three (`sources`, `verificationStatus`, `status`) that disagree.
 - The golden tables' authority becomes auditable, and the tables exist once.
-- The three unverified algorithms become verified in the strong sense rather than
-  described more carefully.
-- A reader is never handed a link that means "we wrote this".
+- Every layout the sandbox draws has its derivation in the repository.
+- The bibliography contains public sources only.
 
 ### Cons
 
 - **Per-fact marking of *derived* and *to verify* is deferred.** A page is marked as a
   whole. A page with one unchecked sentence among twenty cited ones is marked *to
-  verify* entirely — coarse, and the pressure it creates to finish the reading is the
-  point. Footnotes (§5) give *chosen* a per-sentence mark because a choice is a
-  sentence; extending that to the other two states is a separate, costed decision.
-- **The derivation work is real.** Three parity tables, and the RAID 10 / nested ones
-  whose hand derivations are lost, have to be written out step by step from the kernel
-  rule, in a form the test can read. It is bounded and it is the price of the claim.
+  verify* entirely. Footnotes (§5) give *chosen* a per-sentence mark because a choice
+  is a sentence; extending that to the other two states is a separate, costed decision.
+- **The derivation work is real.** The tables — four parity algorithms, RAID 10 and
+  the nested levels — have to be written out step by step from the kernel rule, in a
+  form the test can read.
 - **A `status` field on a page is still a human assertion.** Nothing checks that a page
   marked *cited* is fully cited. The test can enforce the shape of the bibliography, not
   that every sentence has a line in it.
@@ -250,10 +232,9 @@ The draft left four questions open; Valentina settled them the same evening:
 5. **The model's choices are footnotes** where they bite, indexed on the
    design-decisions page, rather than a chapter the reader has to switch to (§5).
 
-The one file `.personal/` still held, `2026-07-31-adr-001-hardware-claims-sources.md`,
-is now tracked as [`reference/adr-001-hardware-claims-sources.md`](../adr-001-hardware-claims-sources.md).
-It is a reading list, not a verification, for ADR-001's three fake-RAID claims (Intel
-RST, JMicron/ASMedia, AMD Ryzen); it feeds the `raid-engine` entry of the queue. The
+[`reference/adr-001-hardware-claims-sources.md`](../adr-001-hardware-claims-sources.md)
+is a reading list, not a verification, for ADR-001's three fake-RAID claims (Intel RST,
+JMicron/ASMedia, AMD Ryzen); it feeds the `raid-engine` entry of the queue. The
 backplane, HBA and cache-protection entries need their own list. Its Ryzen finding —
 some SATA ports come from the CPU die, others from a separate chipset die — is an open
 item on ADR-001's wording, outside this ADR.
