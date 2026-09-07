@@ -1,28 +1,21 @@
 /**
- * layout-golden.test.js — golden-table verification for all parity algorithms.
+ * layout-golden.test.js — golden-table verification for every layout the sandbox draws.
  * Run with: node layout-golden.test.js
  *
- * SOURCING
- * --------
- * left-symmetric: authoritative source = .personal/segment-allocation-rule-left-symmetric.md
- *   (Valentina's verified hand tables). Also the Linux md default (ALGORITHM_LEFT_SYMMETRIC=2).
+ * SOURCING (ADR-004)
+ * ------------------
+ * Every expected grid below is READ from a reference document in
+ * .development/reference/golden-tables/, through ./golden-tables.js. Each document
+ * derives its table by hand from the Linux md rule — raid5_compute_sector() in
+ * drivers/md/raid5.c for the parity algorithms and RAID 6, __raid10_find_phys() in
+ * drivers/md/raid10.c for near / far / offset — and states, as the sandbox's own
+ * convention, whatever the kernel leaves open (Q before P for RAID 6, which copy is
+ * drawn as the original, how spans are stacked in RAID 50/60/100). The tables exist
+ * once, there; this file holds none.
  *
- * RAID6 Q placement: our implementation puts Q to the LEFT of P — this is the DDF
- * convention (ALGORITHM_ROTATING_N_CONTINUE in Linux md, ddf_layout=1), used by
- * hardware RAID controllers following the SNIA DDF standard. mdadm's default
- * ALGORITHM_LEFT_SYMMETRIC puts Q to the RIGHT of P. Both are valid and present
- * in the Linux kernel. Ours matches the .personal notes (hardware RAID context).
- *
- * left-asymmetric, right-asymmetric, right-symmetric: derived from the same rule pair:
- *   rotate  left  → anchor(s) = (n-1-s) mod n   (parity starts rightmost, moves left)
- *   rotate  right → anchor(s) = s mod n          (parity starts leftmost, moves right)
- *   symmetric     → data from (anchor+1) mod n, wrapping
- *   asymmetric    → data from disk 0, skipping parity
- * These rules are the canonical definitions of ALGORITHM_LEFT_ASYMMETRIC(0),
- * RIGHT_ASYMMETRIC(1), LEFT_SYMMETRIC(2), RIGHT_SYMMETRIC(3) in Linux md/raid5.
- * Left-symmetric is the verified anchor; the other three are derived analytically
- * and are internally consistent with it. They await independent external verification
- * before being exposed in the production UI (per the spec's golden-table protocol).
+ * The engine is what is checked. Nothing here is produced by layout.js, and a
+ * disagreement between a document and the engine is settled by the kernel, not by
+ * regenerating the document.
  *
  * RAID 0, RAID 1, JBOD: trivially correct by inspection (no parity, no rotation).
  */
@@ -51,97 +44,46 @@ function grid(seg, red, n, algo, stripes) {
 }
 
 // ---------------------------------------------------------------------------
-// GOLDEN TABLES  (role = 'data' | 'P' | 'Q', seg = 0-based segment number)
-// Notation: null = parity (P or Q), number = data segment
+// GOLDEN TABLES — read from the reference documents (roles: 'data' | 'mirror' | 'P' | 'Q';
+// segs: 0-based chunk number, null under P and Q). See golden-tables/README.md.
 // ---------------------------------------------------------------------------
 
-// LEFT-SYMMETRIC, 4 disks, 4 stripes
-// Source: .personal/segment-allocation-rule-left-symmetric.md (verified)
-const LS4 = {
-  roles: [
-    ['data','data','data','P'],
-    ['data','data','P','data'],
-    ['data','P','data','data'],
-    ['P','data','data','data'],
-  ],
-  segs: [
-    [0,1,2,null],
-    [4,5,null,3],
-    [8,null,6,7],
-    [null,9,10,11],
-  ],
-};
+const { readGoldenTables, readAllGoldenTables } = require('./golden-tables.js');
 
-// LEFT-ASYMMETRIC, 4 disks, 4 stripes
-// Parity: same rotation as left-symmetric (rightmost → moves left)
-// Data: always from disk 0, skipping parity
-const LA4 = {
-  roles: [
-    ['data','data','data','P'],
-    ['data','data','P','data'],
-    ['data','P','data','data'],
-    ['P','data','data','data'],
-  ],
-  segs: [
-    [0,1,2,null],
-    [3,4,null,5],
-    [6,null,7,8],
-    [null,9,10,11],
-  ],
-};
+function golden(file, name) {
+  const table = readGoldenTables(file)[name];
+  if (!table) throw new Error(`${file} has no table named ${name}`);
+  return table;
+}
 
-// RIGHT-ASYMMETRIC, 4 disks, 4 stripes
-// Parity: leftmost (disk 0) → moves right; data from disk 0, skipping parity
-const RA4 = {
-  roles: [
-    ['P','data','data','data'],
-    ['data','P','data','data'],
-    ['data','data','P','data'],
-    ['data','data','data','P'],
-  ],
-  segs: [
-    [null,0,1,2],
-    [3,null,4,5],
-    [6,7,null,8],
-    [9,10,11,null],
-  ],
-};
+const LS4    = golden('left-symmetric.md',   'left-symmetric-raid5-4');
+const LS5_R6 = golden('left-symmetric.md',   'left-symmetric-raid6-5');
+const LA4    = golden('left-asymmetric.md',  'left-asymmetric-raid5-4');
+const RA4    = golden('right-asymmetric.md', 'right-asymmetric-raid5-4');
+const RS4    = golden('right-symmetric.md',  'right-symmetric-raid5-4');
 
-// RIGHT-SYMMETRIC, 4 disks, 4 stripes
-// Parity: leftmost → moves right; data from (anchor+1) wrapping
-const RS4 = {
-  roles: [
-    ['P','data','data','data'],
-    ['data','P','data','data'],
-    ['data','data','P','data'],
-    ['data','data','data','P'],
-  ],
-  segs: [
-    [null,0,1,2],
-    [5,null,3,4],
-    [7,8,null,6],
-    [9,10,11,null],
-  ],
-};
+// ---------------------------------------------------------------------------
+console.log('\n[0] the reference documents themselves');
 
-// LEFT-SYMMETRIC, RAID 6 (parity2), 5 disks, 5 stripes
-// P at anchor, Q at (anchor-1) mod n — verified vs .personal notes (6-disk table)
-const LS5_R6 = {
-  roles: [
-    ['data','data','data','Q','P'],
-    ['data','data','Q','P','data'],
-    ['data','Q','P','data','data'],
-    ['Q','P','data','data','data'],
-    ['P','data','data','data','Q'],
-  ],
-  segs: [
-    [0,1,2,null,null],
-    [4,5,null,null,3],
-    [8,null,null,6,7],
-    [null,null,9,10,11],
-    [null,12,13,14,null],
-  ],
-};
+test('every reference document parses, and every chunk appears once as D', () => {
+  const all = readAllGoldenTables();
+  const names = new Set();
+  for (const [file, tables] of Object.entries(all)) {
+    for (const t of Object.values(tables)) {
+      assert(!names.has(t.name), `${t.name} is defined in two documents`);
+      names.add(t.name);
+      const data = [], copies = [];
+      t.roles.forEach((row, s) => row.forEach((role, d) => {
+        if (role === 'data')   data.push(t.segs[s][d]);
+        if (role === 'mirror') copies.push(t.segs[s][d]);
+      }));
+      const sorted = [...data].sort((a, b) => a - b);
+      sorted.forEach((v, i) => assert(v === i, `${file} ${t.name}: data chunks are not 0..${data.length - 1} once each (saw ${sorted.join(',')})`));
+      copies.forEach((c) => assert(data.includes(c), `${file} ${t.name}: copy M${c} has no D${c}`));
+    }
+  }
+  assert(names.size >= 12, `expected the full set of tables, found ${names.size}`);
+});
 
 // ---------------------------------------------------------------------------
 // TESTS
@@ -297,14 +239,13 @@ test('all four algorithms produce the same total segment count', () => {
 // ---------------------------------------------------------------------------
 console.log('\n[7] nested placements (RAID 50/60/100/1E) + near generalization');
 // SCOPE OF VERIFICATION: the PER-SPAN layout (data/P/Q positions AND the data write
-// order) is golden, hand-derived from the Linux md source — raid5.c for parity
-// (LEFT_SYMMETRIC and the RAID6 Q-left variant ALGORITHM_ROTATING_N_CONTINUE) and
-// raid10.c for near. The expected grids below are computed BY HAND from those rules
-// (.personal/golden-raid{50,1e}.md and segment-allocation-rule-left-symmetric.md),
-// NOT dumped from the engine (a golden must not test the code against itself).
+// order) is the kernel's — raid5.c for parity (LEFT_SYMMETRIC and the RAID 6 Q-left
+// variant ALGORITHM_ROTATING_N_CONTINUE), raid10.c for near — and is derived by hand
+// in the reference documents raid50.md, raid60.md, raid100.md, raid10-near.md.
 // The CROSS-SPAN order (which span gets which span-stripe) is a stacking convention
-// — the kernel only defines the layout *within* a span — fixed here as: one
-// span-stripe per span per round, ascending span order, each span in write order.
+// — the kernel only defines the layout *within* a span — stated in those documents
+// as the sandbox's: one span-stripe per span per round, ascending span order, each
+// span in write order.
 
 const disksOf = (n) => Array.from({ length: n }, (_, i) => M.disk('d' + i, 100));
 function placement(node, opts) {
@@ -321,49 +262,41 @@ function placement(node, opts) {
 const eqGrid = (got, want, what) => want.forEach((row, s) => row.forEach((v, d) =>
   assert(got[s][d] === v, `${what} stripe ${s} col ${d}: got ${JSON.stringify(got[s][d])}, want ${JSON.stringify(v)}`)));
 
-// RAID 10 near, n=4 — hand-derived from raid10.c near (slot = chunk*near_copies + k,
+// RAID 10 near, n=4 — raid10-near.md (raid10.c: slot = chunk*near_copies + k,
 // dev = slot mod raid_disks, stripe = slot / raid_disks; near_copies=2). Copies on
 // adjacent disks. Also the regression guard for the slot-stream rewrite.
 test('RAID 10 near n=4 — roles + segs (raid10.c)', () => {
   const g = placement(M.array('striped', 'mirror', disksOf(4), 'near'));
-  eqGrid(g.roles, [
-    ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
-    ['data','mirror','data','mirror'], ['data','mirror','data','mirror'],
-  ], 'near4 roles');
-  eqGrid(g.segs, [[0,0,1,1],[2,2,3,3],[4,4,5,5],[6,6,7,7]], 'near4 segs');
+  const t = golden('raid10-near.md', 'raid10-near-4');
+  eqGrid(g.roles, t.roles, 'near4 roles');
+  eqGrid(g.segs,  t.segs,  'near4 segs');
 });
 
-// RAID 10 far, n=4 — hand-derived from raid10.c far: first copy of every chunk laid
+// RAID 10 far, n=4 — raid10-far.md (raid10.c far: first copy of every chunk laid
 // out as pure RAID 0 (the "near region"), second copies in the "far region" shifted
-// by near_copies(=1) device. 8 chunks → 2 orig rows then 2 copy rows.
+// by near_copies(=1) device). 8 chunks → 2 orig rows then 2 copy rows.
 test('RAID 10 far n=4 — pure-stripe originals, copies shifted +1 disk', () => {
   const g = placement(M.array('striped', 'mirror', disksOf(4), 'far'), { chunks: 8 });
-  eqGrid(g.roles, [
-    ['data','data','data','data'], ['data','data','data','data'],
-    ['mirror','mirror','mirror','mirror'], ['mirror','mirror','mirror','mirror'],
-  ], 'far4 roles');
-  eqGrid(g.segs, [[0,1,2,3],[4,5,6,7],[3,0,1,2],[7,4,5,6]], 'far4 segs');
+  const t = golden('raid10-far.md', 'raid10-far-4');
+  eqGrid(g.roles, t.roles, 'far4 roles');
+  eqGrid(g.segs,  t.segs,  'far4 segs');
 });
 
-// RAID 10 offset, n=4 — like far, but each copy row sits immediately below its
-// original row (interleaved), same +1 shift.
+// RAID 10 offset, n=4 — raid10-offset.md (like far, but each copy row sits
+// immediately below its original row, same +1 shift).
 test('RAID 10 offset n=4 — orig row then its shifted copy row', () => {
   const g = placement(M.array('striped', 'mirror', disksOf(4), 'offset'), { chunks: 8 });
-  eqGrid(g.roles, [
-    ['data','data','data','data'], ['mirror','mirror','mirror','mirror'],
-    ['data','data','data','data'], ['mirror','mirror','mirror','mirror'],
-  ], 'offset4 roles');
-  eqGrid(g.segs, [[0,1,2,3],[3,0,1,2],[4,5,6,7],[7,4,5,6]], 'offset4 segs');
+  const t = golden('raid10-offset.md', 'raid10-offset-4');
+  eqGrid(g.roles, t.roles, 'offset4 roles');
+  eqGrid(g.segs,  t.segs,  'offset4 segs');
 });
 
-// RAID 1E — striped mirror, ODD disks (n=3). Source: .personal/golden-raid1e.md
+// RAID 1E — striped mirror, ODD disks (n=3): md near with 3 disks, raid10-near.md.
 test('RAID 1E n=3 — interleaved mirror roles + segs', () => {
   const g = placement(M.array('striped', 'mirror', disksOf(3)));
-  eqGrid(g.roles, [
-    ['data','mirror','data'], ['mirror','data','mirror'],
-    ['data','mirror','data'], ['mirror','data','mirror'],
-  ], '1E roles');
-  eqGrid(g.segs, [[0,0,1],[1,2,2],[3,3,4],[4,5,5]], '1E segs');
+  const t = golden('raid10-near.md', 'raid10-near-3');
+  eqGrid(g.roles, t.roles, '1E roles');
+  eqGrid(g.segs,  t.segs,  '1E segs');
 });
 test('RAID 1E — every chunk and its copy sit on different disks', () => {
   const g = placement(M.array('striped', 'mirror', disksOf(3)));
@@ -375,27 +308,19 @@ test('RAID 1E — every chunk and its copy sit on different disks', () => {
   for (const [seg, cols] of seen) assert(cols.size === 2, `chunk ${seg} must use 2 distinct disks, got ${cols.size}`);
 });
 
-// RAID 50 — stripe over 2×(3-disk RAID5 LS). Source: .personal/golden-raid50.md
+// RAID 50 — stripe over 2×(3-disk RAID5 LS): raid50.md.
 const span5 = () => M.array('striped', 'parity1', disksOf(3), 'left-symmetric');
 test('RAID 50 — roles (per-span LS preserved, P null seg)', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
-  eqGrid(g.roles, [
-    ['data','data','P','data','data','P'],
-    ['data','P','data','data','P','data'],
-    ['P','data','data','P','data','data'],
-  ], 'r50 roles');
+  eqGrid(g.roles, golden('raid50.md', 'raid50-2x3').roles, 'r50 roles');
 });
-// Exact global numbering, hand-derived: within each 3-disk RAID5 span the data is
-// written right after P, wrapping (left-symmetric); the outer RAID 0 gives span A
-// stripe r then span B stripe r. So stripe1 disk D3 (right after P@D2) holds the
-// LOWER seg (4), not D1 — the write-order property the engine must preserve.
-test('RAID 50 — exact data numbering (write order, hand-derived from raid5.c LS)', () => {
+// Exact global numbering: within each 3-disk RAID5 span the data is written right
+// after P, wrapping (left-symmetric); the outer RAID 0 gives span A stripe r then
+// span B stripe r. So stripe1 disk D3 (right after P@D2) holds the LOWER seg (4),
+// not D1 — the write-order property the engine must preserve.
+test('RAID 50 — exact data numbering (write order, raid5.c LS per span)', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
-  eqGrid(g.segs, [
-    [0, 1, null, 2, 3, null],
-    [5, null, 4, 7, null, 6],
-    [null, 8, 9, null, 10, 11],
-  ], 'r50 segs');
+  eqGrid(g.segs, golden('raid50.md', 'raid50-2x3').segs, 'r50 segs');
 });
 test('RAID 50 — data animates ONE AT A TIME, in write order; parity after its data', () => {
   const g = placement(M.array('striped', 'none', [span5(), span5()]), { stripes: 3 });
@@ -420,39 +345,28 @@ test('RAID 50 — data animates ONE AT A TIME, in write order; parity after its 
   });
 });
 
-// RAID 60 — stripe over 2×(6-disk RAID6 LS). Roles cross-checked against the
-// hand-verified table in .personal/segment-allocation-rule-left-symmetric.md.
+// RAID 60 — stripe over 2×(6-disk RAID6, Q left of P): raid60.md.
 const span6 = () => M.array('striped', 'parity2', disksOf(6), 'left-symmetric');
-test('RAID 60 — per-span roles match the .personal hand table (Q left of P, DDF)', () => {
+test('RAID 60 — per-span roles (Q left of P, ALGORITHM_ROTATING_N_CONTINUE)', () => {
   const g = placement(M.array('striped', 'none', [span6(), span6()]), { stripes: 3 });
-  eqGrid(g.roles, [
-    ['data','data','data','data','Q','P','data','data','data','data','Q','P'],
-    ['data','data','data','Q','P','data','data','data','data','Q','P','data'],
-    ['data','data','Q','P','data','data','data','data','Q','P','data','data'],
-  ], 'r60 roles');
+  eqGrid(g.roles, golden('raid60.md', 'raid60-2x6').roles, 'r60 roles');
 });
-// Exact numbering hand-derived from raid5.c ALGORITHM_ROTATING_N_CONTINUE (Q left of
-// P, data after P) + the cross-span convention. Matches the corrected canonical table
-// in .personal/segment-allocation-rule-left-symmetric.md (NOT the old hand version,
-// whose row 3 was disk-order and whose row 2 had the spans swapped).
+// Exact numbering: raid5.c ALGORITHM_ROTATING_N_CONTINUE (Q left of P, data after P)
+// per span + the cross-span convention.
 test('RAID 60 — exact data numbering (write order + cross-span convention)', () => {
   const g = placement(M.array('striped', 'none', [span6(), span6()]), { stripes: 3 });
-  eqGrid(g.segs, [
-    [0, 1, 2, 3, null, null, 4, 5, 6, 7, null, null],
-    [9, 10, 11, null, null, 8, 13, 14, 15, null, null, 12],
-    [18, 19, null, null, 16, 17, 22, 23, null, null, 20, 21],
-  ], 'r60 segs');
+  eqGrid(g.segs, golden('raid60.md', 'raid60-2x6').segs, 'r60 segs');
 });
 
-// RAID 100 — stripe over 2×(4-disk RAID10 near). Source: .personal/golden-raid100.md
+// RAID 100 — stripe over 2×(4-disk RAID10 near): raid100.md.
 const span10 = () => M.array('striped', 'mirror', disksOf(4));
-test('RAID 100 — roles all data/mirror, label nested 1+0+0', () => {
-  const g = placement(M.array('striped', 'none', [span10(), span10()]));
+test('RAID 100 — roles and segs (nested 1+0+0)', () => {
+  const g = placement(M.array('striped', 'none', [span10(), span10()]), { stripes: 2 });
   assert(g.algo === 'nested 1+0+0', `expected nested 1+0+0, got ${g.algo}`);
   assert(g.columns === 8, `expected 8 columns, got ${g.columns}`);
-  g.roles.forEach((row, r) => assert(
-    JSON.stringify(row) === JSON.stringify(['data','mirror','data','mirror','data','mirror','data','mirror']),
-    `r100 row ${r} roles: ${JSON.stringify(row)}`));
+  const t = golden('raid100.md', 'raid100-2x4');
+  eqGrid(g.roles, t.roles, 'r100 roles');
+  eqGrid(g.segs,  t.segs,  'r100 segs');
 });
 test('RAID 100 — original and copy of each chunk share a seg, on different disks', () => {
   const g = placement(M.array('striped', 'none', [span10(), span10()]));
