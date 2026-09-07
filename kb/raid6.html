@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -126,15 +126,22 @@
   </nav>
 
   <section class="kb-section">
+    <p class="kb-flag kb-flag-derived">Derived by hand from the Linux md rule — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">RAID 5 with a second parity block per stripe, computed a different way, so that any two disks can fail at once. It keeps all but two disks&#39; worth of space, survives a second failure during a rebuild, and pays for each small write with six disk operations.</p>
     <h2 id="what-it-is">What it is</h2>
-    <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="striping.html">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="parity.html">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="algorithm.html">algorithm</a>, the same four names as RAID 5.</p>
+    <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="striping.html">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="parity.html">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="algorithm.html">algorithm</a>, the same four names as RAID 5.<sup class="kb-fn"><a href="#fn-q-before-p" id="fnref-q-before-p">1</a></sup></p>
     <h2 id="what-it-buys">What it buys</h2>
     <p>The second failure, and the second failure is not a rare event but the ordinary risk of a <a href="rebuild.html">rebuild</a>. A RAID 5 that has lost a disk has no tolerance left while the replacement is being written, and the writing takes as long as the disk is large; the 1988 paper&#39;s formula has that repair time in its denominator (<a href="fault-tolerance.html">fault tolerance</a>). RAID 6 goes through the same rebuild with one failure still tolerated, and an unreadable sector found on a survivor during it is recomputed instead of lost. That is the whole argument for the level, and the argument gets stronger as disks get larger.</p>
     <h2 id="what-it-pays">What it pays</h2>
     <p>Space and writes. The <a href="capacity.html">capacity</a> is all but two disks&#39; worth, so on four disks it keeps half, the same as a mirror, and only from six disks up does it beat RAID 10 on space. A small write must read the old data, the old <em>P</em> and the old <em>Q</em>, and write all three back: six operations for one (<a href="write-penalty.html">write penalty</a>), the highest of any standard level. A write that covers a whole stripe pays none of the reads, as in RAID 5. And <em>Q</em> is arithmetic in a Galois field rather than a plain XOR, so computing it costs more processor time, which is felt on a software engine more than on a controller with an accelerator for it (<a href="raid-engine.html">raid engine</a>).</p>
     <h2 id="the-minimum">The minimum</h2>
     <p>Four disks is the minimum, and here the kernel enforces it: <code>raid5.c</code> refuses to start a RAID 6 with fewer, &quot;not enough configured devices (minimum 4)&quot;. With three the array would be a three-way mirror under another name, <em>P</em> and <em>Q</em> both equal to the single data block, which is why nothing is lost by refusing it.</p>
+    <section class="kb-footnotes" id="notes">
+    <h2>Notes</h2>
+    <ol>
+      <li id="fn-q-before-p">The grids here draw <em>Q</em> on the disk before <em>P</em>, the DDF convention a controller follows; an array <code>mdadm</code> creates as left-symmetric puts <em>Q</em> after <em>P</em>. A choice of the sandbox — see <a href="design-decisions.html">the model&amp;#39;s choices</a>. <a href="#fnref-q-before-p" class="kb-fn-back" aria-label="Back to the text">↩</a></li>
+    </ol>
+    </section>
   </section>
   <section class="kb-section" id="segmentation">
     <h2>Segmentation</h2>
@@ -277,6 +284,7 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
         <li><a href="#what-it-buys">What it buys</a></li>
         <li><a href="#what-it-pays">What it pays</a></li>
         <li><a href="#the-minimum">The minimum</a></li>
+        <li><a href="#notes">Notes</a></li>
         <li><a href="#segmentation">Segmentation</a></li>
         <li><a href="#redundancy">Redundancy</a></li>
         <li><a href="#algorithm">Algorithm</a></li>

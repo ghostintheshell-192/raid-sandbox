@@ -43,7 +43,7 @@ const Model  = require(path.join(ROOT, 'src', 'engine', 'model.js'));
 const Levels = require(path.join(ROOT, 'src', 'engine', 'levels.js'));
 const Layout = require(path.join(ROOT, 'src', 'engine', 'layout.js'));
 const BuildDoc = require(path.join(ROOT, 'src', 'sandbox', 'build-document.js'));
-const { render, escapeHtml, slug, headingsOf } = require('./lib/kb-markdown.js');
+const { render, escapeHtml, slug, headingsOf, footnotesOf } = require('./lib/kb-markdown.js');
 
 const fail = (msg) => { throw new Error(msg); };
 
@@ -61,7 +61,7 @@ const CONCEPT_ORDER = [
   'redundancy', 'mirroring', 'parity',
   'capacity', 'fault-tolerance', 'write-penalty', 'performance',
   'rebuild', 'scrubbing', 'write-hole', 'bbu', 'raid-is-not-a-backup',
-  'raid-engine', 'hba', 'backplane', 'why-linux-md',
+  'raid-engine', 'hba', 'backplane', 'design-decisions',
 ];
 
 // Which concept opens each transcluding section of a level page (§4 of the spec).
@@ -434,6 +434,22 @@ function target(id, ctx) {
   return null;
 }
 
+// ADR-004: a page whose statements rest on something other than a public source
+// says so under its heading — *derived* (by hand from the kernel rule, the
+// derivation in the repository) or *to verify* (not yet checked). *cited* is the
+// default and carries no mark; *chosen* is a footnote where the choice bites, not
+// a mark on the page. The mark links the chapter that explains the four states.
+const FLAGS = {
+  'derived':   'Derived by hand from the Linux md rule',
+  'to-verify': 'Not yet checked against a primary source',
+};
+function statusFlag(status, ctx, where) {
+  if (!(status in FLAGS)) return '';
+  const legend = target('design-decisions', ctx);
+  if (!legend) fail(`${where}: status "${status}" links the design-decisions page, and there is none`);
+  return `<p class="kb-flag kb-flag-${status}">${FLAGS[status]} — <a href="${legend.href}#how-the-pages-are-sourced">how the pages are sourced</a></p>`;
+}
+
 function makeResolver(ctx, where) {
   return (id, text) => {
     const hit = target(id, ctx);
@@ -635,6 +651,7 @@ function levelPage(def, ctx) {
   const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w), where: w, headingId: slug });
   const out   = [];
   const toc   = headingsOf(def.kb.long);
+  if (footnotesOf(def.kb.long).length) toc.push({ id: 'notes', title: 'Notes' });
 
   const section = (id, title, ...parts) => {
     toc.push({ id, title });
@@ -650,6 +667,8 @@ function levelPage(def, ctx) {
   // giving the wrapper the same id would duplicate it (invalid HTML) and make
   // the anchor resolve to the section instead of the heading it names.
   out.push('  <section class="kb-section">');
+  const flag = statusFlag(def.kb.status, ctx, where);
+  if (flag) out.push(`    ${flag}`);
   out.push(`    <p class="kb-lede">${escapeHtml(shortOf(def))}</p>`);
   if (def.kb.long) out.push(indent(md(def.kb.long, `${where}: kb.long`), 4));
   out.push('  </section>');
@@ -842,13 +861,14 @@ function conceptPage(entry, ctx) {
   const where = `${entry.where}: long`;
   const out = [];
   out.push('  <section class="kb-section kb-concept" id="what-it-is">');
-  if (entry.status === 'to-verify')
-    out.push('    <p class="kb-flag">Not yet checked against a primary source</p>');
+  const flag = statusFlag(entry.status, ctx, entry.where);
+  if (flag) out.push(`    ${flag}`);
   out.push(`    <p class="kb-lede">${escapeHtml(shortOf(entry))}</p>`);
   out.push(indent(render(entry.long, { resolveLink: makeResolver(ctx, where), where, headingId: slug }), 4));
   out.push('  </section>');
 
   const toc = headingsOf(entry.long);
+  if (footnotesOf(entry.long).length) toc.push({ id: 'notes', title: 'Notes' });
   out.push('  <section class="kb-section" id="sources">');
   out.push('    <h2>Sources</h2>');
   out.push('    <ul class="kb-sources">');

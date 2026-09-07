@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -126,7 +126,7 @@
   </nav>
 
   <section class="kb-section kb-concept" id="what-it-is">
-    <p class="kb-flag">Not yet checked against a primary source</p>
+    <p class="kb-flag kb-flag-to-verify">Not yet checked against a primary source — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">The logical volume the operating system sees: one block device with a contiguous address space, behaving exactly like a single disk. It behaves that way whatever number of disks, spans or RAID levels sit underneath. It need not take the whole span; a span can host several.</p>
     <p>A virtual drive is the block device that the operating system, the file system and the applications work with. It has a contiguous address space organized in sectors, with numbering starting from 0, and every request to it goes to the <a href="raid-engine.html">raid engine</a>, which translates it onto the members by the <a href="segmentation.html">segmentation</a> of the <a href="span.html">span</a> below and produces whatever the <a href="redundancy.html">redundancy</a> asks for. Above the virtual drive nothing knows there is an array: this decoupling of physical layout from logical addressing is what makes RAID transparent to the software running on it.</p>
     <h2 id="container-and-content">Container and content</h2>
@@ -156,7 +156,6 @@
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li><a href="../data/intro.yaml">data/intro.yaml storageLayers.virtual-drive</a> — the text this entry migrates</li>
       <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667343.html">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Virtual Drive</a> — &#39;A virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives&#39;; may be an entire drive group, multiple drive groups, a portion, parts of several, or any combination</li>
       <li><a href="https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295.html">Broadcom, same guide, Introduction to RAID</a> — &#39;Virtual drives are drive groups or spanned drive groups that are available to the operating system&#39;</li>
       <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — the md device as the array the kernel presents</li>

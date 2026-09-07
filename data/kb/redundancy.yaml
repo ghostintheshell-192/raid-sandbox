@@ -103,8 +103,5 @@ sources:
   - ref: "Microsoft Learn, Storage Spaces overview"
     note: "mirror spaces (two-way, three-way) and parity spaces (single, dual) as the two resiliency techniques"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
-  - ref: "src/engine/model.js"
-    note: "the four redundancies the sandbox composes: none, mirror, parity1, parity2; capacity, fault tolerance and write penalty derived from that axis"
-    url: ../src/engine/model.js
 
-status: written
+status: cited

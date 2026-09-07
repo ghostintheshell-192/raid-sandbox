@@ -89,8 +89,5 @@ sources:
   - ref: "mke2fs(8) man page, -E stride= and stripe_width="
     note: "quoted"
     url: https://man7.org/linux/man-pages/man8/mke2fs.8.html
-  - ref: "src/engine/layout.js"
-    note: "the grids the sandbox draws are one chunk per cell, one stripe per row"
-    url: ../src/engine/layout.js
 
-status: written
+status: cited

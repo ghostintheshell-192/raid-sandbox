@@ -107,7 +107,7 @@
           <li><a class="kb-side-item" href="raid-engine.html">RAID engine</a></li>
           <li><a class="kb-side-item" href="hba.html">HBA</a></li>
           <li><a class="kb-side-item" href="backplane.html">Backplane</a></li>
-          <li><a class="kb-side-item" href="why-linux-md.html">Why Linux md is the reference</a></li>
+          <li><a class="kb-side-item" href="design-decisions.html">Design decisions</a></li>
         </ul>
       </details>
     </aside>
@@ -168,7 +168,6 @@ Q = g⁰·D₀ + g¹·D₁ + g²·D₂ + … + gⁿ⁻¹·Dₙ₋₁         a R
       <li><a href="https://www.kernel.org/pub/linux/kernel/people/hpa/raid6.pdf">H. Peter Anvin — The mathematics of RAID-6 (2004, last updated 2011)</a> — &#39;RAID-6 supports losing any two drives. The way this is done is by computing two syndromes, generally referred P and Q&#39;; P as XOR parity, Q as a Reed-Solomon code over GF(2⁸) with generator {02}; 255 data drives at most</li>
       <li><a href="https://man7.org/linux/man-pages/man8/mke2fs.8.html">mke2fs(8) man page, -E stripe_width</a> — &#39;allows the block allocator to prevent read-modify-write of the parity in a RAID stripe&#39;</li>
       <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Microsoft Learn, Storage Spaces overview</a> — parity spaces: &#39;Data is striped across multiple drives with parity information for fault tolerance&#39;; single parity and dual parity</li>
-      <li><a href="../data/algorithms/left-symmetric.yaml">data/algorithms/left-symmetric.yaml</a> — the rotation as the sandbox draws it</li>
     </ul>
   </section>
   <section class="kb-section" id="related">

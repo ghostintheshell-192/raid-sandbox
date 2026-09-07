@@ -134,8 +134,5 @@ sources:
   - ref: "Microsoft Learn, Storage Spaces overview"
     note: "parity spaces: 'Data is striped across multiple drives with parity information for fault tolerance'; single parity and dual parity"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
-  - ref: "data/algorithms/left-symmetric.yaml"
-    note: "the rotation as the sandbox draws it"
-    url: ../data/algorithms/left-symmetric.yaml
 
-status: written
+status: cited

@@ -108,14 +108,5 @@ sources:
   - ref: "md(4) man page"
     note: "RAID1: data is read from any one device (all but one may fail); RAID6: 'can handle the loss of any two devices without data loss'; RAID4/RAID5: one device failure tolerated"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - ref: "src/engine/model.js failuresToKill() / faultTolerance()"
-    note: "the rule the sandbox computes with: none → min, mirror → sum (RAID 1) or copies (flat RAID 10), parity1 → two smallest, parity2 → three smallest; tolerance = F − 1"
-    url: ../src/engine/model.js
-  - ref: "data/raid-levels/*.yaml reference.faultToleranceAtMinimum"
-    note: "the quoted number, stated there as the level's tolerance at its minimum disk count, not the array's"
-    url: ../data/raid-levels/raid5.yaml
-  - ref: "data/intro.yaml parameters.fault-tolerance"
-    note: "the text this entry supersedes"
-    url: ../data/intro.yaml
 
-status: written
+status: cited

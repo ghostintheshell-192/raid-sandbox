@@ -68,8 +68,5 @@ sources:
   - ref: "Linux kernel Documentation/driver-api/md/raid5-cache.rst"
     note: "the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
     url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
-  - ref: "data/components/engine-roc.yaml"
-    note: "`power-loss-protection` as the capability a RoC claims: 'an interrupted stripe write is replayed when power returns, which is what closes the write hole'"
-    url: ../data/components/engine-roc.yaml
 
 status: to-verify

@@ -45,9 +45,6 @@ long: |
 related: [physical-disks, hba, raid-engine, span]
 
 sources:
-  - ref: "data/components/backplane.yaml"
-    note: "'Passive mid-plane that routes SATA/SAS signals from disks to the HBA or controller. Does not process data'; the note on spreading a span across backplanes"
-    url: ../data/components/backplane.yaml
   - ref: "Adaptec ASR-6805Q User Manual, Backplane Connections; SAS Expander Connections"
     note: "the backplane as what the controller's cables reach the drive bays through, directly or via an expander (secondary; not yet checked against a SAS specification)"
     url: https://www.manualslib.com/manual/600031/Adaptec-Asr-6805q.html?page=72

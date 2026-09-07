@@ -63,7 +63,10 @@ const kbIds      = new Set(Object.keys(kb));
 const pageIds    = new Set(Object.keys(levelFiles).filter((id) => levelFiles[id].kb));
 const levelIds   = new Set(Object.keys(levelFiles));
 const KINDS      = ['concept', 'term'];
-const STATUSES   = ['written', 'to-verify'];
+// ADR-004: cited (the default — every sentence has a public source), derived (rests on
+// a hand derivation in the repository), to-verify (not yet checked). Chosen is a
+// footnote, not a page state.
+const STATUSES   = ['cited', 'derived', 'to-verify'];
 
 // A reference resolves to a knowledge-base entry or to a level that has a page.
 // The lookup is case-insensitive: the prose capitalises a reference that opens a
@@ -90,9 +93,11 @@ for (const id of [...kbIds].sort()) {
     assert(Array.isArray(doc.sources) && doc.sources.length > 0, 'sources is required and cannot be empty');
     for (const s of doc.sources) {
       if (typeof s === 'string') { assert(s.trim(), 'a source cannot be empty'); continue; }
-      assert(s && typeof s.ref === 'string' && s.ref.trim() && typeof s.url === 'string' && /^(https?:\/\/|\.\.\/)/.test(s.url)
+      // ADR-004: sources is a bibliography — a URL a reader can follow, nothing else.
+      assert(s && typeof s.ref === 'string' && s.ref.trim() && typeof s.url === 'string' && /^https?:\/\//.test(s.url)
              && (s.note === undefined || (typeof s.note === 'string' && s.note.trim())),
-        `a source is a string, or { ref, url, note? } with an http(s) or ../ url: ${JSON.stringify(s)}`);
+        `a source is a string, or { ref, url, note? } with an http(s) url: ${JSON.stringify(s)}`);
+      assert(!/^(data|src|tests|\.development)\//.test(s.ref), `a source names a public thing, not a project file: ${s.ref}`);
     }
     assert(STATUSES.includes(doc.status), `status "${doc.status}" is not one of ${STATUSES.join(', ')}`);
     assert(Array.isArray(doc.related), 'related is required (an empty list is allowed, a missing one is not)');
@@ -146,7 +151,9 @@ for (const id of [...pageIds].sort()) {
         assert(typeof x === 'string', `${id}: ${field} has a non-text item — quote it: ${JSON.stringify(x)}`);
   });
 
-  test(`${id}.yaml: kb has short, long, example, worked, related, confusedWith`, () => {
+  test(`${id}.yaml: kb has status, short, long, example, worked, related, confusedWith`, () => {
+    // ADR-004: a level page's grid is a golden table drawn, so the page is derived.
+    assert(b.status === 'derived', `kb.status must be "derived" (got ${JSON.stringify(b.status)})`);
     assert(typeof b.short === 'string' && b.short.trim(), 'kb.short is required');
     assert(typeof b.long === 'string' && b.long.trim(), 'kb.long is required');
     assert(b.example && typeof b.example === 'object', 'kb.example is required');

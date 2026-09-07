@@ -63,7 +63,12 @@ long: |
 
   RAID 6 uses the same four names and adds the second parity, *Q*, next to *P*;
   where exactly, to the left or the right of it, is one more convention, and the
-  two families differ on it.
+  two families differ on it.[^q-before-p]
+
+  [^q-before-p]: A choice of the sandbox: it draws *Q* on the disk before *P*, the
+  DDF convention a controller follows (`ddf-N-continue` in `mdadm`'s list); an array
+  `mdadm` creates as left-symmetric puts *Q* after *P*. Everything else about the
+  rotation is the same. See [[design-decisions|the model's choices]].
 
   ## The mirror layouts
 
@@ -86,7 +91,7 @@ long: |
   looked for in the wrong place. That is why a layout is
   chosen at creation and recorded, and why `mdadm` refuses to guess it.
 
-related: [parity, mirroring, segmentation, raid-engine, chunk, why-linux-md]
+related: [parity, mirroring, segmentation, raid-engine, chunk, design-decisions]
 
 sources:
   - ref: "mdadm(8) man page, --layout"
@@ -98,14 +103,5 @@ sources:
   - ref: "md(4) man page"
     note: "RAID4: parity on 'the last of the active devices'; RAID5: parity 'distributed across all devices'; RAID10 near, far and offset layouts"
     url: https://man7.org/linux/man-pages/man4/md.4.html
-  - ref: "data/algorithms/*.yaml"
-    note: "the seven layouts as the sandbox draws them: left/right × symmetric/asymmetric, with left-symmetric marked as the DDF convention (ALGORITHM_ROTATING_N_CONTINUE); raid10 near, far, offset"
-    url: ../data/algorithms/left-symmetric.yaml
-  - ref: "data/components/os-linux.yaml"
-    note: "near/far/offset declared as layouts that exist only where the md driver is the engine"
-    url: ../data/components/os-linux.yaml
-  - ref: "tests/layout-golden.test.js"
-    note: "the left-symmetric table above, hand-derived from the kernel rule"
-    url: ../tests/layout-golden.test.js
 
-status: written
+status: derived

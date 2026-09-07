@@ -42,7 +42,13 @@ long: |
   The [[physical-disks]] reach the operating system along one path: [[backplane]],
   [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
   three ways, and the way is what the industry names *hardware*, *software* and
-  *firmware* (or *fake*) RAID.
+  *firmware* (or *fake*) RAID.[^three-cases]
+
+  [^three-cases]: The three cases are how the sandbox models the engine — a
+  computing chip, a metadata-only chip, or the operating system — and which case a
+  build is in is decided by *which* object sits on the path, not by where it sits.
+  Real products blur the lines; the sandbox draws the case, not the product. See
+  [[design-decisions|the model's choices]].
 
   **Hardware RAID.** A controller card carries the HBA and a *RAID-on-Chip* (RoC), a
   processor dedicated to the list above, with its own memory as write cache. The
@@ -82,7 +88,7 @@ long: |
   needs no driver to make the array readable, while a firmware array is unreachable
   without one: with the OS driver missing, the option ROM alone cannot serve it.
 
-related: [segmentation, parity, rebuild, virtual-drive, physical-disks, backplane, hba, bbu, write-hole, why-linux-md]
+related: [segmentation, parity, rebuild, virtual-drive, physical-disks, backplane, hba, bbu, write-hole, design-decisions]
 
 sources:
   - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Introduction to RAID"
@@ -101,8 +107,5 @@ sources:
     note: "Storage Spaces as the operating system's own pooling and resiliency layer"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
   - ".development/reference/decisions/001-engine-identity-not-position.md — the ownership/computation distinction; its RoC internals (own processor, protected cache) are stated there as not yet verified against a primary source"
-  - ref: "data/components/engine-roc.yaml, engine-metadata.yaml, os-linux.yaml, os-windows.yaml"
-    note: "the three engine cases as the sandbox models them"
-    url: ../data/components/engine-roc.yaml
 
 status: to-verify

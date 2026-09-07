@@ -100,8 +100,5 @@ sources:
   - ref: "Patterson, Gibson, Katz — A Case for RAID, 1988"
     note: "MTTR, 'the mean time to repair', in the group MTTF formula; 'a disk fails, a replacement disk is switched in electronically'"
     url: https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf
-  - ref: "data/intro.yaml parameters.rebuild-time"
-    note: "the text this entry supersedes"
-    url: ../data/intro.yaml
 
-status: written
+status: cited

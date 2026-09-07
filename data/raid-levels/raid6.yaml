@@ -74,6 +74,8 @@ notFor:
 # each field is. Writing rules: data/kb/segmentation.yaml header.
 # ---------------------------------------------------------------------------
 kb:
+  # ADR-004: the page's grid is a golden table drawn, derived by hand from the md rule.
+  status: derived
   # The title for search results and the browser tab — not the page heading (that stays `name`).
   searchTitle: "How RAID 6 works: double parity and surviving two disk failures"
   short: >
@@ -91,7 +93,12 @@ kb:
     blocks ([[parity]]). Two blocks give two equations, and two equations recover
     two unknowns: "RAID-6 supports losing any two drives", in the words of the
     paper behind the Linux implementation. Which disks hold *P* and *Q* in each
-    stripe is the placement [[algorithm]], the same four names as RAID 5.
+    stripe is the placement [[algorithm]], the same four names as RAID 5.[^q-before-p]
+
+    [^q-before-p]: The grids here draw *Q* on the disk before *P*, the DDF
+    convention a controller follows; an array `mdadm` creates as left-symmetric
+    puts *Q* after *P*. A choice of the sandbox — see [[design-decisions|the
+    model's choices]].
 
     ## What it buys
 
