@@ -1,6 +1,8 @@
 ---
 captured: 2026-09-07
-status: open
+status: promoted-to-adr
+promoted_to: ../../.development/reference/decisions/004-every-statement-names-its-source.md
+promoted_at: 2026-09-07
 context: "review of the knowledge base written 2026-09-06 (spec implemented/knowledge-base.md); question about why 32 of the 107 sources point at our own files"
 tags: [knowledge-base, sources, honesty, to-discuss]
 ---
