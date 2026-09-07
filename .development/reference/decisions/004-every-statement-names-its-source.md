@@ -1,7 +1,7 @@
 # ADR-004: Every statement names where its truth comes from — cited, derived, chosen, or to verify
 
 **Date**: 2026-09-07
-**Status**: Proposed (2026-09-07)
+**Status**: Accepted
 **Impact**: high
 **Summary**: Every strong statement the project makes — on a knowledge-base page, in a level file, in what the sandbox draws — is in exactly one of four states, defined by *where a reader would go to check it*: **cited** (a public source, in the bibliography), **derived** (by hand from a public rule, in a tracked derivation the tests hold the engine to), **chosen** (a decision made for the game, recorded as such), or **to verify** (a queue, every item with a destination). No state is expressed by linking one of our own files or functions. The repository is public; that is said once, as a sentence, never as a link.
 
