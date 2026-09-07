@@ -308,6 +308,10 @@ the spec still describes what exists:
   pages, the kernel files, the 1988 paper, Anvin's RAID-6 paper, Microsoft Learn, the
   MegaRAID guide, Intel's notes, US-CERT; project files with relative links. Plain
   strings where there is no public source.
+  **Superseded 2026-09-07 by [ADR-004](../../reference/decisions/004-every-statement-names-its-source.md)**:
+  `sources` is a bibliography of public URLs and nothing else; the 32 project-file
+  entries are gone; `status` is *cited / derived / to-verify*, and a choice of the
+  sandbox is a footnote on the sentence, indexed on the `design-decisions` page.
 - **`status: to-verify` means at least one sentence unchecked**, not "no sources"
   (§5.1, §10 said the latter). Eight entries carry it: the four layers migrated from
   `intro.yaml`, the three physical actors, `raid-engine` (its RoC internals).

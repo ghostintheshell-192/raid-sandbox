@@ -55,6 +55,7 @@ of issues, git history is a better record than a second directory.
 **Medium Priority:**
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 - `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
+- `kb-to-verify-queue.md` - The knowledge base's to-verify queue: eight pages, each with its reading
 
 **Low Priority:**
 - `automation-not-checked-on-windows.md` - The hooks and dev scripts are authored and tested only on the Linux workstation
