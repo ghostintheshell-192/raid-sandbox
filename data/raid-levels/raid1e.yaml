@@ -37,8 +37,8 @@ note: >
   RAID 1E is the interleaved striped mirror used when the disk count is odd (so the
   chunks cannot pair into clean 2-copy stripes as flat RAID 10 does). The placement is
   the slot-stream "near" layout (md raid10 near with odd disks): copy k of chunk c lands
-  at disk (c*2+k) mod N, so a chunk and its copy always sit on different disks. Verified
-  by hand in .personal/golden-raid1e.md.
+  at disk (c*2+k) mod N, so a chunk and its copy always sit on different disks, derived
+  by hand from raid10.c's near layout at three disks.
 
 description: >
   A mirror that works on an odd number of disks by interleaving chunks and their copies

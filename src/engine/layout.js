@@ -6,9 +6,9 @@
  * for each stripe (row) and each disk (column), what lands there —
  * a data segment, a parity block (P/Q), or a mirror copy.
  *
- * This is the part that makes axis B (data layout) verifiable: the grid it
- * produces for left-symmetric reproduces the hand tables in
- * `.personal/segment-allocation-rule-left-symmetric.md`. The DOM animator
+ * This is the part that makes axis B (data layout) verifiable: the grids it
+ * produces reproduce the tables derived by hand from the Linux md rule in
+ * `.development/reference/golden-tables/` (ADR-004). The DOM animator
  * (Phase 2b) plays this grid; it does not compute it.
  *
  * Algorithm fallback (spec §5b): an unknown algorithm name falls back to the
@@ -36,16 +36,16 @@
   'use strict';
 
   // Known parity placement algorithms. Only algorithms with a golden table in
-  // the test suite belong here. Unknown names fall back to the default.
+  // .development/reference/golden-tables/ belong here. Unknown names fall back
+  // to the default.
   //
   // rotate:    'left'  → parity starts rightmost (n-1), moves LEFT each stripe
   //            'right' → parity starts leftmost  (0),   moves RIGHT each stripe
   // symmetric: true    → data fills from (anchor+1) wrapping (better seq-read locality)
   //            false   → data fills from disk 0, skipping parity (asymmetric)
   //
-  // Golden tables derived from left-symmetric (verified vs .personal notes) plus
-  // the canonical left/right × symmetric/asymmetric rule pair. All four variants
-  // are present in Linux md/raid5 as ALGORITHM_LEFT_ASYMMETRIC(0),
+  // Each has a table derived by hand from raid5_compute_sector() in
+  // drivers/md/raid5.c. The four are Linux md's ALGORITHM_LEFT_ASYMMETRIC(0),
   // RIGHT_ASYMMETRIC(1), LEFT_SYMMETRIC(2), RIGHT_SYMMETRIC(3).
   const PARITY_ALGORITHMS = {
     'left-symmetric':   { rotate: 'left',  symmetric: true  },

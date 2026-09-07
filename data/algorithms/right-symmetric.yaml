@@ -39,4 +39,5 @@ note: >
 source: >
   Linux kernel drivers/md/raid5.h (ALGORITHM_RIGHT_SYMMETRIC = 3,
   comment: "Rotating Parity 0 with Data Continuation") and raid5_compute_sector().
-verificationStatus: verified
+  Derived by hand in .development/reference/golden-tables/right-symmetric.md.
+status: derived

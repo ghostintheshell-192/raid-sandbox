@@ -34,4 +34,5 @@ source: >
   Linux kernel drivers/md/raid5.h (ALGORITHM_LEFT_ASYMMETRIC = 0,
   comment: "Rotating Parity N with Data Restart") and raid5_compute_sector()
   in drivers/md/raid5.c.
-verificationStatus: verified
+  Derived by hand in .development/reference/golden-tables/left-asymmetric.md.
+status: derived

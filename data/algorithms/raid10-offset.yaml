@@ -2,8 +2,6 @@ id: raid10-offset
 name: RAID10 Offset
 appliesTo: [mirror]
 default: false
-status: pending
-
 description: >
   A compromise between near and far. Copies are placed in immediately adjacent
   stripes rather than a distant section. Consecutive stripe pairs form a unit:
@@ -39,7 +37,9 @@ reference:
       layout: [c7-copy, c4-copy, c5-copy, c6-copy]
 
 source: >
-  Linux kernel drivers/md/raid10.c (far_offset=true description). Cross-referenced
-  with linux-raid mailing list thread (narkive FbzmXfqy) and
-  .personal/distribuzione-segmenti-algoritmi.md.
+  Linux kernel drivers/md/raid10.c (far_offset=true description) and
+  __raid10_find_phys(); cross-referenced with the linux-raid mailing list
+  thread (narkive FbzmXfqy). Derived by hand in
+  .development/reference/golden-tables/raid10-offset.md.
+status: derived
 verificationStatus: reference-only

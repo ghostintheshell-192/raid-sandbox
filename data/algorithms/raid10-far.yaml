@@ -2,8 +2,6 @@ id: raid10-far
 name: RAID10 Far
 appliesTo: [mirror]
 default: false
-status: pending
-
 description: >
   The array is split into two equal sections on each disk. The first section
   holds the original copies in pure RAID0 order. The second section (physically
@@ -42,6 +40,8 @@ reference:
 
 source: >
   Linux kernel drivers/md/raid10.c header comment (far_copies description +
-  example). Cross-referenced with .personal/distribuzione-segmenti-algoritmi.md
-  and linux-raid mailing list thread (narkive FbzmXfqy).
+  example) and __raid10_find_phys(); cross-referenced with the linux-raid
+  mailing list thread (narkive FbzmXfqy). Derived by hand in
+  .development/reference/golden-tables/raid10-far.md.
+status: derived
 verificationStatus: reference-only
