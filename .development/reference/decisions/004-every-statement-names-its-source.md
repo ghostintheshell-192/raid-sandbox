@@ -69,20 +69,19 @@ would perform to verify it, not by who performed it:
 |---|---|---|
 | **cited** | a public source says it | the bibliography: a URL |
 | **derived** | we derived it by hand from a public rule, and a test holds the engine to that derivation | the rule is cited; the derivation is in the repository; the page says so in a sentence |
-| **chosen** | a decision we made for the game, not a fact about the world | the page on the model's choices; an ADR where one exists |
+| **chosen** | a decision we made for the game, not a fact about the world | a footnote on the page, where the choice bites; the design-decisions page lists them all; an ADR where one exists |
 | **to verify** | not yet checked against a primary source | nowhere yet — the state is temporary and visible |
 
 **cited** is the default and carries no mark: a page whose every sentence is cited shows
-its bibliography and nothing else. The other three are marked on the page, under its
-heading. A level page, whose grid *is* a golden table drawn, is marked *derived* like the
-algorithm page — for completeness, so that no page that rests on our derivation is
-silent about it. Marking a single sentence rather than a page is deferred (see *Consequences*).
+its bibliography and nothing else. *derived* and *to verify* are marked on the page,
+under its heading. *chosen* is different in kind — a page is not chosen, a statement is —
+so it is marked where it bites, as a footnote (§5). A level page, whose grid *is* a
+golden table drawn, is marked *derived* like the algorithm page — for completeness, so
+that no page that rests on our derivation is silent about it. Marking a single sentence rather than a page is deferred (see *Consequences*).
 
 ### 2. The source of truth depends on the kind of statement
 
-"The Linux `md` driver" is the answer for what the sandbox *draws* and for behaviour
-specific to `md`; it is not the answer for everything, and an ADR that said so would be
-wrong on its first day for half the knowledge base. Three anchors:
+We identify three anchors:
 
 - **Layouts** — where a chunk, a parity block, a copy goes: the kernel source,
   `drivers/md/raid5.c` (`raid5_compute_sector()`), `raid10.c`, `raid0.c`,
@@ -103,18 +102,7 @@ is `https?://`. Nothing else goes in it: not implementation pointers, not proven
 cross-references to other pages (that is `related:`). `tests/kb-data.test.js` enforces
 the URL shape, which turns the rule into something the suite checks.
 
-### 4. No reference to our own files or functions, anywhere a reader sees
-
-Not `model.js`, not `capacityGB()`, not `data/components/backplane.yaml`, not a
-`.personal/` path. A link to our own file in a bibliography claims an authority it does
-not have. Someone who genuinely wants to see how the sandbox computes a number can read
-the repository; that is stated once, on the legend page, as a sentence.
-
-The same applies to the tracked data and code: a `source:` field on an algorithm file, a
-`note:` on a level file, a header comment in a test, may name a kernel function or a
-tracked reference document — never a path under `.personal/`.
-
-### 5. The golden tables are derived by hand, tracked, and read by the test
+### 4. The golden tables are derived by hand, tracked, and read by the test
 
 Every layout the sandbox draws gets one derivation document in
 `.development/reference/golden-tables/<layout>.md`: the kernel rule quoted with its
@@ -141,17 +129,24 @@ the test. Where its table agrees with the one transcribed from Valentina's noteb
 the test, two independent derivations agree — a stronger position than the project has
 had so far. Where they disagree, one of the two is wrong and the kernel decides.
 
-### 6. The model's choices are a chapter of the design-decisions page
+### 5. The model's choices are footnotes, indexed on the design-decisions page
 
 What was decided for the game rather than found in a source — Q left of P (the DDF
 convention, where mdadm's default is Q right of P); the three engine cases; the level
 derived from the composition rather than selected; the cross-span stacking convention
-the kernel does not define; RAID 0+1 satisfying the `database` challenge — is listed in
-one chapter of the page described in §8, each item in a sentence, with the ADR named
-where one exists. A page that rests on such a choice links that chapter with the
-existing `[[id]]` syntax. No new tag, no new syntax.
+the kernel does not define; RAID 0+1 satisfying the `database` challenge — is explained
+**where the reader meets it**: a footnote mark on the sentence, and at the foot of the
+page the note — *this is a design choice of the sandbox, for this reason* — with the ADR
+named where one exists. The reader does not leave the page to learn that a statement
+is ours.
 
-### 7. `to verify` is a queue, not a category of truth
+The design-decisions page (§7) keeps a chapter that **lists** the choices, one line
+each, linking the page whose footnote explains it. The explanation exists once, in the
+footnote; the chapter is its index. This costs the page markdown one piece of syntax it
+does not have today — a footnote reference and its definition — in the hand-written
+renderer (`kb-markdown.js`, one inline pattern and a footer block) and a test.
+
+### 6. `to verify` is a queue, not a category of truth
 
 There is no statement about hardware for which no source exists: if none can be found,
 either the reading has not been done or the statement is wrong. So every item in this
@@ -161,14 +156,14 @@ the bibliography) for HBA versus RAID controller; Broadcom CacheVault documentat
 cache protection; T10 SES and SFF-8485 for the backplane; IBM Redbooks as the generic
 reputable reference the pages speak at the level of.
 
-### 8. One page, `design-decisions`, in chapters
+### 7. One page, `design-decisions`, in chapters
 
 The page *Why Linux md is the reference* already says the promise ("every rule stated
 here can be read and checked in the code, function by function"). It becomes the first
 chapter of a single page, **`design-decisions`**, whose chapters are the things the
 project decided rather than found: *why Linux md is the reference*; *how the pages are
 sourced* — the four states in a reader's words, and the one sentence that the
-repository is public; *the model's choices* (§6). One page keeps the reader's mental
+repository is public; *the model's choices* (§5). One page keeps the reader's mental
 model in one place; chapters keep it ordered. The id `why-linux-md` retires; the pages
 that link it link the chapter instead (`[[design-decisions|…]]`). Every marked page
 links this page.
@@ -203,10 +198,11 @@ links this page.
   cross-references go (already in `related:`); `status:` gains the marked states; the
   four hardware entries stay `to-verify` until read; the level pages are marked
   *derived*. `why-linux-md.yaml` becomes `design-decisions.yaml`, with the three
-  chapters of §8; the pages that link `[[why-linux-md]]` link the chapter.
+  chapters of §7; the pages that link `[[why-linux-md]]` link the chapter.
 - `tests/kb-data.test.js` — the URL rule tightens from `^(https?://|\.\./)` to
   `^https?://`.
-- `.development/scripts/generate-kb.js` — renders the page mark next to the heading.
+- `.development/scripts/generate-kb.js` and `lib/kb-markdown.js` — render the page mark
+  next to the heading, and the footnotes (§5).
 - `.development/reference/golden-tables/*.md` — new: one derivation per layout.
 - `tests/layout-golden.test.js` — reads its grids from the reference documents; its
   header and every table comment name the document, not `.personal/`.
@@ -229,14 +225,14 @@ links this page.
 
 ### Cons
 
-- **Per-fact marking is deferred.** A page is marked as a whole. A page with one
-  unchecked sentence among twenty cited ones is marked *to verify* entirely — coarse, and
-  the pressure it creates to finish the reading is the point. If that proves too
-  coarse, marking a sentence means extending the `[[id]]` mini-syntax of `long:` with an
-  inline marker, a render rule and a test: a separate, costed decision.
+- **Per-fact marking of *derived* and *to verify* is deferred.** A page is marked as a
+  whole. A page with one unchecked sentence among twenty cited ones is marked *to
+  verify* entirely — coarse, and the pressure it creates to finish the reading is the
+  point. Footnotes (§5) give *chosen* a per-sentence mark because a choice is a
+  sentence; extending that to the other two states is a separate, costed decision.
 - **The derivation work is real.** Three parity tables, and the RAID 10 / nested ones
-  currently in `.personal/`, have to be written out step by step from the kernel rule,
-  in a form the test can read. It is bounded and it is the price of the claim.
+  whose hand derivations are lost, have to be written out step by step from the kernel
+  rule, in a form the test can read. It is bounded and it is the price of the claim.
 - **A `status` field on a page is still a human assertion.** Nothing checks that a page
   marked *cited* is fully cited. The test can enforce the shape of the bibliography, not
   that every sentence has a line in it.
@@ -249,13 +245,18 @@ The draft left four questions open; Valentina settled them the same evening:
 2. ***derived* is shown on the level pages too**, for completeness (§1).
 3. **The legend is a page called `design-decisions`, in chapters** — why Linux md, how
    the pages are sourced, the model's choices — rather than an extension of
-   `why-linux-md` (§8).
-4. **The test reads the reference documents** rather than transcribing them (§5).
+   `why-linux-md` (§7).
+4. **The test reads the reference documents** rather than transcribing them (§4).
+5. **The model's choices are footnotes** where they bite, indexed on the
+   design-decisions page, rather than a chapter the reader has to switch to (§5).
 
-Still open, and outside this ADR: whether the *to verify* reading for the hardware
-entries starts from `.personal/2026-07-31-adr-001-hardware-claims-sources.md`, which
-may already hold part of it — Valentina has the file; it has not been read in this
-work.
+The one file `.personal/` still held, `2026-07-31-adr-001-hardware-claims-sources.md`,
+is now tracked as [`reference/adr-001-hardware-claims-sources.md`](../adr-001-hardware-claims-sources.md).
+It is a reading list, not a verification, for ADR-001's three fake-RAID claims (Intel
+RST, JMicron/ASMedia, AMD Ryzen); it feeds the `raid-engine` entry of the queue. The
+backplane, HBA and cache-protection entries need their own list. Its Ryzen finding —
+some SATA ports come from the CPU die, others from a separate chipset die — is an open
+item on ADR-001's wording, outside this ADR.
 
 ## See also
 
