@@ -12,7 +12,7 @@ short: >
   point in time, kept where the array's failures cannot reach it.
 
 long: |
-  ## What redundancy answers
+  ## What redundancy protects against
 
   One question: what happens when a disk stops working? [[redundancy]] answers it
   by keeping enough extra information on the other disks that the array keeps
@@ -20,7 +20,7 @@ long: |
   system stays up through a hardware failure. It is worth a great deal, and it
   is the only thing redundancy provides.
 
-  ## What it does not answer
+  ## What redundancy does not protect against
 
   - **A write that should not have happened.** A deleted file, an overwritten
     document, a database corrupted by a bug, a disk encrypted by ransomware:
@@ -38,7 +38,7 @@ long: |
     ends the array; the [[write-hole]] can end it quietly.
   - **Time.** Nothing in an array remembers what the data was last week.
 
-  ## What a backup is
+  ## Definition of a backup
 
   A copy that is *separate*: on other media, and so not written to by the same
   engine at the same instant; *elsewhere*, and so not in the same failure
@@ -54,7 +54,7 @@ long: |
   A mirrored disk is not a second copy in that sense: it is the same copy,
   written twice, in the same place, by the same engine.
 
-  ## The two together
+  ## Combining the two
 
   RAID and backup are not alternatives; they answer different questions. An
   array keeps a service running while a disk is replaced, so that the failure is

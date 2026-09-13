@@ -11,7 +11,7 @@ short: >
   double. A write that covers a whole stripe pays no read.
 
 long: |
-  ## The table
+  ## Penalty by level
 
   Every write the operating system sends to an array becomes some number of
   operations on the members. That number, *W*, depends on the [[redundancy]]:
@@ -28,7 +28,7 @@ long: |
   changes it. For parity the cost depends on how much of the stripe the write
   covers, which is why there are two columns.
 
-  ## Where 4 comes from
+  ## Derivation of the factor 4
 
   A parity block must stay equal to the XOR of its stripe's data ([[parity]]).
   Change one data block and the parity changes; the 1988 RAID paper gives the rule
@@ -46,7 +46,7 @@ long: |
   must wait for them. With two parities, RAID 6, the old *Q* is read and the new
   *Q* written as well: six.
 
-  ## Two ways to update, and when the penalty vanishes
+  ## Read-modify-write and full-stripe write
 
   The rule above is a *read-modify-write*: it touches only the block being
   written and the parity. The other way is a *reconstruct-write*: read every data
@@ -72,7 +72,7 @@ long: |
   RAID 5 it first relabels the two-disk RAID 1 as a two-disk RAID 5 without
   moving a byte, then adds disks.
 
-  ## What the number does to throughput
+  ## Effect on write throughput
 
   The penalty divides the array's write rate. With *N* disks each able to do a
   certain number of operations per second, and *W* operations per write:

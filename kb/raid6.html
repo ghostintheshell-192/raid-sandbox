@@ -130,11 +130,11 @@
     <p class="kb-lede">RAID 5 with a second parity block per stripe, computed a different way, so that any two disks can fail at once. It keeps all but two disks&#39; worth of space, survives a second failure during a rebuild, and pays for each small write with six disk operations.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 6 is the pair <em>striped + double parity</em>: the data is dealt across the members (<a href="striping.html">striping</a>), and every stripe carries two check blocks, <em>P</em>, the XOR of the data as in RAID 5, and <em>Q</em>, a Reed-Solomon code over the same blocks (<a href="parity.html">parity</a>). Two blocks give two equations, and two equations recover two unknowns: &quot;RAID-6 supports losing any two drives&quot;, in the words of the paper behind the Linux implementation. Which disks hold <em>P</em> and <em>Q</em> in each stripe is the placement <a href="algorithm.html">algorithm</a>, the same four names as RAID 5.<sup class="kb-fn"><a href="#fn-q-before-p" id="fnref-q-before-p">1</a></sup></p>
-    <h2 id="what-it-buys">What it buys</h2>
+    <h2 id="advantages">Advantages</h2>
     <p>The second failure, and the second failure is not a rare event but the ordinary risk of a <a href="rebuild.html">rebuild</a>. A RAID 5 that has lost a disk has no tolerance left while the replacement is being written, and the writing takes as long as the disk is large; the 1988 paper&#39;s formula has that repair time in its denominator (<a href="fault-tolerance.html">fault tolerance</a>). RAID 6 goes through the same rebuild with one failure still tolerated, and an unreadable sector found on a survivor during it is recomputed instead of lost. That is the whole argument for the level, and the argument gets stronger as disks get larger.</p>
-    <h2 id="what-it-pays">What it pays</h2>
+    <h2 id="disadvantages">Disadvantages</h2>
     <p>Space and writes. The <a href="capacity.html">capacity</a> is all but two disks&#39; worth, so on four disks it keeps half, the same as a mirror, and only from six disks up does it beat RAID 10 on space. A small write must read the old data, the old <em>P</em> and the old <em>Q</em>, and write all three back: six operations for one (<a href="write-penalty.html">write penalty</a>), the highest of any standard level. A write that covers a whole stripe pays none of the reads, as in RAID 5. And <em>Q</em> is arithmetic in a Galois field rather than a plain XOR, so computing it costs more processor time, which is felt on a software engine more than on a controller with an accelerator for it (<a href="raid-engine.html">raid engine</a>).</p>
-    <h2 id="the-minimum">The minimum</h2>
+    <h2 id="minimum-disk-count">Minimum disk count</h2>
     <p>Four disks is the minimum, and here the kernel enforces it: <code>raid5.c</code> refuses to start a RAID 6 with fewer, &quot;not enough configured devices (minimum 4)&quot;. With three the array would be a three-way mirror under another name, <em>P</em> and <em>Q</em> both equal to the single data block, which is why nothing is lost by refusing it.</p>
     <section class="kb-footnotes" id="notes">
     <h2>Notes</h2>
@@ -156,7 +156,7 @@ stripe 3       P      D6      D7       Q</code></pre>
   </section>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
-    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
+    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</p>
     <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
     <pre class="kb-worked"><code>(N − 2) × disk size
 N = 4 disks of 2 TB → (4 − 2) × 2 TB = 4 TB usable
@@ -222,24 +222,24 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
   </section>
   <section class="kb-section" id="in-practice">
     <h2>In practice</h2>
-    <h3>Good at</h3>
+    <h3>Strengths</h3>
     <ul>
       <li>Survives any two simultaneous disk failures</li>
       <li>Safe during rebuild: a second failure during rebuild does not cause data loss</li>
       <li>Essential for large arrays where rebuild window risk is significant</li>
     </ul>
-    <h3>Costs</h3>
+    <h3>Limitations</h3>
     <ul>
       <li>Highest write overhead of any standard RAID level (6 I/Os per small write)</li>
       <li>Rebuilding Q (Galois Field arithmetic) is more CPU-intensive than RAID 5</li>
     </ul>
-    <h3>Used for</h3>
+    <h3>Use cases</h3>
     <ul>
       <li>Large disk arrays (more disks = higher chance of failure during rebuild)</li>
       <li>Archival and backup storage</li>
       <li>Any environment where data loss is catastrophic</li>
     </ul>
-    <h3>Not for</h3>
+    <h3>Not suited for</h3>
     <ul>
       <li>Small arrays (two disks&#39; worth of overhead hurts efficiency)</li>
       <li>High-frequency random write workloads</li>
@@ -281,9 +281,9 @@ sequential: a full stripe computes P and Q once → 1 I/O</code></pre>
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#what-it-is">What it is</a></li>
-        <li><a href="#what-it-buys">What it buys</a></li>
-        <li><a href="#what-it-pays">What it pays</a></li>
-        <li><a href="#the-minimum">The minimum</a></li>
+        <li><a href="#advantages">Advantages</a></li>
+        <li><a href="#disadvantages">Disadvantages</a></li>
+        <li><a href="#minimum-disk-count">Minimum disk count</a></li>
         <li><a href="#notes">Notes</a></li>
         <li><a href="#segmentation">Segmentation</a></li>
         <li><a href="#redundancy">Redundancy</a></li>

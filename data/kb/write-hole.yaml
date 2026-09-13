@@ -39,7 +39,7 @@ long: |
   order. That is why the hole is rarely seen and why it is dangerous when it is:
   a power cut during a rebuild is exactly the coincidence.
 
-  ## Why the array cannot see it
+  ## Why it is not detected
 
   A parity stripe carries no checksum of itself. XOR can tell that a stripe is
   inconsistent, by recomputing the parity and comparing, but it cannot tell which
@@ -48,7 +48,7 @@ long: |
   which `md` exposes as a `check` that counts them and a `repair` that rewrites
   the parity from the data.
 
-  ## What closes it
+  ## Mitigations
 
   - **A protected write cache.** On a hardware controller the whole stripe
     update sits in cache until every part is on disk, and a [[bbu|BBU]] or flash

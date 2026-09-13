@@ -12,7 +12,7 @@ short: >
   compatibility, not capacity or safety.
 
 long: |
-  ## What the level leaves open
+  ## What the level does not specify
 
   RAID 5 says: one parity block per stripe. It does not say on which disk. Put it
   on the same disk every stripe and that disk is the check disk of RAID 4, the
@@ -81,7 +81,7 @@ long: |
   place where the [[raid-engine]] on the path restricts the layout: a controller
   cannot be asked for a far layout.
 
-  ## What the choice changes, and what it does not
+  ## Effects of the choice
 
   Capacity and fault tolerance are the same under every layout: the same blocks
   are stored, only their places differ. What changes is the speed profile (how

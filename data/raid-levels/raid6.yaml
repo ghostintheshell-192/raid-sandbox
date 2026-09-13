@@ -100,7 +100,7 @@ kb:
     puts *Q* after *P*. A choice of the sandbox — see [[design-decisions|the
     model's choices]].
 
-    ## What it buys
+    ## Advantages
 
     The second failure, and the second failure is not a rare
     event but the ordinary risk of a [[rebuild]]. A RAID 5 that has lost a disk
@@ -111,7 +111,7 @@ kb:
     on a survivor during it is recomputed instead of lost. That is the whole
     argument for the level, and the argument gets stronger as disks get larger.
 
-    ## What it pays
+    ## Disadvantages
 
     Space and writes. The [[capacity]] is all but two disks'
     worth, so on four disks it keeps half, the same as a mirror, and only from
@@ -123,7 +123,7 @@ kb:
     more processor time, which is felt on a software engine more than on a
     controller with an accelerator for it ([[raid-engine]]).
 
-    ## The minimum
+    ## Minimum disk count
 
     Four disks is the minimum, and here the kernel enforces it: `raid5.c` refuses
     to start a RAID 6 with fewer, "not enough configured devices (minimum 4)".

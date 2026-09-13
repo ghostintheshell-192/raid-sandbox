@@ -128,7 +128,7 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag kb-flag-derived">Derived by hand from the Linux md rule — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
-    <h2 id="what-the-level-leaves-open">What the level leaves open</h2>
+    <h2 id="what-the-level-does-not-specify">What the level does not specify</h2>
     <p>RAID 5 says: one parity block per stripe. It does not say on which disk. Put it on the same disk every stripe and that disk is the check disk of RAID 4, the bottleneck the fifth level was invented to remove (<a href="parity.html">parity</a>). So the parity rotates, and two questions remain: which way does it move from one stripe to the next, and where does the data start once the parity has taken its place? Each pair of answers is a <em>layout</em>, and the <a href="raid-engine.html">raid engine</a> applies it in the same address arithmetic it uses for the <a href="segmentation.html">segmentation</a>.</p>
     <h2 id="the-parity-layouts">The parity layouts</h2>
     <p><code>mdadm</code> names four for RAID 5 and RAID 6, from two independent choices:</p>
@@ -149,7 +149,7 @@ stripe 3    P        D9       D10      D11</code></pre>
     <p>RAID 6 uses the same four names and adds the second parity, <em>Q</em>, next to <em>P</em>; where exactly, to the left or the right of it, is one more convention, and the two families differ on it.<sup class="kb-fn"><a href="#fn-q-before-p" id="fnref-q-before-p">1</a></sup></p>
     <h2 id="the-mirror-layouts">The mirror layouts</h2>
     <p>RAID 10 has its own question: where do the copies of a chunk go? In <code>mdadm</code> the answer is a letter and a number, <code>n2</code>, <code>f2</code>, <code>o2</code>: <em>near</em>, <em>far</em> or <em>offset</em> copies, and how many. The <a href="mirroring.html">mirroring</a> entry describes the three. Near, the default, puts the copies side by side in the same stripe, which is what a controller&#39;s RAID 10 does by spanning mirror pairs; far and offset exist only where <code>md</code> builds the array, because only <code>md</code> defines them. That is the one place where the <a href="raid-engine.html">raid engine</a> on the path restricts the layout: a controller cannot be asked for a far layout.</p>
-    <h2 id="what-the-choice-changes-and-what-it-does-not">What the choice changes, and what it does not</h2>
+    <h2 id="effects-of-the-choice">Effects of the choice</h2>
     <p>Capacity and fault tolerance are the same under every layout: the same blocks are stored, only their places differ. What changes is the speed profile (how evenly a sequential read walks the disks, how far a write&#39;s copies are from each other) and compatibility: the layout is part of the array&#39;s metadata, and an array assembled with the wrong layout returns garbage, because every block is looked for in the wrong place. That is why a layout is chosen at creation and recorded, and why <code>mdadm</code> refuses to guess it.</p>
     <section class="kb-footnotes" id="notes">
     <h2>Notes</h2>
@@ -187,10 +187,10 @@ stripe 3    P        D9       D10      D11</code></pre>
     <aside class="kb-toc" aria-label="On this page">
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
-        <li><a href="#what-the-level-leaves-open">What the level leaves open</a></li>
+        <li><a href="#what-the-level-does-not-specify">What the level does not specify</a></li>
         <li><a href="#the-parity-layouts">The parity layouts</a></li>
         <li><a href="#the-mirror-layouts">The mirror layouts</a></li>
-        <li><a href="#what-the-choice-changes-and-what-it-does-not">What the choice changes, and what it does not</a></li>
+        <li><a href="#effects-of-the-choice">Effects of the choice</a></li>
         <li><a href="#notes">Notes</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>

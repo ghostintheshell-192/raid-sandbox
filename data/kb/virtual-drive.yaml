@@ -55,7 +55,7 @@ long: |
   [[drive-group]] and [[span]] entries describe the two lower layers; this figure
   is the one they point back to.
 
-  ## It does not have to be the whole span
+  ## Partial spans
 
   In Broadcom's MegaRAID definition, "a virtual drive is a partition in a drive
   group that is made up of contiguous data segments on the drives", and it can be
@@ -64,7 +64,7 @@ long: |
   long as the total stays within the span's capacity. Each virtual drive is then a
   separate disk to the operating system.
 
-  ## The same object under other names
+  ## Vendor terminology
 
   On a controller the operating system is given the virtual drive and nothing
   else: the member disks are hidden behind it. In Linux software RAID the object is

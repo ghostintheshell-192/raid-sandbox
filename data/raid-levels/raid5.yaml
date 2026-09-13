@@ -100,7 +100,7 @@ kb:
     disk holds the parity in which stripe is the placement [[algorithm]], almost
     always left-symmetric.
 
-    ## What it buys
+    ## Advantages
 
     Capacity, first. A mirror spends half the disks on copies;
     RAID 5 spends one disk's worth on parity whatever the count, so on four disks
@@ -108,7 +108,7 @@ kb:
     one disk, on any count, and the disk count is the risk: the more disks, the more
     space, the more likely a second failure while the first is being rebuilt.
 
-    ## What it pays
+    ## Disadvantages
 
     The write. A block changed in place must keep the parity of
     its stripe true, and to compute the new parity the engine needs two things
@@ -130,7 +130,7 @@ kb:
     [[chunk]] size and the file system's alignment decide which of the two a
     workload gets.
 
-    ## The minimum, and below it
+    ## Minimum disk count, and below it
 
     Three disks is the minimum that makes sense: two data, one parity per
     stripe. An array *built* with two disks is a different thing from a

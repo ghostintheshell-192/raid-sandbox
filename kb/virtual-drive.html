@@ -148,9 +148,9 @@
 │                                                               │
 └───────────────────────────────────────────────────────────────┘</code></pre>
     <p>Each span gives its two disks one layout, a mirror. The group holds the two spans and carries the layout that joins them, a stripe across the spans: the mirror is the span&#39;s, the stripe is the group&#39;s, and the pair is what RAID 10 means. The virtual drive is what the whole is presented as; the operating system sees that box and nothing below it. In a flat level (a RAID 5 on four disks) the group holds one span and has no layout of its own. The <a href="drive-group.html">drive group</a> and <a href="span.html">span</a> entries describe the two lower layers; this figure is the one they point back to.</p>
-    <h2 id="it-does-not-have-to-be-the-whole-span">It does not have to be the whole span</h2>
+    <h2 id="partial-spans">Partial spans</h2>
     <p>In Broadcom&#39;s MegaRAID definition, &quot;a virtual drive is a partition in a drive group that is made up of contiguous data segments on the drives&quot;, and it can be an entire drive group, several, a portion of one, or parts of several. So a 6 TB span could host a 2 TB virtual drive and leave 4 TB available for another, as long as the total stays within the span&#39;s capacity. Each virtual drive is then a separate disk to the operating system.</p>
-    <h2 id="the-same-object-under-other-names">The same object under other names</h2>
+    <h2 id="vendor-terminology">Vendor terminology</h2>
     <p>On a controller the operating system is given the virtual drive and nothing else: the member disks are hidden behind it. In Linux software RAID the object is the <code>md</code> device, <code>/dev/md0</code> and its siblings, and the member disks stay visible beside it. In Windows it is the <em>storage space</em> carved from a pool, which Microsoft also calls a virtual disk. Three names, one thing: the block device an array becomes.</p>
   </section>
   <section class="kb-section" id="sources">
@@ -183,8 +183,8 @@
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#container-and-content">Container and content</a></li>
-        <li><a href="#it-does-not-have-to-be-the-whole-span">It does not have to be the whole span</a></li>
-        <li><a href="#the-same-object-under-other-names">The same object under other names</a></li>
+        <li><a href="#partial-spans">Partial spans</a></li>
+        <li><a href="#vendor-terminology">Vendor terminology</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

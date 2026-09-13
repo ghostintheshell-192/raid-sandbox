@@ -107,7 +107,7 @@ kb:
     draws as the original the copy the driver places first. A choice of the
     sandbox — see [[design-decisions|the model's choices]].
 
-    ## What it buys
+    ## Advantages
 
     Speed, of both kinds. A large read spans the stripe, at the
     combined bandwidth of all *N* disks; a small read has two disks to choose
@@ -116,7 +116,7 @@ kb:
     write numbers, which is why databases and virtual machine hosts run on it
     ([[performance]]).
 
-    ## What it pays
+    ## Disadvantages
 
     Half the space: the [[capacity]] is *N ÷ 2* disks' worth,
     the same as a two-way mirror, whatever the count. And its
@@ -127,7 +127,7 @@ kb:
     a controller's RAID 1+0 the same rule reads "one failure per pair". The number
     to plan on is one.
 
-    ## The disk count
+    ## Disk count
 
     An even count of disks is the natural shape, one copy per disk per stripe.
     `md` accepts an odd count too, with the copies wrapping across stripes; that

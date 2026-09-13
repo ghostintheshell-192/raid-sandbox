@@ -130,11 +130,11 @@
     <p class="kb-lede">Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
     <h2 id="what-it-is">What it is</h2>
     <p>RAID 10 is the pair <em>striped + mirror</em>: the data is cut into chunks and dealt across the members (<a href="striping.html">striping</a>), and each chunk is stored twice, on two different disks (<a href="mirroring.html">mirroring</a>). In Linux <code>md</code> it is one level, not a nesting: &quot;every datablock is duplicated some number of times, and the resulting collection of datablocks are distributed over multiple drives&quot;. Where the second copy lands is the placement <a href="algorithm.html">algorithm</a>, <em>near</em>, <em>far</em> or <em>offset</em>; near, the default, puts the two copies side by side in the same stripe, which is the same arrangement a hardware controller reaches in a different way, by striping over mirror pairs.<sup class="kb-fn"><a href="#fn-first-copy" id="fnref-first-copy">1</a></sup> That nested form, RAID 1+0, has its own page; with the near layout the two put every block in the same place, and the difference is which engine built it and which other layouts it can offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse arrangement, and its page says why.</p>
-    <h2 id="what-it-buys">What it buys</h2>
+    <h2 id="advantages">Advantages</h2>
     <p>Speed, of both kinds. A large read spans the stripe, at the combined bandwidth of all <em>N</em> disks; a small read has two disks to choose from; and a write costs two operations, one per copy, with no parity to read or compute (<a href="write-penalty.html">write penalty</a>). Among the redundant levels it has the best write numbers, which is why databases and virtual machine hosts run on it (<a href="performance.html">performance</a>).</p>
-    <h2 id="what-it-pays">What it pays</h2>
+    <h2 id="disadvantages">Disadvantages</h2>
     <p>Half the space: the <a href="capacity.html">capacity</a> is <em>N ÷ 2</em> disks&#39; worth, the same as a two-way mirror, whatever the count. And its <a href="fault-tolerance.html">fault tolerance</a> needs the word <em>guaranteed</em>: the array survives one failure for certain, and a second only if it lands on a disk that does not hold the other copy of the same chunks. On four disks with two copies, the second failure lands on the partner of the first in one case out of three; on a controller&#39;s RAID 1+0 the same rule reads &quot;one failure per pair&quot;. The number to plan on is one.</p>
-    <h2 id="the-disk-count">The disk count</h2>
+    <h2 id="disk-count">Disk count</h2>
     <p>An even count of disks is the natural shape, one copy per disk per stripe. <code>md</code> accepts an odd count too, with the copies wrapping across stripes; that array is what the industry names RAID 1E, and it has its own page. With two disks the distinction disappears: two copies on two devices is a mirror, and the array is a RAID 1 by another name.</p>
     <section class="kb-footnotes" id="notes">
     <h2>Notes</h2>
@@ -156,7 +156,7 @@ stripe 3      D6     D6&#39;      D7     D7&#39;</code></pre>
   </section>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
-    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</p>
+    <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</p>
     <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
     <pre class="kb-worked"><code>(N ÷ copies) × disk size
 N = 4 disks of 2 TB, 2 copies → (4 ÷ 2) × 2 TB = 4 TB usable
@@ -213,24 +213,24 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
   </section>
   <section class="kb-section" id="in-practice">
     <h2>In practice</h2>
-    <h3>Good at</h3>
+    <h3>Strengths</h3>
     <ul>
       <li>Best write performance among redundant RAID levels (mirror penalty only, no RMW)</li>
       <li>Full read parallelism across all N disks</li>
       <li>near/far/offset layouts available under Linux mdadm (software RAID only)</li>
     </ul>
-    <h3>Costs</h3>
+    <h3>Limitations</h3>
     <ul>
       <li>50% capacity efficiency (copies=2)</li>
       <li>near/far/offset require Linux mdadm; hardware/fake RAID → use nested RAID 1+0</li>
     </ul>
-    <h3>Used for</h3>
+    <h3>Use cases</h3>
     <ul>
       <li>High-traffic databases</li>
       <li>Virtualization hosts</li>
       <li>Any workload needing both performance and fault tolerance</li>
     </ul>
-    <h3>Not for</h3>
+    <h3>Not suited for</h3>
     <ul>
       <li>Large storage on a budget (50% efficiency)</li>
       <li>Environments where near/far/offset layouts are needed on hardware RAID</li>
@@ -273,9 +273,9 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#what-it-is">What it is</a></li>
-        <li><a href="#what-it-buys">What it buys</a></li>
-        <li><a href="#what-it-pays">What it pays</a></li>
-        <li><a href="#the-disk-count">The disk count</a></li>
+        <li><a href="#advantages">Advantages</a></li>
+        <li><a href="#disadvantages">Disadvantages</a></li>
+        <li><a href="#disk-count">Disk count</a></li>
         <li><a href="#notes">Notes</a></li>
         <li><a href="#segmentation">Segmentation</a></li>
         <li><a href="#redundancy">Redundancy</a></li>

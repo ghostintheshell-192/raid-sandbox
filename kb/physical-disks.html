@@ -136,7 +136,7 @@
       <li><strong>NVMe</strong> disks speak PCIe themselves. There is no protocol to translate and no HBA in the way: the disk sits on the same bus as the CPU and the controller cards, which is what makes it fast and what makes it a special case in every layout that assumes a backplane.</li>
     </ul>
     <p>A mixed set is allowed by the layers above, but the interface is chosen per disk and cannot be changed by anything above it.</p>
-    <h2 id="what-a-disk-contributes">What a disk contributes</h2>
+    <h2 id="contribution-to-the-array">Contribution to the array</h2>
     <p>To an array, a disk is capacity and one unit of parallelism. Its size sets what the layout can use: a striped <a href="span.html">span</a> takes the same amount from every member, so a larger disk contributes only as much as the smallest, while a linear one takes each disk whole. Its speed is one disk&#39;s speed, and the striping above it is how several such speeds are added.</p>
   </section>
   <section class="kb-section" id="sources">
@@ -168,7 +168,7 @@
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
         <li><a href="#the-interface-is-part-of-the-path">The interface is part of the path</a></li>
-        <li><a href="#what-a-disk-contributes">What a disk contributes</a></li>
+        <li><a href="#contribution-to-the-array">Contribution to the array</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

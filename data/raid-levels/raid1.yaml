@@ -92,7 +92,7 @@ kb:
     no layout to choose and no chunk size, because there is nothing to place:
     `mdadm` does not accept a chunk size for it.
 
-    ## What it buys
+    ## Advantages
 
     The strongest [[fault-tolerance]] per disk: with *n* copies,
     *n − 1* failures. The number the level is quoted with, one, is the two-disk
@@ -103,7 +103,7 @@ kb:
     spreads requests over the members ([[performance]]). A mirror serves more
     readers, it does not serve a reader faster.
 
-    ## What it pays
+    ## Disadvantages
 
     Space: the [[capacity]] is one disk's worth, whatever the
     count, so two disks keep half and three a third. And every write is written
@@ -111,7 +111,7 @@ kb:
     parity to compute and no read-before-write, which is why a mirror's small
     writes cost less than a parity array's.
 
-    ## Two things that follow
+    ## Consequences
 
     Two things follow from "every member holds the whole". A mirror of mirrors is
     just a mirror with more copies, which is why a nested level whose spans have

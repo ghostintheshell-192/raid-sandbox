@@ -127,7 +127,7 @@
 
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</p>
-    <h2 id="two-quantities">Two quantities</h2>
+    <h2 id="the-two-parameters-n-and-w">The two parameters: N and W</h2>
     <p>A single disk is the unit: it serves one request at a time, at its own rate. What an array changes is expressed as a multiple of that disk, and the multiple comes from two numbers, one per axis:</p>
     <pre class="kb-figure"><code>N   how many disks take part          from the segmentation (striping)
 W   operations per logical write      from the redundancy   (write penalty)
@@ -193,7 +193,7 @@ RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
     <aside class="kb-toc" aria-label="On this page">
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
-        <li><a href="#two-quantities">Two quantities</a></li>
+        <li><a href="#the-two-parameters-n-and-w">The two parameters: N and W</a></li>
         <li><a href="#reads-width-and-fanout">Reads: width and fanout</a></li>
         <li><a href="#writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</a></li>
         <li><a href="#random-and-sequential">Random and sequential</a></li>

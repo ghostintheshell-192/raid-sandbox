@@ -85,7 +85,7 @@ kb:
     the case the paper opens with: an array whose time to failure is one disk's
     divided by the number of disks ([[redundancy]]).
 
-    ## What it buys
+    ## Advantages
 
     Every advantage of striping, with nothing subtracted. One large request is
     spread over all *N* disks and arrives at their combined bandwidth; *N* small
@@ -94,7 +94,7 @@ kb:
     write is one write. No other layout matches it on any of these, which is why
     it is the reference the others are measured against ([[performance]]).
 
-    ## What it pays
+    ## Disadvantages
 
     A [[fault-tolerance]] of zero, and zero is worse than it sounds. A linear array that loses a disk loses the files that were on that
     disk; a stripe that loses a disk loses every file larger than a chunk, because
@@ -102,7 +102,7 @@ kb:
     unreadable. And the more disks, the sooner: ten disks fail, between them, ten
     times as often as one.
 
-    ## Where it belongs
+    ## Use cases
 
     The level is right for data that can be lost or remade:
     scratch space for editing, render caches, a build directory, anything whose
@@ -110,7 +110,7 @@ kb:
     decision after the disk count. Two disks is the minimum, because an array of
     one member is that member; there is no smaller array it could become.
 
-    ## The same thing under other names
+    ## Other names
 
     Linux `md` calls it `raid0` and copes with disks of unequal size by
     continuing the stripe over the larger ones once the smaller are full

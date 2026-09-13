@@ -15,7 +15,7 @@ short: >
   controller, and what closes the write hole there.
 
 long: |
-  ## Why the cache is at risk
+  ## The risk to the write cache
 
   A RAID controller with memory of its own can answer a write as soon as the data
   is in that memory, and write it to the disks later. This is *write-back*
@@ -27,7 +27,7 @@ long: |
   For a parity array the loss can be worse than the missing writes: a stripe
   whose data landed and whose parity did not is the [[write-hole]].
 
-  ## Two ways to keep the cache
+  ## Protection methods
 
   - **A battery backup unit (BBU).** A battery on the controller keeps the cache
     memory powered while the host is off, for hours, so that the data is still
@@ -53,7 +53,7 @@ long: |
   make the array itself tolerant of the cut with a journal or a partial parity
   log ([[write-hole]]).
 
-  ## What it does not do
+  ## Limitations
 
   A protected cache saves the writes that were in flight. It does not make a
   controller failure survivable: if the card itself dies, the cache and its

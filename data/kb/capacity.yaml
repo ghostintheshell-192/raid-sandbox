@@ -11,7 +11,7 @@ short: >
   mirror, one member's worth for each parity block in the stripe.
 
 long: |
-  ## The rule, per redundancy
+  ## Rule by redundancy type
 
   Usable capacity depends on the [[redundancy]] and on nothing else, with one
   exception noted below. With *N* members of size *s* each:
@@ -73,7 +73,7 @@ long: |
 
   A RAID 51 over the same spans, a mirror of them, keeps one span's worth: 6 TB.
 
-  ## What it is not
+  ## What capacity does not measure
 
   Capacity says nothing about tolerance or speed, and the same capacity comes with
   different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks'

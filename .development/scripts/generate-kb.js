@@ -763,7 +763,7 @@ function belowTheMinimum(def, ctx) {
 }
 
 const PRACTICE_FIELDS = [
-  ['pros', 'Good at'], ['cons', 'Costs'], ['useCases', 'Used for'], ['notFor', 'Not for'],
+  ['pros', 'Strengths'], ['cons', 'Limitations'], ['useCases', 'Use cases'], ['notFor', 'Not suited for'],
 ];
 
 function inPractice(def) {
