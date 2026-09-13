@@ -28,7 +28,7 @@ long: |
   disk's head is from the sector; the result is that several readers are spread
   over several copies.
 
-  ## What it gives
+  ## Properties
 
   With *n* copies:
 
@@ -88,7 +88,7 @@ long: |
   number of disks, and the [[capacity]] and [[fault-tolerance]] entries carry the
   rules for both.
 
-  ## What it does not protect
+  ## Limitations
 
   A mirror copies a mistaken write as faithfully as a good one. Deleting a file
   deletes it on every copy at once; that is what "written to all devices in

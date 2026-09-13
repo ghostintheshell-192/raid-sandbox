@@ -30,7 +30,7 @@ long: |
   two failures landing in the same span. The same reading gives RAID 10 (spans of
   mirrors, striped) and RAID 60 (spans of RAID 6, striped).
 
-  ## The word as vendors use it
+  ## Vendor terminology
 
   The vendor usage is Broadcom's: "disk spanning allows multiple drives to function
   like one large drive", the spanned levels are "RAID 00, RAID 10, RAID 50, and

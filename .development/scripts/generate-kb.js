@@ -460,14 +460,41 @@ function makeResolver(ctx, where) {
 
 const link = (hit) => `<a href="${hit.href}">${escapeHtml(hit.name)}</a>`;
 
-/** A concept's short form, inline, with the way to its long form. */
+/**
+ * A concept's short form, inline, with the way to its long form. It is
+ * labelled "Definition" so the reader knows what the block is: the concept's
+ * general statement, not yet this page's case — that follows under `applied()`.
+ */
 function transclude(id, ctx, where) {
   const entry = ctx.kb.get(id);
   if (!entry) fail(`${where}: the section transcludes "${id}", which data/kb has no file for`);
   return [
+    '<h3>Definition</h3>',
     `<p class="kb-short">${escapeHtml(shortOf(entry))}</p>`,
     `<p class="kb-more"><a href="${entry.id}.html">Read more — ${escapeHtml(entry.name)}</a></p>`,
   ].join('\n');
+}
+
+/**
+ * The part of a transcluding section that is this level's own case: a heading
+ * that says what the block is, a sentence or two that say how to read it, then
+ * the block. Terse labels were tried ("In RAID 0") and did not carry enough for
+ * a reader who meets the page cold; the words are the point.
+ */
+function applied(title, intro, part) {
+  return `<h3>${escapeHtml(title)}</h3>\n<p class="kb-intro">${intro}</p>\n${part}`;
+}
+
+/** What the letters in the grid mean, for this level's redundancy. */
+function gridLegend(def) {
+  const data = 'D followed by a number for a data chunk';
+  switch (def.shape.redundancy) {
+    case 'none':    return `${data}.`;
+    case 'mirror':  return `${data}, and the same number with a prime mark (D0, D0&#39;) for the copy of that chunk.`;
+    case 'parity1': return `${data}, and P for the parity block of the stripe.`;
+    case 'parity2': return `${data}, and P and Q for the two parity blocks of the stripe.`;
+    default: fail(`${def.where}: no grid legend for the redundancy "${def.shape.redundancy}"`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -648,6 +675,8 @@ function levelPage(def, ctx) {
   const grid  = gridText(def, node);
   const runs  = whereItRuns(def, ctx.components, ctx.algorithms);
   const algos = algorithmsFor(def, ctx.algorithms);
+  const ex    = def.kb.example;
+  const name  = escapeHtml(def.name);
   const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w), where: w, headingId: slug });
   const out   = [];
   const toc   = headingsOf(def.kb.long);
@@ -676,39 +705,60 @@ function levelPage(def, ctx) {
   // 2 — segmentation, then this level's own grid
   section('segmentation', 'Segmentation',
     transclude(SECTION_CONCEPT.segmentation, ctx, where),
-    grid.text
-      ? `<p class="kb-caption">${escapeHtml(def.name)} · ${escapeHtml(String(def.kb.example.disks))} disks${grid.algorithm ? ` · ${escapeHtml(grid.algorithm)}` : ''}</p>\n<pre class="kb-grid"><code>${escapeHtml(grid.text)}</code></pre>`
-      : `<p class="kb-caption">No placement grid: ${escapeHtml(grid.reason)}</p>`);
+    applied(`How ${def.name} places its data`,
+      grid.text
+        ? `The grid below is the placement of a ${name} array of ${ex.disks} disks, as the Linux <code>md</code> rule produces it. ` +
+          `Each column is one disk, each row is one stripe, and each cell names the block that lands there: ${gridLegend(def)} ` +
+          'Reading a row from left to right shows how one stripe is dealt across the members; reading a column from top to bottom shows what one disk ends up holding.'
+        : `${name} has no placement grid to draw: ${escapeHtml(grid.reason)}.`,
+      grid.text
+        ? `<p class="kb-caption">${name} · ${escapeHtml(String(ex.disks))} disks${grid.algorithm ? ` · ${escapeHtml(grid.algorithm)}` : ''}</p>\n<pre class="kb-grid"><code>${escapeHtml(grid.text)}</code></pre>`
+        : ''));
 
   // 3 — redundancy, then the worked calculation
   section('redundancy', 'Redundancy',
     transclude(SECTION_CONCEPT.redundancy, ctx, where),
-    `<pre class="kb-worked"><code>${escapeHtml(workedText(def, node))}</code></pre>`);
+    applied(`The numbers for ${def.name}`,
+      'Three quantities follow from the redundancy alone: usable capacity, fault tolerance and write penalty. ' +
+      `Below they are worked out for the example array, ${ex.disks} disks of ${ex.sizeGB} TB each. ` +
+      'Each block states the general rule on its first line, then substitutes the numbers of the example on the lines that follow.',
+      `<pre class="kb-worked"><code>${escapeHtml(workedText(def, node))}</code></pre>`));
 
   // 4 — the algorithm axis, or the reason this class has none
+  const algorithmRole = 'A placement algorithm decides where the parity blocks or the copies go within each stripe. ';
   section('algorithm', 'Algorithm',
     transclude(SECTION_CONCEPT.algorithm, ctx, where),
     algos.length
-      ? '<dl class="kb-defs">\n' + algos.map((a) =>
-          `  <dt>${escapeHtml(a.name)}${a.isDefault ? ' <span class="kb-tag">default</span>' : ''}</dt>\n` +
-          `  <dd>${escapeHtml(plain(a.description))}</dd>`).join('\n') + '\n</dl>'
-      : `<p>${escapeHtml(plain(noAlgorithmReason(def)))}</p>`);
+      ? applied(`The placement algorithms ${def.name} accepts`,
+          algorithmRole +
+          'The list below is the set of algorithms this level accepts, each with what it does; the one marked <em>default</em> is what <code>mdadm</code> chooses when none is named.',
+          '<dl class="kb-defs">\n' + algos.map((a) =>
+            `  <dt>${escapeHtml(a.name)}${a.isDefault ? ' <span class="kb-tag">default</span>' : ''}</dt>\n` +
+            `  <dd>${escapeHtml(plain(a.description))}</dd>`).join('\n') + '\n</dl>')
+      : applied(`The placement algorithms ${def.name} accepts`,
+          algorithmRole + `${name} has none to choose from: ${escapeHtml(plain(noAlgorithmReason(def)))}.`,
+          ''));
 
   // 5 — the objects that can run it, and what they have to say about it
-  section('where-it-runs', 'Where it runs',
+  section('where-it-runs', 'RAID engine',
     transclude(SECTION_CONCEPT.whereItRuns, ctx, where),
-    '<dl class="kb-defs">\n' + runs.engines.map((c) =>
-      `  <dt>${escapeHtml(c.name)}</dt>\n  <dd>${escapeHtml(plain(c.description))}</dd>`).join('\n') + '\n</dl>',
+    applied(`The components that can be the RAID engine of ${def.name}`,
+      'In any given system, exactly one component holds the role of RAID engine: a hardware controller with its own processor, ' +
+      'a firmware chip that keeps the metadata while the operating system&#39;s driver does the work, or the operating system alone. ' +
+      'They are alternatives, not layers, so a system has one of them and not the others. ' +
+      `The list below names the components that can hold that role for a ${name} array, and what each of them does with the level.`,
+      '<dl class="kb-defs">\n' + runs.engines.map((c) =>
+        `  <dt>${escapeHtml(c.name)}</dt>\n  <dd>${escapeHtml(plain(c.description))}</dd>`).join('\n') + '\n</dl>'),
     runs.restricted.length
-      ? '<ul class="kb-notes">\n' + runs.restricted.map((r) =>
+      ? '<p class="kb-intro">Some of the level&#39;s placement algorithms exist only on one engine:</p>\n<ul class="kb-notes">\n' + runs.restricted.map((r) =>
           `  <li>${escapeHtml(r.reason)}</li>`).join('\n') + '\n</ul>' : null,
     runs.writeHoles.length
-      ? '<h3>The write hole</h3>\n<dl class="kb-defs">\n' + runs.writeHoles.map((w) =>
+      ? '<h3>The write hole</h3>\n<p class="kb-intro">On the components below, a power loss during a write can leave a stripe inconsistent, because nothing protects the write cache:</p>\n<dl class="kb-defs">\n' + runs.writeHoles.map((w) =>
           `  <dt>${escapeHtml(w.component.name)}</dt>\n  <dd>${escapeHtml(w.reason)}</dd>`).join('\n') + '\n</dl>' : null);
 
   // 6 — the widths below the level, and what they run as
   const below = belowTheMinimum(def, ctx);
-  if (below) section('below-the-minimum', 'Below the minimum', below);
+  if (below) section('below-the-minimum', 'What happens with fewer disks than the minimum', below);
 
   // 7 — the prose fields that were already in the level files
   const practice = inPractice(def);
@@ -746,24 +796,50 @@ function noAlgorithmReason(def) {
   return def.noAlgorithmReason;
 }
 
+/**
+ * What happens with fewer disks than the minimum (degenerate levels, §5). Three
+ * cases, told apart by the data: Linux md starts the level below its minimum
+ * and what runs is a simpler level (RAID 5, RAID 10); md refuses, and the entry
+ * says what the array would have been (RAID 6); nothing exists below the
+ * minimum at all (RAID 0, RAID 1 — two disks is the smallest array of any kind).
+ */
 function belowTheMinimum(def, ctx) {
+  const name = escapeHtml(def.name);
+  const collapses = def.collapsesTo || [];
+  if (def.minDisksToRun !== undefined && !def.minDisksToRunSource) fail(`${def.where}: minDisksToRun without a minDisksToRunSource`);
+  const source = (text) => `<br><span class="kb-source">${escapeHtml(plain(text))}</span>`;
+  const startsBelow = def.minDisksToRun !== undefined && def.minDisksToRun < def.minDisks;
+
+  if (!startsBelow && !collapses.length) {
+    return `<p>${name} has nothing below its minimum of ${def.minDisks} disks` +
+      (def.minDisksToRunSource ? `: ${escapeHtml(plain(def.minDisksToRunSource)).replace(/^structural: /, '')}` : '') + '.</p>';
+  }
+
+  const opening = 'Every level has a disk count below which it is no longer itself. ';
+  const intro = startsBelow
+    ? opening + `Linux <code>md</code> starts a ${name} with fewer disks anyway, and what runs then is a simpler level under the name of the one requested. ` +
+      `The rows below give the smallest array that is a ${name}, the smallest one Linux <code>md</code> still starts under that name, and what the array actually is at each count in between.`
+    : opening + `For ${name} the kernel enforces the minimum: Linux <code>md</code> refuses to start it with fewer disks. ` +
+      `The rows below give that minimum and what a smaller array would have been, had it started — the shape the minimum protects the level from becoming.`;
+
   const rows = [];
-  rows.push(`  <dt>Minimum for the level</dt>\n  <dd>${def.minDisks} disks</dd>`);
+  rows.push(`  <dt>The smallest array that is a ${name}</dt>\n  <dd>${def.minDisks} disks</dd>`);
   if (def.minDisksToRun !== undefined) {
-    if (!def.minDisksToRunSource) fail(`${def.where}: minDisksToRun without a minDisksToRunSource`);
-    rows.push(`  <dt>The real system still starts it at</dt>\n  <dd>${def.minDisksToRun} disks<br>` +
-              `<span class="kb-source">${escapeHtml(plain(def.minDisksToRunSource))}</span></dd>`);
+    rows.push(`  <dt>The smallest array Linux md starts as ${name}</dt>\n` +
+              `  <dd>${def.minDisksToRun} disks${startsBelow ? '' : ', the same'}${source(def.minDisksToRunSource)}</dd>`);
   }
-  for (const c of def.collapsesTo || []) {
-    rows.push(`  <dt>With ${c.disks} disks it is ${escapeHtml(classWords(c.becomes))}</dt>\n` +
-              `  <dd>${escapeHtml(plain(c.because))}<br>` +
-              `<span class="kb-source">${escapeHtml(plain(c.source))}</span></dd>`);
+  for (const c of collapses) {
+    const level = ctx.levels.order.find((l) => l.shape && l.shape.members === 'disks' && !l.shape.constraint &&
+      l.shape.segmentation === c.becomes.segmentation && l.shape.redundancy === c.becomes.redundancy);
+    const shape = escapeHtml(classWords(c.becomes)) + (level ? `, the shape of ${escapeHtml(level.name)}` : '');
+    rows.push(`  <dt>What a ${c.disks}-disk ${name} ${startsBelow ? 'actually is' : 'would have been'}</dt>\n` +
+              `  <dd>${shape}: ${escapeHtml(plain(c.because))}${source(c.source)}</dd>`);
   }
-  return rows.length ? `<dl class="kb-defs">\n${rows.join('\n')}\n</dl>` : null;
+  return `<p class="kb-intro">${intro}</p>\n<dl class="kb-defs">\n${rows.join('\n')}\n</dl>`;
 }
 
 const PRACTICE_FIELDS = [
-  ['pros', 'Good at'], ['cons', 'Costs'], ['useCases', 'Used for'], ['notFor', 'Not for'],
+  ['pros', 'Strengths'], ['cons', 'Limitations'], ['useCases', 'Use cases'], ['notFor', 'Not suited for'],
 ];
 
 function inPractice(def) {

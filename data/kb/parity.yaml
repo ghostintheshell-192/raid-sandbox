@@ -11,7 +11,7 @@ short: >
   way, the Q of RAID 6, covers two failures at the cost of two.
 
 long: |
-  ## The arithmetic
+  ## The XOR arithmetic
 
   XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has
   one property that makes it useful as redundancy: XOR a value in twice and it
@@ -37,7 +37,7 @@ long: |
   in *degraded* mode. Replace the disk, and the same computation, run over every
   stripe, writes it back: the [[rebuild]].
 
-  ## Where the parity block lives
+  ## Placement of the parity block
 
   The 1988 RAID paper defines the fourth level with one *check disk* per group,
   holding the parity of every stripe. It works, and it has one bottleneck: "every
@@ -58,7 +58,7 @@ long: |
   `pd_idx = data_disks - sector_div(stripe2, raid_disks)`. Every disk then carries
   the same share of parity and of data, and no disk is the check disk.
 
-  ## Keeping the parity up to date
+  ## Parity updates
 
   Whenever a data block changes, the parity of its stripe must change with it.
   The paper gives the rule and its cost:
@@ -87,7 +87,7 @@ long: |
   [[write-hole]], and it is why a parity array needs a [[raid-engine]] whose write
   cache survives power loss.
 
-  ## Two parities
+  ## Single and double parity
 
   One parity block recovers one missing block. To survive two failures a stripe
   needs a second block that is *not* another XOR (two XORs of the same blocks

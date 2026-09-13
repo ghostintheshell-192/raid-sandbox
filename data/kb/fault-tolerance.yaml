@@ -12,7 +12,7 @@ short: >
   survives one failure per span, but two in the same span lose everything.
 
 long: |
-  ## Guaranteed, not lucky
+  ## A worst-case number
 
   Fault tolerance is a worst-case number. It answers: if an adversary chose which
   disks fail, how many could fail before the first byte is lost? A four-disk
@@ -25,7 +25,7 @@ long: |
   mirror; a three-way mirror tolerates two. The rule is what the entry below
   gives, and the number follows from the array actually built.
 
-  ## The rule, per redundancy
+  ## Rule by redundancy type
 
   It is easiest to count the failures needed to *kill* a node, and subtract one.
   For a disk, one failure kills it. For an array, the count depends on the
@@ -57,7 +57,7 @@ long: |
   Linux `md` states two of these directly: a RAID 1 array can lose all devices
   but one, a RAID 6 array "can handle the loss of any two devices".
 
-  ## Nesting: where the failures land
+  ## Nesting
 
   Apply the rule from the bottom up: first compute F for each span, then use those
   values as the members' F one level above. A RAID 50 of two RAID 5 spans:
@@ -75,7 +75,7 @@ long: |
   three), a RAID 51, a mirror of two RAID 5 spans, gives 2 + 2 − 1 = 3. The
   [[span]] entry describes the RAID 50 case.
 
-  ## While the tolerance is used up
+  ## Degraded operation
 
   After a failure the array runs *degraded*. Nothing is lost yet, but the
   tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a
@@ -93,7 +93,7 @@ long: |
   the safer the array: this is the [[rebuild]], and this formula is why the time a
   rebuild takes is a reliability number, not only a performance one.
 
-  ## What it does not count
+  ## What does not count as a failure
 
   A failure is a disk that stops answering. A deletion, an overwrite, a corrupted
   block are not failures: the redundancy records them faithfully. Fault tolerance

@@ -1,5 +1,5 @@
-# data/kb/striping.yaml — striping as a technique: what it buys, what it costs, and
-# why it is older than RAID. The mechanics of the split (chunk, stripe, the address
+# data/kb/striping.yaml — striping as a technique: its advantages, its cost in
+# reliability, and why it is older than RAID. The mechanics of the split (chunk, stripe, the address
 # arithmetic) are in segmentation.yaml; this entry does not repeat them.
 # Writing rules: see segmentation.yaml header.
 
@@ -18,7 +18,7 @@ long: |
   [[chunk]], the stripe, the arithmetic that sends a sector to a disk. This one is
   about what the technique does.
 
-  ## Two kinds of speed
+  ## Bandwidth and throughput
 
   A disk answers one request at a time, at its own bandwidth. Put *N* disks side by
   side and deal the data across them, and two different things get faster.
@@ -42,7 +42,7 @@ long: |
   disk. The chunk size is the parameter that decides which of the two an array
   favours, and the [[chunk]] entry says what the defaults are and why.
 
-  ## The cost
+  ## Cost in reliability
 
   Every disk holds a piece of everything. A file of any size beyond one chunk is
   spread over several disks, and the address space as a whole is spread over all

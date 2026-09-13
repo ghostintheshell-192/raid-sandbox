@@ -14,7 +14,7 @@ short: >
   penalty.
 
 long: |
-  ## Two quantities
+  ## The two parameters: N and W
 
   A single disk is the unit: it serves one request at a time, at its own rate.
   What an array changes is expressed as a multiple of that disk, and the multiple

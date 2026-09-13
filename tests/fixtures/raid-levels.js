@@ -18,7 +18,7 @@ const leaf   = (segmentation, redundancy, extra = {}) => ({ segmentation, redund
 const nested = (segmentation, redundancy, childShape) => ({ segmentation, redundancy, members: 'arrays', childShape });
 
 // The three levels whose minimum is the structural one share the sentence.
-const STRUCTURAL = 'structural — an array of one member is that member; the sandbox refuses it before any level is named (spec §6, the universal ≥ 2)';
+const STRUCTURAL = 'structural: an array of one member is that member, so two disks is the smallest array of any kind and no RAID level exists on one disk';
 const MIRROR     = { segmentation: 'linear', redundancy: 'mirror' };
 
 module.exports = {

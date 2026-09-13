@@ -17,7 +17,7 @@ short: >
   system's own driver, or a boot firmware working with that driver.
 
 long: |
-  ## The role
+  ## Responsibilities
 
   Whatever runs a RAID array has the same list of jobs, and the list is the
   definition of the engine:
@@ -37,7 +37,7 @@ long: |
     [[virtual-drive]] when a controller presents it, an `md` device when the
     operating system does.
 
-  ## Where it lives: three answers
+  ## The three implementations
 
   The [[physical-disks]] reach the operating system along one path: [[backplane]],
   [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
@@ -71,7 +71,7 @@ long: |
   metadata format, `imsm`, "supported by an option-rom on some platforms". The
   metadata is the firmware's; the computing is the operating system's.
 
-  ## What tells them apart
+  ## Distinguishing criterion
 
   Not the wiring. A hardware controller and a firmware-RAID card can sit in the same
   PCIe slot, and on a chipset the firmware engine and the CPU may share a die. What

@@ -19,6 +19,13 @@
 # choice the sandbox made rather than on a source. Every actor on the path is named and
 # linked, even where the text does not stop to explain it; it is explained in its
 # own entry. Nothing is compressed to arrive sooner: the steps are shown.
+#
+# Register (2026-09-13): technical and structured. Section headings name the
+# subject as a manual would ("Advantages", "Limitations", "Rule by redundancy
+# type", "Vendor terminology"), not the question the section answers ("What it
+# buys", "Who runs it"). The level pages use What it is / Advantages /
+# Disadvantages, then one heading per closing topic. In the prose, no metaphor
+# carries the meaning: the effort goes to the concept, not to the sentence.
 
 id: segmentation
 kind: concept

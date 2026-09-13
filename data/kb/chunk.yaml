@@ -12,7 +12,7 @@ short: >
   touches. A stripe is one round of chunks, one per member.
 
 long: |
-  ## Three words for two things
+  ## Terminology: chunk, strip, stripe
 
   Striping cuts data into pieces and deals them across disks. There are two
   things to name, the piece and the row, and each vendor names them differently.
@@ -44,7 +44,7 @@ long: |
   a document gives one number, check which it means before doing arithmetic with
   it.
 
-  ## The numbers
+  ## Typical values
 
   The chunk is chosen when the array is created and cannot be changed without
   rewriting it. In `mdadm` the default is 512 KB; RAID 4, 5, 6 and 10 need a power
@@ -52,7 +52,7 @@ long: |
   RAID5, RAID6, and RAID10": RAID 1 and linear have no chunk, because they cut
   nothing. MegaRAID controllers take strips "from a minimum of 64 KB to 1 MB".
 
-  ## What the size does
+  ## Effect of the chunk size
 
   The chunk size is the main tuning parameter, and it determines which of the two
   performance advantages of [[striping]] an array gets. A

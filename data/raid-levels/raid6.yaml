@@ -100,30 +100,33 @@ kb:
     puts *Q* after *P*. A choice of the sandbox — see [[design-decisions|the
     model's choices]].
 
-    ## What it buys
+    ## Advantages
 
-    The second failure, and the second failure is not a rare
-    event but the ordinary risk of a [[rebuild]]. A RAID 5 that has lost a disk
-    has no tolerance left while the replacement is being written, and the
-    writing takes as long as the disk is large; the 1988 paper's formula has that
-    repair time in its denominator ([[fault-tolerance]]). RAID 6 goes through the
-    same rebuild with one failure still tolerated, and an unreadable sector found
-    on a survivor during it is recomputed instead of lost. That is the whole
-    argument for the level, and the argument gets stronger as disks get larger.
+    - **Fault tolerance.** Two members ([[fault-tolerance]]), and the second
+      failure is not a rare event but the ordinary risk of a [[rebuild]]. A RAID 5
+      that has lost a disk has no tolerance left while the replacement is being
+      written, and the writing takes as long as the disk is large; the 1988
+      paper's formula has that repair time in its denominator. RAID 6 goes
+      through the same rebuild with one failure still tolerated.
+    - **Rebuild safety.** An unreadable sector found on a survivor during the
+      rebuild is recomputed instead of lost. This is the argument for the level,
+      and it gets stronger as disks get larger.
 
-    ## What it pays
+    ## Disadvantages
 
-    Space and writes. The [[capacity]] is all but two disks'
-    worth, so on four disks it keeps half, the same as a mirror, and only from
-    six disks up does it beat RAID 10 on space. A small write must read the old
-    data, the old *P* and the old *Q*, and write all three back: six operations
-    for one ([[write-penalty]]), the highest of any standard level. A write that
-    covers a whole stripe pays none of the reads, as in RAID 5. And *Q* is
-    arithmetic in a Galois field rather than a plain XOR, so computing it costs
-    more processor time, which is felt on a software engine more than on a
-    controller with an accelerator for it ([[raid-engine]]).
+    - **Capacity.** All but two disks' worth ([[capacity]]): on four disks it
+      keeps half, the same as a mirror, and only from six disks up does it beat
+      RAID 10 on space.
+    - **Write cost.** A small write must read the old data, the old *P* and the
+      old *Q*, and write all three back: six operations for one
+      ([[write-penalty]]), the highest of any standard level. A write that covers
+      a whole stripe pays none of the reads, as in RAID 5.
+    - **Processor cost.** *Q* is arithmetic in a Galois field rather than a plain
+      XOR, so computing it costs more processor time, which is felt on a software
+      engine more than on a controller with an accelerator for it
+      ([[raid-engine]]).
 
-    ## The minimum
+    ## Minimum disk count
 
     Four disks is the minimum, and here the kernel enforces it: `raid5.c` refuses
     to start a RAID 6 with fewer, "not enough configured devices (minimum 4)".

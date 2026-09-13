@@ -19,7 +19,7 @@ long: |
   redundancy left to recompute it with. Scrubbing is reading everything *now*,
   while the redundancy is still there.
 
-  ## Two things it finds
+  ## What it detects
 
   - **Unreadable sectors.** A read error on a member during the pass is handled
     as any read error is: `md` "will attempt to find the correct data elsewhere
@@ -34,7 +34,7 @@ long: |
     [[write-hole]] leaves behind, and also what a resync after an unclean
     shutdown fixes for the stripes it reaches.
 
-  ## Who runs it
+  ## Scheduling and control
 
   In `md` the pass is started by writing `check` or `repair` to the array's
   `sync_action`; distributions schedule it monthly. On a controller it is two

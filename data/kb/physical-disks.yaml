@@ -35,7 +35,7 @@ long: |
   A mixed set is allowed by the layers above, but the interface is chosen per disk
   and cannot be changed by anything above it.
 
-  ## What a disk contributes
+  ## Contribution to the array
 
   To an array, a disk is capacity and one unit of parallelism. Its size sets what
   the layout can use: a striped [[span]] takes the same amount from every member,

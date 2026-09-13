@@ -170,7 +170,7 @@
       <dt><a href="rebuild.html">Rebuild</a></dt>
       <dd>Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</dd>
       <dt><a href="redundancy.html">Redundancy</a></dt>
-      <dd>How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it buys.</dd>
+      <dd>How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</dd>
       <dt><a href="scrubbing.html">Scrubbing</a></dt>
       <dd>Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.</dd>
       <dt><a href="segmentation.html">Segmentation</a></dt>
