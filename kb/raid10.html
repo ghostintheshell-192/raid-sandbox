@@ -155,7 +155,8 @@
     <h3>Definition</h3>
     <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
     <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
-    <h3>In RAID 10</h3>
+    <h3>How RAID 10 places its data</h3>
+    <p class="kb-intro">The grid below is the placement of a RAID 10 array of 4 disks, as the Linux <code>md</code> rule produces it. Each column is one disk, each row is one stripe, and each cell names the block that lands there: D followed by a number for a data chunk, and the same number with a prime mark (D0, D0&#39;) for the copy of that chunk. Reading a row from left to right shows how one stripe is dealt across the members; reading a column from top to bottom shows what one disk ends up holding.</p>
     <p class="kb-caption">RAID 10 · 4 disks · near</p>
     <pre class="kb-grid"><code>          disk 0  disk 1  disk 2  disk 3
 stripe 0      D0     D0&#39;      D1     D1&#39;
@@ -168,7 +169,8 @@ stripe 3      D6     D6&#39;      D7     D7&#39;</code></pre>
     <h3>Definition</h3>
     <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</p>
     <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
-    <h3>In RAID 10</h3>
+    <h3>The numbers for RAID 10</h3>
+    <p class="kb-intro">Three quantities follow from the redundancy alone: usable capacity, fault tolerance and write penalty. Below they are worked out for the example array, 4 disks of 2 TB each. Each block states the general rule on its first line, then substitutes the numbers of the example on the lines that follow.</p>
     <pre class="kb-worked"><code>(N ÷ copies) × disk size
 N = 4 disks of 2 TB, 2 copies → (4 ÷ 2) × 2 TB = 4 TB usable
 
@@ -183,7 +185,8 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
     <h3>Definition</h3>
     <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
     <p class="kb-more"><a href="algorithm.html">Read more — Placement algorithm</a></p>
-    <h3>In RAID 10</h3>
+    <h3>The placement algorithms RAID 10 accepts</h3>
+    <p class="kb-intro">A placement algorithm decides where the parity blocks or the copies go within each stripe. The list below is the set of algorithms this level accepts, each with what it does; the one marked <em>default</em> is what <code>mdadm</code> chooses when none is named.</p>
     <dl class="kb-defs">
       <dt>RAID10 Far</dt>
       <dd>The array is split into two equal sections on each disk. The first section holds the original copies in pure RAID0 order. The second section (physically far away on disk) holds the mirror copies, shifted right by near_copies positions — so each chunk&#39;s copy lives on a different disk than the original.</dd>
@@ -194,11 +197,12 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
     </dl>
   </section>
   <section class="kb-section" id="where-it-runs">
-    <h2>Where it runs</h2>
+    <h2>Which component runs it</h2>
     <h3>Definition</h3>
     <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
     <p class="kb-more"><a href="raid-engine.html">Read more — RAID engine</a></p>
-    <h3>In RAID 10</h3>
+    <h3>The components that can be the RAID engine of RAID 10</h3>
+    <p class="kb-intro">In any given system, exactly one component holds the role of RAID engine: a hardware controller with its own processor, a firmware chip that keeps the metadata while the operating system&#39;s driver does the work, or the operating system alone. They are alternatives, not layers, so a system has one of them and not the others. The list below names the components that can hold that role for a RAID 10 array, and what each of them does with the level.</p>
     <dl class="kb-defs">
       <dt>RAID Engine (RoC)</dt>
       <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>
@@ -211,6 +215,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
       <dt>OS — Windows</dt>
       <dd>Windows operating system managing RAID in software via Storage Spaces (Windows 8+/Server 2012+) or legacy Disk Management (dynamic volumes). Storage Spaces supports mirroring, striping, and parity spaces with optional journaling for crash consistency.</dd>
     </dl>
+    <p class="kb-intro">Some of the level&#39;s placement algorithms exist only on one engine:</p>
     <ul class="kb-notes">
       <li>RAID 10 uses the &quot;far / near / offset&quot; layout, which only exists under Linux software RAID (mdadm). On fake or hardware RAID, build a nested RAID 1+0 instead.</li>
     </ul>
@@ -295,7 +300,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
         <li><a href="#segmentation">Segmentation</a></li>
         <li><a href="#redundancy">Redundancy</a></li>
         <li><a href="#algorithm">Algorithm</a></li>
-        <li><a href="#where-it-runs">Where it runs</a></li>
+        <li><a href="#where-it-runs">Which component runs it</a></li>
         <li><a href="#below-the-minimum">Below the minimum</a></li>
         <li><a href="#in-practice">In practice</a></li>
         <li><a href="#try-it">Try it</a></li>

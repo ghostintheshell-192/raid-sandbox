@@ -77,7 +77,7 @@ from "how is the data split" to "what runs it", and the reader learns the page's
 4. **Algorithm** — the concept's short form, then the *scope*: which algorithms this level's
    class accepts (from the engine's own predicate, the same one the algorithm slot uses), each
    with one line from its file in `data/algorithms/` — read at last.
-5. **Where it runs** — derived from the component files: which engines can run this level and
+5. **Which component runs it** — derived from the component files: which engines can run this level and
    its algorithms (`near`/`far`/`offset` only under Linux `md`; the write hole on an engine with
    no protected cache), with the Linux (`mdadm`) and Windows (Storage Spaces) notes the files
    already carry.
