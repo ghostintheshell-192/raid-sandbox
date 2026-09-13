@@ -145,8 +145,10 @@
   </section>
   <section class="kb-section" id="segmentation">
     <h2>Segmentation</h2>
+    <h3>Definition</h3>
     <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
     <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
+    <h3>In RAID 1</h3>
     <p class="kb-caption">RAID 1 · 2 disks</p>
     <pre class="kb-grid"><code>          disk 0  disk 1
 stripe 0      D0     D0&#39;
@@ -156,8 +158,10 @@ stripe 3      D3     D3&#39;</code></pre>
   </section>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
+    <h3>Definition</h3>
     <p class="kb-short">How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</p>
     <p class="kb-more"><a href="redundancy.html">Read more — Redundancy</a></p>
+    <h3>In RAID 1</h3>
     <pre class="kb-worked"><code>disk size, one copy&#39;s worth
 N = 2 disks of 2 TB → 2 TB usable, whatever N is
 
@@ -169,14 +173,18 @@ every copy is written → 2 I/Os, random or sequential</code></pre>
   </section>
   <section class="kb-section" id="algorithm">
     <h2>Algorithm</h2>
+    <h3>Definition</h3>
     <p class="kb-short">The rule that says, stripe by stripe, which member holds the parity and where the data starts, or where a mirror&#39;s copies go. The level says what is stored; the algorithm says where. Left-symmetric for the parity levels and near for RAID 10 are the defaults nearly everything uses. The choice changes speed and compatibility, not capacity or safety.</p>
     <p class="kb-more"><a href="algorithm.html">Read more — Placement algorithm</a></p>
+    <h3>In RAID 1</h3>
     <p>a plain mirror has no layout to choose — every member holds a full copy</p>
   </section>
   <section class="kb-section" id="where-it-runs">
     <h2>Where it runs</h2>
+    <h3>Definition</h3>
     <p class="kb-short">The component that turns a RAID layout into disk operations. It owns the array&#39;s metadata, translates every request from the array&#39;s addresses to the members&#39;, writes the copies or computes the parity, and keeps serving when a disk fails. It is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating system&#39;s own driver, or a boot firmware working with that driver.</p>
     <p class="kb-more"><a href="raid-engine.html">Read more — RAID engine</a></p>
+    <h3>In RAID 1</h3>
     <dl class="kb-defs">
       <dt>RAID Engine (RoC)</dt>
       <dd>A dedicated PCIe card that includes BOTH the HBA (protocol translation) AND a RAID-on-Chip (RoC) processor. The RoC computes parity, manages the stripe, and exposes one or more Virtual Drives to the OS — the OS never sees the individual physical disks. Examples: Broadcom MegaRAID, Adaptec SmartRAID.</dd>

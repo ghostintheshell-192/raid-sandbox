@@ -460,14 +460,24 @@ function makeResolver(ctx, where) {
 
 const link = (hit) => `<a href="${hit.href}">${escapeHtml(hit.name)}</a>`;
 
-/** A concept's short form, inline, with the way to its long form. */
+/**
+ * A concept's short form, inline, with the way to its long form. It is
+ * labelled "Definition" so the reader knows what the block is: the concept's
+ * general statement, not yet this page's case — that follows under `applied()`.
+ */
 function transclude(id, ctx, where) {
   const entry = ctx.kb.get(id);
   if (!entry) fail(`${where}: the section transcludes "${id}", which data/kb has no file for`);
   return [
+    '<h3>Definition</h3>',
     `<p class="kb-short">${escapeHtml(shortOf(entry))}</p>`,
     `<p class="kb-more"><a href="${entry.id}.html">Read more — ${escapeHtml(entry.name)}</a></p>`,
   ].join('\n');
+}
+
+/** The part of a transcluding section that is this level's own case. */
+function applied(def, part) {
+  return `<h3>In ${escapeHtml(def.name)}</h3>\n${part}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -676,29 +686,29 @@ function levelPage(def, ctx) {
   // 2 — segmentation, then this level's own grid
   section('segmentation', 'Segmentation',
     transclude(SECTION_CONCEPT.segmentation, ctx, where),
-    grid.text
+    applied(def, grid.text
       ? `<p class="kb-caption">${escapeHtml(def.name)} · ${escapeHtml(String(def.kb.example.disks))} disks${grid.algorithm ? ` · ${escapeHtml(grid.algorithm)}` : ''}</p>\n<pre class="kb-grid"><code>${escapeHtml(grid.text)}</code></pre>`
-      : `<p class="kb-caption">No placement grid: ${escapeHtml(grid.reason)}</p>`);
+      : `<p class="kb-caption">No placement grid: ${escapeHtml(grid.reason)}</p>`));
 
   // 3 — redundancy, then the worked calculation
   section('redundancy', 'Redundancy',
     transclude(SECTION_CONCEPT.redundancy, ctx, where),
-    `<pre class="kb-worked"><code>${escapeHtml(workedText(def, node))}</code></pre>`);
+    applied(def, `<pre class="kb-worked"><code>${escapeHtml(workedText(def, node))}</code></pre>`));
 
   // 4 — the algorithm axis, or the reason this class has none
   section('algorithm', 'Algorithm',
     transclude(SECTION_CONCEPT.algorithm, ctx, where),
-    algos.length
+    applied(def, algos.length
       ? '<dl class="kb-defs">\n' + algos.map((a) =>
           `  <dt>${escapeHtml(a.name)}${a.isDefault ? ' <span class="kb-tag">default</span>' : ''}</dt>\n` +
           `  <dd>${escapeHtml(plain(a.description))}</dd>`).join('\n') + '\n</dl>'
-      : `<p>${escapeHtml(plain(noAlgorithmReason(def)))}</p>`);
+      : `<p>${escapeHtml(plain(noAlgorithmReason(def)))}</p>`));
 
   // 5 — the objects that can run it, and what they have to say about it
   section('where-it-runs', 'Where it runs',
     transclude(SECTION_CONCEPT.whereItRuns, ctx, where),
-    '<dl class="kb-defs">\n' + runs.engines.map((c) =>
-      `  <dt>${escapeHtml(c.name)}</dt>\n  <dd>${escapeHtml(plain(c.description))}</dd>`).join('\n') + '\n</dl>',
+    applied(def, '<dl class="kb-defs">\n' + runs.engines.map((c) =>
+      `  <dt>${escapeHtml(c.name)}</dt>\n  <dd>${escapeHtml(plain(c.description))}</dd>`).join('\n') + '\n</dl>'),
     runs.restricted.length
       ? '<ul class="kb-notes">\n' + runs.restricted.map((r) =>
           `  <li>${escapeHtml(r.reason)}</li>`).join('\n') + '\n</ul>' : null,

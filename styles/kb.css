@@ -158,10 +158,12 @@
   padding-left: 0.9rem;
 }
 
+/* The concept's general statement, under a "Definition" label; the page's own
+   case follows under "In <level>" and is the part that should stand out. */
 .kb-short {
   border-left: 2px solid var(--accent-border);
   padding-left: 0.9rem;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .kb-more { font-size: 0.8rem; }

@@ -92,7 +92,10 @@ from "how is the data split" to "what runs it", and the reader learns the page's
 
 Sections 2–5 each open with a transcluded short form: the reader meets *segmentation* on the
 RAID 0 page and meets it again, the same two sentences, on the RAID 5 page. That repetition is
-deliberate (self-contained units); the applied part under it is what differs.
+deliberate (self-contained units); the applied part under it is what differs. The two halves
+are labelled (2026-09-13): **Definition** over the short form, **In RAID 0** over the level's
+own case, so the reader knows which is which and the page's own part is the one that stands
+out.
 
 ## 5. The data
 
