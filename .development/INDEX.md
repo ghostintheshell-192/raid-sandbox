@@ -39,7 +39,7 @@
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 
-### tech-debt/ (23 files)
+### tech-debt/ (24 files)
 
 - [README.md](tech-debt/README.md) — Tech Debt Issues
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
@@ -53,6 +53,7 @@
 - [control-path-tolerates-cycles.md](tech-debt/control-path-tolerates-cycles.md) — A control path that loops back on itself is accepted in silence
 - [headless-tests-bypass-port-validation.md](tech-debt/headless-tests-bypass-port-validation.md) — `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
 - [kb-intro-diverges-from-spec.md](tech-debt/kb-intro-diverges-from-spec.md) — The knowledge base teaches a vocabulary the spec does not use
+- [kb-to-verify-queue.md](tech-debt/kb-to-verify-queue.md) — The knowledge base's to-verify queue: eight pages, each with its reading
 - [level-numbers-duplicated-untested.md](tech-debt/level-numbers-duplicated-untested.md) — Level files declare numbers the engine also computes, and nothing compares them
 - [mirror-of-stripes-write-parallelism.md](tech-debt/mirror-of-stripes-write-parallelism.md) — A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
 - [nested-data-allocation-order.md](tech-debt/nested-data-allocation-order.md) — Tech debt — nested data-allocation order
@@ -65,18 +66,34 @@
 - [raid0plus1-difference-not-surfaced.md](tech-debt/raid0plus1-difference-not-surfaced.md) — RAID 0+1 is recognized so the sandbox can say it is worse — and the sandbox never says it
 - [refusal-tests-missing.md](tech-debt/refusal-tests-missing.md) — Three refusals have no test
 
-### reference/ (4 files)
+### reference/ (5 files)
 
+- [adr-001-hardware-claims-sources.md](reference/adr-001-hardware-claims-sources.md) — ADR-001 hardware claims — sources to read
 - [engine-robustness-and-extraction.md](reference/engine-robustness-and-extraction.md) — The composition engine — robustness audit and extraction map
 - [physical-model-fidelity.md](reference/physical-model-fidelity.md) — Physical model vs. physical reality — fidelity audit
 - [refusal-points.md](reference/refusal-points.md) — Refusal points — where the game says no, and whether it says why
 - [unspoken-content.md](reference/unspoken-content.md) — Unspoken content — what the game knows and never says
 
-### reference/decisions/ (3 files)
+### reference/decisions/ (4 files)
 
 - [001-engine-identity-not-position.md](reference/decisions/001-engine-identity-not-position.md) — ADR-001: The RAID engine's type comes from which object it is, not where it sits
 - [002-the-engine-holds-no-domain-facts.md](reference/decisions/002-the-engine-holds-no-domain-facts.md) — ADR-002: The engine holds no domain facts — it reads them from data files
 - [003-desktop-only.md](reference/decisions/003-desktop-only.md) — ADR-003: RAID Sandbox is a desktop game — the mobile flow is removed
+- [004-every-statement-names-its-source.md](reference/decisions/004-every-statement-names-its-source.md) — ADR-004: Every statement names where its truth comes from — cited, derived, chosen, or to verify
+
+### reference/golden-tables/ (11 files)
+
+- [README.md](reference/golden-tables/README.md) — Golden tables — the derivations behind what the sandbox draws
+- [left-asymmetric.md](reference/golden-tables/left-asymmetric.md) — Golden tables: left-asymmetric
+- [left-symmetric.md](reference/golden-tables/left-symmetric.md) — Golden tables: left-symmetric
+- [raid10-far.md](reference/golden-tables/raid10-far.md) — Golden tables: RAID 10 far
+- [raid10-near.md](reference/golden-tables/raid10-near.md) — Golden tables: RAID 10 near
+- [raid10-offset.md](reference/golden-tables/raid10-offset.md) — Golden tables: RAID 10 offset
+- [raid100.md](reference/golden-tables/raid100.md) — Golden tables: RAID 100
+- [raid50.md](reference/golden-tables/raid50.md) — Golden tables: RAID 50
+- [raid60.md](reference/golden-tables/raid60.md) — Golden tables: RAID 60
+- [right-asymmetric.md](reference/golden-tables/right-asymmetric.md) — Golden tables: right-asymmetric
+- [right-symmetric.md](reference/golden-tables/right-symmetric.md) — Golden tables: right-symmetric
 
 ---
 

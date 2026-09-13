@@ -166,7 +166,7 @@ process_directory() {
     build_find_name_args
     while IFS= read -r -d '' file; do
         files+=("$file")
-    done < <(find "$dir" -maxdepth 1 -type f \( "${FIND_NAME_ARGS[@]}" \) -print0 2>/dev/null | sort -z)
+    done < <(find "$dir" -maxdepth 1 -type f \( "${FIND_NAME_ARGS[@]}" \) -print0 2>/dev/null | LC_ALL=C sort -z)
 
     # Filter out skipped files
     local filtered=()
@@ -201,7 +201,7 @@ process_directory() {
     local subdirs=()
     while IFS= read -r -d '' subdir; do
         subdirs+=("$subdir")
-    done < <(find "$dir" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | sort -z)
+    done < <(find "$dir" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | LC_ALL=C sort -z)
 
     for subdir in "${subdirs[@]}"; do
         local dirname

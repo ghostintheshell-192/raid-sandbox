@@ -46,8 +46,8 @@ kernel rules and never regenerated from the engine.
 
 
 ### src/challenge
-- `challenge.js` — RAID Sandbox: prompt-mode win-check (Phase 5, Stage D).
 - `challenge-ui.js` — Challenge mode UI for the RAID Sandbox.
+- `challenge.js` — RAID Sandbox: prompt-mode win-check (Phase 5, Stage D).
 
 ### src/engine
 - `catalog.js`
