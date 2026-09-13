@@ -77,11 +77,11 @@ from "how is the data split" to "what runs it", and the reader learns the page's
 4. **Algorithm** — the concept's short form, then the *scope*: which algorithms this level's
    class accepts (from the engine's own predicate, the same one the algorithm slot uses), each
    with one line from its file in `data/algorithms/` — read at last.
-5. **Which component runs it** — derived from the component files: which engines can run this level and
+5. **RAID engine** — derived from the component files: which engines can run this level and
    its algorithms (`near`/`far`/`offset` only under Linux `md`; the write hole on an engine with
    no protected cache), with the Linux (`mdadm`) and Windows (Storage Spaces) notes the files
    already carry.
-6. **Below the minimum** — from `collapsesTo` and `minDisksToRun` (degenerate levels): what the
+6. **What happens with fewer disks than the minimum** — from `collapsesTo` and `minDisksToRun` (degenerate levels): what the
    level becomes with fewer disks, and whether the real system starts it, with the kernel line.
 7. **In practice** — pros, cons, use cases, compressed to a few lines. A confirmation, not the
    lesson: if sections 2–6 did their job the reader already knows when to use this level.
@@ -93,9 +93,11 @@ from "how is the data split" to "what runs it", and the reader learns the page's
 Sections 2–5 each open with a transcluded short form: the reader meets *segmentation* on the
 RAID 0 page and meets it again, the same two sentences, on the RAID 5 page. That repetition is
 deliberate (self-contained units); the applied part under it is what differs. The two halves
-are labelled (2026-09-13): **Definition** over the short form, **In RAID 0** over the level's
-own case, so the reader knows which is which and the page's own part is the one that stands
-out.
+are labelled (2026-09-13): **Definition** over the short form; over the level's own case a
+heading that names the block (*How RAID 0 places its data*, *The numbers for RAID 0*, *The
+placement algorithms RAID 0 accepts*, *The components that can be the RAID engine of RAID 0*)
+and a paragraph that says how to read it — the grid's legend, the example's numbers, the
+one-engine-per-system rule. Terse labels were tried and did not carry enough.
 
 ## 5. The data
 

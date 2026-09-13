@@ -740,7 +740,7 @@ function levelPage(def, ctx) {
           ''));
 
   // 5 — the objects that can run it, and what they have to say about it
-  section('where-it-runs', 'Which component runs it',
+  section('where-it-runs', 'RAID engine',
     transclude(SECTION_CONCEPT.whereItRuns, ctx, where),
     applied(`The components that can be the RAID engine of ${def.name}`,
       'In any given system, exactly one component holds the role of RAID engine: a hardware controller with its own processor, ' +
@@ -758,7 +758,7 @@ function levelPage(def, ctx) {
 
   // 6 — the widths below the level, and what they run as
   const below = belowTheMinimum(def, ctx);
-  if (below) section('below-the-minimum', 'Below the minimum', below);
+  if (below) section('below-the-minimum', 'What happens with fewer disks than the minimum', below);
 
   // 7 — the prose fields that were already in the level files
   const practice = inPractice(def);
@@ -796,20 +796,46 @@ function noAlgorithmReason(def) {
   return def.noAlgorithmReason;
 }
 
+/**
+ * What happens with fewer disks than the minimum (degenerate levels, §5). Three
+ * cases, told apart by the data: Linux md starts the level below its minimum
+ * and what runs is a simpler level (RAID 5, RAID 10); md refuses, and the entry
+ * says what the array would have been (RAID 6); nothing exists below the
+ * minimum at all (RAID 0, RAID 1 — two disks is the smallest array of any kind).
+ */
 function belowTheMinimum(def, ctx) {
+  const name = escapeHtml(def.name);
+  const collapses = def.collapsesTo || [];
+  if (def.minDisksToRun !== undefined && !def.minDisksToRunSource) fail(`${def.where}: minDisksToRun without a minDisksToRunSource`);
+  const source = (text) => `<br><span class="kb-source">${escapeHtml(plain(text))}</span>`;
+  const startsBelow = def.minDisksToRun !== undefined && def.minDisksToRun < def.minDisks;
+
+  if (!startsBelow && !collapses.length) {
+    return `<p>${name} has nothing below its minimum of ${def.minDisks} disks` +
+      (def.minDisksToRunSource ? `: ${escapeHtml(plain(def.minDisksToRunSource)).replace(/^structural: /, '')}` : '') + '.</p>';
+  }
+
+  const opening = 'Every level has a disk count below which it is no longer itself. ';
+  const intro = startsBelow
+    ? opening + `Linux <code>md</code> starts a ${name} with fewer disks anyway, and what runs then is a simpler level under the name of the one requested. ` +
+      `The rows below give the smallest array that is a ${name}, the smallest one Linux <code>md</code> still starts under that name, and what the array actually is at each count in between.`
+    : opening + `For ${name} the kernel enforces the minimum: Linux <code>md</code> refuses to start it with fewer disks. ` +
+      `The rows below give that minimum and what a smaller array would have been, had it started — the shape the minimum protects the level from becoming.`;
+
   const rows = [];
-  rows.push(`  <dt>Minimum for the level</dt>\n  <dd>${def.minDisks} disks</dd>`);
+  rows.push(`  <dt>The smallest array that is a ${name}</dt>\n  <dd>${def.minDisks} disks</dd>`);
   if (def.minDisksToRun !== undefined) {
-    if (!def.minDisksToRunSource) fail(`${def.where}: minDisksToRun without a minDisksToRunSource`);
-    rows.push(`  <dt>The real system still starts it at</dt>\n  <dd>${def.minDisksToRun} disks<br>` +
-              `<span class="kb-source">${escapeHtml(plain(def.minDisksToRunSource))}</span></dd>`);
+    rows.push(`  <dt>The smallest array Linux md starts as ${name}</dt>\n` +
+              `  <dd>${def.minDisksToRun} disks${startsBelow ? '' : ', the same'}${source(def.minDisksToRunSource)}</dd>`);
   }
-  for (const c of def.collapsesTo || []) {
-    rows.push(`  <dt>With ${c.disks} disks it is ${escapeHtml(classWords(c.becomes))}</dt>\n` +
-              `  <dd>${escapeHtml(plain(c.because))}<br>` +
-              `<span class="kb-source">${escapeHtml(plain(c.source))}</span></dd>`);
+  for (const c of collapses) {
+    const level = ctx.levels.order.find((l) => l.shape && l.shape.members === 'disks' && !l.shape.constraint &&
+      l.shape.segmentation === c.becomes.segmentation && l.shape.redundancy === c.becomes.redundancy);
+    const shape = escapeHtml(classWords(c.becomes)) + (level ? `, the shape of ${escapeHtml(level.name)}` : '');
+    rows.push(`  <dt>What a ${c.disks}-disk ${name} ${startsBelow ? 'actually is' : 'would have been'}</dt>\n` +
+              `  <dd>${shape}: ${escapeHtml(plain(c.because))}${source(c.source)}</dd>`);
   }
-  return rows.length ? `<dl class="kb-defs">\n${rows.join('\n')}\n</dl>` : null;
+  return `<p class="kb-intro">${intro}</p>\n<dl class="kb-defs">\n${rows.join('\n')}\n</dl>`;
 }
 
 const PRACTICE_FIELDS = [

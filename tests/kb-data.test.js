@@ -189,6 +189,18 @@ for (const id of [...pageIds].sort()) {
   });
 }
 
+// The minimum-disk fields are printed on the page as they are, so they answer
+// to the same rule as the prose (ADR-004): a public fact or a kernel line, never
+// the sandbox and never a file of the project.
+const PROJECT_TALK = /\bsandbox\b|\bspec\b|§|(^|[\s(])(data|src|tests|\.development)\//;
+for (const id of [...levelIds].sort()) {
+  const doc = levelFiles[id];
+  test(`${id}.yaml: minDisksToRunSource and collapsesTo name no project file and not the sandbox`, () => {
+    const texts = [doc.minDisksToRunSource, ...(doc.collapsesTo || []).flatMap((c) => [c.because, c.source])];
+    for (const t of texts) if (t !== undefined) assert(!PROJECT_TALK.test(t), `names the project or the sandbox: ${t}`);
+  });
+}
+
 // ---------------------------------------------------------------------------
 console.log('\n[5] every example builds, and is the level whose page it illustrates');
 
