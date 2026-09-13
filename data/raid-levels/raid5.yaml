@@ -102,15 +102,20 @@ kb:
 
     ## Advantages
 
-    Capacity, first. A mirror spends half the disks on copies;
-    RAID 5 spends one disk's worth on parity whatever the count, so on four disks
-    it keeps three quarters, on eight seven eighths. The [[fault-tolerance]] is
-    one disk, on any count, and the disk count is the risk: the more disks, the more
-    space, the more likely a second failure while the first is being rebuilt.
+    - **Capacity.** The parity occupies one member's worth of space regardless
+      of the member count: the usable [[capacity]] is `(N − 1) ÷ N` of the raw
+      total, three quarters on four disks, seven eighths on eight. A mirror keeps
+      one half.
+    - **Read performance.** A read touches no parity block: the `N − 1` data
+      chunks of a stripe are read in parallel, close to a plain stripe of the
+      same width ([[performance]]).
+    - **Fault tolerance.** One member, on any count ([[fault-tolerance]]). Adding
+      members adds capacity, not tolerance, and raises the probability of a
+      second failure while the first is being rebuilt.
 
     ## Disadvantages
 
-    The write. A block changed in place must keep the parity of
+    **Write cost.** A block changed in place must keep the parity of
     its stripe true, and to compute the new parity the engine needs two things
     it does not have in hand: the old data and the old parity. So one logical
     write becomes four disk operations, in this order:
@@ -125,10 +130,11 @@ kb:
     *small* write, one that changes a block and leaves the rest of the stripe as
     it was. A write that covers a whole stripe pays none of the reads: every
     data block is already in hand, the parity is computed from them, and the
-    cost is one write per member. That is the trade. RAID 5 is at its best under
-    large sequential writes and worst under many small scattered ones, and the
-    [[chunk]] size and the file system's alignment decide which of the two a
-    workload gets.
+    cost is one write per member.
+
+    **Workload dependence.** RAID 5 is at its best under large sequential writes
+    and worst under many small scattered ones; the [[chunk]] size and the file
+    system's alignment decide which of the two a workload gets.
 
     ## Minimum disk count, and below it
 

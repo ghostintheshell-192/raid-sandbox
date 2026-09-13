@@ -94,22 +94,23 @@ kb:
 
     ## Advantages
 
-    The strongest [[fault-tolerance]] per disk: with *n* copies,
-    *n − 1* failures. The number the level is quoted with, one, is the two-disk
-    case; a three-way mirror survives two, and Windows Storage Spaces offers
-    both as two-way and three-way mirror spaces. It also gives a kind of speed
-    that is easy to misunderstand. One read is served by one disk, at that disk's
-    speed; but *n* readers at once can each have a copy, because the engine
-    spreads requests over the members ([[performance]]). A mirror serves more
-    readers, it does not serve a reader faster.
+    - **Fault tolerance.** The highest per disk of any level: with *n* copies,
+      *n − 1* failures ([[fault-tolerance]]). The number the level is quoted
+      with, one, is the two-disk case; a three-way mirror survives two, and
+      Windows Storage Spaces offers both, as two-way and three-way mirror spaces.
+    - **Read throughput.** One read is served by one disk, at that disk's speed;
+      *n* readers at once can each be served by a different copy, because the
+      engine spreads requests over the members ([[performance]]). A mirror serves
+      more readers; it does not serve one reader faster.
 
     ## Disadvantages
 
-    Space: the [[capacity]] is one disk's worth, whatever the
-    count, so two disks keep half and three a third. And every write is written
-    *n* times, at the speed of the slowest copy ([[write-penalty]]). There is no
-    parity to compute and no read-before-write, which is why a mirror's small
-    writes cost less than a parity array's.
+    - **Capacity.** One disk's worth, whatever the count ([[capacity]]): two
+      disks keep half, three a third.
+    - **Write cost.** Every write is written *n* times, at the speed of the
+      slowest copy ([[write-penalty]]). There is no parity to compute and no
+      read-before-write, so a mirror's small writes still cost less than a parity
+      array's.
 
     ## Consequences
 

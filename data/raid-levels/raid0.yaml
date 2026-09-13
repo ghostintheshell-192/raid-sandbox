@@ -87,20 +87,29 @@ kb:
 
     ## Advantages
 
-    Every advantage of striping, with nothing subtracted. One large request is
-    spread over all *N* disks and arrives at their combined bandwidth; *N* small
-    requests at unrelated addresses are served at once; every byte of every disk
-    holds data, so the [[capacity]] is the sum. The [[write-penalty]] is one: a
-    write is one write. No other layout matches it on any of these, which is why
-    it is the reference the others are measured against ([[performance]]).
+    Every property of striping, with nothing subtracted:
+
+    - **Bandwidth.** One large request is spread over all *N* disks and is served
+      at their combined bandwidth.
+    - **Throughput.** *N* small requests at unrelated addresses are served at
+      once.
+    - **Capacity.** Every byte of every disk holds data: the [[capacity]] is the
+      sum of the members.
+    - **Write cost.** The [[write-penalty]] is one: a logical write is one disk
+      write.
+
+    No other layout matches it on any of these, which is why it is the reference
+    the others are measured against ([[performance]]).
 
     ## Disadvantages
 
-    A [[fault-tolerance]] of zero, and zero is worse than it sounds. A linear array that loses a disk loses the files that were on that
-    disk; a stripe that loses a disk loses every file larger than a chunk, because
-    each of them had a piece there. The array does not become smaller, it becomes
-    unreadable. And the more disks, the sooner: ten disks fail, between them, ten
-    times as often as one.
+    - **Fault tolerance.** Zero ([[fault-tolerance]]), and the loss is total. A
+      linear array that loses a disk loses the files that were on that disk; a
+      stripe that loses a disk loses every file larger than a chunk, because each
+      of them had a piece there. The array does not become smaller, it becomes
+      unreadable.
+    - **Failure rate.** It grows with the disk count: ten disks fail, between
+      them, ten times as often as one.
 
     ## Use cases
 
