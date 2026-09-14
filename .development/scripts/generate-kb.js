@@ -539,9 +539,11 @@ function sideNav(ctx, file) {
   return [
     '    <aside class="kb-side" aria-label="Knowledge base map">',
     '      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>',
+    '      <div class="kb-side-groups">',
     group('Storage layers', kbHrefs(LAYER_ORDER)),
     group('RAID levels', ctx.pages.map((p) => [`${p.id}.html`, p.name])),
     group('Concepts', kbHrefs(CONCEPT_ORDER)),
+    '      </div>',
     '    </aside>',
   ].join('\n');
 }
