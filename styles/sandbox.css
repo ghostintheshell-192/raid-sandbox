@@ -44,8 +44,18 @@ body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
 }
 .sbc-footer a { color: var(--text-secondary); text-decoration: none; }
 .sbc-footer a:hover { color: var(--accent-cyan); }
+/* Same treatment as the knowledge base's own top nav (.kb-nav-item): this
+   link and the sandbox are equal-rank entry points, and the KB's individual
+   article links already read as lighter-weight than this. */
+.sbc-kb-link {
+  margin-left: auto; font-size: .85rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent-cyan); text-decoration: none;
+  transition: color var(--transition);
+}
+.sbc-kb-link:hover { color: var(--text-primary); }
 .sbc-status {
-  margin-left: auto; font-size: .75rem; opacity: .55;
+  font-size: .75rem; opacity: .55;
   font-style: italic;
 }
 /* An error is not a hint: full opacity, red, upright — a link that could not

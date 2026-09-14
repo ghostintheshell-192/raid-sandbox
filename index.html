@@ -81,7 +81,8 @@
       <button id="btn-clear" class="sbc-clear-btn" type="button" title="Clear the whole canvas">⟲ Clear</button>
       <button id="btn-share" class="sbc-clear-btn" type="button" title="Copy a link to this build">⧉ Share</button>
       <span class="sbc-header-hint" style="opacity:.45; font-size:.8rem">drag disks · group them · set segmentation + redundancy</span>
-      <span class="sbc-status" id="status-bar">← drag a disk chip to start</span>
+      <a class="sbc-kb-link" href="kb/">Knowledge base</a>
+      <span class="sbc-status" id="status-bar"></span>
     </div>
   </header>
 
@@ -222,10 +223,11 @@
     </div>
   </aside>
 
-  <!-- Site navigation lives here, not among the sandbox's controls: the header
-       is the game's, the footer is the site's (same footer on the KB pages). -->
+  <!-- The knowledge base link moved to the header (equal rank with the sandbox,
+       an entry point rather than site navigation); this footer is left for
+       attribution, same footer on the KB pages. -->
   <footer class="sbc-footer">
-    <a href="kb/">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
 </div>
@@ -506,16 +508,13 @@
     renderViolations(r);
     challengeUI.update(r);
 
-    statusBar.classList.remove('sbc-status--error');   // a routine line is never an error
-    // "valid" has to mean valid. firstIssue only reports structural incompleteness,
-    // so without this the bar claimed a build was valid while the panel below listed a
-    // hard violation. The blocking line is the violation's OWN message: a second
-    // wording here would be one more thing that can drift from the rule that produced it.
-    statusBar.textContent =
-        r.firstIssue    ? `⚠ ${r.firstIssue}`
-      : blocking.length ? `✕ ${blocking[0].message}`
-      : r.analysis      ? '✓ build valid — click ▶ to animate the write'
-      :                   '← drag a disk chip to start';
+    // How-to-start hints live in the yellow panel below (elIssue), the blocking
+    // violation is repeated in the violations panel, and a valid build already
+    // shows through the level result and the enabled animate button — this bar
+    // does not restate any of it. It stays empty on routine renders, reserved
+    // for a different kind of message.
+    statusBar.classList.remove('sbc-status--error');
+    statusBar.textContent = '';
 
     // Shared-atom bridge: reflect data-view disk changes in the physical view.
     if (physCtrl) physCtrl.render();
