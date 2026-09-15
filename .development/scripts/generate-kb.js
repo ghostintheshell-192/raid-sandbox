@@ -769,7 +769,7 @@ function levelPage(def, ctx) {
   // 8 — the example, opened in the sandbox
   section('try-it', 'Try it',
     `<p><a class="kb-try" href="${exampleLink(def, node)}">Open this example in the sandbox</a></p>`,
-    `<p class="kb-caption">A desktop link: below the desktop breakpoint the sandbox is not offered (ADR-003).</p>`);
+    `<p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>`);
 
   // 9 — related concepts, and the levels this one is confused with
   section('see-also', 'See also', seeAlso(def, ctx));
