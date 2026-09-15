@@ -72,3 +72,6 @@ npm-debug.log*
 # ---- Python bytecode (the doc generators in .development/scripts/) ----
 __pycache__/
 *.pyc
+
+# ---- Playwright MCP output (screenshots, snapshots taken during sessions) ----
+.playwright-mcp/

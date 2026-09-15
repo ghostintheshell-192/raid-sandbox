@@ -127,6 +127,18 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#penalty-by-level">Penalty by level</a></li>
+      <li><a href="#derivation-of-the-factor-4">Derivation of the factor 4</a></li>
+      <li><a href="#read-modify-write-and-full-stripe-write">Read-modify-write and full-stripe write</a></li>
+      <li><a href="#effect-on-write-throughput">Effect on write throughput</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four operations for single parity and six for double. A write that covers a whole stripe pays no read.</p>
     <h2 id="penalty-by-level">Penalty by level</h2>

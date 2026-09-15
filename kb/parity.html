@@ -127,6 +127,18 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#the-xor-arithmetic">The XOR arithmetic</a></li>
+      <li><a href="#placement-of-the-parity-block">Placement of the parity block</a></li>
+      <li><a href="#parity-updates">Parity updates</a></li>
+      <li><a href="#single-and-double-parity">Single and double parity</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</p>
     <h2 id="the-xor-arithmetic">The XOR arithmetic</h2>

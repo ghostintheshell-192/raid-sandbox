@@ -302,8 +302,10 @@ the spec still describes what exists:
 - **The map's order** is layers → levels → concepts (§2 said concepts before levels).
 - **The layout uses the width for structure, not for longer lines.** From 1100px the
   map stands beside the text as three native `<details>` groups (layers, levels,
-  concepts), the group holding the current page open; from 1400px a right column lists
-  the page's own sections; the reading column keeps a 72-character measure. Links take
+  concepts), the group holding the current page open; from 1250px a right column lists
+  the page's own sections, and below that width the same list folds under the heading
+  as a closed `<details>`; the reading column keeps a 72-character measure, justified,
+  and sits in the middle of the page when no column stands beside it. Links take
   the accent colour; the body is larger than the sandbox's. A footer carries the site's
   navigation, on the sandbox page too.
 - **`[[id]]` renders as typed** (hyphens as spaces), `[[id|text]]` overrides — the

@@ -127,6 +127,17 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#terminology-chunk-strip-stripe">Terminology: chunk, strip, stripe</a></li>
+      <li><a href="#typical-values">Typical values</a></li>
+      <li><a href="#effect-of-the-chunk-size">Effect of the chunk size</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls a chunk and most controllers a strip. Its size is fixed when the array is created and it is the unit striping deals out, so it sets how many disks one request touches. A stripe is one round of chunks, one per member.</p>
     <h2 id="terminology-chunk-strip-stripe">Terminology: chunk, strip, stripe</h2>

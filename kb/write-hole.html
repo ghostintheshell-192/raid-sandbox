@@ -127,6 +127,17 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#the-mechanism">The mechanism</a></li>
+      <li><a href="#why-it-is-not-detected">Why it is not detected</a></li>
+      <li><a href="#mitigations">Mitigations</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</p>
     <h2 id="the-mechanism">The mechanism</h2>

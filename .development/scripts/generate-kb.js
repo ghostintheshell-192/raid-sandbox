@@ -561,6 +561,21 @@ function pageToc(toc) {
   ].join('\n');
 }
 
+// The same list folded under the page's heading, for the widths where the
+// right column is not shown (styles/kb.css shows one or the other, never
+// both): a native <details>, closed, like the map's groups — no script.
+function pageTocInline(toc) {
+  if (!toc || !toc.length) return '';
+  return [
+    '  <details class="kb-toc-inline">',
+    '    <summary class="kb-toc-title">On this page</summary>',
+    '    <ul class="kb-toc-list">',
+    toc.map((t) => `      <li><a href="#${t.id}">${escapeHtml(t.title)}</a></li>`).join('\n'),
+    '    </ul>',
+    '  </details>',
+  ].join('\n');
+}
+
 // kb/index.html is the map: the sitemap and the home page both link to it as
 // the directory `kb/`, not the file, so its canonical, og:url and JSON-LD url
 // have to say the same thing rather than a URL nothing else ever points at.
@@ -651,7 +666,7 @@ ${subtitle ? `    <p class="kb-subtitle">${subtitle}</p>\n` : ''}  </header>
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
 ${nav}
   </nav>
-
+${toc && toc.length ? `\n${pageTocInline(toc)}\n` : ''}
 ${body}
 
   <footer class="kb-footer">
@@ -769,7 +784,7 @@ function levelPage(def, ctx) {
   // 8 — the example, opened in the sandbox
   section('try-it', 'Try it',
     `<p><a class="kb-try" href="${exampleLink(def, node)}">Open this example in the sandbox</a></p>`,
-    `<p class="kb-caption">A desktop link: below the desktop breakpoint the sandbox is not offered (ADR-003).</p>`);
+    `<p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>`);
 
   // 9 — related concepts, and the levels this one is confused with
   section('see-also', 'See also', seeAlso(def, ctx));

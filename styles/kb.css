@@ -16,7 +16,7 @@
 /* ------------------------------------------------------------------ */
 
 .kb-body {
-  padding: 1.5rem 1rem 3rem;
+  padding: 1.5rem 1.5rem 3rem;
   overflow-x: hidden;
 }
 
@@ -24,16 +24,34 @@
   max-width: 1200px;
   margin: 0 auto;
 }
+/* The reading column. When no side column stands beside it (below 1100px) the
+   auto margins put it in the middle of the page with the same space on both
+   sides; inside the grid they do nothing, the track is its width. Justified,
+   so the block has two straight edges; hyphenation keeps the word gaps even
+   on a monospace face, where a ragged line shows more than in a proportional
+   one (the pages are lang="en", which hyphens: auto needs). */
 .kb-main {
   max-width: 72ch;
+  margin: 0 auto;
   font-size: 1.05rem;     /* monospace reads dense: a larger body and a looser line */
   line-height: 1.75;
+  text-align: justify;
+  hyphens: auto;
 }
 .kb-page:not(.kb-page--side) .kb-main { max-width: none; }
+/* What is not running prose stays ragged: headings, navigation, link rows,
+   the map's cards. Justifying a short line spreads its few words apart. */
+.kb-header, .kb-nav, .kb-links, .kb-cards, .kb-toc-inline, .kb-defs dt { text-align: left; }
 
 /* --- the side column: the map beside the text, from 1100px up ------ */
 
+/* Both columns exist in every page's HTML and are hidden here, at the base:
+   the map from 1100px and the page's own index from 1250px take their place
+   beside the text. Hidden only inside those blocks, the index would come
+   back on a narrow window as an ordinary block at the end of the document,
+   after the footer, where it lists sections the reader has already passed. */
 .kb-side { display: none; }
+.kb-toc  { display: none; }
 
 @media (min-width: 1100px) {
   .kb-page--side {
@@ -41,13 +59,15 @@
     grid-template-columns: 15rem minmax(0, 72ch);
     column-gap: 3.5rem;
     align-items: start;
+    /* the two columns are narrower than the row up to 1250px: the rest of
+       the width goes to both sides, not all to the right */
+    justify-content: center;
   }
-  .kb-toc { display: none; }
-  /* EXPERIMENT (2026-09-14, drive-group.html only): two independently
-     anchored boxes instead of one. kb-side-home (the way out) stays where a
-     new visitor looks for it, pinned near the top; the groups rest near the
-     floor and rise as a <details> opens. align-self:stretch gives the column
-     the full row height so each child can pick its own sticky edge within it. */
+  /* Two independently anchored boxes instead of one. kb-side-home (the way
+     out) stays where a new visitor looks for it, pinned near the top; the
+     groups rest near the floor and rise as a <details> opens. align-self:
+     stretch gives the column the full row height so each child can pick its
+     own sticky edge within it. */
   .kb-side {
     display: flex;
     flex-direction: column;
@@ -57,7 +77,10 @@
   }
   /* The one and only divider for the column — kb-side-home and kb-side-groups
      keep their own padding-right for text spacing but must NOT also draw a
-     border-right, or it doubles this line wherever the two overlap. */
+     border-right, or it doubles this line wherever the two overlap. It lives
+     on its own, above both boxes (z-index over kb-side-home's 2): the home box
+     paints an opaque background, and under it the line would break for the
+     box's whole height, padding included, and resume below it. */
   .kb-side::before {
     content: '';
     position: absolute;
@@ -66,13 +89,17 @@
     right: 0;
     width: 1px;
     background: var(--accent-dim);
+    z-index: 3;
   }
   .kb-page--side .kb-side-home {
     /* Bigger and opaque: when many groups are open, kb-side-groups can grow
        tall enough to reach the top of the column and pass underneath this
        box. An opaque background lets the overlapping text vanish cleanly
-       instead of visually colliding with it — still reachable by scrolling
-       kb-side-groups back down. z-index wins the paint order over it. */
+       instead of visually colliding with it; the group hidden there comes
+       back when another one is closed. This is chosen: a menu longer than
+       the viewport has to pass somewhere, and passing under this box is the
+       one place where it does not collide with text. z-index wins the paint
+       order over the groups; the column's divider sits above both. */
     position: sticky;
     top: 1.5rem;
     z-index: 2;
@@ -302,8 +329,10 @@
   padding: 0.3rem 0;
   border-bottom: 1px solid var(--accent-dim);
 }
-.kb-side-group > summary::-webkit-details-marker { display: none; }
-.kb-side-group > summary::before {
+.kb-side-group > summary::-webkit-details-marker,
+.kb-toc-inline > summary::-webkit-details-marker { display: none; }
+.kb-side-group > summary::before,
+.kb-toc-inline > summary::before {
   /* A drawn triangle instead of the '▸' glyph: a font glyph isn't centered
      in its own box, so rotating it swings the tip through an arc around a
      point outside the shape. This triangle is centered in its box, so the
@@ -318,13 +347,19 @@
   clip-path: polygon(20% 10%, 20% 90%, 85% 50%);
   transition: transform var(--transition);
 }
-.kb-side-group[open] > summary::before { transform: rotate(90deg); }
+.kb-side-group[open] > summary::before,
+.kb-toc-inline[open] > summary::before { transform: rotate(90deg); }
 .kb-side-group > summary:hover { color: var(--text-primary); }
 .kb-side-group > .kb-side-list { padding: 0.4rem 0 0.2rem 1em; }
 
-/* --- the right column: this page's own sections, from 1400px up ----- */
+/* --- the right column: this page's own sections, from 1250px up ----- */
+/*  .kb-page caps the row at 1200px, so from 1232px of viewport (the cap    */
+/*  plus .kb-body's side padding) the three columns share the same 1200px  */
+/*  whatever the screen: the reading column keeps the width it has on a    */
+/*  wide monitor. 1250 is that point with room for a scrollbar; it lets a  */
+/*  1366px laptop keep the index that a ten-screen page needs.             */
 
-@media (min-width: 1400px) {
+@media (min-width: 1250px) {
   .kb-page--side.kb-page--toc {
     grid-template-columns: 15rem minmax(0, 72ch) 13rem;
   }
@@ -349,8 +384,25 @@
 }
 .kb-toc-list { list-style: none; margin: 0; padding: 0; }
 .kb-toc-list li { margin: 0 0 0.3rem; }
-.kb-toc-list a { color: var(--text-secondary); text-decoration: none; }
+.kb-toc-list a, .kb-main .kb-toc-list a:visited { color: var(--text-secondary); text-decoration: none; }
 .kb-toc-list a:hover { color: var(--text-primary); }
+
+/* --- the same index folded under the heading, below 1250px ------------ */
+/*  A closed <details> with the map groups' triangle: it costs one line to  */
+/*  the reader who does not want it, and opens for the one who does.        */
+
+.kb-toc-inline { margin: 0 0 2rem; font-size: 0.8rem; }
+.kb-toc-inline > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-block;
+  margin: 0;
+}
+.kb-toc-inline > summary:hover { color: var(--text-primary); }
+.kb-toc-inline .kb-toc-list { padding: 0.4rem 0 0 1.25em; }
+@media (min-width: 1250px) {
+  .kb-toc-inline { display: none; }
+}
 
 /* the section a reader jumped to from the right column shows it */
 .kb-section:target > h2, .kb-section :target { color: var(--accent-cyan); }
@@ -396,7 +448,8 @@
 .kb-footer a:visited { color: var(--text-secondary); }
 
 @media (max-width: 600px) {
-  .kb-body { padding: 1rem 0.75rem 2.5rem; }
+  .kb-body { padding: 1rem 1rem 2.5rem; }
+  .kb-main { font-size: 1rem; }   /* ~40 characters on a 390px phone instead of ~37 */
   .kb-title { font-size: 1.3rem; }
   .kb-grid, .kb-worked, .kb-figure { font-size: 0.72rem; }
 }
