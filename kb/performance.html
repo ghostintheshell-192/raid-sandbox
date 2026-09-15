@@ -127,6 +127,19 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#the-two-parameters-n-and-w">The two parameters: N and W</a></li>
+      <li><a href="#reads-width-and-fanout">Reads: width and fanout</a></li>
+      <li><a href="#writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</a></li>
+      <li><a href="#random-and-sequential">Random and sequential</a></li>
+      <li><a href="#degraded">Degraded</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</p>
     <h2 id="the-two-parameters-n-and-w">The two parameters: N and W</h2>

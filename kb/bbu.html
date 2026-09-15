@@ -127,6 +127,17 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#the-risk-to-the-write-cache">The risk to the write cache</a></li>
+      <li><a href="#protection-methods">Protection methods</a></li>
+      <li><a href="#limitations">Limitations</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-flag kb-flag-to-verify">Not yet checked against a primary source — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>

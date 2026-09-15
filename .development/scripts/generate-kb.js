@@ -561,6 +561,21 @@ function pageToc(toc) {
   ].join('\n');
 }
 
+// The same list folded under the page's heading, for the widths where the
+// right column is not shown (styles/kb.css shows one or the other, never
+// both): a native <details>, closed, like the map's groups — no script.
+function pageTocInline(toc) {
+  if (!toc || !toc.length) return '';
+  return [
+    '  <details class="kb-toc-inline">',
+    '    <summary class="kb-toc-title">On this page</summary>',
+    '    <ul class="kb-toc-list">',
+    toc.map((t) => `      <li><a href="#${t.id}">${escapeHtml(t.title)}</a></li>`).join('\n'),
+    '    </ul>',
+    '  </details>',
+  ].join('\n');
+}
+
 // kb/index.html is the map: the sitemap and the home page both link to it as
 // the directory `kb/`, not the file, so its canonical, og:url and JSON-LD url
 // have to say the same thing rather than a URL nothing else ever points at.
@@ -651,7 +666,7 @@ ${subtitle ? `    <p class="kb-subtitle">${subtitle}</p>\n` : ''}  </header>
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
 ${nav}
   </nav>
-
+${toc && toc.length ? `\n${pageTocInline(toc)}\n` : ''}
 ${body}
 
   <footer class="kb-footer">

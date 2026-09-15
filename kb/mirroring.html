@@ -127,6 +127,18 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#the-mechanism">The mechanism</a></li>
+      <li><a href="#properties">Properties</a></li>
+      <li><a href="#copies-striped-raid-10">Copies striped: RAID 10</a></li>
+      <li><a href="#limitations">Limitations</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk&#39;s worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.</p>
     <h2 id="the-mechanism">The mechanism</h2>

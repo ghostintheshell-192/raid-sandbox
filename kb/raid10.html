@@ -127,6 +127,25 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#what-it-is">What it is</a></li>
+      <li><a href="#advantages">Advantages</a></li>
+      <li><a href="#disadvantages">Disadvantages</a></li>
+      <li><a href="#disk-count">Disk count</a></li>
+      <li><a href="#notes">Notes</a></li>
+      <li><a href="#segmentation">Segmentation</a></li>
+      <li><a href="#redundancy">Redundancy</a></li>
+      <li><a href="#algorithm">Algorithm</a></li>
+      <li><a href="#where-it-runs">RAID engine</a></li>
+      <li><a href="#below-the-minimum">What happens with fewer disks than the minimum</a></li>
+      <li><a href="#in-practice">In practice</a></li>
+      <li><a href="#try-it">Try it</a></li>
+      <li><a href="#see-also">See also</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section">
     <p class="kb-flag kb-flag-derived">Derived by hand from the Linux md rule — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
     <p class="kb-lede">Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>

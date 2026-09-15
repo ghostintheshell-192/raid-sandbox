@@ -127,6 +127,17 @@
       <a class="kb-nav-item" href="../index.html">Sandbox</a>
   </nav>
 
+  <details class="kb-toc-inline">
+    <summary class="kb-toc-title">On this page</summary>
+    <ul class="kb-toc-list">
+      <li><a href="#preliminary-concepts">Preliminary Concepts</a></li>
+      <li><a href="#segmentation-types">Segmentation types</a></li>
+      <li><a href="#remarks">Remarks</a></li>
+      <li><a href="#sources">Sources</a></li>
+      <li><a href="#related">Related</a></li>
+    </ul>
+  </details>
+
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
     <h2 id="preliminary-concepts">Preliminary Concepts</h2>
