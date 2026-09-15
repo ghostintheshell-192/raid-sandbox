@@ -84,6 +84,7 @@
           <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
           <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
           <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+          <li><a class="kb-side-item" href="raid1e.html">RAID 1E</a></li>
         </ul>
       </details>
       <details class="kb-side-group">
@@ -161,6 +162,8 @@
       <dd>Every disk holds a full copy of the data, written in step. A read is served by any one copy, a write goes to all of them, and the array survives as long as one copy is left. It keeps one disk&#39;s worth of space however many disks it has, and it is the simplest redundancy there is.</dd>
       <dt><a href="raid10.html">RAID 10</a></dt>
       <dd>Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</dd>
+      <dt><a href="raid1e.html">RAID 1E</a></dt>
+      <dd>The striped mirror of RAID 10 on an odd number of disks: every chunk is stored on two disks and the chunks are dealt across all of them, with the second copy of a chunk wrapping to the next stripe where the count does not divide. It keeps half the space and is guaranteed to survive one failure.</dd>
       <dt><a href="raid5.html">RAID 5</a></dt>
       <dd>Data striped across every disk, with one parity block per stripe that moves from disk to disk. Any one disk can fail and everything on it is recomputed from the rest by XOR. It keeps all but one disk&#39;s worth of space, reads nearly as fast as a plain stripe, and pays for small writes with four disk operations each.</dd>
       <dt><a href="raid6.html">RAID 6</a></dt>

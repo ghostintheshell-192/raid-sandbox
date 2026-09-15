@@ -84,6 +84,7 @@
           <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
           <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
           <li><span class="kb-side-item active" aria-current="page">RAID 10</span></li>
+          <li><a class="kb-side-item" href="raid1e.html">RAID 1E</a></li>
         </ul>
       </details>
       <details class="kb-side-group">
@@ -163,7 +164,7 @@
       <li><strong>Fault tolerance.</strong> One failure guaranteed (<a href="fault-tolerance.html">fault tolerance</a>); a second is survived only if it lands on a disk that does not hold the other copy of the same chunks. On four disks with two copies, the second failure lands on the partner of the first in one case out of three; on a controller&#39;s RAID 1+0 the same rule reads &quot;one failure per pair&quot;. The number to plan on is one.</li>
     </ul>
     <h2 id="disk-count">Disk count</h2>
-    <p>An even count of disks is the natural shape, one copy per disk per stripe. <code>md</code> accepts an odd count too, with the copies wrapping across stripes; that array is what the industry names RAID 1E, and it has its own page. With two disks the distinction disappears: two copies on two devices is a mirror, and the array is a RAID 1 by another name.</p>
+    <p>An even count of disks is the natural shape, one copy per disk per stripe. <code>md</code> accepts an odd count too, with the copies wrapping across stripes; that array is what the industry names <a href="raid1e.html">RAID 1E</a>, and it has its own page. With two disks the distinction disappears: two copies on two devices is a mirror, and the array is a RAID 1 by another name.</p>
     <section class="kb-footnotes" id="notes">
     <h2>Notes</h2>
     <ol>
@@ -300,7 +301,7 @@ every copy is written, no parity → 2 I/Os, random or sequential</code></pre>
     <ul class="kb-links">
       <li>RAID 1+0</li>
       <li>RAID 0+1</li>
-      <li>RAID 1E</li>
+      <li><a href="raid1e.html">RAID 1E</a></li>
       <li><a href="raid1.html">RAID 1</a></li>
     </ul>
   </section>

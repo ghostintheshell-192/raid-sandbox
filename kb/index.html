@@ -124,6 +124,10 @@
       <h3><a href="raid10.html">RAID 10</a></h3>
       <p>Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
     </li>
+    <li>
+      <h3><a href="raid1e.html">RAID 1E</a></h3>
+      <p>The striped mirror of RAID 10 on an odd number of disks: every chunk is stored on two disks and the chunks are dealt across all of them, with the second copy of a chunk wrapping to the next stripe where the count does not divide. It keeps half the space and is guaranteed to survive one failure.</p>
+    </li>
     </ul>
   </section>
   <section class="kb-section" id="concepts">

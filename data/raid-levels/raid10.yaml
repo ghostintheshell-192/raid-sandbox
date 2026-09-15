@@ -132,7 +132,7 @@ kb:
 
     An even count of disks is the natural shape, one copy per disk per stripe.
     `md` accepts an odd count too, with the copies wrapping across stripes; that
-    array is what the industry names RAID 1E, and it has its own page. With two
+    array is what the industry names [[raid1e|RAID 1E]], and it has its own page. With two
     disks the distinction disappears: two copies on two devices is a mirror, and
     the array is a RAID 1 by another name.
 
