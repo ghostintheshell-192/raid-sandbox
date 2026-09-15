@@ -33,7 +33,13 @@
 
 /* --- the side column: the map beside the text, from 1100px up ------ */
 
+/* Both columns exist in every page's HTML and are hidden here, at the base:
+   the map from 1100px and the page's own index from 1250px take their place
+   beside the text. Hidden only inside those blocks, the index would come
+   back on a narrow window as an ordinary block at the end of the document,
+   after the footer, where it lists sections the reader has already passed. */
 .kb-side { display: none; }
+.kb-toc  { display: none; }
 
 @media (min-width: 1100px) {
   .kb-page--side {
@@ -42,7 +48,6 @@
     column-gap: 3.5rem;
     align-items: start;
   }
-  .kb-toc { display: none; }
   /* Two independently anchored boxes instead of one. kb-side-home (the way
      out) stays where a new visitor looks for it, pinned near the top; the
      groups rest near the floor and rise as a <details> opens. align-self:
