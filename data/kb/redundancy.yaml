@@ -27,8 +27,10 @@ long: |
   Their example: 100 disks rated at 30,000 hours each give an array rated at
   300 hours, "less than 2 weeks". Their conclusion: "Without fault tolerance, large
   arrays of inexpensive disks are too unreliable to be useful." Striping makes the
-  loss total, because every disk carries a piece of every file ([[striping]]); a
-  linear array loses only what was on the dead disk, but that is still data lost.
+  loss total, because every disk carries a piece of every file ([[striping]]). A
+  linear array keeps each file on one disk, but it fails as a whole all the same:
+  the blocks on the surviving disks are intact, and the array no longer serves
+  them ([[jbod]]).
 
   Redundancy is the answer: store, beside the data, enough extra information that
   the contents of a failed member can be recomputed from the survivors. The levels
