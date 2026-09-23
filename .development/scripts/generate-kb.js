@@ -289,6 +289,14 @@ function gridText(def, node) {
   if (placement.unsupported) return { text: null, reason: placement.reason, algorithm: null };
   if (placement.fallback) fail(`${def.where}: kb.example.algorithm — ${placement.fallback}`);
 
+  // Linear + no redundancy (JBOD/concat): placeLinear returns ONE row with no
+  // stripes at all, and each segment IS a whole disk — there is nothing to
+  // rotate and nothing to compute. "stripe 0" and "D<n>" would both be lies
+  // for this shape, so it gets its own table: the cell that distinguishes a
+  // disk here is the range of array addresses it holds, not a chunk label.
+  if (def.shape.segmentation === 'linear' && def.shape.redundancy === 'none')
+    return gridTextLinear(def, node, placement);
+
   const cell = (c) => {
     if (!c) return '·';
     if (c.role === 'data')   return `D${c.seg}`;
@@ -307,6 +315,27 @@ function gridText(def, node) {
 
   return {
     text: [line('', head), ...rows.map((r) => line(r.label, r.cells))].join('\n'),
+    reason: null,
+    algorithm: placement.algorithm,
+  };
+}
+
+// A concatenation's single row, cell d = the address range disk d holds. The
+// size is the same value workedText() calls `size` (node.members[0].sizeGB,
+// printed with the "TB" unit the worked calculation already uses) — read from
+// the tree, not from kb.example, so it cannot drift from the worked numbers.
+function gridTextLinear(def, node, placement) {
+  const size = node.members[0].sizeGB;
+  const row = placement.stripes[0];
+  const cell = (c) => `${c.seg * size}–${(c.seg + 1) * size} TB`;
+
+  const head = Array.from({ length: placement.columns }, (_, d) => `disk ${d}`);
+  const cells = row.map(cell);
+  const widths = head.map((h, d) => Math.max(h.length, cells[d].length));
+  const line = (cellsRow) => cellsRow.map((c, d) => '  ' + String(c).padStart(widths[d])).join('');
+
+  return {
+    text: [line(head), line(cells)].join('\n'),
     reason: null,
     algorithm: placement.algorithm,
   };
@@ -720,13 +749,24 @@ function levelPage(def, ctx) {
   out.push('  </section>');
 
   // 2 — segmentation, then this level's own grid
+  // Linear + no redundancy (JBOD/concat) has no stripes and no legend of block
+  // roles to give — gridLegend() is written for D<n>/P/Q cells and does not
+  // apply here, so this shape gets its own intro instead of calling it.
+  const isLinearConcat = def.shape.segmentation === 'linear' && def.shape.redundancy === 'none';
+  const linearSize = `${node.members[0].sizeGB} TB`;
   section('segmentation', 'Segmentation',
     transclude(SECTION_CONCEPT.segmentation, ctx, where),
     applied(`How ${def.name} places its data`,
       grid.text
-        ? `The grid below is the placement of a ${name} array of ${ex.disks} disks, as the Linux <code>md</code> rule produces it. ` +
-          `Each column is one disk, each row is one stripe, and each cell names the block that lands there: ${gridLegend(def)} ` +
-          'Reading a row from left to right shows how one stripe is dealt across the members; reading a column from top to bottom shows what one disk ends up holding.'
+        ? (isLinearConcat
+            ? `The grid below is the placement of a ${name} array of ${ex.disks} disks of ${linearSize}, as the Linux <code>md</code> rule produces it. ` +
+              'Each column is one disk, and each cell is the range of array addresses that disk holds. ' +
+              `The ranges are as large as the disks: the first ${linearSize} of the array are on disk 0, the next ${linearSize} on disk 1, and so on up to the last disk. ` +
+              'There is no chunk and no stripe: the array moves to the next disk only when the previous one is full. ' +
+              'On a RAID 0 array of the same disks, each cell would be one chunk, 512 KB by default in <code>mdadm</code>, and the data would change disk after every chunk.'
+            : `The grid below is the placement of a ${name} array of ${ex.disks} disks, as the Linux <code>md</code> rule produces it. ` +
+              `Each column is one disk, each row is one stripe, and each cell names the block that lands there: ${gridLegend(def)} ` +
+              'Reading a row from left to right shows how one stripe is dealt across the members; reading a column from top to bottom shows what one disk ends up holding.')
         : `${name} has no placement grid to draw: ${escapeHtml(grid.reason)}.`,
       grid.text
         ? `<p class="kb-caption">${name} · ${escapeHtml(String(ex.disks))} disks${grid.algorithm ? ` · ${escapeHtml(grid.algorithm)}` : ''}</p>\n<pre class="kb-grid"><code>${escapeHtml(grid.text)}</code></pre>`

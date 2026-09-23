@@ -188,10 +188,10 @@
     <p class="kb-short">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
     <p class="kb-more"><a href="segmentation.html">Read more — Segmentation</a></p>
     <h3>How JBOD / spanned places its data</h3>
-    <p class="kb-intro">The grid below is the placement of a JBOD / spanned array of 3 disks, as the Linux <code>md</code> rule produces it. Each column is one disk, each row is one stripe, and each cell names the block that lands there: D followed by a number for a data chunk. Reading a row from left to right shows how one stripe is dealt across the members; reading a column from top to bottom shows what one disk ends up holding.</p>
+    <p class="kb-intro">The grid below is the placement of a JBOD / spanned array of 3 disks of 2 TB, as the Linux <code>md</code> rule produces it. Each column is one disk, and each cell is the range of array addresses that disk holds. The ranges are as large as the disks: the first 2 TB of the array are on disk 0, the next 2 TB on disk 1, and so on up to the last disk. There is no chunk and no stripe: the array moves to the next disk only when the previous one is full. On a RAID 0 array of the same disks, each cell would be one chunk, 512 KB by default in <code>mdadm</code>, and the data would change disk after every chunk.</p>
     <p class="kb-caption">JBOD / spanned · 3 disks</p>
-    <pre class="kb-grid"><code>          disk 0  disk 1  disk 2
-stripe 0      D0      D1      D2</code></pre>
+    <pre class="kb-grid"><code>  disk 0  disk 1  disk 2
+  0–2 TB  2–4 TB  4–6 TB</code></pre>
   </section>
   <section class="kb-section" id="redundancy">
     <h2>Redundancy</h2>
