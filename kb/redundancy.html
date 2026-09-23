@@ -79,11 +79,13 @@
       <details class="kb-side-group">
         <summary class="kb-side-title">RAID levels</summary>
         <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="jbod.html">JBOD / spanned</a></li>
           <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
           <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
           <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
           <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
           <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+          <li><a class="kb-side-item" href="raid1e.html">RAID 1E</a></li>
         </ul>
       </details>
       <details class="kb-side-group" open>
@@ -144,7 +146,7 @@
     <h2 id="purpose">Purpose</h2>
     <p>A disk fails, eventually. Put many disks together and the array fails as soon as any one of them does, so it fails sooner. The paper that named RAID put it as a formula, with MTTF (&quot;mean time to failure&quot;):</p>
     <pre class="kb-figure"><code>MTTF of a disk array = MTTF of a single disk ÷ number of disks in the array</code></pre>
-    <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes the loss total, because every disk carries a piece of every file (<a href="striping.html">striping</a>); a linear array loses only what was on the dead disk, but that is still data lost.</p>
+    <p>Their example: 100 disks rated at 30,000 hours each give an array rated at 300 hours, &quot;less than 2 weeks&quot;. Their conclusion: &quot;Without fault tolerance, large arrays of inexpensive disks are too unreliable to be useful.&quot; Striping makes the loss total, because every disk carries a piece of every file (<a href="striping.html">striping</a>). A linear array keeps each file on one disk, but it fails as a whole all the same: the blocks on the surviving disks are intact, and the array no longer serves them (<a href="jbod.html">jbod</a>).</p>
     <p>Redundancy is the answer: store, beside the data, enough extra information that the contents of a failed member can be recomputed from the survivors. The levels the paper defined are the ways to do this at different costs, and every RAID level since is one of two techniques, or a nesting of them.</p>
     <h2 id="techniques-mirroring-and-parity">Techniques: mirroring and parity</h2>
     <ul>

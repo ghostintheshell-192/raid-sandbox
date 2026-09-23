@@ -23,6 +23,10 @@ minDisksToRunSource: "structural: an array of one member is that member, so two 
 reference:
   faultToleranceAtMinimum: 0
   capacityFormula: "sum of all disk sizes"
+  capacityTemplate: "N * size"        # evaluable, see raid5.yaml
+  writePenalty:
+    random: 1
+    sequential: 1
 
 defaultAlgorithm: null
 
@@ -47,3 +51,113 @@ useCases:
 notFor:
   - Any data you cannot afford to lose
   - Performance-sensitive workloads
+
+kb:
+  # ADR-004: derived. The grid is the linear placement, correct by inspection (no
+  # rotation, no parity); the failure behaviour is cited from md-linear.c and from
+  # Microsoft's dynamic-volume documentation.
+  status: derived
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How JBOD works: disks joined end to end, and two meanings of one name"
+  short: >
+    Disks joined end to end into one volume: the first fills up, then the next.
+    It uses every byte of disks of any size and can grow by adding a disk, but it
+    is no faster than one disk and has no redundancy: one disk failing takes the
+    whole volume with it.
+
+  long: |
+    ## What it is
+
+    JBOD is the pair *linear + no redundancy*: the members are joined end to end
+    ([[segmentation]]), and nothing is added to protect them ([[redundancy]]).
+    Linux `md` calls the mode *linear*: it "simply catenates the available space
+    on each drive to form one large virtual drive". Each member covers one range
+    of addresses of the array, the next member's range starting where the
+    previous one ends. The RAID engine keeps the end address of every member and
+    sends each request to the member whose range contains its address
+    ([[raid-engine]]). Nothing is cut into chunks and nothing is copied.
+
+    It is not a RAID level. The 1988 paper that named RAID defines five levels,
+    all with redundancy, and a plain concatenation adds none. It has a page here
+    because it is the simplest thing an array can be, and the point against which
+    the levels are measured.
+
+    ## Advantages
+
+    - **Capacity.** Every byte of every member holds data: the [[capacity]] is the
+      sum of the members, and the members can be of any size. Windows states it
+      for its version: "the areas of unallocated space can be different sizes".
+    - **Growth.** A disk added at the end extends the array without moving what
+      is already there. `md` names this as the advantage of linear over RAID 0:
+      the array "is made bigger without disturbing the data that is on the
+      array", and this "can even be done on a live array".
+    - **Write cost.** The [[write-penalty]] is one: a logical write is one disk
+      write.
+
+    ## Disadvantages
+
+    - **Fault tolerance.** Zero ([[fault-tolerance]]), and the loss is the whole
+      volume. When `md` sees one member fail, it marks the array broken and logs
+      "failing array"; Windows says that the entire volume fails and all its data
+      becomes inaccessible.[^spanned-failure] The blocks on the surviving disks
+      are not touched, but the array no longer serves them: reaching them is a
+      recovery job outside the array.
+    - **Failure rate.** It grows with the disk count, as for any array without
+      redundancy: in Microsoft's words, "the reliability for a spanned volume is
+      less than the least reliable disk in the set".
+    - **Speed.** One request lands on one disk, so a single stream of reads or
+      writes runs at the speed of one disk ([[performance]]). Two requests are
+      served at the same time only if their addresses happen to fall on
+      different members, which depends on where the data sits, not on the
+      layout.
+    - **Shrinking.** Windows does not allow removing part of a spanned volume:
+      "you cannot delete any portion of it without deleting the entire spanned
+      volume".
+
+    ## Use cases
+
+    The layout is right where capacity matters and the data can be lost or
+    rebuilt from elsewhere: joining disks of different sizes into one volume, or
+    extending a full volume onto a new disk without copying it. Two disks is the
+    minimum, because an array of one member is that member.
+
+    ## Other names
+
+    Linux `md` calls it `linear`, Windows a *spanned volume*, and common speech
+    *JBOD* (Just a Bunch of Disks), *spanning* or *concatenation*.
+
+    The same word has a second meaning on hardware controllers. There, JBOD is a
+    state a single drive can be put in: Broadcom's MegaRAID guide says that a
+    drive in the JBOD state "is exposed to the host operating system as a
+    stand-alone drive", and that JBOD drives cannot be used "to create a RAID
+    configuration". That JBOD is no array at all: each disk reaches the operating
+    system on its own, as a separate device.
+
+    A third use names hardware, not a layout: vendors also call a disk
+    enclosure, a box of drives attached to a server, a JBOD. Microchip's Adaptec
+    SmartRAID guide lists "JBOD" among the names of an enclosure, and Dell
+    describes its MD3060e as a "dense enclosure or JBOD (just-a-bunch-of-disks)".
+
+    This page is about the first meaning, the concatenation.
+
+    [^spanned-failure]: Microsoft Learn, *What Are Dynamic Disks and Volumes?*
+    (Windows Server 2003 documentation), section *Spanned Volumes*: "Spanned
+    volumes do not provide fault tolerance. If one of the disks containing a
+    spanned volume fails, the entire volume fails, and all data on the spanned
+    volume becomes inaccessible."
+
+  example: { disks: 3, sizeGB: 2, protocol: SATA, algorithm: null }
+
+  worked:
+    capacity: |
+      N × disk size
+      N = {N} disks of {size} TB → {N} × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      no redundancy: any one member gone fails the array → 1 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      concatenation, no copies and no parity → {writePenaltyRandom} I/O, random or sequential
+
+  related: [segmentation, span, redundancy, capacity, fault-tolerance, performance, raid-engine]
+  confusedWith: [raid0]

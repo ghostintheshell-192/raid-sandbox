@@ -79,11 +79,13 @@
       <details class="kb-side-group">
         <summary class="kb-side-title">RAID levels</summary>
         <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="jbod.html">JBOD / spanned</a></li>
           <li><a class="kb-side-item" href="raid0.html">RAID 0</a></li>
           <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
           <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
           <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
           <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+          <li><a class="kb-side-item" href="raid1e.html">RAID 1E</a></li>
         </ul>
       </details>
       <details class="kb-side-group" open>
@@ -166,7 +168,7 @@ fault tolerance  1 guaranteed                  the two copies of one chunk may b
                                                (more, if the failures miss each other)
 write cost       2 operations per write
 read width       N                             one large read spans the stripe</code></pre>
-    <p>This is the one place where the <a href="segmentation.html">segmentation</a> axis touches capacity and tolerance: a striped mirror is still a mirror, but each block has its copies on two disks out of <em>N</em>, not on every disk. RAID 1E is the same layout on an odd number of disks, and the <a href="capacity.html">capacity</a> and <a href="fault-tolerance.html">fault tolerance</a> entries carry the rules for both.</p>
+    <p>This is the one place where the <a href="segmentation.html">segmentation</a> axis touches capacity and tolerance: a striped mirror is still a mirror, but each block has its copies on two disks out of <em>N</em>, not on every disk. <a href="raid1e.html">RAID 1E</a> is the same layout on an odd number of disks, and the <a href="capacity.html">capacity</a> and <a href="fault-tolerance.html">fault tolerance</a> entries carry the rules for both.</p>
     <h2 id="limitations">Limitations</h2>
     <p>A mirror copies a mistaken write as faithfully as a good one. Deleting a file deletes it on every copy at once; that is what &quot;written to all devices in parallel&quot; means. See <a href="raid-is-not-a-backup.html">RAID is not a backup</a>.</p>
   </section>

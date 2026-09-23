@@ -105,6 +105,10 @@
     <h2>RAID levels</h2>
     <ul class="kb-cards">
     <li>
+      <h3><a href="jbod.html">JBOD / spanned</a></h3>
+      <p>Disks joined end to end into one volume: the first fills up, then the next. It uses every byte of disks of any size and can grow by adding a disk, but it is no faster than one disk and has no redundancy: one disk failing takes the whole volume with it.</p>
+    </li>
+    <li>
       <h3><a href="raid0.html">RAID 0</a></h3>
       <p>Data dealt out in chunks across every disk and nothing else: no copy, no parity. Every disk works on every large request, so it is the fastest layout there is and uses all the space; and any one disk failing loses everything on all of them.</p>
     </li>
@@ -123,6 +127,10 @@
     <li>
       <h3><a href="raid10.html">RAID 10</a></h3>
       <p>Striping and mirroring in one flat array: every chunk is stored on two disks, and the chunks are dealt across all of them. It reads like a stripe, writes at a mirror&#39;s cost with no parity to compute, keeps half the space, and is guaranteed to survive one failure, more if the failures miss each other.</p>
+    </li>
+    <li>
+      <h3><a href="raid1e.html">RAID 1E</a></h3>
+      <p>The striped mirror of RAID 10 on an odd number of disks: every chunk is stored on two disks and the chunks are dealt across all of them, with the second copy of a chunk wrapping to the next stripe where the count does not divide. It keeps half the space and is guaranteed to survive one failure.</p>
     </li>
     </ul>
   </section>

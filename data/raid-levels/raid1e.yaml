@@ -27,6 +27,7 @@ minDisksToRunSource: "drivers/md/raid10.c setup_conf(): no bound on the device c
 reference:
   faultToleranceAtMinimum: 1
   capacityFormula: "(N / copies) × disk size  =  N/2 × disk size"
+  capacityTemplate: "N / copies * size"   # evaluable, see raid5.yaml
   writePenalty:
     random: 2
     sequential: 2
@@ -60,3 +61,128 @@ useCases:
 notFor:
   - Capacity-efficient storage (50% overhead)
   - Tolerating two simultaneous failures
+
+# ---------------------------------------------------------------------------
+# Knowledge base (specs/implemented/knowledge-base.md §5.2). See raid5.yaml for what
+# each field is. Writing rules: data/kb/segmentation.yaml header.
+# ---------------------------------------------------------------------------
+kb:
+  # ADR-004: the page's grid is a golden table drawn, derived by hand from the md rule
+  # (reference/golden-tables/raid10-near.md, `raid10-near-3`).
+  status: derived
+  # The title for search results and the browser tab — not the page heading (that stays `name`).
+  searchTitle: "How RAID 1E works: a striped mirror on an odd number of disks"
+  short: >
+    The striped mirror of RAID 10 on an odd number of disks: every chunk is stored
+    on two disks and the chunks are dealt across all of them, with the second copy
+    of a chunk wrapping to the next stripe where the count does not divide. It
+    keeps half the space and is guaranteed to survive one failure.
+
+  long: |
+    ## What it is
+
+    RAID 1E is the pair *striped + mirror* on an odd number of disks: the data is
+    cut into chunks and dealt across the members ([[striping]]), and every chunk
+    is stored on two different disks ([[mirroring]]), exactly as in
+    [[raid10|RAID 10]]. What changes is only the count. With an even count the
+    two copies of every chunk fit in the same stripe, side by side; with an odd
+    count one chunk per stripe has no room left for its copy, and the copy goes
+    to the first disk of the next stripe. The two copies are still on two
+    different disks, and no disk holds both copies of any chunk.
+
+    In Linux `md` it is not a level of its own. The RAID10 driver accepts the
+    odd count: "the number of devices in a RAID10 array need not be a multiple
+    of the number of replica of each data block; however, there must be at least
+    as many devices as replicas", and with five devices and two replicas "space
+    equivalent to 2.5 of the devices will be available, and every block will be
+    stored on two different devices". The wrap is the *near* placement
+    [[algorithm]] doing what it always does: the driver fills the disks from left
+    to right, stripe by stripe, with a stream in which every chunk appears twice,
+    and when the stream reaches the last disk it continues on the first disk of
+    the next stripe.[^first-copy]
+
+    The name is the controller vendors'. Adaptec's white paper *Choosing the
+    Right RAID* defines it as the level that "combines data striping from RAID 0
+    with data mirroring from RAID 1", where "data written in a stripe on one
+    drive is mirrored to a stripe on the next drive in the array", and sums it
+    up: "in effect, RAID 1E is a mirror of an odd number of drives". Its figure
+    of a three-drive array is, cell for cell, the grid under *Segmentation*
+    below. On IBM's ServeRAID controllers a RAID 1E array "can contain only an
+    odd number of drives between three (3) and nine (9)"; Adaptec puts the
+    minimum at three and, "for scenarios with four or more drives", recommends
+    RAID 10. So one layout carries two names, and the count decides which: even
+    is RAID 10, odd is RAID 1E.
+
+    [^first-copy]: In the grid one copy of each chunk is drawn as the original and
+    the other as its copy. The driver makes no such distinction, and the sandbox
+    draws as the original the copy the driver places first. A choice of the
+    sandbox — see [[design-decisions|the model's choices]].
+
+    ## Advantages
+
+    - **Disk count.** Any odd count from three up. The third disk of a three-disk
+      array adds capacity, where a three-disk RAID 1 would add a third copy of
+      the same data.
+    - **Bandwidth.** A large read spans the stripe, at the combined bandwidth of
+      all *N* disks, as in RAID 10.
+    - **Write cost.** Two operations per write, one per copy, with no parity to
+      read or compute ([[write-penalty]]).
+
+    ## Disadvantages
+
+    - **Capacity.** *N ÷ 2* disks' worth ([[capacity]]): one and a half disks'
+      worth on three disks, two and a half on five. The same half as any two-way
+      mirror.
+    - **Fault tolerance.** One failure guaranteed ([[fault-tolerance]]). A second
+      failure is survived only if it lands on a disk that holds no copy of the
+      chunks the first disk held. On three disks every disk shares chunks with
+      both of the others, so the number is exactly one.
+    - **Where it exists.** Under Linux `md` it is RAID 10 with an odd count, and
+      any `md` system runs it. On a hardware controller it exists only where the
+      vendor offers it, under the vendor's name: Adaptec and IBM ServeRAID
+      controllers do, and a controller that offers RAID 10 alone refuses the odd
+      count.
+
+    ## Placement rule
+
+    The rule is the near layout's, written for two copies. The legend first, then
+    the rule, then the chunk of the example that wraps.
+
+    ```text
+    N        the number of disks
+    c        the chunk number, counted from 0
+    d        the disk of the first copy       d = (2 × c) mod N
+    s        the stripe of the first copy     s = (2 × c) div N
+    second copy: the next disk, d + 1, in the same stripe;
+                 when d + 1 = N, disk 0 of the next stripe, s + 1
+
+    N = 3, c = 1:   d = 2 mod 3 = 2, s = 2 div 3 = 0   → first copy on disk 2, stripe 0
+                    d + 1 = 3 = N                        → second copy on disk 0, stripe 1
+    ```
+
+    With an even *N* the number *2 × c* is never one short of a multiple of *N*,
+    so the wrap never happens and the copies pair up: that is RAID 10. With an
+    odd *N* it happens once every *N* chunks.
+
+    ## Minimum disk count, and below it
+
+    Three disks is the minimum, and it is a matter of the count's parity, not of
+    what the driver accepts: two disks is an even count, which is RAID 10's
+    shape, and two copies on two disks is a plain mirror, a [[raid1|RAID 1]] by
+    another name. Nothing collapses here; below three the array is another level.
+
+  example: { disks: 3, sizeGB: 2, protocol: SATA, algorithm: near }
+
+  worked:
+    capacity: |
+      (N ÷ copies) × disk size
+      N = {N} disks of {size} TB, 2 copies → ({N} ÷ 2) × {size} TB = {capacity} TB usable
+    faultTolerance: |
+      the members an adversary must kill, minus one
+      two copies of every chunk: both copies of one chunk → 2 → tolerance {faultTolerance}
+    writePenalty: |
+      one logical write costs
+      every copy is written, no parity → {writePenaltyRandom} I/Os, random or sequential
+
+  related: [striping, mirroring, algorithm, write-penalty, capacity, fault-tolerance, performance]
+  confusedWith: [raid10, raid1]

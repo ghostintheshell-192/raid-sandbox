@@ -96,11 +96,28 @@ kb:
     Where the second copy lands is the placement [[algorithm]], *near*, *far* or
     *offset*; near, the default, puts the two copies side by side in the same
     stripe, which is the same arrangement a hardware controller reaches in a
-    different way, by striping over mirror pairs.[^first-copy] That nested form, RAID 1+0, has
-    its own page; with the near layout the two put every block in the same place,
-    and the difference is which engine built it and which other layouts it can
-    offer. RAID 0+1, a mirror of two stripes, uses the same disks in a worse
-    arrangement, and its page says why.
+    different way, by striping over mirror pairs.[^first-copy]
+
+    That nested form has a name of its own, RAID 1+0, and it is built in two
+    steps. First the disks are joined in pairs, each pair a [[raid1|RAID 1]]
+    mirror that holds the same data on both of its disks. Then the pairs are
+    striped together, as a [[raid0|RAID 0]] whose members are the pairs instead
+    of the disks. With the near layout the two constructions put every block in
+    the same place: the grid below, read as pairs of columns, is also the grid
+    of a RAID 1+0 on four disks. What differs is not the placement but who built
+    the array and what else it can do. A nested RAID 1+0 is what a hardware
+    controller builds, one mirror at a time, and it has no far or offset layout:
+    those layouts move the copies across the pairs, and a mirror pair cannot
+    place anything outside itself.
+
+    RAID 0+1 is the same two steps in the opposite order: first two stripes,
+    each across half of the disks, then a mirror of the two stripes. It uses the
+    same disks in a worse arrangement. When one disk fails, the whole stripe it
+    belongs to is lost, because a stripe with a missing member cannot be read;
+    the array is left with one working stripe and no copy of it. When the disk
+    is replaced, the rebuild does not copy one disk's worth of data, as a mirror
+    pair would, but the whole stripe, from the surviving one. In a RAID 1+0 the
+    same failure costs one pair its copy, and the rebuild reads one disk.
 
     [^first-copy]: In the grids one copy of each chunk is drawn as the original and
     the other as its copy. The driver makes no such distinction, and the sandbox
@@ -132,7 +149,7 @@ kb:
 
     An even count of disks is the natural shape, one copy per disk per stripe.
     `md` accepts an odd count too, with the copies wrapping across stripes; that
-    array is what the industry names RAID 1E, and it has its own page. With two
+    array is what the industry names [[raid1e|RAID 1E]], and it has its own page. With two
     disks the distinction disappears: two copies on two devices is a mirror, and
     the array is a RAID 1 by another name.
 

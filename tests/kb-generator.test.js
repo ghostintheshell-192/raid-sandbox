@@ -346,5 +346,15 @@ for (const [name, html] of pages) {
   });
 }
 
+// ---------------------------------------------------------------------------
+console.log('\n[8] a linear array (JBOD) draws address ranges, not stripes');
+
+test('jbod.html: the grid names the address range each disk holds, not a stripe row', () => {
+  const html = pages.get('jbod.html');
+  assert(html, 'jbod.html was not generated');
+  assert(html.includes('0–2 TB'), 'jbod.html: the grid does not show the "0–2 TB" range for disk 0');
+  assert(!html.includes('stripe 0'), 'jbod.html: the grid still labels a row "stripe 0", which a concatenation does not have');
+});
+
 fs.rmSync(tmp, { recursive: true, force: true });
 finish();

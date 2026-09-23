@@ -79,11 +79,13 @@
       <details class="kb-side-group" open>
         <summary class="kb-side-title">RAID levels</summary>
         <ul class="kb-side-list">
+          <li><a class="kb-side-item" href="jbod.html">JBOD / spanned</a></li>
           <li><span class="kb-side-item active" aria-current="page">RAID 0</span></li>
           <li><a class="kb-side-item" href="raid1.html">RAID 1</a></li>
           <li><a class="kb-side-item" href="raid5.html">RAID 5</a></li>
           <li><a class="kb-side-item" href="raid6.html">RAID 6</a></li>
           <li><a class="kb-side-item" href="raid10.html">RAID 10</a></li>
+          <li><a class="kb-side-item" href="raid1e.html">RAID 1E</a></li>
         </ul>
       </details>
       <details class="kb-side-group">
@@ -162,13 +164,13 @@
     <p>No other layout matches it on any of these, which is why it is the reference the others are measured against (<a href="performance.html">performance</a>).</p>
     <h2 id="disadvantages">Disadvantages</h2>
     <ul>
-      <li><strong>Fault tolerance.</strong> Zero (<a href="fault-tolerance.html">fault tolerance</a>), and the loss is total. A linear array that loses a disk loses the files that were on that disk; a stripe that loses a disk loses every file larger than a chunk, because each of them had a piece there. The array does not become smaller, it becomes unreadable.</li>
+      <li><strong>Fault tolerance.</strong> Zero (<a href="fault-tolerance.html">fault tolerance</a>), and the loss is total. A stripe that loses a disk loses every file larger than a chunk, because each of them had a piece there. The array does not become smaller, it becomes unreadable.</li>
       <li><strong>Failure rate.</strong> It grows with the disk count: ten disks fail, between them, ten times as often as one.</li>
     </ul>
     <h2 id="use-cases">Use cases</h2>
     <p>The level is right for data that can be lost or remade: scratch space for editing, render caches, a build directory, anything whose source is elsewhere. The <a href="chunk.html">chunk</a> size is its one parameter, and the only decision after the disk count. Two disks is the minimum, because an array of one member is that member; there is no smaller array it could become.</p>
     <h2 id="other-names">Other names</h2>
-    <p>Linux <code>md</code> calls it <code>raid0</code> and copes with disks of unequal size by continuing the stripe over the larger ones once the smaller are full (<a href="segmentation.html">segmentation</a>); Windows Storage Spaces calls it a <em>simple space</em>, &quot;data striped across multiple drives&quot; with &quot;no resiliency or redundancy&quot;. JBOD is the linear equivalent: the same absence of redundancy, none of the speed, and a failure that costs the files of one disk instead of all of them.</p>
+    <p>Linux <code>md</code> calls it <code>raid0</code> and copes with disks of unequal size by continuing the stripe over the larger ones once the smaller are full (<a href="segmentation.html">segmentation</a>); Windows Storage Spaces calls it a <em>simple space</em>, &quot;data striped across multiple drives&quot; with &quot;no resiliency or redundancy&quot;. <a href="jbod.html">JBOD</a> is the linear equivalent: the same absence of redundancy and the same loss of the whole volume when a disk fails, without the speed.</p>
   </section>
   <section class="kb-section" id="segmentation">
     <h2>Segmentation</h2>
@@ -277,7 +279,7 @@ no copies and no parity → 1 I/O, random or sequential</code></pre>
     </ul>
     <h3>Often confused with</h3>
     <ul class="kb-links">
-      <li>JBOD / spanned</li>
+      <li><a href="jbod.html">JBOD / spanned</a></li>
       <li><a href="raid10.html">RAID 10</a></li>
     </ul>
   </section>
