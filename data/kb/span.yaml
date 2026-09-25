@@ -15,7 +15,7 @@ long: |
   A span is the layer at which the two axes are chosen. Take some or all of a
   [[drive-group]]'s disks and give them one [[segmentation]] and one [[redundancy]]:
   that set is a span, and the pair of choices is its RAID level. The simplest span
-  has no layout at all, disks joined end to end with no redundancy, which is JBOD.
+  has no layout at all, disks joined end to end with no redundancy, which is [[jbod|JBOD]].
   The figure under [[virtual-drive]] shows where the span sits: inside the drive
   group, under the virtual drives carved from it.
 

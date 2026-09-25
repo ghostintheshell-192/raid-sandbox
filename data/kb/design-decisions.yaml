@@ -45,7 +45,7 @@ long: |
   - the device the array becomes is an `md` device in Linux, a [[virtual-drive]] on a
     controller, a *storage space* in Windows
   - disks joined end to end are *linear* in `md`, a *spanned volume* in Windows,
-    and JBOD in common speech
+    and [[jbod|JBOD]] in common speech
 
   ### Where md is not the reference
 
