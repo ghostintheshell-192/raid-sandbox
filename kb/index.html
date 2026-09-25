@@ -163,7 +163,7 @@
     </li>
     <li>
       <h3><a href="parity.html">Parity</a></h3>
-      <p>One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</p>
+      <p>Parity is one extra block per stripe, computed from the stripe&#39;s data blocks by XOR. If any one block of the stripe is lost, it can be recomputed from the others. This protects the stripe at the cost of one block instead of a full copy of the data. RAID 6 adds a second extra block, called Q, computed with a different formula: with two extra blocks, the stripe survives two lost blocks.</p>
     </li>
     <li>
       <h3><a href="capacity.html">Capacity</a></h3>

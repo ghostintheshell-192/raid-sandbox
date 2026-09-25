@@ -24,8 +24,16 @@ That reading fails on physical grounds, in the common case and not only at the e
   JMicron/ASMedia — metadata plus a boot-time Option ROM, while an OS driver computes on
   the general CPU) occupy the **same PCIe slot, in the same position in the wiring**.
   Position cannot separate two things that are not positionally different.
+  *Checked 2026-09-25: JMicron JMB36x is in dmraid's list of firmware-RAID formats;
+  ASMedia is not. ASMedia describes its RAID chips (ASM1061R, ASM1062R) as carrying an
+  "embedded hardware RAID engine", and the ASM1092R, a port multiplier between one host
+  port and two disks, as "completely the free loading for the system CPU". The example
+  holds for JMicron, not for ASMedia.*
 - On SoC-integrated controllers (AMD Ryzen SATA), the fake-RAID firmware and the CPU live
   on the same die: "before or after the PCIe bus" has no answer at all.
+  *Checked 2026-09-25: true on AM4, where some SATA ports are processor-direct; on AM5
+  all SATA ports come from the chipset. The argument stands on AM4, and on the first
+  bullet alone.*
 
 What actually distinguishes the three types is invisible to a wiring diagram: **who owns
 the array metadata, and who computes the layout**. Hardware — the controller owns it and
@@ -106,6 +114,9 @@ driver loads), the CPU computes it. Software — the OS owns it and computes it.
   SoC integration) are written from prior knowledge and **not yet verified against a
   primary source**. The project's ground-truth discipline applies before implementation
   turns this into code.
+  *Checked 2026-09-25 against primary sources (Broadcom, Intel, `md(4)`, dmraid, AMD,
+  ASMedia): the RST claim holds; the SoC claim holds on AM4 only; the add-in claim holds
+  for JMicron and not for ASMedia. See the notes above.*
 - Builds made with the retired generic `raid-engine` piece lose their meaning and need
   the correct named piece instead.
 

@@ -25,7 +25,7 @@ had no sources of its own.
 
 | page | what needs a source | where to read |
 |---|---|---|
-| `raid-engine` | the three cases; where RST firmware lives, what add-in chips do, SoC integration | `reference/adr-001-hardware-claims-sources.md` (Intel RST whitepaper, dmraid readme, AMD RAIDXpert2 guide); the Broadcom MegaRAID guide, already in the bibliography |
+| ~~`raid-engine`~~ | **cited 2026-09-25.** Four sentences were wrong and are corrected: a firmware array's metadata is on the disks; md closes the write hole itself (journal, PPL); a hardware controller needs an OS driver without RAID logic; the shared die holds on AM4 only | Broadcom product briefs and driver guide, Intel RST white paper, `md(4)`, `raid5-ppl`, AMD AM4 page and RAID quick start |
 | `hba` | HBA vs RAID controller; an HBA alone cannot host the engine | Broadcom MegaRAID / HBA documentation (IT mode vs IR mode) |
 | `bbu` | what protects the write cache; the replay that closes the write hole | Broadcom CacheVault and BBU documentation |
 | `backplane` | passive mid-plane, SATA/SAS signal routing, SGPIO/SES | T10 SES, SFF-8485; a Supermicro backplane manual |

@@ -39,7 +39,7 @@
 - [derived-controller.md](specs/planned/derived-controller.md) — The controller is derived, not dragged
 - [informative-ui.md](specs/planned/informative-ui.md) — Informative UI — the map of what needs explaining
 
-### tech-debt/ (24 files)
+### tech-debt/ (26 files)
 
 - [README.md](tech-debt/README.md) — Tech Debt Issues
 - [_TEMPLATE.md](tech-debt/_TEMPLATE.md) — [Issue Title]
@@ -52,7 +52,9 @@
 - [capacity-approximate-on-mixed-disks.md](tech-debt/capacity-approximate-on-mixed-disks.md) — Usable capacity is approximate when an array mixes disk sizes
 - [control-path-tolerates-cycles.md](tech-debt/control-path-tolerates-cycles.md) — A control path that loops back on itself is accepted in silence
 - [headless-tests-bypass-port-validation.md](tech-debt/headless-tests-bypass-port-validation.md) — `cpConnect` never checks port compatibility — headless tests wire canvases no player could draw
+- [kb-inline-code-and-math-blend-into-prose.md](tech-debt/kb-inline-code-and-math-blend-into-prose.md) — Inline code and math variables blend into the knowledge-base prose
 - [kb-intro-diverges-from-spec.md](tech-debt/kb-intro-diverges-from-spec.md) — The knowledge base teaches a vocabulary the spec does not use
+- [kb-notation-used-before-it-is-explained.md](tech-debt/kb-notation-used-before-it-is-explained.md) — Mathematical notation in the knowledge base is named, not explained
 - [kb-to-verify-queue.md](tech-debt/kb-to-verify-queue.md) — The knowledge base's to-verify queue: eight pages, each with its reading
 - [level-numbers-duplicated-untested.md](tech-debt/level-numbers-duplicated-untested.md) — Level files declare numbers the engine also computes, and nothing compares them
 - [mirror-of-stripes-write-parallelism.md](tech-debt/mirror-of-stripes-write-parallelism.md) — A mirror of striped legs writes as one disk — RAID 0+1 gets `writeMult 0.5`
