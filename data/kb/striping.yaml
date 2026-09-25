@@ -14,7 +14,7 @@ short: >
 
 long: |
   Striping is one of the two answers to [[segmentation]], and the one every RAID
-  level except RAID 1 and JBOD is built on. That page shows the mechanics: the
+  level except RAID 1 and [[jbod|JBOD]] is built on. That page shows the mechanics: the
   [[chunk]], the stripe, the arithmetic that sends a sector to a disk. This one is
   about what the technique does.
 

@@ -50,18 +50,23 @@ function expand(escaped, ctx) {
       if (!ctx.footnote) throw new Error(`${ctx.where || 'markdown'}: a footnote [^${fnId}] outside a body`);
       return ctx.footnote(fnId);
     }
-    if (linkId !== undefined) return ctx.resolveLink(unescapeForId(linkId).trim(),
-                                                     linkText === undefined ? null : linkText.trim());
+    if (linkId !== undefined) return ctx.resolveLink(unescapeMatch(linkId).trim(),
+                                                     linkText === undefined ? null : unescapeMatch(linkText).trim());
     if (bold !== undefined)   return `<strong>${expand(bold, ctx)}</strong>`;
     if (italic !== undefined) return `<em>${expand(italic, ctx)}</em>`;
     return match;
   });
 }
 
-// An id is matched inside already-escaped text, so an id containing one of the
-// five escaped characters arrives as an entity. Ids are [a-z0-9-] in practice;
-// this only keeps a malformed one readable in the error message.
-const unescapeForId = (s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+// A link's id and display text are matched inside already-escaped text (see
+// `renderInline`), so any of the five escaped characters they contain arrives
+// as an entity — an apostrophe in "the model's choices" is `&#39;` by the time
+// the regex sees it. `resolveLink` is the caller's own escaping boundary (it
+// builds the `<a>` text with `escapeHtml`), so what reaches it must be raw:
+// passing the already-escaped form through would double-escape it into
+// `&amp;#39;`. Undo the one escaping pass here, at the point both fields leave
+// this module, rather than in the id alone.
+const unescapeMatch = (s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
                               .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
 // ---------------------------------------------------------------------------

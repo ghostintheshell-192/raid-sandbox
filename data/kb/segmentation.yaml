@@ -90,7 +90,7 @@ long: |
   later by appending one more. What it does not do is make anything faster: one
   request lands on one disk, so the array reads and writes at the speed of a single
   disk. Linux does not count it as a RAID level, and neither does this knowledge
-  base: it is the layout of JBOD (Just a Bunch of Disks).
+  base: it is the layout of [[jbod|JBOD]] (Just a Bunch of Disks).
 
   **Striped: the members laid side by side.** Picture the members as columns, each
   with its own sectors from 0 downwards. The data is cut into pieces of a fixed
