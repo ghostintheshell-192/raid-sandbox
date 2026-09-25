@@ -9,10 +9,15 @@
  * is exercised end-to-end by kb-generator.test.js on the real pages.
  */
 
-const { render, footnotesOf } = require('../.development/scripts/lib/kb-markdown.js');
+const { render, renderInline, escapeHtml, footnotesOf } = require('../.development/scripts/lib/kb-markdown.js');
 const { test, assert, eq, finish } = require('./test-helpers.js');
 
-const ctx = { resolveLink: (id, text) => `<a href="${id}.html">${text || id}</a>`, where: 'test' };
+// Mirrors generate-kb.js's real resolver: it escapes the display text itself
+// (`<a>${escapeHtml(text || id)}</a>`), same as the site's actual link text
+// does. A mock that skipped this escaping step would not catch a caller that
+// hands it text already escaped once — see "a link's display text carrying an
+// apostrophe" below.
+const ctx = { resolveLink: (id, text) => `<a href="${id}.html">${escapeHtml(text || id)}</a>`, where: 'test' };
 const throws = (fn, part) => {
   try { fn(); } catch (e) { assert(e.message.includes(part), `expected "${part}" in: ${e.message}`); return; }
   throw new Error(`expected an error containing "${part}"`);
@@ -39,6 +44,29 @@ test('numbers follow the order of first reference, not of definition', () => {
 test('a definition may run over several lines and carry inline markup', () => {
   const html = render('Text.[^n]\n\n[^n]: A choice of the **sandbox**,\n  see [[design-decisions|the model\'s choices]].', ctx);
   assert(html.includes('<li id="fn-n">A choice of the <strong>sandbox</strong>, see <a href="design-decisions.html">the model&#39;s choices</a>. <a href="#fnref-n"'), html);
+});
+
+test('a link\'s display text carrying an apostrophe is escaped once, not twice', () => {
+  // renderInline HTML-escapes the whole line before matching [[id|text]], so
+  // linkText arrives at the regex as "the model&#39;s choices" already. The
+  // resolver (real or mocked) escapes display text itself, so that escaped
+  // form must be undone before it is handed over — otherwise the resolver's
+  // own escapeHtml turns "&#39;" into "&amp;#39;" and the page shows the
+  // entity literally instead of an apostrophe.
+  const html = renderInline('[[design-decisions|the model\'s choices]]', ctx);
+  eq(html, '<a href="design-decisions.html">the model&#39;s choices</a>');
+  assert(!html.includes('&amp;'), html);
+});
+
+test('other escaped characters in a link\'s display text also survive a single pass', () => {
+  const html = renderInline('[[design-decisions|Q & P, "rotation" <fixed>]]', ctx);
+  eq(html, '<a href="design-decisions.html">Q &amp; P, &quot;rotation&quot; &lt;fixed&gt;</a>');
+  assert(!html.includes('&amp;amp;') && !html.includes('&amp;quot;') && !html.includes('&amp;lt;'), html);
+});
+
+test('a link id itself still resolves plain, unaffected by the text-side fix', () => {
+  const html = renderInline('[[design-decisions]]', ctx);
+  eq(html, '<a href="design-decisions.html">design-decisions</a>');
 });
 
 test('a body with no footnotes has no Notes section, and footnotesOf is empty', () => {
