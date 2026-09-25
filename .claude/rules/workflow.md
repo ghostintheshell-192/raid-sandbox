@@ -77,6 +77,12 @@ point is visible in the diff, it is not worth a line of prose.
 `gh pr edit` currently fails on this repo with a GraphQL error about Projects (classic).
 Use the REST API instead: `gh api repos/<owner>/<repo>/pulls/<n> -X PATCH -F body=@<file>`.
 
+### Keeping CURRENT-STATUS.md current
+
+`.development/CURRENT-STATUS.md` is written by hand; no hook regenerates it. When a
+spec is completed (it moves to `specs/implemented/`), update it **on the same branch,
+before the PR**: *Active Work*, a line in *Recent Milestones*, the roadmap item.
+
 ## Deploy
 
 Push to `main` → Vercel builds and publishes to raid-sandbox.dev automatically. There is

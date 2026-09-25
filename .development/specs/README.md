@@ -52,6 +52,8 @@ This table only says whether the thinking has a home.
 |---|---|
 | [`implemented/raid-sandbox-domain-model.md`](implemented/raid-sandbox-domain-model.md) | the design backbone: the two axes, the recursive tree, level and performance derivation, the three resource families, the constraint vocabulary, the challenge schema |
 | [`implemented/agnostic-engine.md`](implemented/agnostic-engine.md) | how the domain facts moved out of the engine and into the data files (five steps, 2026-09-02) |
+| [`implemented/degenerate-levels.md`](implemented/degenerate-levels.md) | a level below its minimum collapses into a simpler one; the panel shows what was built next to what runs (2026-09-05) |
+| [`implemented/knowledge-base.md`](implemented/knowledge-base.md) | the knowledge base generated from the data: one source, two depths, static pages (2026-09-06) |
 
 ## The decisions behind them
 
@@ -59,3 +61,5 @@ This table only says whether the thinking has a home.
 |---|---|
 | [001](../reference/decisions/001-engine-identity-not-position.md) | the RAID engine's type comes from which object it is, not where it sits |
 | [002](../reference/decisions/002-the-engine-holds-no-domain-facts.md) | the engine holds no domain facts — it reads them from the data files |
+| [003](../reference/decisions/003-desktop-only.md) | RAID Sandbox is a desktop game; the knowledge base stays readable on a phone |
+| [004](../reference/decisions/004-every-statement-names-its-source.md) | every statement names where its truth comes from: cited, derived, chosen, or to verify |

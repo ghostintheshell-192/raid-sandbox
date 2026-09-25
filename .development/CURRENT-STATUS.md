@@ -2,271 +2,155 @@
 
 ## Project State
 
-**Last Updated**: 2026-09-07
+**Last Updated**: 2026-09-25
 
-**Current Phase**: Live in its own repo. Extracted from the personal-site repo and
-deployed to **[raid-sandbox.dev](https://raid-sandbox.dev)** via Vercel (auto-deploy from
-`main`, HTTPS enforced by `.dev`). The old site (`ghostintheshell-192.github.io`) now
-forwards its two indexed game URLs here via canonical + refresh stubs.
+**Current Phase**: Live at **[raid-sandbox.dev](https://raid-sandbox.dev)** (Vercel,
+auto-deploy from `main`). The game is desktop only
+([ADR-003](reference/decisions/003-desktop-only.md)); the knowledge base, generated
+from the data, is readable on any screen and is the entry point from a phone.
 
-**Active Work**: **ADR-004** (2026-09-07, PR #45) — every statement names where its
-truth comes from: *cited / derived / chosen / to verify*. Its implementation is on
-`refactor/every-statement-names-its-source`: the golden tables are derived by hand
-from the kernel rule in `reference/golden-tables/` and the layout suite reads them
-from there; the knowledge base's `sources` is a bibliography of public URLs only, the
-pages carry their state under the heading, the model's choices are footnotes indexed
-on the new `design-decisions` page. What remains: the *to verify* queue — the four
-hardware entries (backplane, HBA, BBU, RAID engine) and the four migrated layers — each
-to be read against its named source. The **knowledge base** itself (roadmap item 3)
-is merged: 31 static pages generated from the data, 24 concepts with their sources,
-five level pages with the engine's numbers. What remains of the spec's §9 is the other
-nine levels and the components page. Before that: the **degenerate-levels spec**
-is implemented (PRs #35–#37, 2026-09-05, now `specs/implemented/degenerate-levels.md`): below its minimum a level
-collapses into a simpler one, the panel shows what was built next to what runs, and the
-diff between them is the trace of rewrites the level files declare. The **agnostic-engine
-plan** (2026-09-02) is complete and its technical queue closed (2026-09-04/05). What
-waits on a decision, not a task: whether and how to extract the engine into a project of
-its own (`reference/engine-robustness-and-extraction.md` §8).
+**Active Work**: the knowledge base's level pages. Seven levels have a page: RAID 0, 1,
+5, 6, 10, 1E and JBOD. The seven nested levels (1+0, 0+1, 50, 60, 51, 61, 100) wait on
+a generator feature: `exampleTree()` accepts only a level whose members are disks, so a
+nested level needs an example tree, the worked numbers on a tree, one grid per span and
+a nested *Try it* link. Beside it, the **to-verify queue**
+([`tech-debt/kb-to-verify-queue.md`](tech-debt/kb-to-verify-queue.md)): eight pages
+with at least one sentence not yet checked against a primary source, to be read one
+page at a time, `raid-engine` first.
+
+**Waiting on a decision, not a task**: whether and how to extract the engine into a
+project of its own (`reference/engine-robustness-and-extraction.md` §8).
 
 ## Recent Milestones
 
-- **ADR-004 — every statement names where its truth comes from** (2026-09-07, PR #45
-  and `refactor/every-statement-names-its-source`): four states defined by where a
-  reader would go to check — cited, derived, chosen, to verify — replacing three
-  fields that meant different things (`sources` doing three jobs, `verificationStatus`
-  meaning cited in the data and checked in the test, `status` redefined once). The
-  golden tables now live as hand derivations from `raid5_compute_sector()` and
-  `__raid10_find_phys()` in `reference/golden-tables/` (eleven tables, README grammar,
-  `tests/golden-tables.js` reads them; every table agreed with the one the test held);
-  the knowledge base's 32 project-file sources are gone, the pages are marked, four
-  footnotes carry the model's choices, `why-linux-md` became `design-decisions` in
-  three chapters. 23 suites, 1,890 tests green.
+Newest first. The detail of each is in its pull requests and in the spec or ADR it
+names.
 
-- **The knowledge base, generated from the data** (`feature/knowledge-base`, 2026-09-06,
-  spec and implementation the same day, `specs/implemented/knowledge-base.md`): 24
-  concept entries in `data/kb/` — the four storage layers, the two axes and their
-  techniques, the three numbers, rebuild, scrubbing, the write hole, "RAID is not a
-  backup", the physical actors — every sentence with a fact checked against a primary
-  source read that day (the man pages, `raid0/1/5/10.c`, the 1988 paper, Anvin's RAID-6
-  paper, Microsoft Learn, the MegaRAID guide, Intel, US-CERT) and 107 of 114 sources
-  linked; a `kb:` block on levels 0/1/5/6/10 with the worked calculation filled from the
-  engine; `generate-kb.js` (Node, vendored js-yaml, a markdown subset, an evaluator for
-  `capacityTemplate`) writes 31 pages at commit time, tracked and served static —
-  `kb.html` is redirected by `vercel.json`, `kb.js` is gone, the sitemap lists them; three suites
-  (`kb-data`, `kb-worked`, `kb-generator`: 336 tests) keep data, engine and pages
-  aligned. The engine changed where the pages contradicted it: a mirror's write
-  parallelism is one copy's width and its penalty the copy count, so RAID 0+1 writes
-  like RAID 1+0 (`mirror-of-stripes-write-parallelism` resolved). Layout decided with
-  Valentina reading as a learner: one page per concept, a `<details>` map beside the
-  text, the page's sections on the right, the accent for links, a footer for the site's
-  navigation on every page including the sandbox's. 22 headless suites - 2026-09-06
-- **Desktop only** ([ADR-003](reference/decisions/003-desktop-only.md), 2026-09-05):
-  below 900px the game is no longer offered — `index.html` hides the canvases and shows
-  a short notice saying what RAID Sandbox is, that it needs a desktop browser, and
-  linking the knowledge base, which stays readable on a phone. No mobile version is
-  promised, because none is planned. **What went**: `touch-dnd.js` (the drag-and-drop
-  shim), `sidebar-accordion.js`, the ≤900px single-column flow and the
-  `pointer: coarse` block in `sandbox.css`, the narrow-screen physical-layer fold and
-  its toggle. **What stayed**: the inline picker, no longer a touch affordance but
-  click-to-build next to drag-and-drop, and the base for the accessibility work
-  (roadmap item 9). One tech-debt closes by deletion — the `touch-dnd.js` re-scope — and one is
-  re-scoped: the physical layer's missing picker, now a desktop asymmetry at low priority. Every interface change from here is
-  designed once, for one width - 2026-09-05
-- **Degenerate levels — what the player has, next to what they tried to build** (PRs
-  #35–#37, 2026-09-05, one day after the spec): the leaf level files declare
-  `minDisksToRun` (with the kernel line) and `collapsesTo` (RAID 5 @2, RAID 6 @3,
-  RAID 10 @2 → a mirror), `raid1.yaml` declares that a mirror of mirrors is one mirror;
-  `normalize()` rewrites the tree bottom-up by those rules and keeps the trace;
-  `analyze()` computes the numbers on what runs and returns box 2 as `runs`; the content
-  algebra (`content.js`, tests only) is the oracle that found exactly those three
-  collapses; `min-disks` split into a hard refusal (below `minDisksToRun`) and a soft
-  `level-collapse`; the panel shows two boxes and the diff between them, side by side
-  from 1600px. §11.1 answered from `raid5.c`: a two-disk RAID 5 writes at a mirror's
-  cost. 19 headless suites - 2026-09-05
-- **The technical queue, closed by two batches of agents** (PRs #24–#33, 2026-09-04/05):
-  five agents per batch, each in its own worktree, one PR each, every one tried in the
-  browser. Batch 1: an algorithm drop is refused when the class does not offer it; the
-  knowledge base teaches the four levels of spec §8; the level files' numbers moved under
-  `reference:` and are tested against the engine; RAID 0+1 reads `high` (a mirror reads
-  as wide as the member serving it). Batch 2: the level's `reason` shows on success; the
-  algorithm slot stays, disabled and explained, when a class has none; the validator's
-  last domain facts moved into the data files (`provides: layout:*`, `engineComponentId`,
-  `nvme-backplane` reads `accepts:`); a generic `level-advisory` rule lets a level file
-  declare its own warning (RAID 0+1 first); the **write hole** is a soft cross-axis
-  warning, `power-loss-protection` declared by the RoC files. Six tech-debts closed, one
-  filed (`mirror-of-stripes-write-parallelism`). The validator has nine rules - 2026-09-05
-- **ADR-002, two censuses, the degenerate-levels spec** (PRs #15–#23, 2026-09-04):
-  ADR-002 "the engine holds no domain facts" and the agnostic-engine spec saved from the
-  diary; the refusal-points and unspoken-content censuses (verified line by line,
-  corrected where they overstated the code); the PR flow written into `workflow.md`; the
-  animation waits on hard violations; `data/algorithms/` validated and its three broken
-  files repaired; the two genuinely untested refusals covered; the degenerate-levels idea
-  promoted to `specs/planned/degenerate-levels.md` (now `implemented/`) — below its minimum width a level
-  collapses into a simpler one, and the game names what was composed next to what runs.
-  Kernel facts read from `raid5.c`: RAID 1@2 → RAID 5@2 in place, RAID 6 < 4 refused - 2026-09-04
-- **Agnostic engine — the §5 promise kept** (five branches, all merged 2026-09-02):
-  (1) the physical model lives in `src/engine/` (`catalog.js`, `physical.js`) and is fed
-  by `data/components/*.yaml` — ports, the port-type relation, disk routing by
-  `accepts:`; `cpConnect` refuses what the catalogue forbids; `evaluate()` is pure;
-  (2) the hardware/fake/software verdict is read off each engine object's own
-  `verdict:` block and the `roles` in `index.yaml` — no component is named in code;
-  proof: the tri-mode controller (`engine-roc-trimode.yaml`) arrived as one file and
-  made NVMe hardware RAID buildable; the physical palette is generated from the
-  catalogue; (3) the recognizer matches `shape:` blocks from `data/raid-levels/*.yaml`
-  (`levels.js`), the old function survives as the oracle over 849 enumerated trees,
-  two intended strictnesses confirmed; RAID 0+1 got its file; (4) a build is a
-  document (`build-document.js`): `#build=` in the URL, **⧉ Share**, ~500-char
-  links, per-state ids; (5) `@ts-check` + JSDoc typedefs (`src/engine/types.js`,
-  `jsconfig.json`, `typecheck.sh`, a non-required CI job). 16 headless suites.
-  Six tech-debts closed, one filed (`algorithm-drop-ignores-class`) - 2026-09-02
-- **Engine audit + extraction map** (`reference/engine-robustness-and-extraction.md`):
-  robustness findings F1–F7 (all closed by the plan above), a landscape survey (no
-  packaged precedent for compose → recognise → validate → explain), the seam map and
-  the extraction path; the decision is Valentina's - 2026-09-01
-- **Derived-docs pipeline aligned with dev-dash**: `INDEX.md` and `tech-debt/README.md`
-  tracked again (deterministic generators), `post-merge` hook, `merge=generated`
-  driver, `04-docs-update` stages everything it regenerates; the hand-written
-  tech-debt README prose restored - 2026-08-29/30
-- **ADR-001 — engine identity, not position** (PRs #13, #14): hardware vs fake RAID is
-  decided by which engine object sits on the path (`engine-roc` / `engine-metadata`),
-  software is the case where neither does; the recognizer walks the path
-  (`graph.js`); NVMe software RAID buildable; in-browser hardware/fake pass - 2026-07-30/31
-- **Scaffold alignment** (`chore/scaffold-alignment`): the project config was a partial,
-  older-generation copy of the dev-dash scaffold. Restored the root `CLAUDE.md` entry
-  point and — the actual gap — the **Session Start** directive that makes the latest
-  handoff the first thing read in a session. `.memory-bank/` flattened (the
-  `projects/raid-explorer/` nesting was a leftover of the repo split). Doc generators
-  ported: `ARCHITECTURE.md`, `INDEX.md` and the tech-debt index now regenerate at session
-  start, and `ARCHITECTURE.md` is imported into every session as the navigation map.
-  Dev-dash-specific leftovers removed (ADR references, "issues for DevDash"); **this
-  project still has no ADRs and imports none** - 2026-07-24
-- **CI + branch protection** (PR #2, merged): GitHub Actions runs the 10 headless suites
-  on push/PR; `main` protected lightly (required `headless` check to merge PRs, admin
-  commits still allowed). The automated gate the repo lacked - 2026-07-24
-- Mobile **tap-to-build** (PR #1, merged to `main`, live): the mobile inline picker
-  grew into a full tap-to-build flow — every empty zone (canvas, loose disk, array,
-  attribute slot) taps open an inline picker of what fits, each option carrying its
-  own action; soft glow on the active zone; canvas-first mobile layout. Additive, not
-  gated (drag stays the desktop path). **Scope fixed: single backplane**; multi-group
-  RAID on the data layer stays. Validated in-browser (author + a designer) - 2026-07-24
-- Repo extraction + Vercel + custom domain: game split into its own repo (89-commit
-  history preserved), connected to Vercel, `raid-sandbox.dev` live in HTTPS,
-  site stubs forward old URLs - 2026-07-24
-- RAID combinations: 50/60 placement+animation, RAID 1E, 100, 51/61 recognition —
-  layouts anchored to Linux md source, golden hand-derived, verified in-browser - 2026-06-14
-- Responsive/mobile UX pass: sidebar wrap + accordion palette, collapsible physical
-  layer - 2026-06-14
-- Domain data extracted from `src/` into `data/` resource files - 2026-06-13
-- RAID Sandbox v1 complete — roadmap phases 0–5 (spec:
-  `specs/implemented/raid-sandbox-domain-model.md`) - 2026-06-07
+- **Documentation audit** (2026-09-25): the operational docs brought in line with the
+  repository — this file, `.development/README.md`, `specs/README.md`,
+  `.githooks/README.md`, `vendor/README.md`. A link's display text in the knowledge
+  base is escaped once, not twice (an apostrophe printed as `&#39;` on five pages); the
+  plain-text JBOD mentions link to the JBOD page (PR #54) - 2026-09-25
+- **RAID 1E and JBOD pages** (PR #53): RAID 1E is `derived`, its grid being the
+  existing golden table for near-3. JBOD covers the three meanings of the name and
+  treats the first, concatenation. The generator draws a linear array's grid as the
+  address range each disk holds, not as stripe rows. Found while writing it: a linear
+  array fails as a whole when one disk fails (`md-linear.c`, and Windows on spanned
+  volumes); the RAID 0 and redundancy pages said the opposite and are corrected. The
+  RAID 10 page explains 1+0 and 0+1 in place of pages that do not exist yet - 2026-09-24
+- **Knowledge-base layout, wide to narrow** (PRs #49, #52): the side menu anchored to
+  the bottom with the map and glossary pinned at the top; one continuous divider; the
+  page index from 1250px; below 1100px a centred, justified reading column with the
+  page's sections folded under the heading - 2026-09-15
+- **Sandbox status bar and README** (PRs #50, #51): the status bar no longer repeats
+  what the panels already say, and holds the link to the knowledge base; the public
+  README names the knowledge base, how to serve the app locally, and how to run the
+  whole headless suite - 2026-09-15
+- **The knowledge base in a technical register** (PR #47): headings name the subject;
+  advantages and disadvantages open on the property they state; on a level page every
+  transcluded concept reads *Definition*, then a heading that applies it to the level;
+  *What happens with fewer disks than the minimum* tells the three cases apart. The
+  writing rules are in the `segmentation.yaml` header. PR #48: the architecture map
+  sorts in the C locale, so it is the same on every machine - 2026-09-13
+- **ADR-004 — every statement names where its truth comes from** (PRs #45, #46): four
+  states — cited, derived, chosen, to verify — defined by where a reader would go to
+  check. The golden tables are hand derivations in `reference/golden-tables/`, read by
+  the layout suite; `sources` is a bibliography of public URLs; the model's choices are
+  footnotes, indexed on the `design-decisions` page - 2026-09-07
+- **SEO and analytics** (PRs #41–#44): the property is in Search Console and the
+  generator writes `sitemap.xml`; Open Graph on every knowledge-base page; `kb.html`
+  redirects to `kb/`. Analytics are Vercel Web Analytics, without cookies; GA4 with a
+  consent banner was tried and removed the same day - 2026-09-07
+- **The knowledge base, generated from the data**
+  ([spec](specs/implemented/knowledge-base.md)): one source, two depths, static pages
+  written at commit time by `generate-kb.js`; 24 concepts, the first five level pages
+  with the worked numbers taken from the engine - 2026-09-06
+- **Desktop only** ([ADR-003](reference/decisions/003-desktop-only.md)): below 900px a
+  short notice and a link to the knowledge base; the touch shim and the mobile layout
+  removed; the inline picker stays as click-to-build - 2026-09-05
+- **Degenerate levels** ([spec](specs/implemented/degenerate-levels.md), PRs #35–#37):
+  below its minimum a level collapses into a simpler one, and the panel shows what was
+  built next to what runs - 2026-09-05
+- **The technical queue closed** (PRs #24–#33) and the refusal-points and
+  unspoken-content censuses (PRs #15–#23), with ADR-002 - 2026-09-04/05
+- **Agnostic engine** ([spec](specs/implemented/agnostic-engine.md)): the engine names
+  no component and no level in code; builds are shareable as links; `@ts-check` on the
+  engine files - 2026-09-02
+- **Engine audit and extraction map** (`reference/engine-robustness-and-extraction.md`) - 2026-09-01
+- **Derived docs tracked again**, with a `post-merge` hook and a merge driver - 2026-08-29/30
+- **ADR-001 — engine identity, not position** (PRs #13, #14) - 2026-07-30/31
+- **Own repository, Vercel, `raid-sandbox.dev`**; CI and branch protection; the
+  project configuration aligned with the scaffold - 2026-07-24
+- **RAID combinations** (50, 60, 1E, 100, 51, 61) anchored to the Linux `md` source - 2026-06-14
+- **Domain data moved from `src/` to `data/`** - 2026-06-13
+- **RAID Sandbox v1**, roadmap phases 0–5
+  ([spec](specs/implemented/raid-sandbox-domain-model.md)) - 2026-06-07
 
-## Next Steps — the roadmap after the agnostic-engine plan
+## Next Steps — the roadmap
 
-> ~~**Before any of this**: implement the degenerate-levels spec~~ — **done 2026-09-05**
-> (PRs #35–#37, `specs/implemented/degenerate-levels.md`): below its minimum width a level
-> collapses into a simpler one — a two-disk RAID 5 *is* a mirror, and the kernel says so —
-> and the panel now shows what was built next to what runs, with the diff between them.
+Valentina's priority order, 2026-09-02. Each item says where it starts and a size:
+**S** hours, **M** a session or two, **L** several sessions. Nothing here is
+scheduled; the order is the decision.
 
-Valentina's priority order, 2026-09-02. Each item says where it starts (the document
-or tech-debt that already holds the thinking) and a size: **S** hours, **M** a
-session or two, **L** several sessions. Nothing here is scheduled; the order is the
-decision.
-
-1. **Refusal points** — **CENSUS DONE 2026-09-04**, see
-   [`reference/refusal-points.md`](reference/refusal-points.md) and its companion
-   [`reference/unspoken-content.md`](reference/unspoken-content.md). **Complete
-   2026-09-05**: the animation gate (PR #19), the two untested refusals (PR #21), the
-   `data/algorithms/` validation (PR #20), the algorithm drop refused by class (PR #24).
-   Original scoping: census every place the game must refuse an action, in two
-   families: *structural* (the engine cannot hold the state: incompatible port,
-   self-loop, hand-wired disk, a document it cannot honour) and *UI* (the canvas
-   declines: an algorithm chip on the wrong class — today missing,
-   `tech-debt/algorithm-drop-ignores-class.md`). Output: a reference map with one
-   test per refusal. Start: `tech-debt/headless-tests-bypass-port-validation.md`
-   (resolved — the pattern), `build-document.js` validate(). **M**
+1. ~~**Refusal points**~~ — done 2026-09-05
+   ([`reference/refusal-points.md`](reference/refusal-points.md)).
 2. **Info icons ("i")** — the visual channel for what needs explaining: span, drive
-   group, the formula behind a number, "near/far exist only under Linux". Start:
-   `specs/planned/informative-ui.md` (the complete inventory; most text already exists
-   in `data/`), the decided first channel (hover a violation → highlight its nodes),
-   and the engine's discarded `reason` strings. The data-driven engine made this
-   cheaper: tooltips already come from `ui:` blocks. **M**
-3. **Knowledge base rework** — **MVP DONE 2026-09-06** (`specs/implemented/knowledge-base.md`):
-   one source, two depths, generated at commit time, 31 pages. Left, §9.3–9.4: the `kb:`
-   block on the other nine levels (1E, 1+0, 0+1, 50, 60, 51, 61, 100, JBOD) and the
-   components page; RAID 4 needs a model decision first (§14). The SEO ceiling is gone
-   with it: the text is in the served HTML. **M** for what remains
+   group, the formula behind a number. Start: `specs/planned/informative-ui.md` and
+   [`reference/unspoken-content.md`](reference/unspoken-content.md). **M**
+3. **Knowledge base** — the MVP is live and seven of the fourteen levels have a page.
+   What remains: the seven nested levels (the generator feature first, see *Active
+   Work*), the components page, a model decision for RAID 4
+   ([spec](specs/implemented/knowledge-base.md) §9, §14), and the to-verify queue.
+   Before `raid0plus1` gets a page, its `pros` has to stop naming the sandbox. **M**
 4. **The verdict, drawn** — a dashed box around the pieces that form the controller,
-   coloured by verdict, the ADR-001 lesson with no words. Start:
-   `specs/planned/derived-controller.md` ("the dashed box is the verdict, drawn"),
-   `engineNodeId` in the eval result, `highlight.js`. **M**
-5. **Technical queue** — **closed 2026-09-05** (see the milestones): the level's
-   `reason` on success (PR #28), RAID 0+1 reads high (PR #27), the validator's last ids
-   in code (PR #30), `algorithm-drop-ignores-class` (PR #24). The two remaining items
-   were both about touch. ADR-003 answered them: ~~the `touch-dnd.js` re-scope~~ (the shim
-   is gone), and the physical layer's missing picker re-scoped as a desktop asymmetry,
-   low priority, to take up with item 9 (`tech-debt/physical-layer-canvas-has-no-touch-picker.md`).
-6. **Challenges on the physical axis** — the requirement vocabulary knows only the
-   data metrics; add the RAID type ("must be hardware") and the physical-validator
-   phase 2 rules (fake RAID limited to 0/1/5/10, mixed protocols, Storage Spaces).
-   Share links make "share your solution" possible. Start: `challenge.js`
-   `METRIC_LABEL`, `validator.js` `ctx.level`, spec §11a. **M**
-7. **The third axis — runtime** — disk states, simulated failure, rebuild: click a
-   disk, break it, watch the array degrade or die. The deferred module of the spec
-   and the most game-like thing the sandbox can do; fault tolerance becomes an
-   experience instead of a number. Start: spec §2 ("third axis"), the old
-   `drive-states.md` notes, `render.js` animate(). **L**
-8. **Italian version** — content is YAML, so translating is adding files, not code;
-   the UI strings in `index.html`/controllers are the code side. Widens the audience.
-   Start: `data/`, `data-loader.js` (a language prefix). **M**
-9. **Accessibility** — keyboard and screen-reader paths were never considered; for a
-   teaching tool they matter. Start: an audit of `index.html` roles/labels, the
-   drag-only interactions. **M**
-10. **Extracting the game engine** — the decision this whole plan prepared: second
-    domain (datacenter / network topologies / motor workbench), name, scope; then
-    `git subtree` with history, never a copy. Start:
-    `reference/engine-robustness-and-extraction.md` §4–§8. **L**
+   coloured by verdict. Start: `specs/planned/derived-controller.md`, `highlight.js`. **M**
+5. ~~**Technical queue**~~ — closed 2026-09-05.
+6. **Challenges on the physical axis** — the RAID type as a requirement ("must be
+   hardware") and the physical validator's phase 2 rules. Start: `challenge.js`
+   `METRIC_LABEL`, `validator.js` `ctx.level`, domain-model spec §11a. **M**
+7. **The third axis — runtime** — disk states, simulated failure, rebuild. Start:
+   domain-model spec §2 ("third axis"), `render.js` animate(). **L**
+8. **Italian version** — content is YAML, so translating is adding files; the UI
+   strings are the code side. Start: `data/`, `data-loader.js`. **M**
+9. **Accessibility** — keyboard and screen-reader paths. Start: an audit of
+   `index.html` roles and labels, the drag-only interactions. **M**
+10. **Extracting the game engine** — second domain, name, scope; then `git subtree`
+    with history. Start: `reference/engine-robustness-and-extraction.md` §4–§8. **L**
 
 Small, any time:
 
-- ~~**Phantom back links**~~ — gone 2026-09-06 with the KB: `index.html` has a footer
-  (knowledge base · author), `kb.html` is redirected by `vercel.json`.
-- **Contact form** — the site is static and stays so: `mailto:` + a link to GitHub
-  issues is the honest baseline; a third-party form service adds a host to the path
-  (the js-yaml argument); a Vercel function would be the first server-side code. **S**
-- ~~**SEO: the content is not in the served HTML**~~ — closed by item 3 (2026-09-06):
-  the knowledge base is static HTML with a `TechArticle` per page and a sitemap; what
-  remains is Search Console (the property is still not shared with the MCP account).
+- **Feedback link in the footer** (GitHub issues) — the prerequisite of the
+  distribution plan in `.memory-bank/ideas/2026-09-07-distribution-plan.md`. **S**
 - **Google Fonts is the last third-party blocking request** — self-host JetBrains Mono. **S**
-- ~~**Push + PR flow**~~ — decided 2026-09-04 and written into `workflow.md` (PR #17):
-  a PR per branch, merged from GitHub, so the `headless` check is a gate. One caveat
-  learned the hard way (PR #32): a chained PR whose base branch is merged first must be
-  re-targeted to `main` before it is merged, or its commits land in a closed branch.
 
 ## Active Issues
 
-See `.development/tech-debt/`:
+See `.development/tech-debt/` (its `README.md` is the generated index):
 
+- `kb-to-verify-queue.md` — open (medium): eight knowledge-base pages to read against
+  their sources.
 - `canvas-nodes-are-unnamed.md` — open (medium): the canvas does not name the things
   the player builds (roadmap item 2).
 - `capacity-approximate-on-mixed-disks.md` — open (medium): usable capacity is
   approximate when an array mixes disk sizes.
-- `physical-layer-canvas-has-no-touch-picker.md` — open (low, re-scoped by ADR-003): the physical
-  layer has drag-and-drop only, the data layer also click-to-build; take up with item 9.
+- `physical-layer-canvas-has-no-touch-picker.md` — open (low, re-scoped by ADR-003):
+  the physical layer has drag-and-drop only; take up with item 9.
 - `automation-not-checked-on-windows.md` — open (low): hooks and dev scripts are
-  tested only on the Linux workstation.
-- `nested-data-allocation-order.md` — **mostly RESOLVED**. Per-span order is
-  Linux-verified (write-order bug fixed, golden hand-derived); only the cross-span
-  stacking order remains a documented convention, by design.
+  tested only on Linux.
+- `nested-data-allocation-order.md` — mostly resolved: only the cross-span stacking
+  order remains a documented convention, by design.
 - Known wart: `capacityGB` holds the disk chips' native unit (1/2/4, displayed as "TB").
-  Rename was out of scope for v1.
 
 ## Notes
 
-- **Test suite**: 19 headless node files in `tests/` — run each with `node <file>`, or all
-  via `bash .development/automation/test.sh`; type check via `typecheck.sh`; plus
-  browser test pages (`*.test.html`) and demos. Drag-and-drop, picker and animation work is
-  browser-only (guarded), does not touch the headless suite.
-- **Zero-dependency**: YAML parsed in-browser via js-yaml; node tests must not require
-  YAML parsing at runtime.
-- **Ground truth**: layouts anchored to the Linux `md` source (`raid5.c`/`raid10.c`);
-  golden tables hand-derived, never dumped from the engine.
+- **Tests**: 23 headless suites in `tests/`, run one at a time with `node <file>` or
+  all together with `bash .development/automation/test.sh`; the type check with
+  `typecheck.sh`; browser test pages (`*.test.html`) and demos for what only a browser
+  can show.
+- **Zero dependencies**: YAML is parsed with the vendored js-yaml (`vendor/`); the
+  headless suites never parse YAML.
+- **Ground truth**: layouts are anchored to the Linux `md` source
+  (`raid5.c`/`raid10.c`); the golden tables are derived by hand, never dumped from the
+  engine.
+- **This file is written by hand.** No hook regenerates it, so it is updated at the
+  end of a piece of work, not left to drift.

@@ -3,9 +3,10 @@
 #
 # Contract: runs from the repo root; idempotent; exits 0 unless a generator
 # itself crashes. Prints which files it touched.
-# Aggregates: ARCHITECTURE.md, INDEX.md, tech-debt/README.md.
+# Aggregates: ARCHITECTURE.md, INDEX.md, tech-debt/README.md, and the
+# knowledge base (kb/ + sitemap.xml).
 #
-# The same three generators are wired into SessionStart in
+# The same four generators are wired into SessionStart in
 # .claude/settings.json; this script is the single place that knows the list,
 # so the pre-commit module and the CLI call the same thing.
 set -euo pipefail
