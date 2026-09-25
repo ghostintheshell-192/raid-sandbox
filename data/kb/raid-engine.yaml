@@ -2,9 +2,11 @@
 # turns a layout into disk operations. Writing rules: see segmentation.yaml header.
 #
 # Axis A in one entry. The three places the engine lives are stated with their
-# sources; the internals of a RAID-on-Chip (own processor, protected cache) are
-# taken from the project's component files and not yet checked against vendor
-# documentation, hence `status: to-verify`.
+# sources. Read against them on 2026-09-25 (the to-verify queue): the RoC
+# internals are Broadcom's; the metadata of a firmware array is on the disks, not
+# in the chip; md closes the write hole on its own (journal, PPL); a hardware
+# controller still needs an OS driver, one without RAID logic; the shared die is
+# true on AM4 only.
 
 id: raid-engine
 kind: concept
@@ -19,12 +21,12 @@ short: >
 long: |
   ## Responsibilities
 
-  Whatever runs a RAID array has the same list of jobs, and the list is the
-  definition of the engine:
+  Every RAID engine has the same jobs:
 
   - **Keep the metadata.** Which disks belong to the array, in what order, with what
     layout, and in what state. Linux `md` writes it on each member as a *superblock*;
-    a controller keeps its own format on the disks and in its memory.
+    a controller keeps its own records on the disks (MegaRAID writes them in the
+    SNIA DDF format).
   - **Translate addresses.** Every read and write arrives for the array's sectors
     and must be turned into the members' sectors, by the rule of the
     [[segmentation]].
@@ -40,9 +42,9 @@ long: |
   ## The three implementations
 
   The [[physical-disks]] reach the operating system along one path: [[backplane]],
-  [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path in one of
-  three ways, and the way is what the industry names *hardware*, *software* and
-  *firmware* (or *fake*) RAID.[^three-cases]
+  [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path.
+  Depending on what runs it, it is called *hardware*, *software* or *firmware* (or
+  *fake*) RAID.[^three-cases]
 
   [^three-cases]: The three cases are how the sandbox models the engine — a
   computing chip, a metadata-only chip, or the operating system — and which case a
@@ -50,8 +52,11 @@ long: |
   Real products blur the lines; the sandbox draws the case, not the product. See
   [[design-decisions|the model's choices]].
 
-  **Hardware RAID.** A controller card carries the HBA and a *RAID-on-Chip* (RoC), a
-  processor dedicated to the list above, with its own memory as write cache. The
+  **Hardware RAID.** A controller card carries a *RAID-on-Chip* (RoC), a processor
+  dedicated to the list above. Broadcom's SAS3916, for one, pairs a dual-core ARM
+  processor with "hardware acceleration engines for RAID 5 and RAID 6 parity
+  calculations" and drives the card's own memory, 4 or 8 GB of write cache on a
+  MegaRAID 9560. The
   operating system never sees the member disks: what it is given is the controller's
   virtual drive. In Broadcom's MegaRAID vocabulary, "virtual drives are drive groups
   or spanned drive groups that are available to the operating system".
@@ -61,32 +66,45 @@ long: |
   `mdadm`), Storage Spaces in Windows. The CPU does the computing, the OS sees every
   member disk and, beside them, the array device it made.
 
-  **Firmware RAID, called fake RAID once its wiring is understood.** A chip on the
-  motherboard, or a cheap add-in card, that holds the array's metadata and a boot
-  firmware, an *option ROM* in the system BIOS which, in Intel's words, manages the
-  drives and RAID volumes "before the operating system loads". That is what it is
-  for: the machine can boot from the array. Once the OS is up, its driver does the
-  engine's work on the CPU, exactly as in software RAID. Linux shows this directly:
-  `mdadm` runs Intel Rapid Storage volumes as `md` arrays with an *external*
-  metadata format, `imsm`, "supported by an option-rom on some platforms". The
-  metadata is the firmware's; the computing is the operating system's.
+  **Firmware RAID, also called fake RAID: the card has no RAID engine of its own,
+  and the operating system does the work on the CPU.** A disk
+  controller on the motherboard, or on a cheap add-in card, whose boot firmware
+  knows how to read an array: an *option ROM* in the system BIOS which, in Intel's
+  words, manages the drives and RAID volumes "before the operating system loads".
+  That is what it is for: the machine can boot from the array. The array's metadata
+  is written on the member disks, in the firmware's format. Once the OS is up, its
+  driver does the engine's work on the CPU, exactly as in software RAID: Intel's own
+  description of the Linux boot is that the initial RAM file system loads the MD
+  RAID driver, "and then RAID volumes are assembled". `mdadm` runs these volumes as
+  `md` arrays with an *external* metadata format, `imsm`, "supported by an
+  option-rom on some platforms".
 
   ## Distinguishing criterion
 
-  Not the wiring. A hardware controller and a firmware-RAID card can sit in the same
-  PCIe slot, and on a chipset the firmware engine and the CPU may share a die. What
-  separates the three is two questions: who owns the metadata, and who computes.
+  A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and
+  on AMD's AM4 platform some of the SATA ports AMD RAID works with come from the
+  processor itself ("processor-direct SATA"), so the controller and the CPU share a
+  die. What separates the three is two questions: who owns the metadata, and who
+  computes.
 
   - hardware: the controller owns it and computes it
-  - firmware: the firmware owns it, the CPU computes it
+  - firmware: the firmware defines the metadata and reads it at boot; the operating
+    system updates it and computes
   - software: the operating system owns it and computes it
 
-  Two consequences follow from the same fact. A hardware engine's write cache can
-  be protected against power loss (a [[bbu|BBU]] or flash), which is what closes the
-  parity [[write-hole]]; a driver on the CPU has no such cache, so software and
-  firmware RAID rely on the machine's own power protection. And a hardware engine
-  needs no driver to make the array readable, while a firmware array is unreachable
-  without one: with the OS driver missing, the option ROM alone cannot serve it.
+  Two consequences follow from where the engine runs.
+
+  - **The write hole.** A hardware engine's write cache can be protected against
+    power loss, by a [[bbu|BBU]] or by flash, so a stripe write cut by a power
+    failure is finished when power returns: the controller closes the parity
+    [[write-hole]] itself. A driver on the CPU instead has no memory that survives
+    the cut, so Linux `md` closes the hole on the disks: with a write journal on a
+    separate device or, for RAID 5, with a partial parity log kept in the members'
+    metadata area, which Intel-format firmware arrays can use too.
+  - **The driver.** Both kinds need a driver in the operating system, but not the
+    same kind. A hardware controller's driver (`megaraid_sas` in Linux) carries no
+    RAID logic, because the controller does that work. A firmware array cannot even
+    be assembled without the operating system's RAID driver.
 
 related: [segmentation, parity, rebuild, virtual-drive, physical-disks, backplane, hba, bbu, write-hole, design-decisions]
 
@@ -97,15 +115,38 @@ sources:
   - ref: "Intel, Option ROM Information for Intel RAID Controller Hub"
     note: "'The option ROM manages Serial ATA hard drives and RAID volumes that are attached to an Intel RAID Controller hub before the operating system loads'; 'integrated with the system BIOS'"
     url: https://www.intel.com/content/www/us/en/support/articles/000006106/technologies.html
-  - ref: "mdadm(8) man page, --metadata=imsm"
-    note: "'Use the Intel(R) Matrix Storage Manager metadata format. This creates a CONTAINER which is managed in a similar manner to DDF, and is supported by an option-rom on some platforms'"
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, JBOD drive state"
+    note: "a JBOD drive 'is exposed to the host operating system as a stand-alone drive'; JBOD drives cannot join a RAID configuration 'because they do not have valid DDF records'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11668655/v11672350/v11672410/v11672482.html
+  - ref: "Broadcom, SAS3916 Tri-Mode RAID-on-Chip product brief"
+    note: "'Dual Core ARM A15 at 1600 MHz'; 'Exclusive-OR hardware engine for RAID 5'; 'The SAS3916 ROC integrates a 72-bit, DDR4-2666 DRAM interface and supports hardware acceleration engines for RAID 5 and RAID 6 parity calculations'"
+    url: https://docs.broadcom.com/doc/12397937
+  - ref: "Broadcom, MegaRAID 9500 PCIe Gen 4.0 Tri-Mode Storage Adapters product brief"
+    note: "'Based on the Broadcom SAS3916 and SAS3908 … RAID on Chip (RoC) controller'; cache size 8 GB on the 9560-16i, 4 GB on the 9560-8i"
+    url: https://docs.broadcom.com/doc/MegaRAID-9500-Tri-Mode-Storage-Adapters
+  - ref: "Broadcom (LSI), MegaRAID SAS Device Driver Installation User Guide, Driver Description"
+    note: "'To use the controller with these OSs, you must install software drivers'; the driver functions listed are PCI Express support, multiple adapters and logical-drive management, none of them RAID computation"
+    url: https://docs.broadcom.com/doc/12353249
+  - ref: "Intel, Intel Rapid Storage Technology in Linux (white paper, 2011), Installation and Booting"
+    note: "'OROM exposes the RAID volume as a separate device'; 'The RAM file system is used to load the MD RAID driver and then RAID volumes are assembled'; RST described as a 'software RAID solution'"
+    url: https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/rst-linux-paper.pdf
+  - ref: "mdadm(8) man page, --metadata=imsm and --consistency-policy"
+    note: "'Use the Intel(R) Matrix Storage Manager metadata format. This creates a CONTAINER which is managed in a similar manner to DDF, and is supported by an option-rom on some platforms'; ppl: 'Partial Parity Log is used to close the write hole and eliminate resync'"
     url: https://man7.org/linux/man-pages/man8/mdadm.8.html
-  - ref: "md(4) man page"
-    note: "the superblock as the per-device metadata of a native md array"
+  - ref: "md(4) man page, ARRAYS WITH EXTERNAL METADATA, CONTAINERS and RAID WRITE HOLE"
+    note: "the superblock as the per-device metadata of a native md array; external metadata 'is not managed by the kernel but rather by a user-space program', with mdmon(8) for the details; a container 'just covers the metadata part of the devices'; 'To plug the write hole md supports two mechanisms': the dirty stripe journal and the partial parity log"
     url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Linux kernel Documentation/driver-api/md/raid5-ppl.rst"
+    note: "'PPL is available for md version-1 metadata and external (specifically IMSM) metadata arrays'; 'PPL is stored on array member drives in the metadata area'"
+    url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-ppl.rst
+  - ref: "AMD, AM4 chipsets product page"
+    note: "'With processor-direct SATA and USB connectivity'; maximum SATA ports as 'Combined chipset and processor I/O'"
+    url: https://www.amd.com/en/products/processors/chipsets/am4.html
+  - ref: "AMD, NVMe/SATA RAID Quick Start Guide for Windows Operating Systems (rev. 1.05), Table 2"
+    note: "'SoC SATA Mode' and 'Promontory SATA Mode' both set to RAID for SATA RAID support: the processor's controller and the chipset's"
+    url: https://drivers.amd.com/relnotes/amd_nvme_sata_raid_quick_start_guide_for_windows_os_1.05.pdf
   - ref: "Microsoft Learn, Storage Spaces overview"
     note: "Storage Spaces as the operating system's own pooling and resiliency layer"
     url: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview
-  - ".development/reference/decisions/001-engine-identity-not-position.md — the ownership/computation distinction; its RoC internals (own processor, protected cache) are stated there as not yet verified against a primary source"
 
-status: to-verify
+status: cited

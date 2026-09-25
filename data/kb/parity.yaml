@@ -5,17 +5,18 @@ id: parity
 kind: concept
 name: Parity
 short: >
-  One extra block per stripe, computed from the stripe's data blocks by XOR, from
-  which any single missing block can be recomputed. It protects a whole stripe at
-  the cost of one block instead of a full copy. A second block computed a different
-  way, the Q of RAID 6, covers two failures at the cost of two.
+  Parity is one extra block per stripe, computed from the stripe's data blocks by
+  XOR. If any one block of the stripe is lost, it can be recomputed from the others.
+  This protects the stripe at the cost of one block instead of a full copy of the
+  data. RAID 6 adds a second extra block, called Q, computed with a different
+  formula: with two extra blocks, the stripe survives two lost blocks.
 
 long: |
   ## The XOR arithmetic
 
-  XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has
-  one property that makes it useful as redundancy: XOR a value in twice and it
-  cancels out, so any one term of an XOR sum can be recovered from the others.
+  XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. XOR has
+  one property that makes it useful as redundancy: a value XORed in twice cancels
+  out. So any one term of an XOR sum can be recovered by XORing all the others.
   With data blocks *D₀*, *D₁*, *D₂* and parity *P* over a stripe:
 
   ```text
@@ -30,12 +31,13 @@ long: |
   P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 1010  ✓
   ```
 
-  The parity is computed over the blocks that share a stripe, so it needs a
-  stripe: parity exists only under [[striping]], and the [[chunk]] entry says how
-  many bytes a full stripe holds. Lose the disk that held *D₁* and every read of
-  *D₁* is answered by reading the rest of its stripe and XORing; that is the array
-  in *degraded* mode. Replace the disk, and the same computation, run over every
-  stripe, writes it back: the [[rebuild]].
+  Parity is computed over the blocks of one stripe, so it exists only under
+  [[striping]]; the [[chunk]] entry says how many bytes a full stripe holds.
+
+  If the disk that holds *D₁* fails, the [[raid-engine]] answers every read of
+  *D₁* by reading the rest of its stripe and XORing the blocks: the array is then
+  in *degraded* mode. When the disk is replaced, the engine runs the same
+  computation over every stripe and writes *D₁* back: this is the [[rebuild]].
 
   ## Placement of the parity block
 
@@ -51,8 +53,8 @@ long: |
   single device, are distributed across all devices", which "allows more
   parallelism when writing" and when reading.
 
-  *Which* disk holds the parity of stripe *k* is the placement [[algorithm]]. The
-  one nearly everything uses, left-symmetric, puts the parity on the last disk for
+  The placement [[algorithm]] determines which disk holds the parity of stripe *k*.
+  Linux `md`'s default, left-symmetric, puts the parity on the last disk for
   stripe 0 and moves it one disk to the left every stripe, with the data starting
   just right of it; in `raid5.c` this is the line
   `pd_idx = data_disks - sector_div(stripe2, raid_disks)`. Every disk then carries
@@ -78,14 +80,17 @@ long: |
   read-modify-write) and `rcw` (blocks to read for a reconstruct-write), and takes
   the cheaper. A write that covers the whole stripe has nothing left to read:
   `rcw` is zero, the parity is computed from what is being written, and the
-  penalty disappears. Aligning writes to whole stripes is therefore the way to
-  make parity cheap, which is what the file system's `stripe_width` is for.
+  penalty disappears. For this reason, writes aligned to whole stripes make parity
+  cheap. The file system's `stripe_width` option exists for this: it lets the block
+  allocator avoid a read-modify-write of the parity.
 
   The two writes of that rule are separate disk operations, and a power cut
-  between them leaves a stripe whose parity no longer matches its data. Nothing in
-  the arithmetic detects it; the next rebuild trusts it. This is the
-  [[write-hole]], and it is why a parity array needs a [[raid-engine]] whose write
-  cache survives power loss.
+  between them leaves a stripe whose parity no longer matches its data. The XOR
+  arithmetic cannot detect the mismatch, and a rebuild uses the wrong parity as if
+  it were right. This is the
+  [[write-hole]], and it is why a parity array needs either a [[raid-engine]] whose
+  write cache survives power loss, or a journal or a partial parity log on the
+  disks.
 
   ## Single and double parity
 
@@ -104,7 +109,7 @@ long: |
   two equations are solved together. "RAID-6 supports losing any two drives." The
   cost is two blocks per stripe, and a write that touches one data block must
   update both: six operations instead of four. The field has 255 non-zero
-  elements, so a stripe can hold at most 255 data disks; no real array comes close.
+  elements, so a stripe can hold at most 255 data disks.
 
   Windows Storage Spaces offers the same two shapes as *single parity* and *dual
   parity* spaces, described as "data is striped across multiple drives with parity
@@ -119,6 +124,9 @@ sources:
   - ref: "md(4) man page"
     note: "RAID4: 'like a RAID0 array with an extra device for storing parity'; RAID5: 'the parity blocks for each stripe, instead of being on a single device, are distributed across all devices', 'allows more parallelism when writing'; RAID6: 'can handle the loss of any two devices without data loss'"
     url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "mdadm(8) man page, --layout"
+    note: "'The layout of the RAID5 parity block can be one of left-asymmetric, left-symmetric, right-asymmetric, right-symmetric, la, ra, ls, rs. The default is left-symmetric.'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
   - ref: "drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC"
     note: "pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks"
     url: https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c

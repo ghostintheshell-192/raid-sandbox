@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Parity — RAID Sandbox knowledge base</title>
-  <meta name="description" content="One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed.">
+  <meta name="description" content="Parity is one extra block per stripe, computed from the stripe&#39;s data blocks by XOR.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/parity.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/parity.html">
   <meta property="og:title" content="Parity — RAID Sandbox knowledge base">
-  <meta property="og:description" content="One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed.">
+  <meta property="og:description" content="Parity is one extra block per stripe, computed from the stripe&#39;s data blocks by XOR.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -40,7 +40,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "Parity",
-    "description": "One extra block per stripe, computed from the stripe's data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.",
+    "description": "Parity is one extra block per stripe, computed from the stripe's data blocks by XOR. If any one block of the stripe is lost, it can be recomputed from the others. This protects the stripe at the cost of one block instead of a full copy of the data. RAID 6 adds a second extra block, called Q, computed with a different formula: with two extra blocks, the stripe survives two lost blocks.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/parity.html",
     "isPartOf": {
@@ -142,9 +142,9 @@
   </details>
 
   <section class="kb-section kb-concept" id="what-it-is">
-    <p class="kb-lede">One extra block per stripe, computed from the stripe&#39;s data blocks by XOR, from which any single missing block can be recomputed. It protects a whole stripe at the cost of one block instead of a full copy. A second block computed a different way, the Q of RAID 6, covers two failures at the cost of two.</p>
+    <p class="kb-lede">Parity is one extra block per stripe, computed from the stripe&#39;s data blocks by XOR. If any one block of the stripe is lost, it can be recomputed from the others. This protects the stripe at the cost of one block instead of a full copy of the data. RAID 6 adds a second extra block, called Q, computed with a different formula: with two extra blocks, the stripe survives two lost blocks.</p>
     <h2 id="the-xor-arithmetic">The XOR arithmetic</h2>
-    <p>XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. It has one property that makes it useful as redundancy: XOR a value in twice and it cancels out, so any one term of an XOR sum can be recovered from the others. With data blocks <em>D₀</em>, <em>D₁</em>, <em>D₂</em> and parity <em>P</em> over a stripe:</p>
+    <p>XOR, written ⊕, adds bits without carry: 0 ⊕ 0 = 0, 0 ⊕ 1 = 1, 1 ⊕ 1 = 0. XOR has one property that makes it useful as redundancy: a value XORed in twice cancels out. So any one term of an XOR sum can be recovered by XORing all the others. With data blocks <em>D₀</em>, <em>D₁</em>, <em>D₂</em> and parity <em>P</em> over a stripe:</p>
     <pre class="kb-figure"><code>P  = D₀ ⊕ D₁ ⊕ D₂                  parity: the XOR of the data blocks
 
 D₁ = D₀ ⊕ D₂ ⊕ P                   any one block is the XOR of all the others
@@ -154,10 +154,11 @@ D₀ = 1100 0101
 D₁ = 0011 1010
 D₂ = 1111 0000
 P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 1010  ✓</code></pre>
-    <p>The parity is computed over the blocks that share a stripe, so it needs a stripe: parity exists only under <a href="striping.html">striping</a>, and the <a href="chunk.html">chunk</a> entry says how many bytes a full stripe holds. Lose the disk that held <em>D₁</em> and every read of <em>D₁</em> is answered by reading the rest of its stripe and XORing; that is the array in <em>degraded</em> mode. Replace the disk, and the same computation, run over every stripe, writes it back: the <a href="rebuild.html">rebuild</a>.</p>
+    <p>Parity is computed over the blocks of one stripe, so it exists only under <a href="striping.html">striping</a>; the <a href="chunk.html">chunk</a> entry says how many bytes a full stripe holds.</p>
+    <p>If the disk that holds <em>D₁</em> fails, the <a href="raid-engine.html">raid engine</a> answers every read of <em>D₁</em> by reading the rest of its stripe and XORing the blocks: the array is then in <em>degraded</em> mode. When the disk is replaced, the engine runs the same computation over every stripe and writes <em>D₁</em> back: this is the <a href="rebuild.html">rebuild</a>.</p>
     <h2 id="placement-of-the-parity-block">Placement of the parity block</h2>
     <p>The 1988 RAID paper defines the fourth level with one <em>check disk</em> per group, holding the parity of every stripe. It works, and it has one bottleneck: &quot;every write must read and write the check disk&quot;, so the whole array can only complete writes as fast as that one disk. The fifth level keeps the same parity but spreads it: &quot;the final level RAID distributes the data and check information across all the disks — including the check disks&quot;. Linux <code>md</code> says the same in its own words: RAID 4 is &quot;a RAID0 array with an extra device for storing parity&quot;, the last of the devices; in RAID 5 &quot;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&quot;, which &quot;allows more parallelism when writing&quot; and when reading.</p>
-    <p><em>Which</em> disk holds the parity of stripe <em>k</em> is the placement <a href="algorithm.html">algorithm</a>. The one nearly everything uses, left-symmetric, puts the parity on the last disk for stripe 0 and moves it one disk to the left every stripe, with the data starting just right of it; in <code>raid5.c</code> this is the line <code>pd_idx = data_disks - sector_div(stripe2, raid_disks)</code>. Every disk then carries the same share of parity and of data, and no disk is the check disk.</p>
+    <p>The placement <a href="algorithm.html">algorithm</a> determines which disk holds the parity of stripe <em>k</em>. Linux <code>md</code>&#39;s default, left-symmetric, puts the parity on the last disk for stripe 0 and moves it one disk to the left every stripe, with the data starting just right of it; in <code>raid5.c</code> this is the line <code>pd_idx = data_disks - sector_div(stripe2, raid_disks)</code>. Every disk then carries the same share of parity and of data, and no disk is the check disk.</p>
     <h2 id="parity-updates">Parity updates</h2>
     <p>Whenever a data block changes, the parity of its stripe must change with it. The paper gives the rule and its cost:</p>
     <pre class="kb-figure"><code>new parity = (old data ⊕ new data) ⊕ old parity
@@ -165,13 +166,13 @@ P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 10
 a small write, on two disks:     read old data      read old parity
                                  write new data     write new parity
                                  → 4 operations for one logical write</code></pre>
-    <p>That is the <em>small-write problem</em>, and the four operations are the <a href="write-penalty.html">write penalty</a> of single parity. There is a second way: read the data blocks the write does <em>not</em> touch, and compute the parity fresh. <code>raid5.c</code> counts both for every stripe it is about to write, <code>rmw</code> (blocks to read for a read-modify-write) and <code>rcw</code> (blocks to read for a reconstruct-write), and takes the cheaper. A write that covers the whole stripe has nothing left to read: <code>rcw</code> is zero, the parity is computed from what is being written, and the penalty disappears. Aligning writes to whole stripes is therefore the way to make parity cheap, which is what the file system&#39;s <code>stripe_width</code> is for.</p>
-    <p>The two writes of that rule are separate disk operations, and a power cut between them leaves a stripe whose parity no longer matches its data. Nothing in the arithmetic detects it; the next rebuild trusts it. This is the <a href="write-hole.html">write hole</a>, and it is why a parity array needs a <a href="raid-engine.html">raid engine</a> whose write cache survives power loss.</p>
+    <p>That is the <em>small-write problem</em>, and the four operations are the <a href="write-penalty.html">write penalty</a> of single parity. There is a second way: read the data blocks the write does <em>not</em> touch, and compute the parity fresh. <code>raid5.c</code> counts both for every stripe it is about to write, <code>rmw</code> (blocks to read for a read-modify-write) and <code>rcw</code> (blocks to read for a reconstruct-write), and takes the cheaper. A write that covers the whole stripe has nothing left to read: <code>rcw</code> is zero, the parity is computed from what is being written, and the penalty disappears. For this reason, writes aligned to whole stripes make parity cheap. The file system&#39;s <code>stripe_width</code> option exists for this: it lets the block allocator avoid a read-modify-write of the parity.</p>
+    <p>The two writes of that rule are separate disk operations, and a power cut between them leaves a stripe whose parity no longer matches its data. The XOR arithmetic cannot detect the mismatch, and a rebuild uses the wrong parity as if it were right. This is the <a href="write-hole.html">write hole</a>, and it is why a parity array needs either a <a href="raid-engine.html">raid engine</a> whose write cache survives power loss, or a journal or a partial parity log on the disks.</p>
     <h2 id="single-and-double-parity">Single and double parity</h2>
     <p>One parity block recovers one missing block. To survive two failures a stripe needs a second block that is <em>not</em> another XOR (two XORs of the same blocks carry the same information). RAID 6 computes two <em>syndromes</em>, in H. Peter Anvin&#39;s description for the Linux implementation:</p>
     <pre class="kb-figure"><code>P = D₀ + D₁ + D₂ + … + Dₙ₋₁                        ordinary XOR parity
 Q = g⁰·D₀ + g¹·D₁ + g²·D₂ + … + gⁿ⁻¹·Dₙ₋₁         a Reed-Solomon code</code></pre>
-    <p>where the arithmetic is that of the Galois field GF(2⁸) and <em>g</em> is a generator of it. With one data disk lost, <em>P</em> recovers it as in RAID 5; with two lost, the two equations are solved together. &quot;RAID-6 supports losing any two drives.&quot; The cost is two blocks per stripe, and a write that touches one data block must update both: six operations instead of four. The field has 255 non-zero elements, so a stripe can hold at most 255 data disks; no real array comes close.</p>
+    <p>where the arithmetic is that of the Galois field GF(2⁸) and <em>g</em> is a generator of it. With one data disk lost, <em>P</em> recovers it as in RAID 5; with two lost, the two equations are solved together. &quot;RAID-6 supports losing any two drives.&quot; The cost is two blocks per stripe, and a write that touches one data block must update both: six operations instead of four. The field has 255 non-zero elements, so a stripe can hold at most 255 data disks.</p>
     <p>Windows Storage Spaces offers the same two shapes as <em>single parity</em> and <em>dual parity</em> spaces, described as &quot;data is striped across multiple drives with parity information for fault tolerance&quot;.</p>
   </section>
   <section class="kb-section" id="sources">
@@ -179,6 +180,7 @@ Q = g⁰·D₀ + g¹·D₁ + g²·D₂ + … + gⁿ⁻¹·Dₙ₋₁         a R
     <ul class="kb-sources">
       <li><a href="https://www.cs.cmu.edu/~garth/RAIDpaper/Patterson88.pdf">Patterson, Gibson, Katz — A Case for RAID, 1988</a> — §10 Fourth Level RAID: &#39;new parity = (old data xor new data) xor old parity&#39;; &#39;a small write then uses 2 disks to perform 4 accesses — 2 reads and 2 writes&#39;; &#39;The check disk is the bottleneck, and the final level RAID removes this bottleneck&#39;; §11 Fifth Level RAID: &#39;distributes the data and check information across all the disks — including the check disks&#39;</li>
       <li><a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4) man page</a> — RAID4: &#39;like a RAID0 array with an extra device for storing parity&#39;; RAID5: &#39;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&#39;, &#39;allows more parallelism when writing&#39;; RAID6: &#39;can handle the loss of any two devices without data loss&#39;</li>
+      <li><a href="https://man7.org/linux/man-pages/man8/mdadm.8.html">mdadm(8) man page, --layout</a> — &#39;The layout of the RAID5 parity block can be one of left-asymmetric, left-symmetric, right-asymmetric, right-symmetric, la, ra, ls, rs. The default is left-symmetric.&#39;</li>
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c">drivers/md/raid5.c raid5_compute_sector(), ALGORITHM_LEFT_SYMMETRIC</a> — pd_idx = data_disks - sector_div(stripe2, raid_disks); *dd_idx = (pd_idx + 1 + *dd_idx) % raid_disks</li>
       <li><a href="https://github.com/torvalds/linux/blob/master/drivers/md/raid5.c">drivers/md/raid5.c handle_stripe_dirtying()</a> — rmw and rcw counted per stripe; &#39;prefer read-modify-write, but need to get some data&#39;; the reconstruct-write branch taken when rcw is the cheaper</li>
       <li><a href="https://www.kernel.org/pub/linux/kernel/people/hpa/raid6.pdf">H. Peter Anvin — The mathematics of RAID-6 (2004, last updated 2011)</a> — &#39;RAID-6 supports losing any two drives. The way this is done is by computing two syndromes, generally referred P and Q&#39;; P as XOR parity, Q as a Reed-Solomon code over GF(2⁸) with generator {02}; 255 data drives at most</li>
