@@ -10,7 +10,8 @@ bash .development/automation/bootstrap.sh
 
 Git will not pick up hooks shipped inside a repository on its own — that is a
 security property, not an oversight. `bootstrap.sh` sets
-`core.hooksPath .githooks` locally and makes everything executable.
+`core.hooksPath .githooks` locally, registers the `merge=generated` driver the
+derived docs are marked with in `.gitattributes`, and makes everything executable.
 
 ## Modules
 
@@ -18,10 +19,20 @@ security property, not an oversight. `bootstrap.sh` sets
 | ------ | ------------ | ------- |
 | `00-branch-protection` | On `main`, allows **merges only**; everything else — documentation included — needs a branch | yes |
 | `01-security` | Scans staged files for secrets — by filename, by content pattern, by directory | yes |
-| `04-docs-update` | Runs `.development/automation/docs-update.sh` and stages the regenerated docs | no |
+| `04-docs-update` | Runs `.development/automation/docs-update.sh` and stages the regenerated docs and knowledge base | no |
 
 Bypass with `git commit --no-verify` when a check is wrong. That is the escape
 hatch a false positive is supposed to cost.
+
+## post-merge
+
+`post-merge` runs after a merge, including the one `git pull` makes. It calls
+`04-docs-update` against the merged tree, because git creates a merge commit
+without conflicts without running `pre-commit`, so the derived docs would
+otherwise describe neither branch. What it regenerates is staged, not committed.
+Its second step, moving a merged branch's spec to `implemented/`, runs only if
+`.development/scripts/spec-workflow.py` exists; in this project it does not, so
+that step is inert.
 
 ## Why the gaps in the numbering
 
@@ -32,10 +43,11 @@ take:
 
 - `02-format-check` — no formatter on a vanilla, no-build-step codebase
 - `03-archive-resolved-issues` — the tech-debt volume does not justify it
-- `05-spec-workflow` — one spec; the workflow it automates does not exist here
+- `05-spec-workflow` — specs move from `planned/` to `implemented/` by hand; the
+  workflow it automates does not exist here
 
-Same reasoning for `post-checkout` / `post-merge` (spec bookkeeping) and for
-`build.sh` / `format-*.sh`: not carried over.
+Same reasoning for `post-checkout` and for `build.sh` / `format-*.sh`: not
+carried over.
 
 ## Relationship to the remote gate
 

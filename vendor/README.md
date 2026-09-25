@@ -27,9 +27,12 @@ handed a third party a request log of every visitor. Neither is worth it for
 `sha256(js-yaml.min.js)` =
 `45dc3dd03dc07a06705a2c2989b8c7f709013f04bd5386e3279d4e447f07ebd7`
 
-The bundle is UMD: loaded by a plain `<script>` it assigns the global
-`jsyaml`, which is what `kb.js`, `src/challenge/challenge.js` and
-`src/sandbox/physical-controller.js` read.
+The bundle is UMD. In the browser, `index.html` loads it with a plain
+`<script>` and it assigns the global `jsyaml`, which is what
+`src/sandbox/data-loader.js` and `src/challenge/challenge.js` read. In Node,
+`.development/scripts/generate-kb.js` loads the same file to read the YAML the
+knowledge-base pages are generated from; the pages it writes are static HTML
+and do not load js-yaml.
 
 ## Updating
 
