@@ -33,7 +33,7 @@ long: |
   here says how a sector is mapped to a disk, where the parity of a stripe goes, or
   what the driver does with two disks where a level asks for three, the sentence
   points at the function that does it, and anyone can open the file and see whether
-  the sentence is true. A controller's firmware and Windows' driver do the same
+  the sentence is true. A controller's [[firmware]] and Windows' driver do the same
   jobs, but their code is not published; what can be checked about them is their
   documentation, which describes behaviour and does not show it.
 

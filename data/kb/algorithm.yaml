@@ -62,7 +62,7 @@ long: |
   every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a
   sequential read uses the disks less evenly.
   Left-symmetric is also the layout hardware controllers use, under the name the
-  SNIA Disk Data Format gives it, *rotating parity N with data continuation*;
+  [[snia|SNIA]] Disk Data Format gives it, *rotating parity N with data continuation*;
   `mdadm` lists it a second time as `ddf-N-continue` for that reason. An array
   built by a controller and one built by `md` with the default layout put every
   block in the same place.

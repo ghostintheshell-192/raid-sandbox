@@ -27,7 +27,7 @@ searchDescription: >
 long: |
   ## The risk to the write cache
 
-  A RAID controller can have memory of its own, its *cache*. With *write-back*
+  A RAID controller can have memory of its own, its *cache*. With *[[write-back|write-back]]*
   caching, the controller confirms a write to the operating system as soon as the
   data is in that memory, and writes it to the disks later. With *write-through*,
   it confirms a write only once the data is on the disks. Broadcom defines the two
@@ -59,7 +59,7 @@ long: |
   less if the battery is degraded": if power returns within that time, the data is
   still in the cache and the controller writes it to the disks. A battery wears
   out, and Broadcom puts its life at "about 1 ½ years". The controller also runs a
-  *learn cycle* on the battery: a check it repeats periodically, which Broadcom
+  *[[learn-cycle|learn cycle]]* on the battery: a check it repeats periodically, which Broadcom
   defines as "a battery calibration operation performed periodically by the
   controller to determine the condition of the battery". In plain terms, the
   controller measures whether the battery can still do its job. While the battery
@@ -91,7 +91,7 @@ long: |
   logging efficiently using nonvolatile RAM."
 
   A driver running on the CPU has no memory that survives the power cut, so
-  software and firmware RAID ([[raid-engine]]) close the hole in other ways: Linux
+  software and [[firmware]] RAID ([[raid-engine]]) close the hole in other ways: Linux
   `md` writes to a journal on a separate device or, for RAID 5, keeps a partial
   parity log in the members' metadata area ([[write-hole]]). A vendor of software
   RAID, SoftRAID, recommends an uninterruptible power supply (UPS), a battery for

@@ -31,6 +31,14 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-lane-1:target) a[href="#term-lane-1"],
+    .kb-main:has(#term-sas-1:target) a[href="#term-sas-1"],
+    .kb-main:has(#term-nvme-1:target) a[href="#term-nvme-1"],
+    .kb-main:has(#term-pcie-1:target) a[href="#term-pcie-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +125,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Backplane</h1>
@@ -143,10 +152,30 @@
     <p>In a server or a disk shelf the <a href="physical-disks.html">physical disks</a> do not cable to the controller one by one. They slide into bays, and the bays are connectors on a board at the back of the cage: the backplane. Its job is electrical, to carry each disk&#39;s signal lines to a connector the <a href="hba.html">HBA</a> or the RAID controller cables to, and to bring power and the bay&#39;s status lights.</p>
     <p>Two kinds exist, and the difference is whether anything on the board processes commands:</p>
     <ul>
-      <li><strong>Passive.</strong> Connectors and traces, one lane per bay. A cable from the controller carries four lanes, so a passive backplane serves four bays per connector, and a larger cage needs more cables.</li>
-      <li><strong>Active.</strong> The board carries a SAS <em>expander</em>, a switch between the controller&#39;s lanes and the bays. One four-lane cable then reaches every disk in the cage, and the expander routes each command to its target. The expander only forwards commands; it is not a <a href="raid-engine.html">raid engine</a>, and it keeps no data.</li>
+      <li><strong>Passive.</strong> Connectors and traces, one <a class="kb-term" id="ref-term-lane-1" href="#term-lane-1">lane</a> per bay. A cable from the controller carries four lanes, so a passive backplane serves four bays per connector, and a larger cage needs more cables.</li>
+      <li><strong>Active.</strong> The board carries a <a class="kb-term" id="ref-term-sas-1" href="#term-sas-1">SAS</a> <em>expander</em>, a switch between the controller&#39;s lanes and the bays. One four-lane cable then reaches every disk in the cage, and the expander routes each command to its target. The expander only forwards commands; it is not a <a href="raid-engine.html">raid engine</a>, and it keeps no data.</li>
     </ul>
-    <p>NVMe disks are the case that steps around it: they speak PCIe, and in the simplest wiring they reach the bus without a SAS backplane in between (<a href="physical-disks.html">physical disks</a>).</p>
+    <span class="kb-term-anchor" id="term-lane-1"></span>
+    <aside class="kb-term-box" aria-label="Lane: definition">
+      <p><strong>Lane.</strong> One of the serial connections that together make up a link: SNIA defines a lane as &quot;one of multiple point-to-point physical connections that make up a single link&quot;. Connectors and slots are named by their lane count: the SAS connectors of an HBA are marked x4 or x8, and so are PCIe links.</p>
+      <p class="kb-term-more"><a href="glossary.html#lane">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-sas-1"></span>
+    <aside class="kb-term-box" aria-label="SAS: definition">
+      <p><strong>SAS.</strong> Serial Attached SCSI, an interface for connecting disks that carries SCSI commands. SNIA defines it as &quot;a SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&quot;: a SAS controller drives SATA disks as well as SAS ones.</p>
+      <p class="kb-term-more"><a href="glossary.html#sas">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <p><a class="kb-term" id="ref-term-nvme-1" href="#term-nvme-1">NVMe</a> disks are the case that steps around it: they speak <a class="kb-term" id="ref-term-pcie-1" href="#term-pcie-1">PCIe</a>, and in the simplest wiring they reach the bus without a SAS backplane in between (<a href="physical-disks.html">physical disks</a>).</p>
+    <span class="kb-term-anchor" id="term-nvme-1"></span>
+    <aside class="kb-term-box" aria-label="NVMe: definition">
+      <p><strong>NVMe.</strong> NVM Express, an interface that, in its specification&#39;s words, &quot;allows a host to communicate with a non-volatile memory subsystem&quot;. Over PCIe the disk&#39;s own controller is a device on the bus, so no host bus adapter stands between the disk and the CPU. It can also run over a network, as NVMe over Fabrics.</p>
+      <p class="kb-term-more"><a href="glossary.html#nvme">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-pcie-1"></span>
+    <aside class="kb-term-box" aria-label="PCIe: definition">
+      <p><strong>PCIe.</strong> PCI Express, the newer form of PCI, which SNIA defines as &quot;a bus for connecting interface modules to a computer system&quot;. Controller cards sit in PCIe slots, and NVMe disks connect to it directly. It carries data over serial lanes, and a link is named by how many lanes it has: x4, x8.</p>
+      <p class="kb-term-more"><a href="glossary.html#pcie">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <p>Why name it at all, if it computes nothing? Because it is a failure domain. A backplane that dies takes every disk on it off the path at once, however the disks are laid out. The practice that follows is to spread the members of one <a href="span.html">span</a> across backplanes where the cage allows it, so that no single board holds both copies of a mirror or two members of a parity stripe.</p>
   </section>
   <section class="kb-section" id="sources">

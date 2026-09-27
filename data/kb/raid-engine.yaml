@@ -31,7 +31,7 @@ long: |
   - **Keep the metadata.** Which disks belong to the array, in what order, with what
     layout, and in what state. Linux `md` writes it on each member as a *superblock*;
     a controller keeps its own records on the disks (MegaRAID writes them in the
-    SNIA DDF format).
+    [[snia|SNIA]] DDF format).
   - **Translate addresses.** Every read and write arrives for the array's sectors
     and must be turned into the members' sectors, by the rule of the
     [[segmentation]].
@@ -47,7 +47,7 @@ long: |
   ## The three implementations
 
   The [[physical-disks]] reach the operating system along one path: [[backplane]],
-  [[hba|HBA]], the PCIe bus, the CPU, the OS. The engine sits on that path.
+  [[hba|HBA]], the [[pcie|PCIe]] bus, the CPU, the OS. The engine sits on that path.
   Depending on what runs it, it is called *hardware*, *software* or *firmware* (or
   *fake*) RAID.[^three-cases]
 
@@ -73,7 +73,7 @@ long: |
 
   **Firmware RAID, also called fake RAID: the card has no RAID engine of its own,
   and the operating system does the work on the CPU.** A disk
-  controller on the motherboard, or on a cheap add-in card, whose boot firmware
+  controller on the motherboard, or on a cheap add-in card, whose boot [[firmware]]
   knows how to read an array: an *option ROM* in the system BIOS which, in Intel's
   words, manages the drives and RAID volumes "before the operating system loads".
   That is what it is for: the machine can boot from the array. The array's metadata
@@ -87,7 +87,7 @@ long: |
   ## Distinguishing criterion
 
   A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and
-  on AMD's AM4 platform some of the SATA ports AMD RAID works with come from the
+  on AMD's AM4 platform some of the [[sata|SATA]] ports AMD RAID works with come from the
   processor itself ("processor-direct SATA"), so the controller and the CPU share a
   die. What separates the three is two questions: who owns the metadata, and who
   computes.
