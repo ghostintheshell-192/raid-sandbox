@@ -510,12 +510,17 @@ function statusFlag(status, ctx, where) {
  * box, from which `termStyle` writes the page's highlight rule.
  */
 const termState = () => ({ count: new Map(), boxes: [] });
+const TERM_CLOSED = 'term-closed';
 
 /**
  * A link to a term does not leave the page. It opens a box right after the
  * paragraph it sits in, with the term's short form and a link to its glossary
- * entry, where the sources are. The box is shown by `:target` (kb.css), so the
- * page stays a document with no script; the × closes it by targeting the link.
+ * entry, where the sources are. The page stays a document with no script: the
+ * link targets an empty anchor just before the box, and kb.css shows the box
+ * that follows a `:target` anchor. The anchor is `position: fixed`, and a browser
+ * does not scroll to bring a fixed element into view, so opening a box does not
+ * move the page. The × targets another fixed anchor (TERM_CLOSED), which no box
+ * follows: the box closes, and the page stays where it is.
  * One box per term per paragraph: a second mention in the same paragraph opens
  * the same box. Where the renderer has no block to follow (a footnote), or the
  * page keeps no term state, the link goes to the glossary instead.
@@ -531,10 +536,11 @@ function makeResolver(ctx, where, page = null) {
     const n    = (page.count.get(term.id) || 0) + 1;
     const box  = `term-${term.id}-${n}`;
     const html = [
-      `<aside class="kb-term-box" id="${box}" aria-label="${escapeHtml(term.name)}: definition">`,
+      `<span class="kb-term-anchor" id="${box}"></span>`,
+      `<aside class="kb-term-box" aria-label="${escapeHtml(term.name)}: definition">`,
       `  <p><strong>${escapeHtml(term.name)}.</strong> ${escapeHtml(shortOf(term))}</p>`,
       `  <p class="kb-term-more"><a href="${hit.href}">Sources and more in the glossary</a>` +
-        `<a class="kb-term-close" href="#ref-${box}" aria-label="Close the definition">×</a></p>`,
+        `<a class="kb-term-close" href="#${TERM_CLOSED}" aria-label="Close the definition">×</a></p>`,
       '</aside>',
     ].join('\n');
     if (block.aside(term.id, html)) {
@@ -757,7 +763,7 @@ ${JSON.stringify(ld, null, 2).split('\n').map((l) => '  ' + l).join('\n')}
 <div class="kb-page${side ? ' kb-page--side' : ''}${toc && toc.length ? ' kb-page--toc' : ''}">
 ${side ? `\n${sideNav(ctx, file)}\n` : ''}
   <div class="kb-main">
-
+${terms && terms.boxes.length ? `  <span class="kb-term-anchor" id="${TERM_CLOSED}"></span>\n` : ''}
   <header class="kb-header">
     <h1 class="kb-title">${escapeHtml(heading)}</h1>
 ${subtitle ? `    <p class="kb-subtitle">${subtitle}</p>\n` : ''}  </header>

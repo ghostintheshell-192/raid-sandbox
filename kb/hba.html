@@ -127,6 +127,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">HBA</h1>
@@ -156,32 +157,37 @@
     <p class="kb-lede">The host bus adapter: the card, or the chipset function, that connects the disks (over SATA or SAS) to the CPU (over PCIe). It passes each disk through unchanged, so the operating system sees every one of them. A plain HBA computes no RAID; some run a firmware with the simple levels, never parity. A RAID controller is built on one chip that is both the disk controller and a RAID engine.</p>
     <h2 id="function">Function</h2>
     <p>Disks connect over <a class="kb-term" id="ref-term-sata-1" href="#term-sata-1">SATA</a> or <a class="kb-term" id="ref-term-sas-1" href="#term-sas-1">SAS</a>; the CPU reaches expansion cards over <a class="kb-term" id="ref-term-pcie-1" href="#term-pcie-1">PCIe</a>. Something on the path has to speak both, and that is the host bus adapter, which SNIA defines as &quot;an I/O adapter that connects a host computer bus to an I/O interconnect&quot;.</p>
-    <aside class="kb-term-box" id="term-sata-1" aria-label="SATA: definition">
+    <span class="kb-term-anchor" id="term-sata-1"></span>
+    <aside class="kb-term-box" aria-label="SATA: definition">
       <p><strong>SATA.</strong> Serial ATA, an interface for connecting disks to a computer: a version of the older ATA standard that uses a serial connection. On a PC the SATA ports belong to a controller that follows Intel&#39;s AHCI specification. A SAS controller can drive SATA disks too.</p>
-      <p class="kb-term-more"><a href="glossary.html#sata">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-sata-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#sata">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
-    <aside class="kb-term-box" id="term-sas-1" aria-label="SAS: definition">
+    <span class="kb-term-anchor" id="term-sas-1"></span>
+    <aside class="kb-term-box" aria-label="SAS: definition">
       <p><strong>SAS.</strong> Serial Attached SCSI, an interface for connecting disks that carries SCSI commands. SNIA defines it as &quot;a SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&quot;: a SAS controller drives SATA disks as well as SAS ones.</p>
-      <p class="kb-term-more"><a href="glossary.html#sas">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-sas-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#sas">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
-    <aside class="kb-term-box" id="term-pcie-1" aria-label="PCIe: definition">
+    <span class="kb-term-anchor" id="term-pcie-1"></span>
+    <aside class="kb-term-box" aria-label="PCIe: definition">
       <p><strong>PCIe.</strong> PCI Express, the newer form of PCI, which SNIA defines as &quot;a bus for connecting interface modules to a computer system&quot;. Controller cards sit in PCIe slots, and NVMe disks connect to it directly. It carries data over serial lanes, and a link is named by how many lanes it has: x4, x8.</p>
-      <p class="kb-term-more"><a href="glossary.html#pcie">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-pcie-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#pcie">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
     <p>SAS carries SCSI commands, and SCSI names the two ends of a command. The <em>initiator</em> is &quot;the endpoint that originates a SCSI I/O command sequence&quot;, the <em>target</em> is &quot;the endpoint that receives&quot; it. The HBA is the initiator (&quot;I/O adapters … are typical initiators&quot;) and each disk a target. The HBA takes a read or write from the operating system, sends it to the right disk (through a <a href="backplane.html">backplane</a> if there is one), and returns the answer.</p>
     <p>An HBA does not change what the operating system sees: every <a href="physical-disks.html">physical disk</a> appears as itself. Microchip describes the HBA mode of its cards in these terms: &quot;RAID functions of the controller are disabled. All attached drives are surfaced as RAW devices.&quot; Any RAID is then done by something else: the operating system, or a firmware working with the operating system&#39;s driver (<a href="raid-engine.html">raid engine</a>).</p>
     <h2 id="forms">Forms</h2>
     <p>On a desktop the HBA is not a card: the chipset&#39;s SATA controller is one. Intel&#39;s AHCI specification, the standard those controllers follow, says so: &quot;A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices.&quot;</p>
     <p>On a server the HBA is usually a PCIe card, and each of its connectors carries several <a class="kb-term" id="ref-term-lane-1" href="#term-lane-1">lanes</a>. The LSI SAS 9300-8i has &quot;two x4 internal mini-SAS HD connectors (SFF-8643)&quot;, four lanes each; the Broadcom 9500-16i has &quot;Two x8 SFF-8654&quot;, eight lanes each.</p>
-    <aside class="kb-term-box" id="term-lane-1" aria-label="Lane: definition">
+    <span class="kb-term-anchor" id="term-lane-1"></span>
+    <aside class="kb-term-box" aria-label="Lane: definition">
       <p><strong>Lane.</strong> One of the serial connections that together make up a link: SNIA defines a lane as &quot;one of multiple point-to-point physical connections that make up a single link&quot;. Connectors and slots are named by their lane count: the SAS connectors of an HBA are marked x4 or x8, and so are PCIe links.</p>
-      <p class="kb-term-more"><a href="glossary.html#lane">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-lane-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#lane">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
     <h2 id="hbas-with-simple-raid">HBAs with simple RAID</h2>
     <p>Some HBAs do compute RAID, within a limit, when they are given a different <a class="kb-term" id="ref-term-firmware-1" href="#term-firmware-1">firmware</a>. The LSI SAS 9300-8i can be reflashed &quot;to run Integrated RAID (IR) firmware&quot;, which supports &quot;RAID 0, RAID 1, RAID 10, and RAID 1E&quot;. These are the levels without <a href="parity.html">parity</a>: they place and copy blocks but compute nothing from them. Parity needs a chip built for it.</p>
-    <aside class="kb-term-box" id="term-firmware-1" aria-label="Firmware: definition">
+    <span class="kb-term-anchor" id="term-firmware-1"></span>
+    <aside class="kb-term-box" aria-label="Firmware: definition">
       <p><strong>Firmware.</strong> The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</p>
-      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-firmware-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
     <h2 id="hba-and-raid-controller">HBA and RAID controller</h2>
     <p>The difference between an HBA and a RAID controller is the difference between software and hardware RAID. A RAID controller card is built on a <em>RAID-on-Chip</em> (RoC): one chip that is at once the disk controller and the RAID engine. Broadcom&#39;s SAS3916 is a &quot;single-chip solution&quot;, listed for use in a &quot;SAS/SATA/PCIe RAID host bus adapter&quot;, with &quot;Hardware RAID Levels 5, 6&quot;. The engine builds the array and hands the operating system a <a href="virtual-drive.html">virtual drive</a> instead of the disks.</p>
@@ -189,9 +195,10 @@
     <p>What a card is for the operating system depends on how it works, not on where it sits. Some cards can be switched between the two: Microchip&#39;s cards have an &quot;HBA Mode&quot; with the RAID functions disabled, and a &quot;Mixed&quot; mode that exposes RAID volumes and raw drives together.</p>
     <h2 id="nvme-disks">NVMe disks</h2>
     <p>An <a class="kb-term" id="ref-term-nvme-1" href="#term-nvme-1">NVMe</a> disk carries its own controller on the PCIe bus. In the words of the NVMe specification, &quot;when PCI Express is used as the transport, then a controller is a PCI Express function&quot;. Nothing has to translate between the disk and the CPU, so an NVMe disk can connect without an HBA. Tri-mode adapters can attach NVMe disks anyway, next to SAS and SATA ones in the same bays: Broadcom&#39;s &quot;PCIe device bridge (PDB) enables the PCIe (NVMe) storage interface connections&quot;.</p>
-    <aside class="kb-term-box" id="term-nvme-1" aria-label="NVMe: definition">
+    <span class="kb-term-anchor" id="term-nvme-1"></span>
+    <aside class="kb-term-box" aria-label="NVMe: definition">
       <p><strong>NVMe.</strong> NVM Express, an interface that, in its specification&#39;s words, &quot;allows a host to communicate with a non-volatile memory subsystem&quot;. Over PCIe the disk&#39;s own controller is a device on the bus, so no host bus adapter stands between the disk and the CPU. It can also run over a network, as NVMe over Fabrics.</p>
-      <p class="kb-term-more"><a href="glossary.html#nvme">Sources and more in the glossary</a><a class="kb-term-close" href="#ref-term-nvme-1" aria-label="Close the definition">×</a></p>
+      <p class="kb-term-more"><a href="glossary.html#nvme">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
   </section>
   <section class="kb-section" id="sources">

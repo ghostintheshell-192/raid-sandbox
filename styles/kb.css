@@ -193,8 +193,10 @@
 
 /* --- glossary terms: a box under the paragraph, no script ----------- */
 /*  A link to a term opens its definition right under the paragraph it   */
-/*  sits in, instead of leaving the page. The box is hidden until it is  */
-/*  the page's :target; the × targets the link again, which closes it.   */
+/*  sits in, instead of leaving the page. The box is hidden until the    */
+/*  anchor before it is the page's :target; the × targets another        */
+/*  anchor, which closes it. Both anchors are fixed, so the page never   */
+/*  scrolls when a box opens or closes.                                  */
 /*  A term is yellow with a dotted underline; a link to another page    */
 /*  stays green. Yellow sits away from the mint green (which leans to    */
 /*  blue) and, pale, away from the amber of parity and of "to verify".   */
@@ -217,8 +219,11 @@
   text-decoration-color: var(--kb-term-line);
 }
 
+/* the anchor a term link targets: fixed, so reaching it never scrolls */
+.kb-term-anchor { position: fixed; top: 0; }
+
 .kb-term-box { display: none; }
-.kb-term-box:target {
+.kb-term-anchor:target + .kb-term-box {
   display: block;
   margin: -0.4rem 0 1.2rem;
   padding: 0.7rem 1rem 0.6rem;
@@ -230,7 +235,6 @@
   font-size: 0.9rem;
   line-height: 1.6;
   text-align: left;
-  scroll-margin-block: 40vh;   /* open it about where the reader is, not at the top */
 }
 .kb-term-box p { margin: 0 0 0.4rem; }
 .kb-term-box strong { color: var(--kb-term-color); }
@@ -461,9 +465,8 @@
   .kb-toc-inline { display: none; }
 }
 
-/* the section a reader jumped to from the right column shows it — a heading
-   or a section, not a term's box, which is a target too but keeps its text */
-.kb-section:target > h2, .kb-section :target:not(.kb-term-box) { color: var(--accent-cyan); }
+/* the section a reader jumped to from the right column shows it */
+.kb-section:target > h2, .kb-section :target { color: var(--accent-cyan); }
 .kb-section h3 { scroll-margin-top: 1rem; }
 
 /* --- the map's cards: a grid that fills the width, one column narrow - */
