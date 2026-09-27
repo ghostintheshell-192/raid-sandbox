@@ -31,6 +31,11 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +122,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Segmentation</h1>
@@ -145,7 +151,12 @@
     <p class="kb-lede">How an array splits its data across its member disks. Striped cuts the data into fixed-size chunks and deals them out to every member in turn; linear writes it as one run, filling the first member before touching the next. Segmentation is about how many disks take part in one request, not about whether the data survives a failure.</p>
     <h2 id="preliminary-concepts">Preliminary Concepts</h2>
     <p>An array is a set of disks presented as one. Its members are disks, or, in the nested levels, smaller arrays; here the members are disks. The operating system does not see the members. It sees one block device, and it addresses it the way it addresses any disk: by sector number, the <em>logical block address</em> (LBA), counting from 0 to the last sector. Each member disk has its own sector numbers, also counting from 0. So on every read and every write something has to translate the array&#39;s sector number into a member and a sector on that member: array sector <em>s</em> becomes member <em>m</em>, sector <em>t</em>.</p>
-    <p>That translation is done by the <a href="raid-engine.html">raid engine</a>, wherever it lives: the firmware of a RAID-on-Chip on a hardware controller, or the operating system&#39;s driver in software RAID (<code>md</code> in Linux, Storage Spaces in Windows). The rule it applies is the <strong>array&#39;s layout</strong>, chosen once, by whoever creates the array (with <code>mdadm --level</code>, in the controller&#39;s configuration utility, as the resiliency type of a storage space), and fixed from then on. Segmentation is the part of that layout that says where the data goes, and every standard RAID level is built on one of two answers:</p>
+    <p>That translation is done by the <a href="raid-engine.html">raid engine</a>, wherever it lives: the <a class="kb-term" id="ref-term-firmware-1" href="#term-firmware-1">firmware</a> of a RAID-on-Chip on a hardware controller, or the operating system&#39;s driver in software RAID (<code>md</code> in Linux, Storage Spaces in Windows). The rule it applies is the <strong>array&#39;s layout</strong>, chosen once, by whoever creates the array (with <code>mdadm --level</code>, in the controller&#39;s configuration utility, as the resiliency type of a storage space), and fixed from then on. Segmentation is the part of that layout that says where the data goes, and every standard RAID level is built on one of two answers:</p>
+    <span class="kb-term-anchor" id="term-firmware-1"></span>
+    <aside class="kb-term-box" aria-label="Firmware: definition">
+      <p><strong>Firmware.</strong> The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</p>
+      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <ul>
       <li>Linear</li>
       <li>Striped</li>

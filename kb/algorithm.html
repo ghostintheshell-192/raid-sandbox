@@ -31,6 +31,11 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-snia-1:target) a[href="#term-snia-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +122,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Placement algorithm</h1>
@@ -163,7 +169,12 @@ stripe 0    D0       D1       D2       P
 stripe 1    D4       D5       P        D3
 stripe 2    D8       P        D6       D7
 stripe 3    P        D9       D10      D11</code></pre>
-    <p>Read the data in order and it walks every disk in turn, D3 on disk 3 then D4 on disk 0, with no disk visited twice in a row: that is the advantage of <em>symmetric</em>, and why it is the default. The asymmetric layouts restart at disk 0 every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a sequential read uses the disks less evenly. Left-symmetric is also the layout hardware controllers use, under the name the SNIA Disk Data Format gives it, <em>rotating parity N with data continuation</em>; <code>mdadm</code> lists it a second time as <code>ddf-N-continue</code> for that reason. An array built by a controller and one built by <code>md</code> with the default layout put every block in the same place.</p>
+    <p>Read the data in order and it walks every disk in turn, D3 on disk 3 then D4 on disk 0, with no disk visited twice in a row: that is the advantage of <em>symmetric</em>, and why it is the default. The asymmetric layouts restart at disk 0 every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a sequential read uses the disks less evenly. Left-symmetric is also the layout hardware controllers use, under the name the <a class="kb-term" id="ref-term-snia-1" href="#term-snia-1">SNIA</a> Disk Data Format gives it, <em>rotating parity N with data continuation</em>; <code>mdadm</code> lists it a second time as <code>ddf-N-continue</code> for that reason. An array built by a controller and one built by <code>md</code> with the default layout put every block in the same place.</p>
+    <span class="kb-term-anchor" id="term-snia-1"></span>
+    <aside class="kb-term-box" aria-label="SNIA: definition">
+      <p><strong>SNIA.</strong> The Storage Networking Industry Association, which describes itself as &quot;an association of producers and consumers of storage networking products&quot;. It develops and promotes storage standards, and publishes a dictionary of storage terms: many definitions in these pages are quoted from it.</p>
+      <p class="kb-term-more"><a href="glossary.html#snia">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <p>RAID 6 uses the same four names and adds the second parity, <em>Q</em>, next to <em>P</em>; where exactly, to the left or the right of it, is one more convention, and the two families differ on it.<sup class="kb-fn"><a href="#fn-q-before-p" id="fnref-q-before-p">1</a></sup></p>
     <h2 id="the-mirror-layouts">The mirror layouts</h2>
     <p>RAID 10 has its own question: where do the copies of a chunk go? In <code>mdadm</code> the answer is a letter and a number, <code>n2</code>, <code>f2</code>, <code>o2</code>: <em>near</em>, <em>far</em> or <em>offset</em> copies, and how many. The <a href="mirroring.html">mirroring</a> entry describes the three. Near, the default, puts the copies side by side in the same stripe, which is what a controller&#39;s RAID 10 does by spanning mirror pairs; far and offset exist only where <code>md</code> builds the array, because only <code>md</code> defines them. That is the one place where the <a href="raid-engine.html">raid engine</a> on the path restricts the layout: a controller cannot be asked for a far layout.</p>
@@ -172,7 +183,7 @@ stripe 3    P        D9       D10      D11</code></pre>
     <section class="kb-footnotes" id="notes">
     <h2>Notes</h2>
     <ol>
-      <li id="fn-q-before-p">A choice of the sandbox: it draws <em>Q</em> on the disk before <em>P</em>, the DDF convention a controller follows (<code>ddf-N-continue</code> in <code>mdadm</code>&#39;s list); an array <code>mdadm</code> creates as left-symmetric puts <em>Q</em> after <em>P</em>. Everything else about the rotation is the same. See <a href="design-decisions.html">the model&#39;s choices</a>. <a href="#fnref-q-before-p" class="kb-fn-back" aria-label="Back to the text">↩</a></li>
+      <li id="fn-q-before-p">A choice of the sandbox: it draws <em>Q</em> on the disk before <em>P</em>, the <a href="glossary.html#ddf">DDF</a> convention a controller follows (<code>ddf-N-continue</code> in <code>mdadm</code>&#39;s list); an array <code>mdadm</code> creates as left-symmetric puts <em>Q</em> after <em>P</em>. Everything else about the rotation is the same. See <a href="design-decisions.html">the model&#39;s choices</a>. <a href="#fnref-q-before-p" class="kb-fn-back" aria-label="Back to the text">↩</a></li>
     </ol>
     </section>
   </section>

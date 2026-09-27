@@ -31,6 +31,16 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-snia-1:target) a[href="#term-snia-1"],
+    .kb-main:has(#term-ddf-1:target) a[href="#term-ddf-1"],
+    .kb-main:has(#term-degraded-1:target) a[href="#term-degraded-1"],
+    .kb-main:has(#term-pcie-1:target) a[href="#term-pcie-1"],
+    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"],
+    .kb-main:has(#term-sata-1:target) a[href="#term-sata-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +127,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">RAID engine</h1>
@@ -146,19 +157,49 @@
     <h2 id="responsibilities">Responsibilities</h2>
     <p>Every RAID engine has the same jobs:</p>
     <ul>
-      <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own records on the disks (MegaRAID writes them in the SNIA DDF format).</li>
+      <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own records on the disks (MegaRAID writes them in the <a class="kb-term" id="ref-term-snia-1" href="#term-snia-1">SNIA</a> <a class="kb-term" id="ref-term-ddf-1" href="#term-ddf-1">DDF</a> format).</li>
       <li><strong>Translate addresses.</strong> Every read and write arrives for the array&#39;s sectors and must be turned into the members&#39; sectors, by the rule of the <a href="segmentation.html">segmentation</a>.</li>
       <li><strong>Produce the redundancy.</strong> Write every copy of a mirrored block, compute the <a href="parity.html">parity</a> of a stripe and write it, keep the two consistent.</li>
-      <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em>degraded</em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
+      <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em><a class="kb-term" id="ref-term-degraded-1" href="#term-degraded-1">degraded</a></em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
       <li><strong>Present the result.</strong> Upstream, the array is one block device: a <a href="virtual-drive.html">virtual drive</a> when a controller presents it, an <code>md</code> device when the operating system does.</li>
     </ul>
+    <span class="kb-term-anchor" id="term-snia-1"></span>
+    <aside class="kb-term-box" aria-label="SNIA: definition">
+      <p><strong>SNIA.</strong> The Storage Networking Industry Association, which describes itself as &quot;an association of producers and consumers of storage networking products&quot;. It develops and promotes storage standards, and publishes a dictionary of storage terms: many definitions in these pages are quoted from it.</p>
+      <p class="kb-term-more"><a href="glossary.html#snia">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-ddf-1"></span>
+    <aside class="kb-term-box" aria-label="DDF: definition">
+      <p><strong>DDF.</strong> Common RAID Disk Data Format: a SNIA standard for the records a RAID controller writes on its disks. The records say which disks form an array and how its data is laid out across them. Because every vendor can write the same format, &quot;the user data on physical disks is accessible independent of the RAID controller being used&quot;. The records sit at the end of each disk, and the disk&#39;s last block holds the header that points to them. Linux mdadm can also create DDF arrays, but marks the format as deprecated.</p>
+      <p class="kb-term-more"><a href="glossary.html#ddf">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-degraded-1"></span>
+    <aside class="kb-term-box" aria-label="Degraded: definition">
+      <p><strong>Degraded.</strong> The state of a RAID array that has lost a member disk and keeps working. SNIA defines degraded mode as the mode &quot;in which not all of the array&#39;s member disks are functioning, but the array as a whole is able to respond to application read and write requests&quot;. Reads of the lost disk&#39;s blocks are answered by recomputing them from the redundancy. The array has less tolerance, or none, until the rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two disks have failed.</p>
+      <p class="kb-term-more"><a href="glossary.html#degraded">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <h2 id="the-three-implementations">The three implementations</h2>
-    <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the PCIe bus, the CPU, the OS. The engine sits on that path. Depending on what runs it, it is called <em>hardware</em>, <em>software</em> or <em>firmware</em> (or <em>fake</em>) RAID.<sup class="kb-fn"><a href="#fn-three-cases" id="fnref-three-cases">1</a></sup></p>
+    <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the <a class="kb-term" id="ref-term-pcie-1" href="#term-pcie-1">PCIe</a> bus, the CPU, the OS. The engine sits on that path. Depending on what runs it, it is called <em>hardware</em>, <em>software</em> or <em>firmware</em> (or <em>fake</em>) RAID.<sup class="kb-fn"><a href="#fn-three-cases" id="fnref-three-cases">1</a></sup></p>
+    <span class="kb-term-anchor" id="term-pcie-1"></span>
+    <aside class="kb-term-box" aria-label="PCIe: definition">
+      <p><strong>PCIe.</strong> PCI Express, the newer form of PCI, which SNIA defines as &quot;a bus for connecting interface modules to a computer system&quot;. Controller cards sit in PCIe slots, and NVMe disks connect to it directly. It carries data over serial lanes, and a link is named by how many lanes it has: x4, x8.</p>
+      <p class="kb-term-more"><a href="glossary.html#pcie">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <p><strong>Hardware RAID.</strong> A controller card carries a <em>RAID-on-Chip</em> (RoC), a processor dedicated to the list above. Broadcom&#39;s SAS3916, for one, pairs a dual-core ARM processor with &quot;hardware acceleration engines for RAID 5 and RAID 6 parity calculations&quot; and drives the card&#39;s own memory, 4 or 8 GB of write cache on a MegaRAID 9560. The operating system never sees the member disks: what it is given is the controller&#39;s virtual drive. In Broadcom&#39;s MegaRAID vocabulary, &quot;virtual drives are drive groups or spanned drive groups that are available to the operating system&quot;.</p>
     <p><strong>Software RAID.</strong> No engine object on the path. The HBA passes the disks through and the operating system&#39;s driver is the engine: <code>md</code> in Linux (configured with <code>mdadm</code>), Storage Spaces in Windows. The CPU does the computing, the OS sees every member disk and, beside them, the array device it made.</p>
-    <p><strong>Firmware RAID, also called fake RAID: the card has no RAID engine of its own, and the operating system does the work on the CPU.</strong> A disk controller on the motherboard, or on a cheap add-in card, whose boot firmware knows how to read an array: an <em>option ROM</em> in the system BIOS which, in Intel&#39;s words, manages the drives and RAID volumes &quot;before the operating system loads&quot;. That is what it is for: the machine can boot from the array. The array&#39;s metadata is written on the member disks, in the firmware&#39;s format. Once the OS is up, its driver does the engine&#39;s work on the CPU, exactly as in software RAID: Intel&#39;s own description of the Linux boot is that the initial RAM file system loads the MD RAID driver, &quot;and then RAID volumes are assembled&quot;. <code>mdadm</code> runs these volumes as <code>md</code> arrays with an <em>external</em> metadata format, <code>imsm</code>, &quot;supported by an option-rom on some platforms&quot;.</p>
+    <p><strong>Firmware RAID, also called fake RAID: the card has no RAID engine of its own, and the operating system does the work on the CPU.</strong> A disk controller on the motherboard, or on a cheap add-in card, whose boot <a class="kb-term" id="ref-term-firmware-1" href="#term-firmware-1">firmware</a> knows how to read an array: an <em>option ROM</em> in the system BIOS which, in Intel&#39;s words, manages the drives and RAID volumes &quot;before the operating system loads&quot;. That is what it is for: the machine can boot from the array. The array&#39;s metadata is written on the member disks, in the firmware&#39;s format. Once the OS is up, its driver does the engine&#39;s work on the CPU, exactly as in software RAID: Intel&#39;s own description of the Linux boot is that the initial RAM file system loads the MD RAID driver, &quot;and then RAID volumes are assembled&quot;. <code>mdadm</code> runs these volumes as <code>md</code> arrays with an <em>external</em> metadata format, <code>imsm</code>, &quot;supported by an option-rom on some platforms&quot;.</p>
+    <span class="kb-term-anchor" id="term-firmware-1"></span>
+    <aside class="kb-term-box" aria-label="Firmware: definition">
+      <p><strong>Firmware.</strong> The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</p>
+      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <h2 id="distinguishing-criterion">Distinguishing criterion</h2>
-    <p>A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and on AMD&#39;s AM4 platform some of the SATA ports AMD RAID works with come from the processor itself (&quot;processor-direct SATA&quot;), so the controller and the CPU share a die. What separates the three is two questions: who owns the metadata, and who computes.</p>
+    <p>A hardware controller and a firmware-RAID card can sit in the same PCIe slot, and on AMD&#39;s AM4 platform some of the <a class="kb-term" id="ref-term-sata-1" href="#term-sata-1">SATA</a> ports AMD RAID works with come from the processor itself (&quot;processor-direct SATA&quot;), so the controller and the CPU share a die. What separates the three is two questions: who owns the metadata, and who computes.</p>
+    <span class="kb-term-anchor" id="term-sata-1"></span>
+    <aside class="kb-term-box" aria-label="SATA: definition">
+      <p><strong>SATA.</strong> Serial ATA, an interface for connecting disks to a computer: a version of the older ATA standard that uses a serial connection. On a PC the SATA ports belong to a controller that follows Intel&#39;s AHCI specification. A SAS controller can drive SATA disks too.</p>
+      <p class="kb-term-more"><a href="glossary.html#sata">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <ul>
       <li>hardware: the controller owns it and computes it</li>
       <li>firmware: the firmware defines the metadata and reads it at boot; the operating system updates it and computes</li>

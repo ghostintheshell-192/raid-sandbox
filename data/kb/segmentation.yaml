@@ -56,7 +56,7 @@ long: |
   translate the array's sector number into a member and a sector on that member:
   array sector *s* becomes member *m*, sector *t*.
 
-  That translation is done by the [[raid-engine]], wherever it lives: the firmware
+  That translation is done by the [[raid-engine]], wherever it lives: the [[firmware]]
   of a RAID-on-Chip on a hardware controller, or the operating system's driver in
   software RAID (`md` in Linux, Storage Spaces in Windows). The rule it applies is
   the **array's layout**, chosen once, by whoever creates the array (with `mdadm

@@ -10,6 +10,10 @@ short: >
   decides what the card does: an HBA flashed with Integrated RAID firmware, for
   example, gains the simple RAID levels.
 
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["firmware"]
+
 related: [hba, raid-engine]
 
 sources:

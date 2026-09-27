@@ -31,6 +31,11 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-degraded-1:target) a[href="#term-degraded-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +122,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Rebuild</h1>
@@ -144,7 +150,12 @@
   <section class="kb-section kb-concept" id="what-it-is">
     <p class="kb-lede">Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</p>
     <h2 id="operation">Operation</h2>
-    <p>When a member fails, the <a href="raid-engine.html">raid engine</a> marks it faulty and carries on with the rest: in <code>md</code>, on a write error &quot;the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices&quot;. The array is now <em>degraded</em>: every request is still answered, but the <a href="redundancy.html">redundancy</a> that made the failure survivable is spent. Restoring it means putting a disk in the dead one&#39;s place and filling it, and what fills it depends on the level:</p>
+    <p>When a member fails, the <a href="raid-engine.html">raid engine</a> marks it faulty and carries on with the rest: in <code>md</code>, on a write error &quot;the md driver will immediately disable that device (marking it as faulty) and continues operation on the remaining devices&quot;. The array is now <em><a class="kb-term" id="ref-term-degraded-1" href="#term-degraded-1">degraded</a></em>: every request is still answered, but the <a href="redundancy.html">redundancy</a> that made the failure survivable is spent. Restoring it means putting a disk in the dead one&#39;s place and filling it, and what fills it depends on the level:</p>
+    <span class="kb-term-anchor" id="term-degraded-1"></span>
+    <aside class="kb-term-box" aria-label="Degraded: definition">
+      <p><strong>Degraded.</strong> The state of a RAID array that has lost a member disk and keeps working. SNIA defines degraded mode as the mode &quot;in which not all of the array&#39;s member disks are functioning, but the array as a whole is able to respond to application read and write requests&quot;. Reads of the lost disk&#39;s blocks are answered by recomputing them from the redundancy. The array has less tolerance, or none, until the rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two disks have failed.</p>
+      <p class="kb-term-more"><a href="glossary.html#degraded">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <ul>
       <li>a <strong>mirror</strong> copies the surviving copy block by block</li>
       <li>a <strong>parity</strong> array reads every stripe&#39;s remaining blocks and recomputes the missing one by XOR (<a href="parity.html">parity</a>), or, for RAID 6 with two missing, solves the two syndromes</li>

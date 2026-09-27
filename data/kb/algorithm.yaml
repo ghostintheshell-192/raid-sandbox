@@ -62,7 +62,7 @@ long: |
   every stripe (D3 would be on disk 0, D4 on disk 1, D5 on disk 3), so a
   sequential read uses the disks less evenly.
   Left-symmetric is also the layout hardware controllers use, under the name the
-  SNIA Disk Data Format gives it, *rotating parity N with data continuation*;
+  [[snia|SNIA]] Disk Data Format gives it, *rotating parity N with data continuation*;
   `mdadm` lists it a second time as `ddf-N-continue` for that reason. An array
   built by a controller and one built by `md` with the default layout put every
   block in the same place.
@@ -72,7 +72,7 @@ long: |
   two families differ on it.[^q-before-p]
 
   [^q-before-p]: A choice of the sandbox: it draws *Q* on the disk before *P*, the
-  DDF convention a controller follows (`ddf-N-continue` in `mdadm`'s list); an array
+  [[ddf|DDF]] convention a controller follows (`ddf-N-continue` in `mdadm`'s list); an array
   `mdadm` creates as left-symmetric puts *Q* after *P*. Everything else about the
   rotation is the same. See [[design-decisions|the model's choices]].
 

@@ -33,7 +33,7 @@ long: |
   here says how a sector is mapped to a disk, where the parity of a stripe goes, or
   what the driver does with two disks where a level asks for three, the sentence
   points at the function that does it, and anyone can open the file and see whether
-  the sentence is true. A controller's firmware and Windows' driver do the same
+  the sentence is true. A controller's [[firmware]] and Windows' driver do the same
   jobs, but their code is not published; what can be checked about them is their
   documentation, which describes behaviour and does not show it.
 
@@ -89,7 +89,7 @@ long: |
   Where the sources leave something open the sandbox decided, and the page that
   rests on the choice explains it in a note. The list:
 
-  - Under RAID 6 the sandbox draws *Q* on the disk before *P*, the DDF convention,
+  - Under RAID 6 the sandbox draws *Q* on the disk before *P*, the [[ddf|DDF]] convention,
     where an array `mdadm` creates as left-symmetric puts *Q* after *P*:
     [[algorithm]], [[raid6]].
   - The RAID engine is one of three things — a computing chip, a metadata-only

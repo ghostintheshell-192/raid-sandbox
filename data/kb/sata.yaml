@@ -10,6 +10,10 @@ short: >
   to a controller that follows Intel's AHCI specification. A SAS controller can
   drive SATA disks too.
 
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["SATA"]
+
 related: [sas, hba]
 
 sources:

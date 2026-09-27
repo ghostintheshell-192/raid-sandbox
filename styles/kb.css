@@ -26,7 +26,7 @@
 }
 /* The reading column. When no side column stands beside it (below 1100px) the
    auto margins put it in the middle of the page with the same space on both
-   sides; inside the grid they do nothing, the track is its width. Justified,
+   sides; inside the grid they are taken off (below), the track is its width. Justified,
    so the block has two straight edges; hyphenation keeps the word gaps even
    on a monospace face, where a ragged line shows more than in a proportional
    one (the pages are lang="en", which hyphens: auto needs). */
@@ -63,6 +63,12 @@
        the width goes to both sides, not all to the right */
     justify-content: center;
   }
+  /* Inside the grid the reading column fills its track. Auto margins would
+     stop it from stretching: it would take the width of its widest content
+     instead, up to its max-width, and a long line in a text figure (the 3-2-1
+     rule on raid-is-not-a-backup) pushed it under the right column. The
+     figure scrolls inside its own box instead. */
+  .kb-page--side .kb-main { margin: 0; }
   /* Two independently anchored boxes instead of one. kb-side-home (the way
      out) stays where a new visitor looks for it, pinned near the top; the
      groups rest near the floor and rise as a <details> opens. align-self:

@@ -28,16 +28,16 @@ long: |
   Two kinds exist, and the difference is whether anything on the board processes
   commands:
 
-  - **Passive.** Connectors and traces, one lane per bay. A cable from the
+  - **Passive.** Connectors and traces, one [[lane]] per bay. A cable from the
     controller carries four lanes, so a passive backplane serves four bays per
     connector, and a larger cage needs more cables.
-  - **Active.** The board carries a SAS *expander*, a switch between the
+  - **Active.** The board carries a [[sas|SAS]] *expander*, a switch between the
     controller's lanes and the bays. One four-lane cable then reaches every disk
     in the cage, and the expander routes each command to its target. The
     expander only forwards commands; it is not a [[raid-engine]], and it keeps
     no data.
 
-  NVMe disks are the case that steps around it: they speak PCIe, and in the
+  [[nvme|NVMe]] disks are the case that steps around it: they speak [[pcie|PCIe]], and in the
   simplest wiring they reach the bus without a SAS backplane in between
   ([[physical-disks]]).
 

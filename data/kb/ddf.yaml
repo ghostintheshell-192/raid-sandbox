@@ -1,0 +1,31 @@
+# data/kb/ddf.yaml — a glossary term: SNIA's common format for the RAID
+# records a controller writes on its disks. Writing rules: see segmentation.yaml
+# header.
+
+id: ddf
+kind: term
+name: DDF
+short: >
+  Common RAID Disk Data Format: a SNIA standard for the records a RAID controller
+  writes on its disks. The records say which disks form an array and how its data
+  is laid out across them. Because every vendor can write the same format, "the
+  user data on physical disks is accessible independent of the RAID controller
+  being used". The records sit at the end of each disk, and the disk's last block
+  holds the header that points to them. Linux mdadm can also create DDF arrays,
+  but marks the format as deprecated.
+
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["DDF"]
+
+related: [raid-engine, algorithm]
+
+sources:
+  - ref: "SNIA, Common RAID Disk Data Format Specification, Version 2.0 Revision 19 (2009), §1 Introduction, §2.1 Purpose, §2.2.1 Location"
+    note: "'a standard data structure describing how data is formatted across the disks in a RAID group'; 'allows storing RAID configuration information on physical disks by different vendor implementations in a common format so the user data on physical disks is accessible independent of the RAID controller being used'; 'The Anchor Header ... MUST be stored at the last logical block returned by either the ATA Identify Device or SCSI Read Capacity commands'"
+    url: https://www.snia.org/sites/default/files/SNIA_DDF_Technical_Position_v2.0.pdf
+  - ref: "mdadm(8) man page, --metadata=ddf"
+    note: "'Use the \"Industry Standard\" DDF (Disk Data Format) format defined by SNIA. DDF is deprecated and there is no active development around it'"
+    url: https://man7.org/linux/man-pages/man8/mdadm.8.html
+
+status: cited

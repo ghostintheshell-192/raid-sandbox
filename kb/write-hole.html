@@ -31,6 +31,13 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-degraded-1:target) a[href="#term-degraded-1"],
+    .kb-main:has(#term-write-back-1:target) a[href="#term-write-back-1"],
+    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +124,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Write hole</h1>
@@ -144,17 +152,32 @@
     <p class="kb-lede">The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</p>
     <h2 id="the-mechanism">The mechanism</h2>
     <p>Updating a parity stripe takes more than one disk operation: the data block and the parity block are on different disks and are written separately (<a href="write-penalty.html">write penalty</a>). If the power fails after one lands and before the other, the stripe is left in a state no single write would produce. The kernel&#39;s own description is short: &quot;for RAID 4/5/6 array, an unclean shutdown can cause data in some stripes to not be in consistent state, eg, data and parity don&#39;t match.&quot;</p>
-    <p>On its own this is not yet data loss. The data block is what was written, or what was there before; the parity is stale. As long as every disk is present the array never reads the parity to answer a request, and a resync after the unclean shutdown recomputes it from the data. The hole opens when a disk is missing. Then the parity is not a spare copy, it is the only way to recover the missing block, and a wrong parity yields a wrong block: &quot;data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect.&quot; The block that was never written to comes back corrupted, silently, because the <a href="rebuild.html">rebuild</a> trusts the parity it finds. And in a degraded array there is &quot;no way to recalculate parity, because one of the disks is missing&quot;.</p>
+    <p>On its own this is not yet data loss. The data block is what was written, or what was there before; the parity is stale. As long as every disk is present the array never reads the parity to answer a request, and a resync after the unclean shutdown recomputes it from the data. The hole opens when a disk is missing. Then the parity is not a spare copy, it is the only way to recover the missing block, and a wrong parity yields a wrong block: &quot;data calculated from parity for array blocks that have not been touched by a write request during the unclean shutdown can be incorrect.&quot; The block that was never written to comes back corrupted, silently, because the <a href="rebuild.html">rebuild</a> trusts the parity it finds. And in a <a class="kb-term" id="ref-term-degraded-1" href="#term-degraded-1">degraded</a> array there is &quot;no way to recalculate parity, because one of the disks is missing&quot;.</p>
+    <span class="kb-term-anchor" id="term-degraded-1"></span>
+    <aside class="kb-term-box" aria-label="Degraded: definition">
+      <p><strong>Degraded.</strong> The state of a RAID array that has lost a member disk and keeps working. SNIA defines degraded mode as the mode &quot;in which not all of the array&#39;s member disks are functioning, but the array as a whole is able to respond to application read and write requests&quot;. Reads of the lost disk&#39;s blocks are answered by recomputing them from the redundancy. The array has less tolerance, or none, until the rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two disks have failed.</p>
+      <p class="kb-term-more"><a href="glossary.html#degraded">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <p>Two things have to coincide: an interrupted write and a missing disk, in either order. That is why the hole is rarely seen and why it is dangerous when it is: a power cut during a rebuild is exactly the coincidence.</p>
     <h2 id="why-it-is-not-detected">Why it is not detected</h2>
     <p>A parity stripe carries no checksum of itself. XOR can tell that a stripe is inconsistent, by recomputing the parity and comparing, but it cannot tell which block is wrong, and it is never consulted on a read unless a disk is gone. Only a deliberate pass over the whole array finds the mismatches: <a href="scrubbing.html">scrubbing</a>, which <code>md</code> exposes as a <code>check</code> that counts them and a <code>repair</code> that rewrites the parity from the data.</p>
     <h2 id="mitigations">Mitigations</h2>
     <ul>
       <li><strong>A protected write cache.</strong> On a hardware controller the whole stripe update sits in cache until every part is on disk, and a <a href="bbu.html">BBU</a> or flash module keeps that cache through the cut; when power returns the write is finished, not left half done. This is why the <a href="raid-engine.html">raid engine</a> with such a cache can be silent about the hole, and why the same array on an engine without one cannot.</li>
-      <li><strong>A journal.</strong> Linux <code>md</code> can put a fast device in front of a RAID 4/5/6 array as a write-through cache: &quot;the write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks.&quot; An interrupted stripe is replayed from the journal.</li>
+      <li><strong>A journal.</strong> Linux <code>md</code> can put a fast device in front of a RAID 4/5/6 array as a <a class="kb-term" id="ref-term-write-back-1" href="#term-write-back-1">write-through</a> cache: &quot;the write-through cache will cache all data on cache disk first. After the data is safe on the cache disk, the data will be flushed onto RAID disks.&quot; An interrupted stripe is replayed from the journal.</li>
       <li><strong>A partial parity log.</strong> For RAID 5, <code>md</code> can record, before dispatching a write, the &quot;partial parity&quot; of the stripe, enough to make &quot;parity for the stripe consistent with its state before the write operation, regardless of which chunk writes have completed&quot;; then &quot;if one of the not modified data disks of this stripe is missing, this updated parity can be used to recover its contents&quot;. The log lives on the member disks themselves, needs no extra device, and is enabled with <code>--consistency-policy=ppl</code>.</li>
-      <li><strong>Power that does not fail.</strong> An uninterruptible power supply keeps the machine up long enough to finish its writes. This is the fallback of software and firmware RAID, whose engine is a driver with no memory of its own to protect. Intel&#39;s own note for its firmware RAID says what happens otherwise: after a dirty shutdown, parity &quot;may be inconsistent with the data it is supposed to be protecting&quot; and must be recomputed for every stripe.</li>
+      <li><strong>Power that does not fail.</strong> An uninterruptible power supply keeps the machine up long enough to finish its writes. This is the fallback of software and <a class="kb-term" id="ref-term-firmware-1" href="#term-firmware-1">firmware</a> RAID, whose engine is a driver with no memory of its own to protect. Intel&#39;s own note for its firmware RAID says what happens otherwise: after a dirty shutdown, parity &quot;may be inconsistent with the data it is supposed to be protecting&quot; and must be recomputed for every stripe.</li>
     </ul>
+    <span class="kb-term-anchor" id="term-write-back-1"></span>
+    <aside class="kb-term-box" aria-label="Write-back and write-through caching: definition">
+      <p><strong>Write-back and write-through caching.</strong> The two ways a controller with a cache can confirm a write. With write-back, &quot;the completion of a write request is signaled as soon as the data is in cache&quot;, and the data reaches the disks later. With write-through, completion &quot;is not signaled until data is safely stored on non-volatile media&quot;. Write-back is faster, and loses confirmed writes on a power cut unless the cache is protected.</p>
+      <p class="kb-term-more"><a href="glossary.html#write-back">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-firmware-1"></span>
+    <aside class="kb-term-box" aria-label="Firmware: definition">
+      <p><strong>Firmware.</strong> The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</p>
+      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <p>Mirrors are not immune to an interrupted write, but they fail more gently: the copies may disagree, and a resync picks one, but there is no computed block that could give a wrong answer about a third disk.</p>
   </section>
   <section class="kb-section" id="sources">

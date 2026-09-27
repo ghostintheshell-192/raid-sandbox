@@ -37,7 +37,7 @@ long: |
   parity for array blocks that have not been touched by a write request during
   the unclean shutdown can be incorrect." The block that was never written to
   comes back corrupted, silently, because the [[rebuild]] trusts the parity it
-  finds. And in a degraded array there is "no way to recalculate parity, because
+  finds. And in a [[degraded]] array there is "no way to recalculate parity, because
   one of the disks is missing".
 
   Two things have to coincide: an interrupted write and a missing disk, in either
@@ -62,7 +62,7 @@ long: |
     cache can be silent about the hole, and why the same array on an engine
     without one cannot.
   - **A journal.** Linux `md` can put a fast device in front of a RAID 4/5/6
-    array as a write-through cache: "the write-through cache will cache all data
+    array as a [[write-back|write-through]] cache: "the write-through cache will cache all data
     on cache disk first. After the data is safe on the cache disk, the data will
     be flushed onto RAID disks." An interrupted stripe is replayed from the
     journal.
@@ -75,7 +75,7 @@ long: |
     device, and is enabled with `--consistency-policy=ppl`.
   - **Power that does not fail.** An uninterruptible power supply keeps the
     machine up long enough to finish its writes. This is the fallback of
-    software and firmware RAID, whose engine is a driver with no memory of its
+    software and [[firmware]] RAID, whose engine is a driver with no memory of its
     own to protect. Intel's own note for its firmware RAID says what happens
     otherwise: after a dirty shutdown, parity "may be inconsistent with the data
     it is supposed to be protecting" and must be recomputed for every stripe.
