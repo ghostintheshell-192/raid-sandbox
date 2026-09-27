@@ -42,8 +42,10 @@ long: |
 
   ## Forms of the HBA: chipset and card
 
-  On a desktop the HBA is not a card: the chipset's SATA controller is one.
-  Intel's AHCI specification, the standard those controllers follow, says so: "A
+  On a desktop PC the HBA is usually not a separate card: it is built into the
+  motherboard. It is the SATA controller of the *chipset*, the chips on the
+  motherboard that connect the CPU to the disks and to the other devices. Intel's
+  AHCI specification, the standard those controllers follow, says so: "A
   host bus adapter refers to the silicon that implements the AHCI specification to
   communicate between system memory and Serial ATA devices."
 

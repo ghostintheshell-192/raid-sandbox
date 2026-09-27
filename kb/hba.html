@@ -180,7 +180,7 @@
     </aside>
     <p>An HBA does not change what the operating system sees: every <a href="physical-disks.html">physical disk</a> appears as itself. Any RAID is then done by something else: the operating system, or a firmware working with the operating system&#39;s driver (<a href="raid-engine.html">raid engine</a>).</p>
     <h2 id="forms-of-the-hba-chipset-and-card">Forms of the HBA: chipset and card</h2>
-    <p>On a desktop the HBA is not a card: the chipset&#39;s SATA controller is one. Intel&#39;s AHCI specification, the standard those controllers follow, says so: &quot;A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices.&quot;</p>
+    <p>On a desktop PC the HBA is usually not a separate card: it is built into the motherboard. It is the SATA controller of the <em>chipset</em>, the chips on the motherboard that connect the CPU to the disks and to the other devices. Intel&#39;s AHCI specification, the standard those controllers follow, says so: &quot;A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices.&quot;</p>
     <p>On a server the HBA is usually a PCIe card, and each of its connectors carries several <a class="kb-term" id="ref-term-lane-1" href="#term-lane-1">lanes</a>. The LSI SAS 9300-8i has &quot;two x4 internal mini-SAS HD connectors (SFF-8643)&quot;, four lanes each; the Broadcom 9500-16i has &quot;Two x8 SFF-8654&quot;, eight lanes each.</p>
     <span class="kb-term-anchor" id="term-lane-1"></span>
     <aside class="kb-term-box" aria-label="Lane: definition">
