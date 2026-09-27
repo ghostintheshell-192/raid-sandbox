@@ -56,6 +56,7 @@ of issues, git history is a better record than a second directory.
 - `canvas-nodes-are-unnamed.md` - The canvas does not name the things the player builds
 - `capacity-approximate-on-mixed-disks.md` - Usable capacity is approximate when an array mixes disk sizes
 - `kb-notation-used-before-it-is-explained.md` - Mathematical notation in the knowledge base is named, not explained
+- `kb-terms-used-before-they-are-explained.md` - Technical terms in the knowledge base are used before they are explained
 - `kb-to-verify-queue.md` - The knowledge base's to-verify queue: eight pages, each with its reading
 
 **Low Priority:**
