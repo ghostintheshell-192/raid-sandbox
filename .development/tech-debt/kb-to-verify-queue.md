@@ -27,7 +27,7 @@ had no sources of its own.
 |---|---|---|
 | ~~`raid-engine`~~ | **cited 2026-09-25.** Four sentences were wrong and are corrected: a firmware array's metadata is on the disks; md closes the write hole itself (journal, PPL); a hardware controller needs an OS driver without RAID logic; the shared die holds on AM4 only | Broadcom product briefs and driver guide, Intel RST white paper, `md(4)`, `raid5-ppl`, AMD AM4 page and RAID quick start |
 | `hba` | HBA vs RAID controller; an HBA alone cannot host the engine | Broadcom MegaRAID / HBA documentation (IT mode vs IR mode) |
-| `bbu` | what protects the write cache; the replay that closes the write hole | Broadcom CacheVault and BBU documentation |
+| ~~`bbu`~~ | **cited 2026-09-27.** Three sentences were wrong and are corrected: a battery holds the cache for up to 72 hours and flash for 3+ years, not indefinitely; the supercapacitor has a learn cycle too; a controller failure does not always lose the cache (transportable BBU). The full-stripe gathering of small writes had no source and is removed | Broadcom CacheVault brief, Tri-Mode user guide and LSI BBU guide, Dell NV-cache white paper, Chen et al. 1994, SoftRAID on UPS |
 | `backplane` | passive mid-plane, SATA/SAS signal routing, SGPIO/SES | T10 SES, SFF-8485; a Supermicro backplane manual |
 | `physical-disks` | the SATA/SAS path and NVMe on PCIe, as stated | the same as above plus `md(4)`; IBM Redbooks as the generic reference |
 | `drive-group` | the second layer as MegaRAID names it | Broadcom MegaRAID guide (drive groups, virtual drives) |

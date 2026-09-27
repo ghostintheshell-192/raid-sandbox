@@ -195,7 +195,7 @@
     </li>
     <li>
       <h3><a href="bbu.html">Battery backup unit and flash cache protection</a></h3>
-      <p>A battery or supercapacitor that lets a hardware RAID controller keep its write cache through a power cut. The battery powers the cache memory until power returns; the supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash. It is what makes write-back caching safe on a controller, and what closes the write hole there.</p>
+      <p>A battery or a supercapacitor that lets a hardware RAID controller keep the contents of its write cache through a power cut. A battery keeps the cache memory powered until power returns; a supercapacitor, in newer designs, powers the controller just long enough to copy the cache to flash memory on the card. It makes write-back caching safe, where a write is confirmed as soon as it is in the cache. It also closes the write hole on the controller: the stripe left with new data and old parity when power fails between the two writes.</p>
     </li>
     <li>
       <h3><a href="raid-is-not-a-backup.html">RAID is not a backup</a></h3>
