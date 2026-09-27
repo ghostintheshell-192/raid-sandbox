@@ -71,8 +71,8 @@ hashes in **Notes** so git state can be resumed without hunting.
 
 ### 4. Commit and push the journal
 
-  The journal is a repository of its own (`raid-sandbox-memory`). Commit and push it
-  right after writing the handoff:
+The journal is a repository of its own (`raid-sandbox-memory`). Commit and push it
+right after writing the handoff:
 
   ```bash
   git -C .memory-bank/journal add -A
@@ -86,6 +86,7 @@ After creating the file, confirm:
 
 - Which handoff file was created
 - The filename used
+- That the journal was committed and pushed
 - Remind the user to type `/exit` or `/clear` to complete
 
 ## Example
