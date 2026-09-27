@@ -76,6 +76,27 @@ Done: the box, the glossary anchors and eight terms (`sata`, `sas`, `pcie`,
 open: the audit of the other long forms, page by page with the prose pass, adding
 a term where a page uses a word it does not explain.
 
+**Also open: link the terms that already exist.** The pages written before the
+box name the terms in plain text. As of 2026-09-27, only `hba` links them:
+
+| term | pages that name it without a link |
+|---|---|
+| `sata` | `physical-disks`, `raid-engine` |
+| `sas` | `backplane`, `physical-disks` |
+| `pcie` | `backplane`, `physical-disks`, `raid-engine` |
+| `nvme` | `backplane`, `physical-disks` |
+| `firmware` | `bbu`, `design-decisions`, `raid-engine`, `segmentation`, `write-hole` |
+| `lane` | `backplane` |
+| `write-back` | `bbu`, `write-hole` |
+| `learn-cycle` | `bbu` |
+| `snia` | `algorithm`, `raid-engine` |
+
+`backplane`, `physical-disks` and `raid-engine` are linked when they are verified
+(the to-verify queue); the others in one pass. Planned with it, on its own
+branch: each term declares the forms it takes in the text (`SATA`; `lane`,
+`lanes`), and a test holds every page that names a term to link it at least
+once, so a new term lists the pages to link by itself.
+
 ## Notes
 
 - `bbu` is fixed on its own verification branch (`docs/kb-verify-bbu`); this note
