@@ -159,4 +159,4 @@ correction the page received.
 6. The physical plane adopts the silhouettes.
 
 The prototype (scripts, SVGs, the figures it was drawn from) is kept locally in
-`.memory-bank/diagram-prototype/`.
+`.memory-bank/journal/diagram-prototype/`.
