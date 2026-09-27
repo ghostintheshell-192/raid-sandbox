@@ -12,7 +12,7 @@ When this skill is activated, create handoff notes for the current session.
 
 ### 1. Create a new handoff file
 
-**Location**: `.memory-bank/` (flat — no per-project subfolder)
+**Location**: `.memory-bank/journal/handoffs/`
 
 Each session gets its own file. Create a new file with this naming convention:
 
@@ -69,7 +69,18 @@ hashes in **Notes** so git state can be resumed without hunting.
 - Include specific file paths when relevant
 - Be concise but complete
 
-### 4. Confirm to the user
+### 4. Commit and push the journal
+
+  The journal is a repository of its own (`raid-sandbox-memory`). Commit and push it
+  right after writing the handoff:
+
+  ```bash
+  git -C .memory-bank/journal add -A
+  git -C .memory-bank/journal commit -m "Handoff YYYY-MM-DD: <brief title>"
+  git -C .memory-bank/journal push
+  ```
+
+### 5. Confirm to the user
 
 After creating the file, confirm:
 
@@ -79,16 +90,18 @@ After creating the file, confirm:
 
 ## Example
 
-1. Create `.memory-bank/2026-07-24-2135-mobile-tap-to-build-ci-branch-protection.md`
+1. Create `.memory-bank/journal/handoffs/2026-07-24-2135-mobile-tap-to-build-ci-branch-protection.md`
 2. Confirm: "Created handoff notes: `2026-07-24-2135-mobile-tap-to-build-ci-branch-protection.md`. You can exit with /exit."
 
 ## Reading previous sessions
 
 At the start of a new session (see `.claude/rules/workflow.md`, *Session Start*):
 
-1. List files in `.memory-bank/`
-2. Read the most recent handoff (sorted by filename = sorted by date)
-3. Read any files it links to
+1. Make sure the journal is there (in a cloud session, clone it: see *Session Start*, step 0)
+2. List files in `.memory-bank/journal/handoffs/`
+3. Read the most recent handoff (sorted by filename = sorted by date)
+4. Read any files it links to
+5. Cross-reference `memory/MEMORY.md` (in a cloud session: `.memory-bank/journal/memory/MEMORY.md`)
 
 ## Localized triggers
 
