@@ -1,77 +1,149 @@
 # data/kb/bbu.yaml — what protects a hardware controller's write cache through a
 # power cut: the object that provides `power-loss-protection` in the component
-# files. The CacheVault mechanism is quoted from Broadcom; the battery variant is
-# described from Broadcom's product page as summarised, not read verbatim, hence
-# `status: to-verify`. Writing rules: see segmentation.yaml header.
+# files. Read against its sources on 2026-09-27 (the to-verify queue): the battery
+# holds the cache for up to 72 hours, not indefinitely, and flash for 3+ years;
+# the supercapacitor has a learn cycle too; a controller failure does not always
+# lose the cache (transportable BBU). The claim that write-back gathers small
+# writes into full stripes had no source and was removed. Writing rules: see
+# segmentation.yaml header.
 
 id: bbu
 kind: concept
 name: Battery backup unit and flash cache protection
 short: >
-  A battery or supercapacitor that lets a hardware RAID controller keep its write
-  cache through a power cut. The battery powers the cache memory until power
-  returns; the supercapacitor, in newer designs, powers the controller just long
-  enough to copy the cache to flash. It is what makes write-back caching safe on a
-  controller, and what closes the write hole there.
+  A battery or a supercapacitor that lets a hardware RAID controller keep the
+  contents of its write cache through a power cut. A battery keeps the cache memory
+  powered until power returns; a supercapacitor, in newer designs, powers the
+  controller just long enough to copy the cache to flash memory on the card. It
+  makes write-back caching safe, where a write is confirmed as soon as it is in the
+  cache. It also closes the write hole on the controller: the stripe left with new
+  data and old parity when power fails between the two writes.
 
 searchTitle: "RAID controller BBU: battery and flash cache protection explained"
 searchDescription: >
-  A battery or supercapacitor keeps a hardware RAID controller's write cache through a
-  power cut. It makes write-back caching safe and closes the write hole.
+  A battery or supercapacitor keeps a RAID controller's write cache through a power
+  cut, so confirmed writes reach the disks and no stripe is left half-written.
 
 long: |
   ## The risk to the write cache
 
-  A RAID controller with memory of its own can answer a write as soon as the data
-  is in that memory, and write it to the disks later. This is *write-back*
-  caching, and it is a large part of why a hardware controller is fast on writes:
-  the [[write-penalty]] of a parity update is paid in the background, and small
-  writes can be gathered into full stripes. The cost is a window of risk. Until the
-  cached data reaches the disks, it exists only in volatile memory, and a power
-  cut in that window loses writes the operating system was told had succeeded.
-  For a parity array the loss can be worse than the missing writes: a stripe
-  whose data landed and whose parity did not is the [[write-hole]].
+  A RAID controller can have memory of its own, its *cache*. With *write-back*
+  caching, the controller confirms a write to the operating system as soon as the
+  data is in that memory, and writes it to the disks later. With *write-through*,
+  it confirms a write only once the data is on the disks. Broadcom defines the two
+  policies by when "the controller sends a data transfer completion signal to the
+  host": when "the controller cache receives all of the data", or when "the drive
+  subsystem receives all the data".
+
+  Write-back makes writes faster, because the operating system does not wait for
+  the disks, and the [[write-penalty]] of a parity update is paid afterwards. The
+  cost is a window of risk. Until the cached data reaches the disks, it exists only
+  in volatile memory, which loses its contents without power. A power cut in that
+  window loses writes the operating system was told had succeeded: "Since the
+  controller has already acknowledged the I/O as complete, the application is
+  unaware of the data loss."
+
+  For a parity array the loss can be worse than the missing writes. If power fails
+  after a stripe's new data reaches the disks but before its new parity does, the
+  stripe is left with data and parity that do not match. This is the
+  [[write-hole]]: nothing detects the mismatch, and a later rebuild uses the wrong
+  parity and produces wrong data.
 
   ## Protection methods
 
-  - **A battery backup unit (BBU).** A battery on the controller keeps the cache
-    memory powered while the host is off, for hours, so that the data is still
-    there when power returns and the controller can finish writing it. The
-    battery ages, needs charging and periodic relearning, and while it is not
-    charged the controller is meant to run write-through, answering a write only
-    once it is on disk.
-  - **Flash cache protection.** The newer design does not try to keep the memory
-    alive. A supercapacitor pack "provides power for the backup of your data in
-    case of host power loss or server failure", long enough for the controller to
-    copy the cache to non-volatile flash on the card: "the data is backed up to
-    the NAND flash memory available on the MegaRAID storage adapter". When power
-    returns the cache is read back from flash and the writes complete. Broadcom
-    sells this as CacheVault; the supercapacitor does not age like a battery and
-    holds the data indefinitely once it is in flash.
+  Two designs keep the cache through a power cut. They are alternatives: a
+  controller has one or the other.
 
-  Either way, the controller's writes are *protected*: an interrupted stripe
-  write is finished when power returns, not left half done. This is the
-  capability the [[raid-engine]] entry means by a protected cache, and the reason
-  a hardware engine can close the write hole where a driver on the CPU cannot: the
-  driver has no memory that survives the cut. Software and firmware RAID have to
-  protect the whole machine instead, with an uninterruptible power supply, or
-  make the array itself tolerant of the cut with a journal or a partial parity
-  log ([[write-hole]]).
+  **Battery backup unit (BBU).** A battery on the controller keeps the cache memory
+  powered while the machine is off. Broadcom gives the limit as "up to 72 hours,
+  less if the battery is degraded": if power returns within that time, the data is
+  still in the cache and the controller writes it to the disks. A battery wears
+  out, and Broadcom puts its life at "about 1 ½ years". The controller also runs a
+  *learn cycle* on the battery: a check it repeats periodically, which Broadcom
+  defines as "a battery calibration operation performed periodically by the
+  controller to determine the condition of the battery". In plain terms, the
+  controller measures whether the battery can still do its job. While the battery
+  is missing or discharged, the controller stops using write-back: "the firmware
+  disables the Write Back policy and defaults to the Write Through policy."
+
+  **Flash cache protection.** The newer design does not keep the memory powered. A
+  *supercapacitor*, a component that stores enough energy to run the card for a
+  short time, powers the controller long enough to copy the cache to the *NAND
+  flash* memory on the card, a kind of memory that keeps its contents without
+  power. Broadcom sells this design as CacheVault. "Once power returns, the data is
+  restored to the cache and normal operation resumes." In flash the data stays
+  recoverable for "3+ years", against the battery's 72 hours. The supercapacitor
+  needs no scheduled replacement, but it has a learn cycle too: the controller
+  discharges it "from nearly full to a low level" and measures how much charge it
+  can hold. Dell described the same design for its PERC H700 and H800 controllers:
+  on restart the controller will "restore all of the cache data from the flash
+  array to the DRAM array", then "write all cache data to disk".
+
+  ## Completing the interrupted writes
+
+  With either design, the writes the controller had confirmed are still there when
+  power returns, and the controller writes them to the disks. An interrupted stripe
+  write is finished, not left half done, so the stripe's data and parity match
+  again. This is how a protected cache closes the write hole. Chen and colleagues
+  stated the general requirement in 1994: "information sufficient to recover the
+  parity must be logged to nonvolatile storage before executing each write
+  operation", and "hardware implementations of RAID systems can implement such
+  logging efficiently using nonvolatile RAM."
+
+  A driver running on the CPU has no memory that survives the power cut, so
+  software and firmware RAID ([[raid-engine]]) close the hole in other ways: Linux
+  `md` writes to a journal on a separate device or, for RAID 5, keeps a partial
+  parity log in the members' metadata area ([[write-hole]]). A vendor of software
+  RAID, SoftRAID, recommends an uninterruptible power supply (UPS), a battery for
+  the whole machine, which gives it "time to complete any in-progress writes and
+  shut down gracefully".
 
   ## Limitations
 
-  A protected cache saves the writes that were in flight. It does not make a
-  controller failure survivable: if the card itself dies, the cache and its
-  contents die with it, and the array is only as recoverable as the metadata on
-  the disks allows. It is a power-loss device, not a redundancy device.
+  - **Time.** A battery holds the cache for up to 72 hours, fewer as it ages; a
+    power cut that lasts longer loses the data anyway. Flash holds it for 3+ years.
+  - **Maintenance.** A battery has to be replaced, and while it is missing or
+    discharged the controller falls back to write-through, with slower writes.
+  - **Controller failure.** The protected data lives on the controller's own
+    hardware. If the controller fails, the data survives only if its cache can be
+    moved to a replacement. Broadcom's older transportable BBUs were made for this:
+    "A transportable BBU can be used to move to a replacement controller a storage
+    adapter's cached data that has not been written to the disk". The replacement
+    "must be the same model as the failed storage adapter", with a cleared
+    configuration and connected to the same disks.
+  - **Scope.** A protected cache saves the writes that were in flight. It is a
+    power-loss device, not a redundancy device: it does nothing against a failed
+    disk, which is what the array's redundancy is for.
 
 related: [raid-engine, write-hole, write-penalty, parity]
 
 sources:
-  - "Broadcom TechDocs, CacheVault Data Protection (9700 series) — 'The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure'; 'The data is backed up to the NAND flash memory available on the MegaRAID storage adapter'"
-  - "Broadcom, Cache Protection for RAID Controller Cards (product page, as summarised): battery backup units protect cached data 'by providing battery power to the controller'; CacheVault by 'storing cached data in non-volatile flash cache storage'; write-through until the battery is charged — not read verbatim"
+  - ref: "Broadcom, CacheVault Technology product brief (BC-0497EN, 2021)"
+    note: "'If power is lost while write-back cache is enabled, the writes in DRAM may be lost. Since the controller has already acknowledged the I/O as complete, the application is unaware of the data loss'; 'Once power returns, the data is restored to the cache and normal operation resumes'; BBU 'only good for about 1 ½ years'; data recoverable for 'Up to 72 hours, less if the battery is degraded' (BBU) against '3+ years' (CacheVault); CacheVault maintenance schedule 'None'"
+    url: https://docs.broadcom.com/doc/BC-0497EN
+  - ref: "Broadcom TechDocs, CacheVault Data Protection (9700 series)"
+    note: "'The CVPM33 module is a super-capacitor pack that provides power for the backup of your data in case of host power loss or server failure'; 'The data is backed up to the NAND flash memory available on the MegaRAID storage adapter'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/97xx-adapters/1-0/mr-hba-cachevault-data-protection.html
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide, Virtual Drive Policies"
+    note: "Write-Through: 'The controller sends a data transfer completion signal to the host when the drive subsystem receives all the data in a transaction'; Write Back: '… when the controller cache receives all of the data in a transaction'; 'If you select the Write Back policy and the battery is absent, the firmware disables the Write Back policy and defaults to the Write Through policy'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11668655/v11669525/v11669923/virtual-drive-policies-.html
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide (PDF), battery and CacheVault properties"
+    note: "'A learn cycle is a battery calibration operation performed periodically by the controller to determine the condition of the battery'; CacheVault full charge capacity 'is updated on each learn cycle when the supercapacitors undergo a qualified discharge from nearly full to a low level'"
+    url: https://techdocs.broadcom.com/content/dam/broadcom/techdocs/data-center-solutions/tools/generated-pdfs/12Gbs-MegaRAID-Tri-Mode-Software.pdf
+  - ref: "LSI Logic, MegaRAID Battery Backup Unit User's Guide (DB15-000323-01, version 1.1, 2005), section 3.4"
+    note: "'A transportable BBU can be used to move to a replacement controller a storage adapter's cached data that has not been written to the disk'; the new adapter 'must be the same model as the failed storage adapter', 'must have a cleared configuration' and 'must be connected to the same disk drives of the original configuration'; it then 'will flush the cache data to the logical drives'"
+    url: https://docs.broadcom.com/doc/mr_BBU_ug.pdf
+  - ref: "Dell, Non-Volatile CACHE for Host-Based RAID Controllers (technical white paper, 2010)"
+    note: "on restart the subsystem will 'restore all of the cache data from the flash array to the DRAM array', and the controller will 'proceed to write all cache data to disk. This process is known as flushing the cache'; 'The Dell PERC H700 and H800 RAID controller products offer a CTF NVCACHE feature'"
+    url: https://i.dell.com/sites/csdocuments/shared-content_data-sheets_documents/en/nv-cache-for-host-based-raid-controllers.pdf
+  - ref: "Chen, Lee, Gibson, Katz, Patterson, RAID: High-Performance, Reliable Secondary Storage (ACM Computing Surveys 26(2), 1994), section 3.4.2"
+    note: "crashes leave 'states where the data is updated and the parity is not, or visa versa'; 'information sufficient to recover the parity must be logged to nonvolatile storage before executing each write operation'; 'Hardware implementations of RAID systems can implement such logging efficiently using nonvolatile RAM'"
+    url: https://web.eecs.umich.edu/~pmchen/papers/chen94_1.pdf
+  - ref: "OWC SoftRAID knowledge base, Why should I use a UPS with RAID 4 or RAID 5?"
+    note: "'If power is suddenly cut while a write is in progress — before both the data and parity have been fully written — the parity information on your volume can become inconsistent'; a UPS gives the machine 'time to complete any in-progress writes and shut down gracefully'"
+    url: https://software.owc.com/knowledge-base/why-should-i-use-a-ups-with-raid-4-or-raid-5/
   - ref: "Linux kernel Documentation/driver-api/md/raid5-cache.rst"
-    note: "the write-through journal: 'the data will be flushed onto RAID disks' only after it is safe on the cache device; the write hole as data and parity that 'don't match' after an unclean shutdown"
+    note: "the write-through journal: 'After the data is safe on the cache disk, the data will be flushed onto RAID disks'; the write hole as stripes where 'data and parity don't match' after an unclean shutdown"
     url: https://github.com/torvalds/linux/blob/master/Documentation/driver-api/md/raid5-cache.rst
 
-status: to-verify
+status: cited
