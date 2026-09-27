@@ -10,6 +10,10 @@ short: >
   intended for connecting storage subsystems or devices to hosts through host bus
   adapters". SAS carries SCSI commands over a serial connection.
 
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["SCSI"]
+
 related: [sas, hba]
 
 sources:

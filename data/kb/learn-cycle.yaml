@@ -11,6 +11,10 @@ short: >
   supercapacitor module, the controller discharges it "from nearly full to a low
   level" to measure how much charge it holds.
 
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["learn cycle", "learn cycles"]
+
 related: [bbu]
 
 sources:

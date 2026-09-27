@@ -253,4 +253,37 @@ for (const id of [...pageIds].sort()) {
   });
 }
 
+// ---------------------------------------------------------------------------
+console.log('\n[6] a page that names a glossary term links it');
+
+// A term (kind: term) declares the forms it takes in the text. Every long form
+// that uses one of them, outside a link and outside code, links the term at
+// least once: its first useful mention opens the term's box, so the reader is
+// never left with a word the knowledge base defines and the page does not.
+// A new term lists here, by itself, the pages still to link.
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const bodies = [
+  ...[...kbIds].filter((id) => kb[id].long).map((id) => [`data/kb/${id}.yaml`, kb[id].long]),
+  ...[...pageIds].map((id) => [`data/raid-levels/${id}.yaml (kb.long)`, levelFiles[id].kb.long]),
+];
+
+for (const id of [...kbIds].sort()) {
+  const doc = kb[id];
+  if (doc.kind !== 'term') continue;
+  test(`data/kb/${id}.yaml: a term declares the forms it takes in the text`, () => {
+    assert(Array.isArray(doc.forms) && doc.forms.length > 0, 'forms is required on a term: the words a page uses for it');
+    for (const f of doc.forms) assert(typeof f === 'string' && f.trim(), `a form is a non-empty string: ${JSON.stringify(f)}`);
+  });
+  if (!Array.isArray(doc.forms)) continue;
+  const rx = new RegExp(`(?<![\\w-])(?:${doc.forms.map(escapeRe).join('|')})(?![\\w-])`);
+  test(`every page that names ${id} links it`, () => {
+    const missing = bodies.filter(([, long]) => {
+      if (references(long).some((r) => r.toLowerCase() === id)) return false;
+      const bare = String(long).replace(/\[\[[^\]]*\]\]/g, ' ').replace(/`[^`]*`/g, ' ');
+      return rx.test(bare);
+    }).map(([where]) => where);
+    assert(!missing.length, `named without a [[${id}]] link in: ${missing.join(', ')}`);
+  });
+}
+
 finish();
