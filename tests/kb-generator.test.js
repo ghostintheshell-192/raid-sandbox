@@ -116,10 +116,21 @@ for (const [name, html] of pages) {
         assert(pageIds.get(name).has(href.slice(1)), `${name}: "${href}" names no id on this page`);
         continue;
       }
-      const [file, fragment] = href.split('#');
+      const [path_, fragment] = href.split('#');
+      const file = path_ === './' ? 'index.html' : path_;   // the map, by its canonical directory
       assert(pages.has(file), `${name}: "${href}" points at ${file}, which is not generated`);
       if (fragment) assert(pageIds.get(file).has(fragment), `${name}: "${href}" names no id on ${file}`);
     }
+  });
+}
+
+// The map and the home page have the directory as their canonical URL (/kb/,
+// /); Vercel counts /kb/ and /kb/index.html as two paths, so a link to the file
+// splits one page between two addresses.
+for (const [name, html] of pages) {
+  test(`${name}: links the map and the home page by their canonical directory, never index.html`, () => {
+    for (const href of hrefsOf(html))
+      assert(!/(^|\/)index\.html(#|$)/.test(href), `${name}: "${href}" names index.html — link the directory`);
   });
 }
 
@@ -187,6 +198,39 @@ for (const [name, html] of pages) {
   });
 }
 
+// The search-facing fields of every data file with a page, read here because
+// [4] and [4b] both need them.
+// Levels carry the pair in their `kb:` block, concepts at the top of their own
+// file; `tryIt` is a concept's pointer at the level whose example it opens.
+const PY_SEARCH = `
+import yaml, json, os, sys
+base = sys.argv[1]
+out = {}
+dir = os.path.join(base, 'data', 'raid-levels')
+for f in sorted(os.listdir(dir)):
+    if f.endswith('.yaml') and f != 'index.yaml':
+        with open(os.path.join(dir, f)) as fh:
+            doc = yaml.safe_load(fh)
+        kb = doc.get('kb') or {}
+        out[doc['id']] = { 'name': doc['name'], 'searchTitle': kb.get('searchTitle'),
+                           'searchDescription': kb.get('searchDescription') }
+dir = os.path.join(base, 'data', 'kb')
+for f in sorted(os.listdir(dir)):
+    if f.endswith('.yaml'):
+        with open(os.path.join(dir, f)) as fh:
+            doc = yaml.safe_load(fh)
+        out[doc['id']] = { 'name': doc['name'], 'searchTitle': doc.get('searchTitle'),
+                           'searchDescription': doc.get('searchDescription'), 'tryIt': doc.get('tryIt') }
+print(json.dumps(out))
+`;
+let searchData;
+try {
+  searchData = JSON.parse(execFileSync('python3', ['-c', PY_SEARCH, root], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }));
+} catch (e) {
+  console.error('Could not read data/raid-levels and data/kb via python3/pyyaml:', e.message);
+  process.exit(1);
+}
+
 // ---------------------------------------------------------------------------
 console.log('\n[4] the pages are documents: only the JSON-LD and the site-wide analytics block run');
 
@@ -218,7 +262,10 @@ for (const [name, html] of pages) {
       assert(!(forbidden in ld), `${name}: JSON-LD claims ${forbidden}, which this project does not have`);
   });
 
-  test(`${name}: the meta description is a whole-sentence prefix of the full JSON-LD description`, () => {
+  // A page whose data carries a searchDescription says it in its own words —
+  // [4b] holds that one; every other page cuts its description from the short.
+  const own = searchData[name.replace(/\.html$/, '')];
+  if (!(own && own.searchDescription)) test(`${name}: the meta description is a whole-sentence prefix of the full JSON-LD description`, () => {
     const meta = unescape(/<meta name="description" content="([^"]*)"/.exec(html)[1]);
     const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
     const ld = JSON.parse(m[1]);
@@ -250,41 +297,40 @@ for (const [name, html] of pages) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[4b] a level\'s searchTitle wins in <title> / og:title only — the heading stays `name`');
-
-const PY_LEVELS = `
-import yaml, json, os, sys
-base = sys.argv[1]
-dir = os.path.join(base, 'data', 'raid-levels')
-out = {}
-for f in sorted(os.listdir(dir)):
-    if f.endswith('.yaml') and f != 'index.yaml':
-        with open(os.path.join(dir, f)) as fh:
-            doc = yaml.safe_load(fh)
-        kb = doc.get('kb') or {}
-        out[doc['id']] = { 'name': doc['name'], 'searchTitle': kb.get('searchTitle') }
-print(json.dumps(out))
-`;
-let levelTitles;
-try {
-  levelTitles = JSON.parse(execFileSync('python3', ['-c', PY_LEVELS, root], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }));
-} catch (e) {
-  console.error('Could not read data/raid-levels via python3/pyyaml:', e.message);
-  process.exit(1);
-}
+console.log('\n[4b] searchTitle / searchDescription win in the head only — the heading stays `name`');
 
 for (const [name, html] of pages) {
-  const id = name.replace(/\.html$/, '');
-  const entry = levelTitles[id];
-  if (!entry || !entry.searchTitle) continue;   // not a level page, or one with no searchTitle
-  test(`${name}: kb.searchTitle drives <title>/og:title, and <h1> keeps the level's name`, () => {
-    const titleTag = /<title>([^<]*)<\/title>/.exec(html)[1];
-    const ogTitle  = /<meta property="og:title" content="([^"]*)"/.exec(html)[1];
-    const h1       = /<h1 class="kb-title">([^<]*)<\/h1>/.exec(html)[1];
-    eq(titleTag, `${entry.searchTitle} — RAID Sandbox`);
-    eq(ogTitle, `${entry.searchTitle} — RAID Sandbox`);
-    eq(h1, entry.name);
-  });
+  const entry = searchData[name.replace(/\.html$/, '')];
+  if (!entry) continue;   // the map and the glossary have no data file of their own
+  const titleTag = unescape(/<title>([^<]*)<\/title>/.exec(html)[1]);
+  const ogTitle  = unescape(/<meta property="og:title" content="([^"]*)"/.exec(html)[1]);
+  const desc     = unescape(/<meta name="description" content="([^"]*)"/.exec(html)[1]);
+  const h1       = unescape(/<h1 class="kb-title">([^<]*)<\/h1>/.exec(html)[1]);
+  const ld       = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html)[1]);
+
+  if (entry.searchTitle) {
+    test(`${name}: searchTitle drives <title>/og:title; <h1> and the JSON-LD headline keep the name`, () => {
+      eq(titleTag, `${entry.searchTitle} — RAID Sandbox`);
+      eq(ogTitle, titleTag);
+      eq(h1, entry.name);
+      eq(ld.headline, entry.name);
+    });
+  }
+  if (entry.searchDescription) {
+    test(`${name}: searchDescription is the meta description, whole; the JSON-LD keeps the page's own lines`, () => {
+      eq(desc, collapse(entry.searchDescription));
+      assert(ld.description !== desc, 'the JSON-LD description must stay the short form, not the search one');
+    });
+  }
+  if (entry.tryIt) {
+    test(`${name}: tryIt opens the same build as the ${entry.tryIt} page's own "Try it" link`, () => {
+      const buildOf = (h) => (/<a class="kb-try" href="([^"]*)"/.exec(h) || [])[1];
+      const level = pages.get(`${entry.tryIt}.html`);
+      assert(level, `${entry.tryIt}.html is not generated`);
+      assert(buildOf(html), `${name}: no "Try it" link`);
+      eq(buildOf(html), buildOf(level));
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -37,6 +37,12 @@ short: >
   how many disks take part in one request, not about whether the data survives a
   failure.
 
+searchTitle: "Striped vs linear: how a RAID array splits data across disks"
+searchDescription: >
+  How a RAID array splits data across its disks: striped deals fixed-size chunks to
+  every member in turn; linear fills one disk before moving on to the next.
+tryIt: raid0
+
 long: |
 
   ## Preliminary Concepts

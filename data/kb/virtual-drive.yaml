@@ -11,6 +11,11 @@ short: >
   way whatever number of disks, spans or RAID levels sit underneath. It need not
   take the whole span; a span can host several.
 
+searchTitle: "What is a RAID virtual drive? The volume the OS sees"
+searchDescription: >
+  A RAID virtual drive is the logical volume the operating system sees: one block
+  device that behaves like a single disk, whatever sits underneath it.
+
 long: |
   A virtual drive is the block device that the operating system, the file system
   and the applications work with. It has a contiguous address space organized in sectors,

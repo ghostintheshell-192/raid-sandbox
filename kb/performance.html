@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Performance — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How fast an array reads and writes, relative to one disk.">
+  <title>RAID performance explained: read and write speed by level — RAID Sandbox</title>
+  <meta name="description" content="RAID read and write speed relative to one disk: how many disks serve a request, and how many operations a write costs. Random and sequential, and degraded.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/performance.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/performance.html">
-  <meta property="og:title" content="Performance — RAID Sandbox knowledge base">
-  <meta property="og:description" content="How fast an array reads and writes, relative to one disk.">
+  <meta property="og:title" content="RAID performance explained: read and write speed by level — RAID Sandbox">
+  <meta property="og:description" content="RAID read and write speed relative to one disk: how many disks serve a request, and how many operations a write costs. Random and sequential, and degraded.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -137,6 +137,7 @@
       <li><a href="#writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</a></li>
       <li><a href="#random-and-sequential">Random and sequential</a></li>
       <li><a href="#degraded">Degraded</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -179,6 +180,12 @@ RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
     <h2 id="degraded">Degraded</h2>
     <p>The numbers above are for a healthy array. After a failure a parity array answers every read of the missing disk by reading the rest of the stripe and recomputing, so its reads slow down and its disks are busier; a mirror simply has one copy fewer to fan out over. The <a href="rebuild.html">rebuild</a> adds its own traffic on top. Fault tolerance says the data survives the failure; it does not say the array stays fast through it.</p>
   </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwibWlycm9yIiwibmVhciIsWyJkMSIsImQyIiwiZDMiLCJkNCJdXV0sW10sW11d">Open a RAID 10 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid10.html">RAID 10 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
+  </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
@@ -202,7 +209,7 @@ RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -215,6 +222,7 @@ RAID 6        4     6           0.67 ×      1                 4 ×</code></pre>
         <li><a href="#writes-parallelism-divided-by-penalty">Writes: parallelism divided by penalty</a></li>
         <li><a href="#random-and-sequential">Random and sequential</a></li>
         <li><a href="#degraded">Degraded</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

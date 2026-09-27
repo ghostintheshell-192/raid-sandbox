@@ -14,6 +14,11 @@ short: >
   enough to copy the cache to flash. It is what makes write-back caching safe on a
   controller, and what closes the write hole there.
 
+searchTitle: "RAID controller BBU: battery and flash cache protection explained"
+searchDescription: >
+  A battery or supercapacitor keeps a hardware RAID controller's write cache through a
+  power cut. It makes write-back caching safe and closes the write hole.
+
 long: |
   ## The risk to the write cache
 

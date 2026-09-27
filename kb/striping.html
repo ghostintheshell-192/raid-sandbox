@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Striping — RAID Sandbox knowledge base</title>
-  <meta name="description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn.">
+  <title>What is RAID striping? How data is split across disks — RAID Sandbox</title>
+  <meta name="description" content="RAID striping splits data into fixed-size chunks across several disks: more speed, and N times the risk of losing it all. How mirroring and parity build on it.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/striping.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/striping.html">
-  <meta property="og:title" content="Striping — RAID Sandbox knowledge base">
-  <meta property="og:description" content="Cutting data into fixed-size chunks and dealing them out across several disks in turn.">
+  <meta property="og:title" content="What is RAID striping? How data is split across disks — RAID Sandbox">
+  <meta property="og:description" content="RAID striping splits data into fixed-size chunks across several disks: more speed, and N times the risk of losing it all. How mirroring and parity build on it.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -135,6 +135,7 @@
       <li><a href="#bandwidth-and-throughput">Bandwidth and throughput</a></li>
       <li><a href="#cost-in-reliability">Cost in reliability</a></li>
       <li><a href="#striping-under-redundancy">Striping under redundancy</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -153,6 +154,12 @@
     <p>This was known before RAID had a name. Salem and Garcia-Molina described disk striping in 1986 as a way to get bandwidth from several disks, and in 1988 the same authors published on its impact on reliability. The paper that named RAID, by Patterson, Gibson and Katz in the same year, starts from that cost: an array of many cheap disks is fast and fails often, and the levels it defines are the ways to add the reliability back, each at a different cost in disk space and write operations. That is why striping and <a href="redundancy.html">redundancy</a> are two separate axes: striping provides the speed, and redundancy is added so that the speed does not come with an <em>N</em>-fold failure rate.</p>
     <h2 id="striping-under-redundancy">Striping under redundancy</h2>
     <p>With a <a href="mirroring.html">mirroring</a> layer the striped set is copied, or the stripe is built out of copies (RAID 10). With <a href="parity.html">parity</a> the stripe is the unit the parity is computed over: one chunk per stripe holds the XOR of the others. A write that covers a whole stripe computes the parity in one step; a small write has to read the old data and the old parity first. Parity does not exist without a stripe, which is why there is no linear level with parity.</p>
+  </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwibm9uZSIsbnVsbCxbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open a RAID 0 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid0.html">RAID 0 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
@@ -177,7 +184,7 @@
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -188,6 +195,7 @@
         <li><a href="#bandwidth-and-throughput">Bandwidth and throughput</a></li>
         <li><a href="#cost-in-reliability">Cost in reliability</a></li>
         <li><a href="#striping-under-redundancy">Striping under redundancy</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

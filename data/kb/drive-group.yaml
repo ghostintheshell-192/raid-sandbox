@@ -10,6 +10,11 @@ short: >
   group is a pool, not a layout: it marks off "these disks are mine to arrange",
   and the arranging, striping, mirroring or parity, happens one layer down.
 
+searchTitle: "What is a RAID drive group? The disk pool of a RAID controller"
+searchDescription: >
+  A RAID drive group is the set of physical disks a controller gathers into one pool.
+  It is not a layout: the striping, mirroring or parity happen one layer down.
+
 long: |
   Forming a drive group is a gathering step. The [[raid-engine]] takes a set of
   [[physical-disks]] under itself, and from that point on it can divide them up as

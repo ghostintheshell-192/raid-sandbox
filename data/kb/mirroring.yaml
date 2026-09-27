@@ -10,6 +10,12 @@ short: >
   there. The cost is that the disks hold one disk's worth of data between them, or
   half of their sum when the copies are striped across a larger set, as in RAID 10.
 
+searchTitle: "What is RAID mirroring? How RAID 1 and RAID 10 copy data"
+searchDescription: >
+  RAID mirroring keeps a full copy of every block on two or more disks. How RAID 1 and
+  RAID 10 place the copies, how many failures they survive, what they cost.
+tryIt: raid1
+
 long: |
   ## The mechanism
 

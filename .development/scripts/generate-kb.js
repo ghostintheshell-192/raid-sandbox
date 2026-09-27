@@ -81,6 +81,13 @@ const REDUNDANCY_WORDS   = { none: 'no redundancy', mirror: 'mirror', parity1: '
 const SITE   = 'https://raid-sandbox.dev';
 const PARITY = ['parity1', 'parity2'];
 
+// The map and the home page are linked by their canonical URL — the directory,
+// `/kb/` and `/` — never by the file inside it. Vercel counts /kb/ and
+// /kb/index.html as two paths, so a link to the file splits one page's visits,
+// and its signals to a crawler, between two addresses.
+const MAP_HREF  = './';
+const ROOT_HREF = '../';
+
 // ---------------------------------------------------------------------------
 // READING THE DATA
 // ---------------------------------------------------------------------------
@@ -221,6 +228,22 @@ function metaDescription(text, limit = 160) {
   return s.slice(0, end);
 }
 
+/**
+ * The search-facing pair of a page: <title>/og:title and the meta description.
+ * Both are optional in the data (`searchTitle`, `searchDescription` — on a
+ * concept's own file, in a level's `kb:` block) and win only there: the <h1>
+ * and the JSON-LD headline stay `name`, and the JSON-LD description stays the
+ * page's own first lines, so the page never says something its own heading and
+ * lede do not. A `searchDescription` is used whole — kb-data.test.js holds it
+ * to the length a results list shows.
+ */
+function searchMeta(src, name, full) {
+  return {
+    title: src.searchTitle ? `${plain(src.searchTitle)} — RAID Sandbox` : `${name} — RAID Sandbox knowledge base`,
+    description: src.searchDescription ? plain(src.searchDescription) : metaDescription(full),
+  };
+}
+
 const classWords = (shape) => {
   const seg = SEGMENTATION_WORDS[shape.segmentation];
   const red = REDUNDANCY_WORDS[shape.redundancy];
@@ -273,7 +296,7 @@ function exampleLink(def, node) {
                algorithm: node.algorithm ?? null, members: node.members.map((d) => d.id) }],
     components: [], wires: [],
   };
-  try { return `../index.html#build=${BuildDoc.encode(doc)}`; }
+  try { return `${ROOT_HREF}#build=${BuildDoc.encode(doc)}`; }
   catch (e) { fail(`${def.where}: the example does not encode as a build document (${e.message})`); }
 }
 
@@ -533,8 +556,8 @@ function gridLegend(def) {
 // ---------------------------------------------------------------------------
 
 const NAV = [
-  { file: 'index.html',    label: 'Map' },
-  { file: 'glossary.html', label: 'Glossary' },
+  { file: 'index.html',    href: MAP_HREF,        label: 'Map' },
+  { file: 'glossary.html', href: 'glossary.html', label: 'Glossary' },
 ];
 
 /**
@@ -567,7 +590,7 @@ function sideNav(ctx, file) {
   };
   return [
     '    <aside class="kb-side" aria-label="Knowledge base map">',
-    '      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>',
+    `      <p class="kb-side-home"><a href="${MAP_HREF}">Map</a> · <a href="glossary.html">Glossary</a></p>`,
     '      <div class="kb-side-groups">',
     group('Storage layers', kbHrefs(LAYER_ORDER)),
     group('RAID levels', ctx.pages.map((p) => [`${p.id}.html`, p.name])),
@@ -620,8 +643,8 @@ const pageUrl = (file) => file === 'index.html' ? `${SITE}/kb/` : `${SITE}/kb/${
 function chrome({ file, title, description, fullDescription = description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
-    : `      <a class="kb-nav-item" href="${n.file}">${n.label}</a>`)
-    .concat([`      <a class="kb-nav-item" href="../index.html">Sandbox</a>`]).join('\n');
+    : `      <a class="kb-nav-item" href="${n.href}">${n.label}</a>`)
+    .concat([`      <a class="kb-nav-item" href="${ROOT_HREF}">Sandbox</a>`]).join('\n');
 
   const url = pageUrl(file);
   const ld = {
@@ -699,7 +722,7 @@ ${toc && toc.length ? `\n${pageTocInline(toc)}\n` : ''}
 ${body}
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="${ROOT_HREF}">RAID Sandbox</a> · <a href="${MAP_HREF}">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -824,20 +847,15 @@ function levelPage(def, ctx) {
   // 8 — the example, opened in the sandbox
   section('try-it', 'Try it',
     `<p><a class="kb-try" href="${exampleLink(def, node)}">Open this example in the sandbox</a></p>`,
-    `<p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>`);
+    TRY_CAPTION);
 
   // 9 — related concepts, and the levels this one is confused with
   section('see-also', 'See also', seeAlso(def, ctx));
 
   const full = shortOf(def);
-  // The search-facing title is optional: when a level's kb: block carries one,
-  // it wins in <title> and og:title only — the <h1> (`heading` below) and the
-  // JSON-LD headline stay `def.name`, so the page itself never says something
-  // its own heading does not.
   return chrome({
     file: `${def.id}.html`,
-    title: def.kb.searchTitle ? `${def.kb.searchTitle} — RAID Sandbox` : `${def.name} — RAID Sandbox knowledge base`,
-    description: metaDescription(full),
+    ...searchMeta(def.kb, def.name, full),
     fullDescription: full,
     heading: def.name,
     subtitle: escapeHtml(classWords(def.shape)),
@@ -847,6 +865,8 @@ function levelPage(def, ctx) {
     kind: 'level',
   });
 }
+
+const TRY_CAPTION = '<p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>';
 
 function noAlgorithmReason(def) {
   if (!def.noAlgorithmReason) fail(`${def.where}: no defaultAlgorithm and no noAlgorithmReason to explain it`);
@@ -1002,6 +1022,25 @@ function conceptPage(entry, ctx) {
 
   const toc = headingsOf(entry.long);
   if (footnotesOf(entry.long).length) toc.push({ id: 'notes', title: 'Notes' });
+
+  // A level page's example, opened in the sandbox — only where the entry names
+  // (`tryIt`) a level whose example shows the concept at work. The array is the
+  // one the level page draws and computes, so the two cannot disagree.
+  if (entry.tryIt) {
+    const def = ctx.pageById.get(entry.tryIt);
+    if (!def) fail(`${entry.where}: tryIt names "${entry.tryIt}", which has no level page`);
+    const node = exampleTree(def, ctx.levels);
+    const ex   = def.kb.example;
+    const name = escapeHtml(def.name);
+    out.push('  <section class="kb-section" id="try-it">');
+    out.push('    <h2>Try it</h2>');
+    out.push(`    <p><a class="kb-try" href="${exampleLink(def, node)}">Open a ${name} array in the sandbox</a></p>`);
+    out.push(`    <p class="kb-intro">The example from the <a href="${def.id}.html">${name} page</a>: ${ex.disks} disks of ${ex.sizeGB} TB.</p>`);
+    out.push(`    ${TRY_CAPTION}`);
+    out.push('  </section>');
+    toc.push({ id: 'try-it', title: 'Try it' });
+  }
+
   out.push('  <section class="kb-section" id="sources">');
   out.push('    <h2>Sources</h2>');
   out.push('    <ul class="kb-sources">');
@@ -1033,8 +1072,7 @@ function conceptPage(entry, ctx) {
 
   return chrome({
     file: `${entry.id}.html`,
-    title: `${entry.name} — RAID Sandbox knowledge base`,
-    description: metaDescription(shortOf(entry)),
+    ...searchMeta(entry, entry.name, shortOf(entry)),
     fullDescription: shortOf(entry),
     heading: entry.name,
     subtitle: entry.kind === 'concept' ? 'Concept' : 'Term',

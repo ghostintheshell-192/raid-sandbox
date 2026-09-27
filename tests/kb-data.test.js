@@ -80,6 +80,26 @@ const resolves = (id) => {
 const references = (text) =>
   [...String(text || '').matchAll(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g)].map((m) => m[1].trim());
 
+/**
+ * The optional search-facing pair, on a concept's file or a level's `kb:` block.
+ * Both go into the <head> verbatim, so both are plain text, and each is held to
+ * the length a results list shows before cutting: about 70 characters for a
+ * title once " — RAID Sandbox" is added, about 160 for a description.
+ */
+function checkSearch(doc, prefix) {
+  if (doc.searchTitle !== undefined) {
+    assert(typeof doc.searchTitle === 'string' && doc.searchTitle.trim(), `${prefix}searchTitle must be a non-empty string`);
+    assert(doc.searchTitle.length <= 70, `${prefix}searchTitle must be at most 70 characters (got ${doc.searchTitle.length})`);
+    assert(!doc.searchTitle.endsWith('.'), `${prefix}searchTitle must not end with a period`);
+  }
+  if (doc.searchDescription !== undefined) {
+    const d = typeof doc.searchDescription === 'string' ? doc.searchDescription.replace(/\s+/g, ' ').trim() : '';
+    assert(d, `${prefix}searchDescription must be a non-empty string`);
+    assert(d.length <= 160, `${prefix}searchDescription must be at most 160 characters (got ${d.length})`);
+    assert(!d.includes('**') && !d.includes('[['), `${prefix}searchDescription must carry no markdown`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 console.log('\n[1] every data/kb entry has the fields a page is built from');
 
@@ -101,6 +121,18 @@ for (const id of [...kbIds].sort()) {
     }
     assert(STATUSES.includes(doc.status), `status "${doc.status}" is not one of ${STATUSES.join(', ')}`);
     assert(Array.isArray(doc.related), 'related is required (an empty list is allowed, a missing one is not)');
+  });
+}
+
+for (const id of [...kbIds].sort()) {
+  const doc = kb[id];
+  test(`data/kb/${id}.yaml: searchTitle and searchDescription, when present, fit a results list`, () => {
+    checkSearch(doc, '');
+  });
+  test(`data/kb/${id}.yaml: tryIt, when present, names a level with a page`, () => {
+    if (doc.tryIt === undefined) return;
+    assert(doc.kind === 'concept', 'only a concept has a page to put a "Try it" section on');
+    assert(pageIds.has(doc.tryIt), `tryIt "${doc.tryIt}" is no level with a kb: block — its example is what the link opens`);
   });
 }
 
@@ -169,11 +201,8 @@ for (const id of [...pageIds].sort()) {
     assert(!b.short.includes('**') && !b.short.includes('[['), 'kb.short must carry no markdown');
   });
 
-  test(`${id}.yaml: kb.searchTitle, when present, is a short plain sentence fragment`, () => {
-    if (b.searchTitle === undefined) return;
-    assert(typeof b.searchTitle === 'string' && b.searchTitle.trim(), 'kb.searchTitle must be a non-empty string');
-    assert(b.searchTitle.length <= 70, `kb.searchTitle must be at most 70 characters (got ${b.searchTitle.length})`);
-    assert(!b.searchTitle.endsWith('.'), 'kb.searchTitle must not end with a period');
+  test(`${id}.yaml: kb.searchTitle and kb.searchDescription, when present, fit a results list`, () => {
+    checkSearch(b, 'kb.');
   });
 
   test(`${id}.yaml: kb.related and every [[reference]] in kb.long resolve`, () => {

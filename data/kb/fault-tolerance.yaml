@@ -11,6 +11,12 @@ short: >
   one, double parity two. In a nested level the worst place matters: a RAID 50
   survives one failure per span, but two in the same span lose everything.
 
+searchTitle: "RAID fault tolerance: how many disk failures each level survives"
+searchDescription: >
+  How many disks a RAID array can lose in the worst case: none on RAID 0, all copies
+  but one on a mirror, one on RAID 5, two on RAID 6. Nesting and degraded mode.
+tryIt: raid6
+
 long: |
   ## A worst-case number
 

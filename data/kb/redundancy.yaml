@@ -13,6 +13,11 @@ short: >
   with a second parity, can be rebuilt. Redundancy always costs capacity; the
   question is how much, and how many failures it covers.
 
+searchTitle: "RAID redundancy explained: mirroring vs parity"
+searchDescription: >
+  How a RAID array keeps data readable when a disk fails: mirroring stores whole
+  copies, parity a computed summary. What each costs, how many failures it covers.
+
 long: |
   ## Purpose
 

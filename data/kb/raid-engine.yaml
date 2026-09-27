@@ -18,6 +18,11 @@ short: >
   is a role, not a fixed device: a RAID-on-Chip on a controller card, the operating
   system's own driver, or a boot firmware working with that driver.
 
+searchTitle: "Hardware, software or fake RAID: what the RAID engine is"
+searchDescription: >
+  The RAID engine turns a RAID layout into disk operations. Hardware, software and
+  firmware (fake) RAID differ in one thing: which component holds that role.
+
 long: |
   ## Responsibilities
 

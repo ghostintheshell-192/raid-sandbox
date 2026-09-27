@@ -11,6 +11,11 @@ short: >
   match. Linux md calls the pass a check or a repair; controllers call it patrol
   read and consistency check.
 
+searchTitle: "RAID scrubbing: finding bad sectors before a rebuild does"
+searchDescription: >
+  RAID scrubbing reads every block in the background to find unreadable sectors and
+  copies or parity that no longer match. Linux md check and repair, patrol read.
+
 long: |
   A disk can hold a sector it can no longer read without anyone knowing, because
   nothing has asked for that sector in months. The array does not notice either;

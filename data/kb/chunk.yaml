@@ -11,6 +11,12 @@ short: >
   and it is the unit striping deals out, so it sets how many disks one request
   touches. A stripe is one round of chunks, one per member.
 
+searchTitle: "RAID chunk size vs stripe size: chunk, strip and stripe explained"
+searchDescription: >
+  The RAID chunk, or strip, is the piece of a stripe that lands on one disk; the
+  stripe is one chunk per member. Typical chunk sizes, and what the size changes.
+tryIt: raid0
+
 long: |
   ## Terminology: chunk, strip, stripe
 
