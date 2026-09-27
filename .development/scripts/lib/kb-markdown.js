@@ -11,10 +11,16 @@
  * no images, no autolinks. Anything outside the subset is either escaped as
  * plain text or, for a cross-reference or footnote that names nothing, an error.
  *
- * What it does NOT do: resolve links. The caller passes `resolveLink(id, text)`
- * and owns the map from an id to a page — this file holds no domain facts and
- * no knowledge of the site's layout (ADR-002). It also never renders `short`:
- * short forms are plain text and are escaped by the caller.
+ * What it does NOT do: resolve links. The caller passes `resolveLink(id, text,
+ * block)` and owns the map from an id to a page — this file holds no domain
+ * facts and no knowledge of the site's layout (ADR-002). It also never renders
+ * `short`: short forms are plain text and are escaped by the caller.
+ *
+ * `block.aside(key, html)` lets the caller place a block of its own right after
+ * the paragraph, list or heading the link sits in (the knowledge base uses it
+ * for the box a glossary term opens). Asides with the same key in one block are
+ * placed once: `aside` returns true for the first, false for a repeat. Inside a footnote there is no block to follow, so `block` is
+ * undefined there and the caller links without an aside.
  *
  * Fenced blocks are emitted verbatim (escaped, never re-wrapped): the text
  * figures in the concept files rely on exact spacing and box-drawing characters.
@@ -51,7 +57,8 @@ function expand(escaped, ctx) {
       return ctx.footnote(fnId);
     }
     if (linkId !== undefined) return ctx.resolveLink(unescapeMatch(linkId).trim(),
-                                                     linkText === undefined ? null : unescapeMatch(linkText).trim());
+                                                     linkText === undefined ? null : unescapeMatch(linkText).trim(),
+                                                     ctx.aside ? { aside: ctx.aside } : undefined);
     if (bold !== undefined)   return `<strong>${expand(bold, ctx)}</strong>`;
     if (italic !== undefined) return `<em>${expand(italic, ctx)}</em>`;
     return match;
@@ -105,7 +112,7 @@ function footnoteState(where) {
       for (const id of defs.keys()) if (!order.includes(id)) throw new Error(`${where}: footnote [^${id}] is defined but never referenced`);
       if (!order.length) return null;
       const items = order.map((id) =>
-        `  <li id="fn-${id}">${renderInline(defs.get(id), { ...ctx, footnote: undefined })} <a href="#fnref-${id}" class="kb-fn-back" aria-label="Back to the text">↩</a></li>`);
+        `  <li id="fn-${id}">${renderInline(defs.get(id), { ...ctx, footnote: undefined, aside: undefined })} <a href="#fnref-${id}" class="kb-fn-back" aria-label="Back to the text">↩</a></li>`);
       return `<section class="kb-footnotes" id="notes">\n<h2>Notes</h2>\n<ol>\n${items.join('\n')}\n</ol>\n</section>`;
     },
   };
@@ -113,7 +120,7 @@ function footnoteState(where) {
 
 /**
  * @param {string} markdown
- * @param {{ resolveLink: (id: string, text: string|null) => string, where?: string }} ctx
+ * @param {{ resolveLink: (id: string, text: string|null, block?: { aside: (key: string, html: string) => boolean }) => string, where?: string }} ctx
  * @returns {string} HTML
  */
 function render(markdown, ctx) {
@@ -121,7 +128,10 @@ function render(markdown, ctx) {
   const lines = String(markdown == null ? '' : markdown).replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   const notes = footnoteState(where);
-  ctx = { ...ctx, where, footnote: (id) => notes.ref(id) };
+  const asides = new Map();   // key → html, for the block being rendered
+  const flush = () => { for (const html of asides.values()) out.push(html); asides.clear(); };
+  ctx = { ...ctx, where, footnote: (id) => notes.ref(id),
+          aside: (key, html) => { if (asides.has(key)) return false; asides.set(key, html); return true; } };
 
   let i = 0;
   while (i < lines.length) {
@@ -158,6 +168,7 @@ function render(markdown, ctx) {
       const text  = heading[2].trim();
       const id    = ctx.headingId ? ` id="${escapeHtml(ctx.headingId(text))}"` : '';
       out.push(`<h${level}${id}>${renderInline(text, ctx)}</h${level}>`);
+      flush();
       i++;
       continue;
     }
@@ -184,6 +195,7 @@ function render(markdown, ctx) {
       out.push(`<${tag}>`);
       for (const item of items) out.push(`  <li>${renderInline(item.join(' '), ctx)}</li>`);
       out.push(`</${tag}>`);
+      flush();
       continue;
     }
 
@@ -212,6 +224,7 @@ function render(markdown, ctx) {
       i++;
     }
     out.push(`<p>${renderInline(para.join(' '), ctx)}</p>`);
+    flush();
   }
 
   const notesHtml = notes.render(ctx);

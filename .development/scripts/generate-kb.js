@@ -469,8 +469,9 @@ const joinOr = (xs) => xs.length < 2 ? (xs[0] || '') : `${xs.slice(0, -1).join('
 
 // ---------------------------------------------------------------------------
 // CROSS-REFERENCES — [[id]] in the prose, `related` and `confusedWith` in the
-// data. A concept lives on the concepts page at its own anchor; a level lives on
-// its own page. An id that is neither is a broken reference and stops the build.
+// data. A concept and a level live on their own page; a term (an entry with only
+// a short form) lives in the glossary, at its own anchor. An id that is none of
+// these is a broken reference and stops the build.
 // The lookup is case-insensitive because the prose capitalises a reference that
 // opens a sentence ([[Redundancy]]). The link TEXT is the reference as the author
 // typed it, hyphens read as spaces — "chunk", "write penalty", "Redundancy" — so
@@ -480,7 +481,8 @@ const joinOr = (xs) => xs.length < 2 ? (xs[0] || '') : `${xs.slice(0, -1).join('
 
 function target(id, ctx) {
   const entry = ctx.kb.get(id) || ctx.kb.get(String(id).toLowerCase());
-  if (entry) return { href: `${entry.id}.html`, name: entry.name };
+  if (entry) return { href: entry.kind === 'term' ? `glossary.html#${entry.id}` : `${entry.id}.html`,
+                      name: entry.name, entry };
   const level = ctx.pageById.get(id) || ctx.pageById.get(String(id).toLowerCase());
   if (level) return { href: `${level.id}.html`, name: level.name };
   return null;
@@ -502,12 +504,57 @@ function statusFlag(status, ctx, where) {
   return `<p class="kb-flag kb-flag-${status}">${FLAGS[status]} — <a href="${legend.href}#how-the-pages-are-sourced">how the pages are sourced</a></p>`;
 }
 
-function makeResolver(ctx, where) {
-  return (id, text) => {
+/**
+ * The state a page keeps for the glossary terms its prose links: how many boxes
+ * each term has opened so far (their ids are numbered), and the ids of every
+ * box, from which `termStyle` writes the page's highlight rule.
+ */
+const termState = () => ({ count: new Map(), boxes: [] });
+
+/**
+ * A link to a term does not leave the page. It opens a box right after the
+ * paragraph it sits in, with the term's short form and a link to its glossary
+ * entry, where the sources are. The box is shown by `:target` (kb.css), so the
+ * page stays a document with no script; the × closes it by targeting the link.
+ * One box per term per paragraph: a second mention in the same paragraph opens
+ * the same box. Where the renderer has no block to follow (a footnote), or the
+ * page keeps no term state, the link goes to the glossary instead.
+ */
+function makeResolver(ctx, where, page = null) {
+  return (id, text, block) => {
     const hit = target(id, ctx);
     if (!hit) fail(`${where}: [[${id}]] names no knowledge-base entry and no level page`);
-    return `<a href="${hit.href}">${escapeHtml(text || String(id).replace(/-/g, ' '))}</a>`;
+    const label = escapeHtml(text || String(id).replace(/-/g, ' '));
+    if (!(hit.entry && hit.entry.kind === 'term' && block && page)) return `<a href="${hit.href}">${label}</a>`;
+
+    const term = hit.entry;
+    const n    = (page.count.get(term.id) || 0) + 1;
+    const box  = `term-${term.id}-${n}`;
+    const html = [
+      `<aside class="kb-term-box" id="${box}" aria-label="${escapeHtml(term.name)}: definition">`,
+      `  <p><strong>${escapeHtml(term.name)}.</strong> ${escapeHtml(shortOf(term))}</p>`,
+      `  <p class="kb-term-more"><a href="${hit.href}">Sources and more in the glossary</a>` +
+        `<a class="kb-term-close" href="#ref-${box}" aria-label="Close the definition">×</a></p>`,
+      '</aside>',
+    ].join('\n');
+    if (block.aside(term.id, html)) {
+      page.count.set(term.id, n);
+      page.boxes.push(box);
+      return `<a class="kb-term" id="ref-${box}" href="#${box}">${label}</a>`;
+    }
+    return `<a class="kb-term" href="#term-${term.id}-${n - 1}">${label}</a>`;
   };
+}
+
+/**
+ * The rule that marks the term whose box is open. CSS cannot pair a link with
+ * the box its href names, so the page carries one selector per box; the look
+ * itself (`--kb-term-open`) is kb.css's. Empty when the page opens no box.
+ */
+function termStyle(page) {
+  if (!page || !page.boxes.length) return '';
+  const selectors = page.boxes.map((b) => `.kb-main:has(#${b}:target) a[href="#${b}"]`);
+  return `  <style>\n    ${selectors.join(',\n    ')} {\n      background: var(--kb-term-open);\n    }\n  </style>\n`;
 }
 
 const link = (hit) => `<a href="${hit.href}">${escapeHtml(hit.name)}</a>`;
@@ -640,7 +687,7 @@ const pageUrl = (file) => file === 'index.html' ? `${SITE}/kb/` : `${SITE}/kb/${
 // `fullDescription` feeds the JSON-LD `description`, which is not a snippet
 // shown in a results list but the page's own first lines restated — cutting
 // it the same way would just be losing text nothing forced us to lose.
-function chrome({ file, title, description, fullDescription = description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page' }) {
+function chrome({ file, title, description, fullDescription = description, heading, subtitle, body, ctx, side = true, toc = null, kind = 'page', terms = null }) {
   const nav = NAV.map((n) => n.file === file
     ? `      <span class="kb-nav-item active" aria-current="page">${n.label}</span>`
     : `      <a class="kb-nav-item" href="${n.href}">${n.label}</a>`)
@@ -692,7 +739,7 @@ function chrome({ file, title, description, fullDescription = description, headi
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
-
+${termStyle(terms)}
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
        JSON-LD, not restated. No dates, no ratings, nothing invented. -->
@@ -746,7 +793,8 @@ function levelPage(def, ctx) {
   const algos = algorithmsFor(def, ctx.algorithms);
   const ex    = def.kb.example;
   const name  = escapeHtml(def.name);
-  const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w), where: w, headingId: slug });
+  const terms = termState();
+  const md    = (text, w) => render(text, { resolveLink: makeResolver(ctx, w, terms), where: w, headingId: slug });
   const out   = [];
   const toc   = headingsOf(def.kb.long);
   if (footnotesOf(def.kb.long).length) toc.push({ id: 'notes', title: 'Notes' });
@@ -863,6 +911,7 @@ function levelPage(def, ctx) {
     ctx,
     toc,
     kind: 'level',
+    terms,
   });
 }
 
@@ -1017,7 +1066,8 @@ function conceptPage(entry, ctx) {
   const flag = statusFlag(entry.status, ctx, entry.where);
   if (flag) out.push(`    ${flag}`);
   out.push(`    <p class="kb-lede">${escapeHtml(shortOf(entry))}</p>`);
-  out.push(indent(render(entry.long, { resolveLink: makeResolver(ctx, where), where, headingId: slug }), 4));
+  const terms = termState();
+  out.push(indent(render(entry.long, { resolveLink: makeResolver(ctx, where, terms), where, headingId: slug }), 4));
   out.push('  </section>');
 
   const toc = headingsOf(entry.long);
@@ -1044,15 +1094,7 @@ function conceptPage(entry, ctx) {
   out.push('  <section class="kb-section" id="sources">');
   out.push('    <h2>Sources</h2>');
   out.push('    <ul class="kb-sources">');
-  // A source is plain text, or { ref, url, note }: `ref` names the thing itself
-  // (the man page, the paper, the kernel file) and is the link; `note` is what
-  // was taken from it and stays plain, so the link is light and the reader can
-  // still check.
-  for (const s of entry.sources) {
-    if (typeof s === 'string') { out.push(`      <li>${escapeHtml(plain(s))}</li>`); continue; }
-    if (!s || !s.ref || !s.url) fail(`${entry.where}: a source needs ref and url (or a plain string)`);
-    out.push(`      <li><a href="${escapeHtml(s.url)}">${escapeHtml(plain(s.ref))}</a>${s.note ? ` — ${escapeHtml(plain(s.note))}` : ''}</li>`);
-  }
+  for (const src of entry.sources) out.push(`      ${sourceItem(src, entry.where)}`);
   out.push('    </ul>');
   out.push('  </section>');
   toc.push({ id: 'sources', title: 'Sources' });
@@ -1080,22 +1122,43 @@ function conceptPage(entry, ctx) {
     ctx,
     toc,
     kind: 'concept',
+    terms,
   });
 }
 
+/**
+ * One source as a list item. A source is plain text, or { ref, url, note }:
+ * `ref` names the thing itself (the man page, the paper, the kernel file) and is
+ * the link; `note` is what was taken from it and stays plain, so the link is
+ * light and the reader can still check.
+ */
+function sourceItem(src, where) {
+  if (typeof src === 'string') return `<li>${escapeHtml(plain(src))}</li>`;
+  if (!src || !src.ref || !src.url) fail(`${where}: a source needs ref and url (or a plain string)`);
+  return `<li><a href="${escapeHtml(src.url)}">${escapeHtml(plain(src.ref))}</a>${src.note ? ` — ${escapeHtml(plain(src.note))}` : ''}</li>`;
+}
+
+// Every entry has an anchor in the glossary, its own id. A term has no page of
+// its own, so the glossary is where it lives: its name is not a link, and its
+// sources are listed under its short form, as a concept lists them on its page.
 function glossaryPage(ctx) {
   const rows = [
-    ...[...ctx.kb.values()].map((e) => ({ name: e.name, short: shortOf(e), href: `${e.id}.html` })),
-    ...ctx.pages.map((p) => ({ name: p.name, short: shortOf(p), href: `${p.id}.html` })),
+    ...[...ctx.kb.values()].map((e) => ({ id: e.id, name: e.name, short: shortOf(e),
+                                          href: e.kind === 'term' ? null : `${e.id}.html`, term: e.kind === 'term' ? e : null })),
+    ...ctx.pages.map((p) => ({ id: p.id, name: p.name, short: shortOf(p), href: `${p.id}.html`, term: null })),
   ].sort((a, b) => {
     const x = a.name.toLowerCase(), y = b.name.toLowerCase();
-    return x < y ? -1 : x > y ? 1 : (a.href < b.href ? -1 : 1);
+    return x < y ? -1 : x > y ? 1 : (a.id < b.id ? -1 : 1);
   });
 
   const body = ['  <section class="kb-section" id="glossary">', '    <dl class="kb-defs">']
     .concat(rows.flatMap((r) => [
-      `      <dt><a href="${r.href}">${escapeHtml(r.name)}</a></dt>`,
+      r.href ? `      <dt id="${r.id}"><a href="${r.href}">${escapeHtml(r.name)}</a></dt>`
+             : `      <dt id="${r.id}">${escapeHtml(r.name)}</dt>`,
       `      <dd>${escapeHtml(r.short)}</dd>`,
+      ...(r.term ? [`      <dd class="kb-term-sources"><ul class="kb-sources">`,
+                    ...r.term.sources.map((src) => `        ${sourceItem(src, r.term.where)}`),
+                    '      </ul></dd>'] : []),
     ]))
     .concat(['    </dl>', '  </section>']).join('\n');
 

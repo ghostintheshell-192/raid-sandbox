@@ -191,6 +191,52 @@
 .kb-main a:hover { text-decoration-color: var(--accent-cyan); }
 .kb-main a:visited { color: var(--accent-hover); }
 
+/* --- glossary terms: a box under the paragraph, no script ----------- */
+/*  A link to a term opens its definition right under the paragraph it   */
+/*  sits in, instead of leaving the page. The box is hidden until it is  */
+/*  the page's :target; the × targets the link again, which closes it.   */
+/*  A dotted underline tells a term apart from a link to another page.   */
+/*  While the box is open the term that opened it is marked, so the      */
+/*  reader sees what the box belongs to: the page's own <style> pairs    */
+/*  each box with its link (CSS cannot), and takes the colour from here. */
+/*  Without CSS the box is an ordinary note after the paragraph.         */
+
+.kb-main { --kb-term-open: var(--accent-dim); }
+
+.kb-main a.kb-term { text-decoration-style: dotted; text-decoration-thickness: 2px; }
+.kb-main a.kb-term:visited { color: var(--accent-cyan); }
+
+.kb-term-box { display: none; }
+.kb-term-box:target {
+  display: block;
+  margin: -0.4rem 0 1.2rem;
+  padding: 0.7rem 1rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-border);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-align: left;
+  scroll-margin-block: 40vh;   /* open it about where the reader is, not at the top */
+}
+.kb-term-box p { margin: 0 0 0.4rem; }
+.kb-term-box strong { color: var(--accent-cyan); }
+.kb-term-more {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+.kb-main a.kb-term-close { text-decoration: none; font-size: 1.1rem; line-height: 1; padding: 0 0.2rem; }
+
+/* in the glossary: the entry a term links to is marked while it is the target */
+.kb-defs dt:target { color: var(--accent-cyan); }
+.kb-term-sources { margin-top: 0.3rem; }
+.kb-term-sources .kb-sources { margin: 0; padding-left: 1.2rem; }
+
 /* --- sections ------------------------------------------------------- */
 
 .kb-section { margin-bottom: 2.75rem; }

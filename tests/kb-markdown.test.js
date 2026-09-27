@@ -1,5 +1,6 @@
 /**
- * kb-markdown.test.js — the footnotes of the knowledge-base markdown subset.
+ * kb-markdown.test.js — the footnotes and the asides of the knowledge-base
+ * markdown subset.
  * Run with: node kb-markdown.test.js
  *
  * ADR-004: a design choice of the sandbox is explained where the reader meets
@@ -88,6 +89,42 @@ test('[^x] inside backticks is not a footnote', () => {
   const html = render('Write `[^x]` literally.', ctx);
   assert(html.includes('<code>[^x]</code>'), html);
   assert(!html.includes('kb-fn'), html);
+});
+
+console.log('\n[4] an aside is placed right after the block its link sits in');
+
+// A resolver that asks for an aside for every link, the way the generator does
+// for a glossary term, and reports whether the aside was new.
+const asideCtx = (seen) => ({
+  where: 'test',
+  resolveLink: (id, text, block) => {
+    if (!block) { seen.push(`no-block:${id}`); return `<a href="g#${id}">${text || id}</a>`; }
+    seen.push(`${id}:${block.aside(id, `<aside id="${id}"></aside>`)}`);
+    return `<a href="#${id}">${text || id}</a>`;
+  },
+});
+
+test('after the paragraph, before the next block', () => {
+  const html = render('One [[sata]] here.\n\nTwo.', asideCtx([]));
+  eq(html, '<p>One <a href="#sata">sata</a> here.</p>\n<aside id="sata"></aside>\n<p>Two.</p>');
+});
+
+test('after a whole list, not inside an item', () => {
+  const html = render('- a [[sas]]\n- b', asideCtx([]));
+  eq(html, '<ul>\n  <li>a <a href="#sas">sas</a></li>\n  <li>b</li>\n</ul>\n<aside id="sas"></aside>');
+});
+
+test('the same key twice in one block is placed once; in the next block again', () => {
+  const seen = [];
+  const html = render('[[pcie]] and [[pcie]].\n\nAgain [[pcie]].', asideCtx(seen));
+  eq(seen.join(','), 'pcie:true,pcie:false,pcie:true');
+  eq(html.split('<aside id="pcie"></aside>').length - 1, 2);
+});
+
+test('a link inside a footnote gets no block to follow', () => {
+  const seen = [];
+  render('Text.[^n]\n\n[^n]: See [[lane]].', asideCtx(seen));
+  eq(seen.join(','), 'no-block:lane');
 });
 
 finish();
