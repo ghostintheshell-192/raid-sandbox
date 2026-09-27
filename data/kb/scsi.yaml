@@ -1,0 +1,20 @@
+# data/kb/scsi.yaml — a glossary term: the command set SAS carries. Writing
+# rules: see segmentation.yaml header.
+
+id: scsi
+kind: term
+name: SCSI
+short: >
+  Small Computer System Interface: in SNIA's words, "a collection of ANSI
+  standards and proposed standards that define I/O interconnects primarily
+  intended for connecting storage subsystems or devices to hosts through host bus
+  adapters". SAS carries SCSI commands over a serial connection.
+
+related: [sas, hba]
+
+sources:
+  - ref: "SNIA Dictionary (2016), Small Computer System Interface (SCSI); Serial Attached SCSI (SAS)"
+    note: "SCSI: 'A collection of ANSI standards and proposed standards that define I/O interconnects primarily intended for connecting storage subsystems or devices to hosts through host bus adapters'; SAS: 'A SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+
+status: cited
