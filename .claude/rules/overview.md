@@ -22,7 +22,8 @@ Spec-driven and incremental:
 3. **Ground-truth first** — RAID layouts are anchored to the Linux `md` kernel source
    (`drivers/md/raid5.c`, `raid10.c`). Golden tables are **hand-derived from the kernel
    rules**, never dumped from the engine, then asserted against it.
-4. **Session handoffs** — continuity notes in `.memory-bank/projects/raid-explorer/`.
+4. **Session handoffs** — continuity notes in `.memory-bank/journal/handoffs/`, a private
+   repository of their own (see `workflow.md`).
 
 ## Tech Stack
 

@@ -34,7 +34,8 @@ Operational documentation for RAID Sandbox — tracked, lives with the code.
   - `generate-kb.js` (+ `lib/kb-markdown.js`, `lib/capacity-template.js`) —
     generates the knowledge base: the static pages in `kb/` and `sitemap.xml`, from
     `data/kb/` and the `kb:` blocks of the level files
-  - `session-archive.py` — archives session transcripts to `.memory-bank/sessions/`
+  - `session-archive.py` — archives session transcripts (masked by `redact_transcript.py`)
+    and a copy of Claude's memory to the journal, `.memory-bank/journal/`, and pushes it
 
 The four generators run automatically at session start (`SessionStart` hook in
 `.claude/settings.json`) and on every commit (the pre-commit hook);
@@ -61,7 +62,8 @@ hand.
 
 ## Related
 
-- Session handoffs (per-session continuity notes) live **flat** in
-  `.memory-bank/` — local, gitignored. They are read at session start; see
+- Session handoffs (per-session continuity notes) live in
+  `.memory-bank/journal/handoffs/` — a private repository of their own,
+  `raid-sandbox-memory`, ignored by this one. They are read at session start; see
   `.claude/rules/workflow.md`.
 - Tracked idea seeds live in `.memory-bank/ideas/`.
