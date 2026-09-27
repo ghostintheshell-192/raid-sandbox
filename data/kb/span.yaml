@@ -11,6 +11,11 @@ short: >
   spans, each with its own independent layout, and the nested levels are spans
   striped together.
 
+searchTitle: "What is a RAID span? Spans, drive groups and nested levels"
+searchDescription: >
+  A RAID span is a set of disks sharing one layout: where a RAID level applies. A
+  drive group can hold several spans; nested levels are spans striped together.
+
 long: |
   A span is the layer at which the two axes are chosen. Take some or all of a
   [[drive-group]]'s disks and give them one [[segmentation]] and one [[redundancy]]:

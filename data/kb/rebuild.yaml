@@ -11,6 +11,11 @@ short: >
   degraded, slower, and one failure away from loss. The time it takes is a
   reliability number, and a hot spare is what lets it start with nobody present.
 
+searchTitle: "RAID rebuild explained: degraded mode, duration and hot spares"
+searchDescription: >
+  A RAID rebuild writes a replaced disk back from the mirror or from parity. Why the
+  array is degraded until it ends, how long it takes, what a hot spare does.
+
 long: |
   ## Operation
 

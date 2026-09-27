@@ -13,6 +13,12 @@ short: >
   with the disks that can serve them; writes scale with the disks divided by the
   penalty.
 
+searchTitle: "RAID performance explained: read and write speed by level"
+searchDescription: >
+  RAID read and write speed relative to one disk: how many disks serve a request, and
+  how many operations a write costs. Random and sequential, and degraded.
+tryIt: raid10
+
 long: |
   ## The two parameters: N and W
 

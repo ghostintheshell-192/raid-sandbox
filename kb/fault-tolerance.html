@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fault tolerance — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How many disks can fail, in the worst place, before data is lost.">
+  <title>RAID fault tolerance: how many disk failures each level survives — RAID Sandbox</title>
+  <meta name="description" content="How many disks a RAID array can lose in the worst case: none on RAID 0, all copies but one on a mirror, one on RAID 5, two on RAID 6. Nesting and degraded mode.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/fault-tolerance.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/fault-tolerance.html">
-  <meta property="og:title" content="Fault tolerance — RAID Sandbox knowledge base">
-  <meta property="og:description" content="How many disks can fail, in the worst place, before data is lost.">
+  <meta property="og:title" content="RAID fault tolerance: how many disk failures each level survives — RAID Sandbox">
+  <meta property="og:description" content="How many disks a RAID array can lose in the worst case: none on RAID 0, all copies but one on a mirror, one on RAID 5, two on RAID 6. Nesting and degraded mode.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -137,6 +137,7 @@
       <li><a href="#nesting">Nesting</a></li>
       <li><a href="#degraded-operation">Degraded operation</a></li>
       <li><a href="#what-does-not-count-as-a-failure">What does not count as a failure</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -180,6 +181,12 @@ the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
     <h2 id="what-does-not-count-as-a-failure">What does not count as a failure</h2>
     <p>A failure is a disk that stops answering. A deletion, an overwrite, a corrupted block are not failures: the redundancy records them faithfully. Fault tolerance measures survival of hardware, not of data (<a href="raid-is-not-a-backup.html">RAID is not a backup</a>).</p>
   </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwicGFyaXR5MiIsImxlZnQtc3ltbWV0cmljIixbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open a RAID 6 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid6.html">RAID 6 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
+  </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
@@ -201,7 +208,7 @@ the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -214,6 +221,7 @@ the stripe    F = min(2, 2)   (none over the spans: one dead span kills it)
         <li><a href="#nesting">Nesting</a></li>
         <li><a href="#degraded-operation">Degraded operation</a></li>
         <li><a href="#what-does-not-count-as-a-failure">What does not count as a failure</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

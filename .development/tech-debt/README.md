@@ -60,6 +60,7 @@ of issues, git history is a better record than a second directory.
 
 **Low Priority:**
 - `automation-not-checked-on-windows.md` - The hooks and dev scripts are authored and tested only on the Linux workstation
+- `disk-size-field-named-gb-holds-tb.md` - The disk size field is named `sizeGB` but holds terabytes
 - `kb-inline-code-and-math-blend-into-prose.md` - Inline code and math variables blend into the knowledge-base prose
 - `nested-data-allocation-order.md` - Tech debt — nested data-allocation order
 - `physical-layer-canvas-has-no-touch-picker.md` - The Physical Layer canvas has no click-to-build picker — drag is its only path

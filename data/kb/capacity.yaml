@@ -10,6 +10,12 @@ short: >
   takes its share: nothing for striping or concatenation, all but one copy for a
   mirror, one member's worth for each parity block in the stripe.
 
+searchTitle: "RAID capacity: how much usable space each RAID level leaves"
+searchDescription: >
+  Usable RAID capacity: every disk on RAID 0, one disk's worth on a mirror, all but
+  one on RAID 5, all but two on RAID 6. Disks of different sizes, and nesting.
+tryIt: raid5
+
 long: |
   ## Rule by redundancy type
 

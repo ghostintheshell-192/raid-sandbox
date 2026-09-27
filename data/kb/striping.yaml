@@ -12,6 +12,12 @@ short: >
   requests by different disks at the same time. It multiplies speed by the number
   of disks and multiplies the chance of losing everything by the same number.
 
+searchTitle: "What is RAID striping? How data is split across disks"
+searchDescription: >
+  RAID striping splits data into fixed-size chunks across several disks: more speed,
+  and N times the risk of losing it all. How mirroring and parity build on it.
+tryIt: raid0
+
 long: |
   Striping is one of the two answers to [[segmentation]], and the one every RAID
   level except RAID 1 and [[jbod|JBOD]] is built on. That page shows the mechanics: the

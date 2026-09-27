@@ -13,6 +13,11 @@ short: >
   protection and no help from anything above it. Every layer above exists to turn
   a set of them into something more useful than one disk at a time.
 
+searchTitle: "Physical disks in a RAID array: HDD, SSD, SATA, SAS and NVMe"
+searchDescription: >
+  The bottom layer of a RAID array: hard disks and SSDs, each with its own capacity
+  and interface, SATA, SAS or NVMe, and what each contributes to the array.
+
 long: |
   A physical disk is one device: a spinning hard drive or a solid-state drive, with
   a capacity, an interface, and an address space of its own, sectors numbered from

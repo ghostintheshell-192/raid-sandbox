@@ -11,6 +11,11 @@ short: >
   fire, a second failure during a rebuild. A backup is a separate copy, made at a
   point in time, kept where the array's failures cannot reach it.
 
+searchTitle: "RAID is not a backup: what redundancy does and does not protect"
+searchDescription: >
+  RAID keeps an array running when a disk fails. It does nothing against deletion,
+  malware, a failed controller or fire. What a backup is, and why you need both.
+
 long: |
   ## What redundancy protects against
 

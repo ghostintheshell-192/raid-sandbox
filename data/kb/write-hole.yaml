@@ -12,6 +12,11 @@ short: >
   It affects the parity levels on any engine whose writes are not protected; a
   battery-backed cache, a journal, or a partial parity log closes it.
 
+searchTitle: "The RAID write hole: how a power cut corrupts parity"
+searchDescription: >
+  The RAID write hole: a power cut between writing a stripe's data and its parity
+  leaves parity that no longer matches. Why nothing notices, and what closes it.
+
 long: |
   ## The mechanism
 

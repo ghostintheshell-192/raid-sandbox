@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Write penalty — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How many disk operations one logical write costs.">
+  <title>RAID write penalty: why one write costs 2, 4 or 6 disk operations — RAID Sandbox</title>
+  <meta name="description" content="RAID write penalty: one write costs 1 disk operation on RAID 0, one per copy on a mirror, 4 on RAID 5, 6 on RAID 6. Why, and how full-stripe writes avoid it.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/write-penalty.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/write-penalty.html">
-  <meta property="og:title" content="Write penalty — RAID Sandbox knowledge base">
-  <meta property="og:description" content="How many disk operations one logical write costs.">
+  <meta property="og:title" content="RAID write penalty: why one write costs 2, 4 or 6 disk operations — RAID Sandbox">
+  <meta property="og:description" content="RAID write penalty: one write costs 1 disk operation on RAID 0, one per copy on a mirror, 4 on RAID 5, 6 on RAID 6. Why, and how full-stripe writes avoid it.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -136,6 +136,7 @@
       <li><a href="#derivation-of-the-factor-4">Derivation of the factor 4</a></li>
       <li><a href="#read-modify-write-and-full-stripe-write">Read-modify-write and full-stripe write</a></li>
       <li><a href="#effect-on-write-throughput">Effect on write throughput</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -167,6 +168,12 @@ parity2  (RAID 6)    6                        1</code></pre>
     <pre class="kb-figure"><code>writes per second  ≈  N × (operations per second of one disk) ÷ W</code></pre>
     <p>On four disks, RAID 0 writes about four disks&#39; worth, RAID 10 two, RAID 5 one for small writes and nearly four for full stripes, RAID 6 two thirds of one for small writes. Reads pay no penalty. The <a href="performance.html">performance</a> entry puts the two together.</p>
   </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwicGFyaXR5MSIsImxlZnQtc3ltbWV0cmljIixbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open a RAID 5 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid5.html">RAID 5 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
+  </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
@@ -189,7 +196,7 @@ parity2  (RAID 6)    6                        1</code></pre>
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -201,6 +208,7 @@ parity2  (RAID 6)    6                        1</code></pre>
         <li><a href="#derivation-of-the-factor-4">Derivation of the factor 4</a></li>
         <li><a href="#read-modify-write-and-full-stripe-write">Read-modify-write and full-stripe write</a></li>
         <li><a href="#effect-on-write-throughput">Effect on write throughput</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

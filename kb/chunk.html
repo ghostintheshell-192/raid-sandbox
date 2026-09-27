@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chunk, strip and stripe — RAID Sandbox knowledge base</title>
-  <meta name="description" content="The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls a chunk and most controllers a strip.">
+  <title>RAID chunk size vs stripe size: chunk, strip and stripe explained — RAID Sandbox</title>
+  <meta name="description" content="The RAID chunk, or strip, is the piece of a stripe that lands on one disk; the stripe is one chunk per member. Typical chunk sizes, and what the size changes.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/chunk.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/chunk.html">
-  <meta property="og:title" content="Chunk, strip and stripe — RAID Sandbox knowledge base">
-  <meta property="og:description" content="The chunk is the piece of a stripe that lands on one disk: what Linux `md` calls a chunk and most controllers a strip.">
+  <meta property="og:title" content="RAID chunk size vs stripe size: chunk, strip and stripe explained — RAID Sandbox">
+  <meta property="og:description" content="The RAID chunk, or strip, is the piece of a stripe that lands on one disk; the stripe is one chunk per member. Typical chunk sizes, and what the size changes.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -135,6 +135,7 @@
       <li><a href="#terminology-chunk-strip-stripe">Terminology: chunk, strip, stripe</a></li>
       <li><a href="#typical-values">Typical values</a></li>
       <li><a href="#effect-of-the-chunk-size">Effect of the chunk size</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -160,6 +161,12 @@ stripe size   = C × (N − P)      the data a full stripe carries</code></pre>
     <p>The chunk size is the main tuning parameter, and it determines which of the two performance advantages of <a href="striping.html">striping</a> an array gets. A request smaller than a chunk touches one disk; a request of <em>R</em> sectors touches about <em>R ÷ C</em> disks, up to <em>N</em>. A small chunk spreads one request over many disks and gives it their combined bandwidth, at the cost of every disk doing a small piece of work for it. A large chunk keeps one request on one disk and leaves the others free for other requests, which is what a workload of many small, unrelated accesses wants.</p>
     <p>Under parity the size of the row matters as much as the size of the piece. A write that covers a whole stripe, <em>C × (N − P)</em> of data aligned to the stripe&#39;s start, lets the <a href="raid-engine.html">raid engine</a> compute the parity from what it is writing; a smaller write must read what it does not have first, the read-modify-write behind the <a href="write-penalty.html">write penalty</a>. This is why the file system above the array can be given the two numbers: the ext4 file system takes the chunk as its <code>stride</code> (&quot;the number of blocks read or written to disk before moving to the next disk, which is sometimes referred to as the chunk size&quot;) and the row as its <code>stripe_width</code> (typically &quot;stride-size × N, where N is the number of data-bearing disks&quot;), and uses them to place its data so that writes fill stripes and &quot;prevent read-modify-write of the parity&quot;.</p>
   </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwibm9uZSIsbnVsbCxbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open a RAID 0 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid0.html">RAID 0 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
+  </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
@@ -181,7 +188,7 @@ stripe size   = C × (N − P)      the data a full stripe carries</code></pre>
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -192,6 +199,7 @@ stripe size   = C × (N − P)      the data a full stripe carries</code></pre>
         <li><a href="#terminology-chunk-strip-stripe">Terminology: chunk, strip, stripe</a></li>
         <li><a href="#typical-values">Typical values</a></li>
         <li><a href="#effect-of-the-chunk-size">Effect of the chunk size</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

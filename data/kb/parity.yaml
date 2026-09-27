@@ -11,6 +11,12 @@ short: >
   data. RAID 6 adds a second extra block, called Q, computed with a different
   formula: with two extra blocks, the stripe survives two lost blocks.
 
+searchTitle: "RAID parity explained: how XOR rebuilds a lost disk"
+searchDescription: >
+  RAID parity is the XOR of a stripe's data blocks: any one lost block is the XOR of
+  the others. How RAID 5 and RAID 6 place it, and why small writes cost four.
+tryIt: raid5
+
 long: |
   ## The XOR arithmetic
 

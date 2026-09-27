@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Capacity — RAID Sandbox knowledge base</title>
-  <meta name="description" content="How much of the raw disk space an array leaves usable for data.">
+  <title>RAID capacity: how much usable space each RAID level leaves — RAID Sandbox</title>
+  <meta name="description" content="Usable RAID capacity: every disk on RAID 0, one disk&#39;s worth on a mirror, all but one on RAID 5, all but two on RAID 6. Disks of different sizes, and nesting.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/capacity.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/capacity.html">
-  <meta property="og:title" content="Capacity — RAID Sandbox knowledge base">
-  <meta property="og:description" content="How much of the raw disk space an array leaves usable for data.">
+  <meta property="og:title" content="RAID capacity: how much usable space each RAID level leaves — RAID Sandbox">
+  <meta property="og:description" content="Usable RAID capacity: every disk on RAID 0, one disk&#39;s worth on a mirror, all but one on RAID 5, all but two on RAID 6. Disks of different sizes, and nesting.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -65,7 +65,7 @@
 <div class="kb-page kb-page--side kb-page--toc">
 
     <aside class="kb-side" aria-label="Knowledge base map">
-      <p class="kb-side-home"><a href="index.html">Map</a> · <a href="glossary.html">Glossary</a></p>
+      <p class="kb-side-home"><a href="./">Map</a> · <a href="glossary.html">Glossary</a></p>
       <div class="kb-side-groups">
       <details class="kb-side-group">
         <summary class="kb-side-title">Storage layers</summary>
@@ -124,9 +124,9 @@
   </header>
 
   <nav class="kb-nav" role="navigation" aria-label="Knowledge base">
-      <a class="kb-nav-item" href="index.html">Map</a>
+      <a class="kb-nav-item" href="./">Map</a>
       <a class="kb-nav-item" href="glossary.html">Glossary</a>
-      <a class="kb-nav-item" href="../index.html">Sandbox</a>
+      <a class="kb-nav-item" href="../">Sandbox</a>
   </nav>
 
   <details class="kb-toc-inline">
@@ -136,6 +136,7 @@
       <li><a href="#members-of-different-sizes">Members of different sizes</a></li>
       <li><a href="#nesting">Nesting</a></li>
       <li><a href="#what-capacity-does-not-measure">What capacity does not measure</a></li>
+      <li><a href="#try-it">Try it</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
@@ -168,6 +169,12 @@ the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</c
     <h2 id="what-capacity-does-not-measure">What capacity does not measure</h2>
     <p>Capacity says nothing about tolerance or speed, and the same capacity comes with different tolerance. On four disks, RAID 10 and RAID 6 both leave two disks&#39; worth; RAID 10 is guaranteed to survive one failure, RAID 6 any two. What differs between them is the <a href="write-penalty.html">write penalty</a> and the rebuild, and the level pages show both.</p>
   </section>
+  <section class="kb-section" id="try-it">
+    <h2>Try it</h2>
+    <p><a class="kb-try" href="../#build=cWzEsW1sxLDIsIlNBVEEiXSxbMiwyLCJTQVRBIl0sWzMsMiwiU0FUQSJdLFs0LDIsIlNBVEEiXV0sW1sxLCJzdHJpcGVkIiwicGFyaXR5MSIsImxlZnQtc3ltbWV0cmljIixbImQxIiwiZDIiLCJkMyIsImQ0Il1dXSxbXSxbXV0">Open a RAID 5 array in the sandbox</a></p>
+    <p class="kb-intro">The example from the <a href="raid5.html">RAID 5 page</a>: 4 disks of 2 TB.</p>
+    <p class="kb-caption">A desktop link: on a phone or in a narrow window the sandbox is not offered.</p>
+  </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
@@ -189,7 +196,7 @@ the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</c
   </section>
 
   <footer class="kb-footer">
-    <a href="../index.html">RAID Sandbox</a> · <a href="index.html">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
+    <a href="../">RAID Sandbox</a> · <a href="./">Knowledge base</a> · <a href="mailto:valentina.malavenda01@gmail.com">Valentina Malavenda</a>
   </footer>
 
   </div>
@@ -201,6 +208,7 @@ the stripe     6 + 6        = 12 TB       none: the spans&#39; capacities add</c
         <li><a href="#members-of-different-sizes">Members of different sizes</a></li>
         <li><a href="#nesting">Nesting</a></li>
         <li><a href="#what-capacity-does-not-measure">What capacity does not measure</a></li>
+        <li><a href="#try-it">Try it</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

@@ -12,6 +12,11 @@ short: >
   every one of them. It computes no RAID. A RAID controller card is an HBA with a
   RAID engine added.
 
+searchTitle: "What is an HBA? Host bus adapter vs RAID controller"
+searchDescription: >
+  An HBA connects SATA or SAS disks to PCIe and passes each one through to the OS. It
+  computes no RAID: a RAID controller is an HBA plus a RAID engine.
+
 long: |
   Disks speak SATA or SAS; the CPU speaks PCIe. Something on the path has to
   speak both, and that is the host bus adapter. In SAS terms it is the

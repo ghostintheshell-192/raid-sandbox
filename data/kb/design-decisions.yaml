@@ -14,6 +14,11 @@ short: >
   the choice the sandbox made is a note on the page that rests on it, and this page
   lists them all.
 
+searchTitle: "How these RAID pages are sourced: Linux md as the reference"
+searchDescription: >
+  Why these RAID pages take the Linux md driver as their reference, how every
+  statement is marked by where it can be checked, and the choices the model makes.
+
 long: |
   ## Why Linux md is the reference
 

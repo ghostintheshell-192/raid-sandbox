@@ -11,6 +11,12 @@ short: >
   are the defaults nearly everything uses. The choice changes speed and
   compatibility, not capacity or safety.
 
+searchTitle: "RAID placement algorithms: left-symmetric, near, far and offset"
+searchDescription: >
+  RAID placement algorithms decide where parity or mirror copies go in each stripe:
+  left-symmetric and the other RAID 5/6 layouts; near, far, offset for RAID 10.
+tryIt: raid5
+
 long: |
   ## What the level does not specify
 
