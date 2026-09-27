@@ -402,5 +402,51 @@ test('jbod.html: the grid names the address range each disk holds, not a stripe 
   assert(!html.includes('stripe 0'), 'jbod.html: the grid still labels a row "stripe 0", which a concatenation does not have');
 });
 
+// ---------------------------------------------------------------------------
+console.log('\n[9] a glossary term opens a box on the page, and lives in the glossary');
+
+// A term (an entry with no long form) has no page. A link to it opens a box
+// right after its paragraph: the link targets the anchor just before the box,
+// the × targets the page's closing anchor, the page's own <style> marks the link
+// while its box is open, and the box sends the reader to the term's glossary
+// entry, where its sources are.
+const glossary = pages.get('glossary.html');
+const glossaryIds = idsOf(glossary);
+
+for (const [name, html] of pages) {
+  const boxes = [...html.matchAll(/<span class="kb-term-anchor" id="(term-([a-z0-9-]+)-\d+)"><\/span>\s*<aside class="kb-term-box"[^>]*>([\s\S]*?)<\/aside>/g)];
+  const links = [...html.matchAll(/<a class="kb-term"(?: id="([^"]+)")? href="#([^"]+)">/g)];
+  if (!boxes.length && !links.length) continue;
+  const style = (/<style>([\s\S]*?)<\/style>/.exec(html) || [])[1] || '';
+
+  test(`${name}: every term link opens a box, every box has its link, its × and its highlight`, () => {
+    assert(html.includes('<span class="kb-term-anchor" id="term-closed"></span>'), `${name}: no closing anchor for the boxes`);
+    const boxIds = new Set(boxes.map((b) => b[1]));
+    for (const l of links) assert(boxIds.has(l[2]), `${name}: a term link targets #${l[2]}, which is no box`);
+    for (const [, box, term, inner] of boxes) {
+      assert(links.some((l) => l[1] === `ref-${box}` && l[2] === box), `${name}: box ${box} has no link with id ref-${box}`);
+      assert(inner.includes('href="#term-closed"'), `${name}: box ${box} has no × to the closing anchor`);
+      assert(inner.includes(`href="glossary.html#${term}"`), `${name}: box ${box} does not link the glossary entry of ${term}`);
+      assert(glossaryIds.has(term), `glossary.html has no anchor for the term ${term}`);
+      assert(style.includes(`#${box}:target`), `${name}: the page's <style> does not mark the link of ${box}`);
+    }
+  });
+
+  test(`${name}: a box (and its anchor) follows the block its link sits in, never sits inside it`, () => {
+    for (const b of boxes) {
+      const before = html.slice(0, b.index).trimEnd();
+      assert(/<\/(p|ul|ol|h[1-6]|aside)>$/.test(before), `${name}: box ${b[1]} does not follow a closed block`);
+      assert(!/<(p|li)>(?:(?!<\/\1>)[\s\S])*$/.test(before), `${name}: box ${b[1]} opens inside a paragraph or an item`);
+    }
+  });
+}
+
+test('glossary.html: every entry has an anchor; a term lists its sources there', () => {
+  const dts = [...glossary.matchAll(/<dt id="([^"]+)">/g)].map((m) => m[1]);
+  assert(dts.length > 0, 'the glossary has no anchored entries');
+  const terms = [...glossary.matchAll(/<dt id="([^"]+)">([^<]*)<\/dt>\s*<dd>[\s\S]*?<\/dd>\s*(<dd class="kb-term-sources">)?/g)];
+  for (const t of terms) assert(t[3], `glossary.html: the term ${t[1]} has no sources under its definition`);
+});
+
 fs.rmSync(tmp, { recursive: true, force: true });
 finish();

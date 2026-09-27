@@ -1,0 +1,26 @@
+# data/kb/sata.yaml — a glossary term: the disk interface of the chipset's
+# controller. Writing rules: see segmentation.yaml header.
+
+id: sata
+kind: term
+name: SATA
+short: >
+  Serial ATA, an interface for connecting disks to a computer: a version of the
+  older ATA standard that uses a serial connection. On a PC the SATA ports belong
+  to a controller that follows Intel's AHCI specification. A SAS controller can
+  drive SATA disks too.
+
+related: [sas, hba]
+
+sources:
+  - ref: "SNIA Dictionary (2016), Serial Advanced Technology Attachment (SATA); Advanced Technology Attachment (ATA)"
+    note: "SATA: 'A version of the ATA interface that uses a serial connection architecture'; ATA: 'A standard designed to connect hard and removable disk drives'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "Intel, Serial ATA AHCI 1.3.1 Specification, section 1.6"
+    note: "'A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices'"
+    url: https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/serial-ata-ahci-spec-rev1-3-1.pdf
+  - ref: "SNIA Dictionary (2016), Serial Attached SCSI (SAS)"
+    note: "'A SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+
+status: cited

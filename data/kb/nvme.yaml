@@ -1,0 +1,23 @@
+# data/kb/nvme.yaml — a glossary term: the interface of disks that sit on PCIe
+# themselves. Writing rules: see segmentation.yaml header.
+
+id: nvme
+kind: term
+name: NVMe
+short: >
+  NVM Express, an interface that, in its specification's words, "allows a host to
+  communicate with a non-volatile memory subsystem". Over PCIe the disk's own
+  controller is a device on the bus, so no host bus adapter stands between the disk
+  and the CPU. It can also run over a network, as NVMe over Fabrics.
+
+related: [pcie, hba]
+
+sources:
+  - ref: "NVM Express Base Specification, revision 2.4, sections 1.1 and 1.5"
+    note: "'The NVM Express (NVMe) interface allows a host to communicate with a non-volatile memory subsystem (NVM subsystem)'; 'attached using a variety of transports including PCI Express, Ethernet, InfiniBand, and Fibre Channel'; 'When PCI Express is used as the transport, then a controller is a PCI Express function'"
+    url: https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.4-Ratified-2026.07.31.pdf
+  - ref: "SNIA Dictionary (2016), NVMe; NVMe over fabrics"
+    note: "'An acronym for NVM Express'; 'An extension of the NVM Express controller interface to support message-based NVMe operations over a network fabric'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+
+status: cited

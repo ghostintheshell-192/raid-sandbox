@@ -1,0 +1,20 @@
+# data/kb/sas.yaml — a glossary term: the SCSI disk interface of server
+# controllers. Writing rules: see segmentation.yaml header.
+
+id: sas
+kind: term
+name: SAS
+short: >
+  Serial Attached SCSI, an interface for connecting disks that carries SCSI
+  commands. SNIA defines it as "a SCSI interface standard that provides for
+  attaching hosts to SCSI devices, including SAS and SATA disk and tape drives": a
+  SAS controller drives SATA disks as well as SAS ones.
+
+related: [sata, hba]
+
+sources:
+  - ref: "SNIA Dictionary (2016), Serial Attached SCSI (SAS)"
+    note: "'A SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+
+status: cited

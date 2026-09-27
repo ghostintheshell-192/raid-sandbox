@@ -1,0 +1,20 @@
+# data/kb/snia.yaml — a glossary term: the storage industry's association,
+# whose dictionary many pages quote. Writing rules: see segmentation.yaml header.
+
+id: snia
+kind: term
+name: SNIA
+short: >
+  The Storage Networking Industry Association, which describes itself as "an
+  association of producers and consumers of storage networking products". It
+  develops and promotes storage standards, and publishes a dictionary of storage
+  terms: many definitions in these pages are quoted from it.
+
+related: []
+
+sources:
+  - ref: "SNIA Dictionary (2016), Storage Networking Industry Association (SNIA); introduction"
+    note: "'A 501(c)(6) association of producers and consumers of storage networking products whose goal is to further storage networking technology and applications'; 'Our mission is to lead the storage industry worldwide in developing and promoting standards, technologies, and educational services'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+
+status: cited

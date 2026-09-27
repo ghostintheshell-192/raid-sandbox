@@ -207,7 +207,7 @@
     </li>
     <li>
       <h3><a href="hba.html">HBA</a></h3>
-      <p>The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.</p>
+      <p>The host bus adapter: the card, or the chipset function, that connects the disks (over SATA or SAS) to the CPU (over PCIe). It passes each disk through unchanged, so the operating system sees every one of them. A plain HBA computes no RAID; some run a firmware with the simple levels, never parity. A RAID controller is built on one chip that is both the disk controller and a RAID engine.</p>
     </li>
     <li>
       <h3><a href="backplane.html">Backplane</a></h3>

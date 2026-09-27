@@ -191,6 +191,67 @@
 .kb-main a:hover { text-decoration-color: var(--accent-cyan); }
 .kb-main a:visited { color: var(--accent-hover); }
 
+/* --- glossary terms: a box under the paragraph, no script ----------- */
+/*  A link to a term opens its definition right under the paragraph it   */
+/*  sits in, instead of leaving the page. The box is hidden until the    */
+/*  anchor before it is the page's :target; the × targets another        */
+/*  anchor, which closes it. Both anchors are fixed, so the page never   */
+/*  scrolls when a box opens or closes.                                  */
+/*  A term is yellow with a dotted underline; a link to another page    */
+/*  stays green. Yellow sits away from the mint green (which leans to    */
+/*  blue) and, pale, away from the amber of parity and of "to verify".   */
+/*  While the box is open the term that opened it is marked, so the      */
+/*  reader sees what the box belongs to: the page's own <style> pairs    */
+/*  each box with its link (CSS cannot), and takes the colour from here. */
+/*  Without CSS the box is an ordinary note after the paragraph.         */
+
+.kb-main {
+  --kb-term-color:  #fff08a;                 /* the term in the text, and the box's accent */
+  --kb-term-line:   rgba(255, 240, 138, 0.45); /* the term's dotted underline, and the box's frame */
+  --kb-term-open:   #3a3514;                 /* the term's background while its box is open */
+}
+
+.kb-main a.kb-term,
+.kb-main a.kb-term:visited {
+  color: var(--kb-term-color);
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--kb-term-line);
+}
+
+/* the anchor a term link targets: fixed, so reaching it never scrolls */
+.kb-term-anchor { position: fixed; top: 0; }
+
+.kb-term-box { display: none; }
+.kb-term-anchor:target + .kb-term-box {
+  display: block;
+  margin: -0.4rem 0 1.2rem;
+  padding: 0.7rem 1rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--kb-term-line);
+  border-left: 3px solid var(--kb-term-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-align: left;
+}
+.kb-term-box p { margin: 0 0 0.4rem; }
+.kb-term-box strong { color: var(--kb-term-color); }
+.kb-term-more {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+.kb-main a.kb-term-close { color: var(--kb-term-color); text-decoration: none; font-size: 1.1rem; line-height: 1; padding: 0 0.2rem; }
+
+/* in the glossary: the entry a term links to is marked while it is the target */
+.kb-defs dt:target { color: var(--kb-term-color); }
+.kb-term-sources { margin-top: 0.3rem; }
+.kb-term-sources .kb-sources { margin: 0; padding-left: 1.2rem; }
+
 /* --- sections ------------------------------------------------------- */
 
 .kb-section { margin-bottom: 2.75rem; }

@@ -1,0 +1,26 @@
+# data/kb/lane.yaml — a glossary term: the unit a SAS or PCIe connection is
+# counted in. Writing rules: see segmentation.yaml header.
+
+id: lane
+kind: term
+name: Lane
+short: >
+  One of the serial connections that together make up a link: SNIA defines a lane
+  as "one of multiple point-to-point physical connections that make up a single
+  link". Connectors and slots are named by their lane count: the SAS connectors of
+  an HBA are marked x4 or x8, and so are PCIe links.
+
+related: [sas, pcie, hba]
+
+sources:
+  - ref: "SNIA Dictionary (2016), lane; Peripheral Component Interconnect (PCI)"
+    note: "lane: 'One of multiple point-to-point physical connections that make up a single link'; PCI: 'The newer PCIe interface supports one bit wide serial \"lanes\"'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "Broadcom, 9500 Series PCIe Gen 4.0 Tri-Mode Storage HBAs product brief"
+    note: "connectors: 'Two x8 SFF-8654' (9500-16i), 'One x8 SFF-8654' (9500-8i), '4 x4 SFF-8644' (9500-16e)"
+    url: https://docs.broadcom.com/doc/BC-0510EN
+  - ref: "LSI SAS 9300-8i Host Bus Adapter User Guide, Overview and Features"
+    note: "'two x4 internal mini-SAS HD connectors (SFF-8643)'; 'eight lanes of PCIe 3.0'"
+    url: https://docs.broadcom.com/doc/12354877
+
+status: cited

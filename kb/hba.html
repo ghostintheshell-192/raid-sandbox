@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>What is an HBA? Host bus adapter vs RAID controller — RAID Sandbox</title>
-  <meta name="description" content="An HBA connects SATA or SAS disks to PCIe and passes each one through to the OS. It computes no RAID: a RAID controller is an HBA plus a RAID engine.">
+  <meta name="description" content="An HBA connects SATA or SAS disks to PCIe and passes each one to the OS. HBAs with IR firmware do RAID 0, 1 and 10; parity needs a RAID controller&#39;s engine.">
   <link rel="canonical" href="https://raid-sandbox.dev/kb/hba.html">
   <meta name="theme-color" content="#0a0e14">
 
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="RAID Sandbox">
   <meta property="og:url" content="https://raid-sandbox.dev/kb/hba.html">
   <meta property="og:title" content="What is an HBA? Host bus adapter vs RAID controller — RAID Sandbox">
-  <meta property="og:description" content="An HBA connects SATA or SAS disks to PCIe and passes each one through to the OS. It computes no RAID: a RAID controller is an HBA plus a RAID engine.">
+  <meta property="og:description" content="An HBA connects SATA or SAS disks to PCIe and passes each one to the OS. HBAs with IR firmware do RAID 0, 1 and 10; parity needs a RAID controller&#39;s engine.">
   <meta property="og:image" content="https://raid-sandbox.dev/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -31,6 +31,17 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-sata-1:target) a[href="#term-sata-1"],
+    .kb-main:has(#term-sas-1:target) a[href="#term-sas-1"],
+    .kb-main:has(#term-pcie-1:target) a[href="#term-pcie-1"],
+    .kb-main:has(#term-scsi-1:target) a[href="#term-scsi-1"],
+    .kb-main:has(#term-lane-1:target) a[href="#term-lane-1"],
+    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"],
+    .kb-main:has(#term-nvme-1:target) a[href="#term-nvme-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -40,7 +51,7 @@
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "HBA",
-    "description": "The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.",
+    "description": "The host bus adapter: the card, or the chipset function, that connects the disks (over SATA or SAS) to the CPU (over PCIe). It passes each disk through unchanged, so the operating system sees every one of them. A plain HBA computes no RAID; some run a firmware with the simple levels, never parity. A RAID controller is built on one chip that is both the disk controller and a RAID engine.",
     "inLanguage": "en",
     "url": "https://raid-sandbox.dev/kb/hba.html",
     "isPartOf": {
@@ -117,6 +128,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">HBA</h1>
@@ -132,24 +144,83 @@
   <details class="kb-toc-inline">
     <summary class="kb-toc-title">On this page</summary>
     <ul class="kb-toc-list">
+      <li><a href="#function">Function</a></li>
+      <li><a href="#forms-of-the-hba-chipset-and-card">Forms of the HBA: chipset and card</a></li>
+      <li><a href="#hba-and-raid-controller">HBA and RAID controller</a></li>
+      <li><a href="#nvme-disks">NVMe disks</a></li>
       <li><a href="#sources">Sources</a></li>
       <li><a href="#related">Related</a></li>
     </ul>
   </details>
 
   <section class="kb-section kb-concept" id="what-it-is">
-    <p class="kb-flag kb-flag-to-verify">Not yet checked against a primary source — <a href="design-decisions.html#how-the-pages-are-sourced">how the pages are sourced</a></p>
-    <p class="kb-lede">The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.</p>
-    <p>Disks speak SATA or SAS; the CPU speaks PCIe. Something on the path has to speak both, and that is the host bus adapter. In SAS terms it is the <em>initiator</em>, the end that issues commands, and each disk a <em>target</em>. The HBA takes a read or write from the operating system, sends it down the right lane (through a <a href="backplane.html">backplane</a> if there is one), and returns the answer. What it does not do is change what the operating system sees: with an HBA alone, every <a href="physical-disks.html">physical disk</a> appears as itself, and any RAID is done by something else: the operating system (<a href="raid-engine.html">raid engine</a>, software RAID) or a firmware (firmware RAID).</p>
-    <p>On a desktop the HBA is not a card: the chipset&#39;s SATA controller is one. On a server it is usually a PCIe card with two or four SAS connectors, each carrying four lanes.</p>
-    <p>The reason the HBA has its own entry, rather than being folded into &quot;the controller&quot;, is that the difference between an HBA and a RAID controller is the difference between software and hardware RAID. A hardware RAID card is an HBA <em>and</em> a RAID-on-Chip on the same board: the HBA part talks to the disks, the engine part builds the array and hands the operating system a <a href="virtual-drive.html">virtual drive</a> instead of the disks. Take the engine away and what is left is an HBA. This is also why the two can look alike in a slot, and why what a card <em>is</em> has to be read from what it does, not from where it sits.</p>
-    <p>NVMe disks need no HBA: they are PCIe devices themselves, which is what makes them fast and what leaves them outside the SAS path.</p>
+    <p class="kb-lede">The host bus adapter: the card, or the chipset function, that connects the disks (over SATA or SAS) to the CPU (over PCIe). It passes each disk through unchanged, so the operating system sees every one of them. A plain HBA computes no RAID; some run a firmware with the simple levels, never parity. A RAID controller is built on one chip that is both the disk controller and a RAID engine.</p>
+    <h2 id="function">Function</h2>
+    <p>Disks connect over <a class="kb-term" id="ref-term-sata-1" href="#term-sata-1">SATA</a> or <a class="kb-term" id="ref-term-sas-1" href="#term-sas-1">SAS</a>; the CPU reaches the cards plugged into the motherboard over <a class="kb-term" id="ref-term-pcie-1" href="#term-pcie-1">PCIe</a>. Something on the path has to connect the two, and that is the Host Bus Adapter (HBA). It is a chip, on a card plugged into the motherboard or built into the motherboard itself, and its job is to pass each read or write arriving from the CPU over PCIe on to the right disk, and the disk&#39;s answer back.</p>
+    <span class="kb-term-anchor" id="term-sata-1"></span>
+    <aside class="kb-term-box" aria-label="SATA: definition">
+      <p><strong>SATA.</strong> Serial ATA, an interface for connecting disks to a computer: a version of the older ATA standard that uses a serial connection. On a PC the SATA ports belong to a controller that follows Intel&#39;s AHCI specification. A SAS controller can drive SATA disks too.</p>
+      <p class="kb-term-more"><a href="glossary.html#sata">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-sas-1"></span>
+    <aside class="kb-term-box" aria-label="SAS: definition">
+      <p><strong>SAS.</strong> Serial Attached SCSI, an interface for connecting disks that carries SCSI commands. SNIA defines it as &quot;a SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&quot;: a SAS controller drives SATA disks as well as SAS ones.</p>
+      <p class="kb-term-more"><a href="glossary.html#sas">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-pcie-1"></span>
+    <aside class="kb-term-box" aria-label="PCIe: definition">
+      <p><strong>PCIe.</strong> PCI Express, the newer form of PCI, which SNIA defines as &quot;a bus for connecting interface modules to a computer system&quot;. Controller cards sit in PCIe slots, and NVMe disks connect to it directly. It carries data over serial lanes, and a link is named by how many lanes it has: x4, x8.</p>
+      <p class="kb-term-more"><a href="glossary.html#pcie">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <p>SAS carries <a class="kb-term" id="ref-term-scsi-1" href="#term-scsi-1">SCSI</a> commands. Every command has a sender and a receiver: SCSI calls the sender the <em>initiator</em> and the receiver the <em>target</em>. The HBA is the initiator, and each disk is a target. When there is a <a href="backplane.html">backplane</a>, the commands pass through it on their way to the disks.</p>
+    <span class="kb-term-anchor" id="term-scsi-1"></span>
+    <aside class="kb-term-box" aria-label="SCSI: definition">
+      <p><strong>SCSI.</strong> Small Computer System Interface: in SNIA&#39;s words, &quot;a collection of ANSI standards and proposed standards that define I/O interconnects primarily intended for connecting storage subsystems or devices to hosts through host bus adapters&quot;. SAS carries SCSI commands over a serial connection.</p>
+      <p class="kb-term-more"><a href="glossary.html#scsi">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <p>An HBA does not change what the operating system sees: every <a href="physical-disks.html">physical disk</a> appears as itself. Any RAID is then done by something else: the operating system, or a firmware working with the operating system&#39;s driver (<a href="raid-engine.html">raid engine</a>).</p>
+    <h2 id="forms-of-the-hba-chipset-and-card">Forms of the HBA: chipset and card</h2>
+    <p>On a desktop PC the HBA is usually not a separate card: it is built into the motherboard. It is the SATA controller of the <em>chipset</em>, the chips on the motherboard that connect the CPU to the disks and to the other devices. Intel&#39;s AHCI specification, the standard those controllers follow, says so: &quot;A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices.&quot;</p>
+    <p>On a server the HBA is usually a PCIe card, and each of its connectors carries several <a class="kb-term" id="ref-term-lane-1" href="#term-lane-1">lanes</a>. The LSI SAS 9300-8i has &quot;two x4 internal mini-SAS HD connectors (SFF-8643)&quot;, four lanes each; the Broadcom 9500-16i has &quot;Two x8 SFF-8654&quot;, eight lanes each.</p>
+    <span class="kb-term-anchor" id="term-lane-1"></span>
+    <aside class="kb-term-box" aria-label="Lane: definition">
+      <p><strong>Lane.</strong> One of the serial connections that together make up a link: SNIA defines a lane as &quot;one of multiple point-to-point physical connections that make up a single link&quot;. Connectors and slots are named by their lane count: the SAS connectors of an HBA are marked x4 or x8, and so are PCIe links.</p>
+      <p class="kb-term-more"><a href="glossary.html#lane">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <h3 id="hbas-with-simple-raid">HBAs with simple RAID</h3>
+    <p>Some HBAs do compute RAID, within a limit, when they are given a different <a class="kb-term" id="ref-term-firmware-1" href="#term-firmware-1">firmware</a>. The LSI SAS 9300-8i can be reflashed &quot;to run Integrated RAID (IR) firmware&quot;, which supports &quot;RAID 0, RAID 1, RAID 10, and RAID 1E&quot;. These are the levels without <a href="parity.html">parity</a>: they place and copy blocks but compute nothing from them. Parity needs a chip built for it.</p>
+    <span class="kb-term-anchor" id="term-firmware-1"></span>
+    <aside class="kb-term-box" aria-label="Firmware: definition">
+      <p><strong>Firmware.</strong> The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</p>
+      <p class="kb-term-more"><a href="glossary.html#firmware">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <h2 id="hba-and-raid-controller">HBA and RAID controller</h2>
+    <p>The difference between an HBA and a RAID controller is the same as the difference between software and hardware RAID. An HBA only connects the disks: the operating system sees each of them and runs the RAID itself. A RAID controller connects the disks and also runs the RAID: it builds the array and hands the operating system a <a href="virtual-drive.html">virtual drive</a> instead of the disks.</p>
+    <p>On a RAID controller card both jobs are done by a single chip, the <em>RAID-on-Chip</em> (RoC). It is not an HBA chip with a RAID chip added beside it: one chip is the disk controller and the RAID engine at once. An HBA card uses a simpler chip, which only connects the disks. Broadcom, which makes both kinds of card, builds them on different chips, and the operating system even uses a different driver for each: in Linux, <code>mpt3sas</code> for HBAs and <code>megaraid_sas</code> for RAID controllers.</p>
+    <p>Some RAID controller cards can also work as a plain HBA. The controller maker Microchip calls this the card&#39;s <em>HBA mode</em>: the card turns off its RAID functions and shows every disk to the operating system as it is. In its <em>mixed</em> mode the card does both at once: some disks form RAID arrays, and the others are shown as they are. So whether a card acts as an HBA or as a RAID controller depends on how it is set to work, not only on the card itself.</p>
+    <h2 id="nvme-disks">NVMe disks</h2>
+    <p>An <a class="kb-term" id="ref-term-nvme-1" href="#term-nvme-1">NVMe</a> disk carries its own controller on the PCIe bus. Nothing has to translate between the disk and the CPU, so an NVMe disk can connect without an HBA. Tri-mode adapters can attach NVMe disks anyway, next to SAS and SATA ones in the same bays: Broadcom&#39;s &quot;PCIe device bridge (PDB) enables the PCIe (NVMe) storage interface connections&quot;.</p>
+    <span class="kb-term-anchor" id="term-nvme-1"></span>
+    <aside class="kb-term-box" aria-label="NVMe: definition">
+      <p><strong>NVMe.</strong> NVM Express, an interface that, in its specification&#39;s words, &quot;allows a host to communicate with a non-volatile memory subsystem&quot;. Over PCIe the disk&#39;s own controller is a device on the bus, so no host bus adapter stands between the disk and the CPU. It can also run over a network, as NVMe over Fabrics.</p>
+      <p class="kb-term-more"><a href="glossary.html#nvme">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>
     <ul class="kb-sources">
-      <li>.development/reference/decisions/001-engine-identity-not-position.md — hardware and firmware RAID cards occupy the same slot; what distinguishes them is what the object is</li>
-      <li>SAS expander descriptions (secondary): &#39;Expanders facilitate the connection of one or more Initiators to one or more Targets&#39; — the initiator/target vocabulary, not yet checked against the SAS specification</li>
+      <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), Host Bus Adapter; initiator; target</a> — HBA: &#39;An I/O adapter that connects a host computer bus to an I/O interconnect&#39;; initiator: &#39;The endpoint that originates a SCSI I/O command sequence&#39;, &#39;I/O adapters, network interface cards, and intelligent I/O interconnect control ASICs are typical initiators&#39;; target: &#39;The endpoint that receives a SCSI I/O command sequence&#39;</li>
+      <li><a href="https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/serial-ata-ahci-spec-rev1-3-1.pdf">Intel, Serial ATA AHCI 1.3.1 Specification, section 1.6</a> — &#39;HBA is an acronym for &quot;host bus adapter&quot;. A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices&#39;</li>
+      <li><a href="https://docs.broadcom.com/doc/12354877">LSI SAS 9300-8i Host Bus Adapter User Guide</a> — &#39;onboard Flash memory for the firmware, and BIOS and NVSRAM for RAID support (RAID 0, RAID 1, RAID 10, and RAID 1E)&#39;; &#39;to reflash the board to run Integrated RAID (IR) firmware&#39;; &#39;two x4 internal mini-SAS HD connectors (SFF-8643)&#39;</li>
+      <li><a href="https://docs.broadcom.com/doc/BC-0510EN">Broadcom, 9500 Series PCIe Gen 4.0 Tri-Mode Storage HBAs product brief</a> — &#39;Based on the Broadcom SAS3816 and SAS3808 eight-lane host PCIe to SAS/SATA/PCIe IOC controllers&#39;; connectors &#39;Two x8 SFF-8654&#39; (9500-16i)</li>
+      <li><a href="https://docs.broadcom.com/doc/9500-TM-HBA-OCP-PB">Broadcom, 9500 Series Tri-Mode RAID and HBA OCP Adapters product brief</a> — 9562-16i: storage controller SAS3916, RAID levels &#39;0, 00, 1, 10, 5, 50, 6, 60&#39;; 9502-16i: storage controller SAS3816, RAID levels &#39;—&#39;</li>
+      <li><a href="https://docs.broadcom.com/doc/12397937">Broadcom, SAS3916 Tri-Mode RAID-on-Chip product brief</a> — applications: &#39;SAS/SATA/PCIe RAID host bus adapter&#39;; &#39;Cost-effective, single-chip solution for entry-level RAID storage systems&#39;; &#39;Hardware RAID Levels 5, 6&#39;</li>
+      <li><a href="https://docs.broadcom.com/doc/pub-005851">Broadcom, 94xx MegaRAID and HBA Tri-Mode Storage Adapters User Guide</a> — &#39;The Tri-Mode device interface contains a SAS core and a PCIe device bridge (PDB). The PDB enables the PCIe (NVMe) storage interface connections&#39;</li>
+      <li><a href="https://www.dell.com/support/manuals/en-us/hba-355/hba355_ug/no-raid-support">Dell, Host Bus Adapter User&#39;s Guide, HBA 355 and 350 series</a> — the HBA355i and HBA350i &#39;are non–RAID solution cards that can be used as a boot controller and also as a data controller&#39;</li>
+      <li><a href="https://ww1.microchip.com/downloads/aemDocuments/documents/adaptec/documents/user_guidesadaptec_cli_smarthba_smartraid_12_24_ug.pdf">Microchip, Adaptec CLI (ARCCONF) for SmartHBA and SmartRAID User&#39;s Guide, SETCONNECTORMODE</a> — &#39;HBA Mode—Allows the connector to act and be used as a Host Bus Adapter. RAID functions of the controller are disabled. All attached drives are surfaced as RAW devices&#39;; modes &#39;RAID: Hide RAW&#39; and &#39;Mixed&#39;</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/scsi/mpt3sas/Kconfig">Linux kernel drivers/scsi/mpt3sas/Kconfig</a> — &#39;This driver supports PCI-Express SAS 12Gb/s Host Adapters&#39;</li>
+      <li><a href="https://github.com/torvalds/linux/blob/master/drivers/scsi/megaraid/Kconfig.megaraid">Linux kernel drivers/scsi/megaraid/Kconfig.megaraid</a> — &#39;Module for LSI Logic&#39;s SAS based RAID controllers&#39;</li>
+      <li><a href="https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.4-Ratified-2026.07.31.pdf">NVM Express Base Specification, revision 2.4, section 1.5</a> — &#39;When PCI Express is used as the transport, then a controller is a PCI Express function&#39;</li>
     </ul>
   </section>
   <section class="kb-section" id="related">
@@ -159,6 +230,11 @@
       <li><a href="physical-disks.html">Physical disks</a></li>
       <li><a href="raid-engine.html">RAID engine</a></li>
       <li><a href="virtual-drive.html">Virtual drive</a></li>
+      <li><a href="glossary.html#sata">SATA</a></li>
+      <li><a href="glossary.html#sas">SAS</a></li>
+      <li><a href="glossary.html#scsi">SCSI</a></li>
+      <li><a href="glossary.html#pcie">PCIe</a></li>
+      <li><a href="glossary.html#nvme">NVMe</a></li>
     </ul>
   </section>
 
@@ -171,6 +247,10 @@
     <aside class="kb-toc" aria-label="On this page">
       <p class="kb-toc-title">On this page</p>
       <ul class="kb-toc-list">
+        <li><a href="#function">Function</a></li>
+        <li><a href="#forms-of-the-hba-chipset-and-card">Forms of the HBA: chipset and card</a></li>
+        <li><a href="#hba-and-raid-controller">HBA and RAID controller</a></li>
+        <li><a href="#nvme-disks">NVMe disks</a></li>
         <li><a href="#sources">Sources</a></li>
         <li><a href="#related">Related</a></li>
       </ul>

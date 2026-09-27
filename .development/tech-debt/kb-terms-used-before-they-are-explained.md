@@ -58,11 +58,44 @@ entry, and the first use that comes before the sentence that defines the term.
 
 ## Recommended Approach
 
-A for the short forms and the search descriptions, where it is the only option. B
-for the long forms, with C for a term that recurs on several pages. Audit the
-short forms and the search descriptions of every entry first: they are the plain
-text, and they are few enough to read in one pass. Then the long forms, page by
-page, together with the prose pass.
+**Decided 2026-09-27: glossary terms (Option C), opened in place.** A term the
+reader may not know gets an entry of its own, `kind: term` (a short form and its
+sources, no long form). In a long form its first use is a `[[id]]` link, and the
+link does not leave the page: it opens a box right under the paragraph with the
+term's short form and a link to its glossary entry, where the sources are listed.
+The term stays marked while its box is open, so the reader sees what the box
+belongs to. Nothing is explained twice: the definition is written once and shows
+wherever the term is linked.
+
+The short forms and the search descriptions are plain text and cannot link. There
+a term is named, not explained: they are summaries, and on the glossary page the
+entries stand side by side.
+
+Done: the box, the glossary anchors and eight terms (`sata`, `sas`, `pcie`,
+`nvme`, `firmware`, `lane`, `write-back`, `learn-cycle`), used by `hba`. Still
+open: the audit of the other long forms, page by page with the prose pass, adding
+a term where a page uses a word it does not explain.
+
+**Also open: link the terms that already exist.** The pages written before the
+box name the terms in plain text. As of 2026-09-27, only `hba` links them:
+
+| term | pages that name it without a link |
+|---|---|
+| `sata` | `physical-disks`, `raid-engine` |
+| `sas` | `backplane`, `physical-disks` |
+| `pcie` | `backplane`, `physical-disks`, `raid-engine` |
+| `nvme` | `backplane`, `physical-disks` |
+| `firmware` | `bbu`, `design-decisions`, `raid-engine`, `segmentation`, `write-hole` |
+| `lane` | `backplane` |
+| `write-back` | `bbu`, `write-hole` |
+| `learn-cycle` | `bbu` |
+| `snia` | `algorithm`, `raid-engine` |
+
+`backplane`, `physical-disks` and `raid-engine` are linked when they are verified
+(the to-verify queue); the others in one pass. Planned with it, on its own
+branch: each term declares the forms it takes in the text (`SATA`; `lane`,
+`lanes`), and a test holds every page that names a term to link it at least
+once, so a new term lists the pages to link by itself.
 
 ## Notes
 
