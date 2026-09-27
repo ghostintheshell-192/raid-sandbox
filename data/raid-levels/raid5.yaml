@@ -141,7 +141,7 @@ kb:
     Three disks is the minimum that makes sense: two data, one parity per
     stripe. An array *built* with two disks is a different thing from a
     three-disk array that has *lost* one. The second is a RAID 5 running
-    degraded: every stripe still has a data block and a parity block on the
+    [[degraded]]: every stripe still has a data block and a parity block on the
     survivors, the missing block is recomputed by XOR on every read, and nothing
     is a copy of anything. The first has one data block per stripe, and the
     "parity" of a single block is that block itself: disk 0 and disk 1 hold the

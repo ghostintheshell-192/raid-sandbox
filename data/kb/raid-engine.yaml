@@ -31,14 +31,14 @@ long: |
   - **Keep the metadata.** Which disks belong to the array, in what order, with what
     layout, and in what state. Linux `md` writes it on each member as a *superblock*;
     a controller keeps its own records on the disks (MegaRAID writes them in the
-    [[snia|SNIA]] DDF format).
+    [[snia|SNIA]] [[ddf|DDF]] format).
   - **Translate addresses.** Every read and write arrives for the array's sectors
     and must be turned into the members' sectors, by the rule of the
     [[segmentation]].
   - **Produce the redundancy.** Write every copy of a mirrored block, compute the
     [[parity]] of a stripe and write it, keep the two consistent.
   - **Survive a failure.** When a member dies, keep answering from the survivors
-    (a *degraded* array) and, given a replacement, [[rebuild]] the missing member
+    (a *[[degraded|degraded]]* array) and, given a replacement, [[rebuild]] the missing member
     from what the redundancy holds.
   - **Present the result.** Upstream, the array is one block device: a
     [[virtual-drive]] when a controller presents it, an `md` device when the

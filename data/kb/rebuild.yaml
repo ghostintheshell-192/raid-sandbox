@@ -22,7 +22,7 @@ long: |
   When a member fails, the [[raid-engine]] marks it faulty and carries on with
   the rest: in `md`, on a write error "the md driver will immediately disable
   that device (marking it as faulty) and continues operation on the remaining
-  devices". The array is now *degraded*: every request is still answered, but
+  devices". The array is now *[[degraded|degraded]]*: every request is still answered, but
   the [[redundancy]] that made the failure survivable is spent. Restoring it
   means putting a disk in the dead one's place and filling it, and what fills
   it depends on the level:

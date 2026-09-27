@@ -257,8 +257,10 @@ for (const id of [...pageIds].sort()) {
 console.log('\n[6] a page that names a glossary term links it');
 
 // A term (kind: term) declares the forms it takes in the text. Every long form
-// that uses one of them, outside a link and outside code, links the term at
-// least once: its first useful mention opens the term's box, so the reader is
+// that uses one of them, outside a link, outside code and outside a quotation,
+// links the term at least once. A quotation is the source's words and may use
+// the word in another sense ("the battery is degraded"), so it does not count.
+// The term's first useful mention opens its box, so the reader is
 // never left with a word the knowledge base defines and the page does not.
 // A new term lists here, by itself, the pages still to link.
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -279,7 +281,7 @@ for (const id of [...kbIds].sort()) {
   test(`every page that names ${id} links it`, () => {
     const missing = bodies.filter(([, long]) => {
       if (references(long).some((r) => r.toLowerCase() === id)) return false;
-      const bare = String(long).replace(/\[\[[^\]]*\]\]/g, ' ').replace(/`[^`]*`/g, ' ');
+      const bare = String(long).replace(/\[\[[^\]]*\]\]/g, ' ').replace(/`[^`]*`/g, ' ').replace(/"[^"]*"/g, ' ');
       return rx.test(bare);
     }).map(([where]) => where);
     assert(!missing.length, `named without a [[${id}]] link in: ${missing.join(', ')}`);

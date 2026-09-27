@@ -94,7 +94,7 @@ long: |
   backup; the reasons are collected under [[raid-is-not-a-backup|RAID is not a backup]].
 
   Nor does it make the array whole again by itself. After a failure the array runs
-  *degraded*, serving reads by recomputing what the dead member held, until the
+  *[[degraded|degraded]]*, serving reads by recomputing what the dead member held, until the
   member is replaced and the engine has written it back from the redundancy: the
   [[rebuild]]. Until then the array has no tolerance left.
 

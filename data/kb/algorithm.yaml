@@ -72,7 +72,7 @@ long: |
   two families differ on it.[^q-before-p]
 
   [^q-before-p]: A choice of the sandbox: it draws *Q* on the disk before *P*, the
-  DDF convention a controller follows (`ddf-N-continue` in `mdadm`'s list); an array
+  [[ddf|DDF]] convention a controller follows (`ddf-N-continue` in `mdadm`'s list); an array
   `mdadm` creates as left-symmetric puts *Q* after *P*. Everything else about the
   rotation is the same. See [[design-decisions|the model's choices]].
 

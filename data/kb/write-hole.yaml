@@ -37,7 +37,7 @@ long: |
   parity for array blocks that have not been touched by a write request during
   the unclean shutdown can be incorrect." The block that was never written to
   comes back corrupted, silently, because the [[rebuild]] trusts the parity it
-  finds. And in a degraded array there is "no way to recalculate parity, because
+  finds. And in a [[degraded]] array there is "no way to recalculate parity, because
   one of the disks is missing".
 
   Two things have to coincide: an interrupted write and a missing disk, in either

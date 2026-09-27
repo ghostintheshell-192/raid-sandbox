@@ -1,0 +1,34 @@
+# data/kb/degraded.yaml — a glossary term: the state of an array that has lost
+# a member and keeps working. Writing rules: see segmentation.yaml header.
+
+id: degraded
+kind: term
+name: Degraded
+short: >
+  The state of a RAID array that has lost a member disk and keeps working. SNIA
+  defines degraded mode as the mode "in which not all of the array's member disks
+  are functioning, but the array as a whole is able to respond to application read
+  and write requests". Reads of the lost disk's blocks are answered by recomputing
+  them from the redundancy. The array has less tolerance, or none, until the
+  rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the
+  line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two
+  disks have failed.
+
+# The forms the term takes in the text: a page that names it in one of them
+# links it at least once (kb-data.test.js).
+forms: ["degraded"]
+
+related: [rebuild, fault-tolerance, redundancy]
+
+sources:
+  - ref: "SNIA Dictionary (2016), degraded mode; reduced mode"
+    note: "'A mode of RAID array operation in which not all of the array's member disks are functioning, but the array as a whole is able to respond to application read and write requests to its virtual disks'; reduced mode: 'Synonym for degraded mode'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "md(4) man page, RAID4/5/6 unclean shutdown"
+    note: "'If a RAID4, RAID5 or RAID6 array is degraded (missing at least one drive, two for RAID6) when it is restarted after an unclean shutdown, it cannot recalculate parity'"
+    url: https://man7.org/linux/man-pages/man4/md.4.html
+  - ref: "Broadcom 12Gb/s MegaRAID Tri-Mode Software, Virtual Drive States"
+    note: "Degraded: 'The virtual drive operating condition is not optimal. One of the configured drives has failed or is offline. A RAID 6 drive group does not move to degraded until two drive failures occur'"
+    url: https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/enterprise-storage-solutions/12gbs-megaraid-tri-mode-software/1-0/v11667295/v11667323/v11667684.html
+
+status: cited

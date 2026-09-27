@@ -95,7 +95,7 @@ kb:
     paper behind the Linux implementation. Which disks hold *P* and *Q* in each
     stripe is the placement [[algorithm]], the same four names as RAID 5.[^q-before-p]
 
-    [^q-before-p]: The grids here draw *Q* on the disk before *P*, the DDF
+    [^q-before-p]: The grids here draw *Q* on the disk before *P*, the [[ddf|DDF]]
     convention a controller follows; an array `mdadm` creates as left-symmetric
     puts *Q* after *P*. A choice of the sandbox — see [[design-decisions|the
     model's choices]].

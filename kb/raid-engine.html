@@ -33,6 +33,8 @@
   <link rel="stylesheet" href="../styles/kb.css">
   <style>
     .kb-main:has(#term-snia-1:target) a[href="#term-snia-1"],
+    .kb-main:has(#term-ddf-1:target) a[href="#term-ddf-1"],
+    .kb-main:has(#term-degraded-1:target) a[href="#term-degraded-1"],
     .kb-main:has(#term-pcie-1:target) a[href="#term-pcie-1"],
     .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"],
     .kb-main:has(#term-sata-1:target) a[href="#term-sata-1"] {
@@ -155,16 +157,26 @@
     <h2 id="responsibilities">Responsibilities</h2>
     <p>Every RAID engine has the same jobs:</p>
     <ul>
-      <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own records on the disks (MegaRAID writes them in the <a class="kb-term" id="ref-term-snia-1" href="#term-snia-1">SNIA</a> DDF format).</li>
+      <li><strong>Keep the metadata.</strong> Which disks belong to the array, in what order, with what layout, and in what state. Linux <code>md</code> writes it on each member as a <em>superblock</em>; a controller keeps its own records on the disks (MegaRAID writes them in the <a class="kb-term" id="ref-term-snia-1" href="#term-snia-1">SNIA</a> <a class="kb-term" id="ref-term-ddf-1" href="#term-ddf-1">DDF</a> format).</li>
       <li><strong>Translate addresses.</strong> Every read and write arrives for the array&#39;s sectors and must be turned into the members&#39; sectors, by the rule of the <a href="segmentation.html">segmentation</a>.</li>
       <li><strong>Produce the redundancy.</strong> Write every copy of a mirrored block, compute the <a href="parity.html">parity</a> of a stripe and write it, keep the two consistent.</li>
-      <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em>degraded</em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
+      <li><strong>Survive a failure.</strong> When a member dies, keep answering from the survivors (a <em><a class="kb-term" id="ref-term-degraded-1" href="#term-degraded-1">degraded</a></em> array) and, given a replacement, <a href="rebuild.html">rebuild</a> the missing member from what the redundancy holds.</li>
       <li><strong>Present the result.</strong> Upstream, the array is one block device: a <a href="virtual-drive.html">virtual drive</a> when a controller presents it, an <code>md</code> device when the operating system does.</li>
     </ul>
     <span class="kb-term-anchor" id="term-snia-1"></span>
     <aside class="kb-term-box" aria-label="SNIA: definition">
       <p><strong>SNIA.</strong> The Storage Networking Industry Association, which describes itself as &quot;an association of producers and consumers of storage networking products&quot;. It develops and promotes storage standards, and publishes a dictionary of storage terms: many definitions in these pages are quoted from it.</p>
       <p class="kb-term-more"><a href="glossary.html#snia">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-ddf-1"></span>
+    <aside class="kb-term-box" aria-label="DDF: definition">
+      <p><strong>DDF.</strong> Common RAID Disk Data Format: a SNIA standard for the records a RAID controller writes on its disks. The records say which disks form an array and how its data is laid out across them. Because every vendor can write the same format, &quot;the user data on physical disks is accessible independent of the RAID controller being used&quot;. The records sit at the end of each disk, and the disk&#39;s last block holds the header that points to them. Linux mdadm can also create DDF arrays, but marks the format as deprecated.</p>
+      <p class="kb-term-more"><a href="glossary.html#ddf">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
+    <span class="kb-term-anchor" id="term-degraded-1"></span>
+    <aside class="kb-term-box" aria-label="Degraded: definition">
+      <p><strong>Degraded.</strong> The state of a RAID array that has lost a member disk and keeps working. SNIA defines degraded mode as the mode &quot;in which not all of the array&#39;s member disks are functioning, but the array as a whole is able to respond to application read and write requests&quot;. Reads of the lost disk&#39;s blocks are answered by recomputing them from the redundancy. The array has less tolerance, or none, until the rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two disks have failed.</p>
+      <p class="kb-term-more"><a href="glossary.html#degraded">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
     </aside>
     <h2 id="the-three-implementations">The three implementations</h2>
     <p>The <a href="physical-disks.html">physical disks</a> reach the operating system along one path: <a href="backplane.html">backplane</a>, <a href="hba.html">HBA</a>, the <a class="kb-term" id="ref-term-pcie-1" href="#term-pcie-1">PCIe</a> bus, the CPU, the OS. The engine sits on that path. Depending on what runs it, it is called <em>hardware</em>, <em>software</em> or <em>firmware</em> (or <em>fake</em>) RAID.<sup class="kb-fn"><a href="#fn-three-cases" id="fnref-three-cases">1</a></sup></p>

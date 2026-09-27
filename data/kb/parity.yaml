@@ -42,7 +42,7 @@ long: |
 
   If the disk that holds *D₁* fails, the [[raid-engine]] answers every read of
   *D₁* by reading the rest of its stripe and XORing the blocks: the array is then
-  in *degraded* mode. When the disk is replaced, the engine runs the same
+  in *[[degraded|degraded]]* mode. When the disk is replaced, the engine runs the same
   computation over every stripe and writes *D₁* back: this is the [[rebuild]].
 
   ## Placement of the parity block

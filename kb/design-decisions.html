@@ -32,7 +32,8 @@
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
   <style>
-    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"] {
+    .kb-main:has(#term-firmware-1:target) a[href="#term-firmware-1"],
+    .kb-main:has(#term-ddf-1:target) a[href="#term-ddf-1"] {
       background: var(--kb-term-open);
     }
   </style>
@@ -178,13 +179,18 @@
     <h2 id="the-model-s-choices">The model&#39;s choices</h2>
     <p>Where the sources leave something open the sandbox decided, and the page that rests on the choice explains it in a note. The list:</p>
     <ul>
-      <li>Under RAID 6 the sandbox draws <em>Q</em> on the disk before <em>P</em>, the DDF convention, where an array <code>mdadm</code> creates as left-symmetric puts <em>Q</em> after <em>P</em>: <a href="algorithm.html">algorithm</a>, <a href="raid6.html">raid6</a>.</li>
+      <li>Under RAID 6 the sandbox draws <em>Q</em> on the disk before <em>P</em>, the <a class="kb-term" id="ref-term-ddf-1" href="#term-ddf-1">DDF</a> convention, where an array <code>mdadm</code> creates as left-symmetric puts <em>Q</em> after <em>P</em>: <a href="algorithm.html">algorithm</a>, <a href="raid6.html">raid6</a>.</li>
       <li>The RAID engine is one of three things — a computing chip, a metadata-only chip, or the operating system — and hardware against firmware RAID is decided by <em>which</em> object sits on the path, not by <em>where</em> it sits: <a href="raid-engine.html">raid engine</a>.</li>
       <li>Of the copies of a mirrored chunk, the one drawn as the original is the first the driver places; the driver&#39;s copies are equals: <a href="raid10.html">raid10</a>.</li>
       <li>In a stripe over parity spans (RAID 50, RAID 60) or over RAID 10 spans (RAID 100), the outer stripe hands each span one whole span-stripe per round, spans in order. The kernel defines the layout inside a span and leaves the interleave across spans to the stripe&#39;s chunk size.</li>
       <li>The RAID level is never selected: it is recognized from what is composed. Two disks in a mirror are RAID 1 because of their shape, not because the player named them.</li>
       <li>A stripe of mirrors and a mirror of stripes — RAID 1+0 and RAID 0+1 — write at the same speed here, because a mirror writes at one copy&#39;s width; the two therefore satisfy the same challenges.</li>
     </ul>
+    <span class="kb-term-anchor" id="term-ddf-1"></span>
+    <aside class="kb-term-box" aria-label="DDF: definition">
+      <p><strong>DDF.</strong> Common RAID Disk Data Format: a SNIA standard for the records a RAID controller writes on its disks. The records say which disks form an array and how its data is laid out across them. Because every vendor can write the same format, &quot;the user data on physical disks is accessible independent of the RAID controller being used&quot;. The records sit at the end of each disk, and the disk&#39;s last block holds the header that points to them. Linux mdadm can also create DDF arrays, but marks the format as deprecated.</p>
+      <p class="kb-term-more"><a href="glossary.html#ddf">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
   </section>
   <section class="kb-section" id="sources">
     <h2>Sources</h2>

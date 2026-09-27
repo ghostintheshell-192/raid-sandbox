@@ -83,7 +83,7 @@ long: |
 
   ## Degraded operation
 
-  After a failure the array runs *degraded*. Nothing is lost yet, but the
+  After a failure the array runs *[[degraded|degraded]]*. Nothing is lost yet, but the
   tolerance is used up: a mirror pair is now a single disk, a RAID 5 is now a
   stripe with no parity, and every read of the dead member's blocks is answered by
   recomputing them from the survivors. The 1988 paper's reliability model has a

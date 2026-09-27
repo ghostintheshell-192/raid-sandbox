@@ -31,6 +31,11 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="stylesheet" href="../styles/kb.css">
+  <style>
+    .kb-main:has(#term-degraded-1:target) a[href="#term-degraded-1"] {
+      background: var(--kb-term-open);
+    }
+  </style>
 
   <!-- Only what this page verifiably contains: its own heading, its own first
        lines, and the application it belongs to — copied from index.html's
@@ -117,6 +122,7 @@
     </aside>
 
   <div class="kb-main">
+  <span class="kb-term-anchor" id="term-closed"></span>
 
   <header class="kb-header">
     <h1 class="kb-title">Parity</h1>
@@ -156,7 +162,12 @@ D₁ = 0011 1010
 D₂ = 1111 0000
 P  = 0000 1111                     recompute D₁: D₀ ⊕ D₂ ⊕ P = 0011 1010  ✓</code></pre>
     <p>Parity is computed over the blocks of one stripe, so it exists only under <a href="striping.html">striping</a>; the <a href="chunk.html">chunk</a> entry says how many bytes a full stripe holds.</p>
-    <p>If the disk that holds <em>D₁</em> fails, the <a href="raid-engine.html">raid engine</a> answers every read of <em>D₁</em> by reading the rest of its stripe and XORing the blocks: the array is then in <em>degraded</em> mode. When the disk is replaced, the engine runs the same computation over every stripe and writes <em>D₁</em> back: this is the <a href="rebuild.html">rebuild</a>.</p>
+    <p>If the disk that holds <em>D₁</em> fails, the <a href="raid-engine.html">raid engine</a> answers every read of <em>D₁</em> by reading the rest of its stripe and XORing the blocks: the array is then in <em><a class="kb-term" id="ref-term-degraded-1" href="#term-degraded-1">degraded</a></em> mode. When the disk is replaced, the engine runs the same computation over every stripe and writes <em>D₁</em> back: this is the <a href="rebuild.html">rebuild</a>.</p>
+    <span class="kb-term-anchor" id="term-degraded-1"></span>
+    <aside class="kb-term-box" aria-label="Degraded: definition">
+      <p><strong>Degraded.</strong> The state of a RAID array that has lost a member disk and keeps working. SNIA defines degraded mode as the mode &quot;in which not all of the array&#39;s member disks are functioning, but the array as a whole is able to respond to application read and write requests&quot;. Reads of the lost disk&#39;s blocks are answered by recomputing them from the redundancy. The array has less tolerance, or none, until the rebuild writes the disk back. SNIA also calls it reduced mode. Vendors draw the line differently: MegaRAID keeps a RAID 6 out of its Degraded state until two disks have failed.</p>
+      <p class="kb-term-more"><a href="glossary.html#degraded">Sources and more in the glossary</a><a class="kb-term-close" href="#term-closed" aria-label="Close the definition">×</a></p>
+    </aside>
     <h2 id="placement-of-the-parity-block">Placement of the parity block</h2>
     <p>The 1988 RAID paper defines the fourth level with one <em>check disk</em> per group, holding the parity of every stripe. It works, and it has one bottleneck: &quot;every write must read and write the check disk&quot;, so the whole array can only complete writes as fast as that one disk. The fifth level keeps the same parity but spreads it: &quot;the final level RAID distributes the data and check information across all the disks — including the check disks&quot;. Linux <code>md</code> says the same in its own words: RAID 4 is &quot;a RAID0 array with an extra device for storing parity&quot;, the last of the devices; in RAID 5 &quot;the parity blocks for each stripe, instead of being on a single device, are distributed across all devices&quot;, which &quot;allows more parallelism when writing&quot; and when reading.</p>
     <p>The placement <a href="algorithm.html">algorithm</a> determines which disk holds the parity of stripe <em>k</em>. Linux <code>md</code>&#39;s default, left-symmetric, puts the parity on the last disk for stripe 0 and moves it one disk to the left every stripe, with the data starting just right of it; in <code>raid5.c</code> this is the line <code>pd_idx = data_disks - sector_div(stripe2, raid_disks)</code>. Every disk then carries the same share of parity and of data, and no disk is the check disk.</p>
