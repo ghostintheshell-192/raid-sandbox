@@ -1,6 +1,8 @@
 {
   "redirects": [
-    { "source": "/kb.html", "destination": "/kb/", "permanent": true }
+    { "source": "/kb.html", "destination": "/kb/", "permanent": true },
+    { "source": "/kb/index.html", "destination": "/kb/", "permanent": true },
+    { "source": "/index.html", "destination": "/", "permanent": true }
   ],
   "trailingSlash": true
 }
