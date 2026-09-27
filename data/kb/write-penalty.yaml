@@ -12,8 +12,8 @@ short: >
 
 searchTitle: "RAID write penalty: why one write costs 2, 4 or 6 disk operations"
 searchDescription: >
-  RAID write penalty: one write costs 1 disk operation plain, one per copy on a
-  mirror, 4 on RAID 5, 6 on RAID 6. Where the 4 comes from; full-stripe writes.
+  RAID write penalty: one write costs 1 disk operation on RAID 0, one per copy on a
+  mirror, 4 on RAID 5, 6 on RAID 6. Why, and how full-stripe writes avoid it.
 tryIt: raid5
 
 long: |
