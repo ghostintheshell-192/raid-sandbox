@@ -1,6 +1,8 @@
 ---
 captured: 2026-09-27
-status: parked
+status: promoted-to-spec
+promoted_to: ../../.development/specs/planned/kb-position-diagrams.md
+promoted_at: 2026-09-27
 context: "KB verification of bbu (branch docs/kb-verify-bbu); Valentina asked for an image showing where the BBU sits physically"
 tags: [kb, diagrams, svg, seo, physical-layer]
 ---
