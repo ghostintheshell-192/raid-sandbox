@@ -1,0 +1,21 @@
+# data/kb/learn-cycle.yaml — a glossary term: the check a controller runs on the
+# device that protects its cache. Writing rules: see segmentation.yaml header.
+
+id: learn-cycle
+kind: term
+name: Learn cycle
+short: >
+  A check a RAID controller repeats periodically on the device that protects its
+  cache. Broadcom defines it as "a battery calibration operation performed
+  periodically by the controller to determine the condition of the battery"; on a
+  supercapacitor module, the controller discharges it "from nearly full to a low
+  level" to measure how much charge it holds.
+
+related: [bbu]
+
+sources:
+  - ref: "Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide (PDF), battery and CacheVault properties"
+    note: "'A learn cycle is a battery calibration operation performed periodically by the controller to determine the condition of the battery'; CacheVault full charge capacity 'is updated on each learn cycle when the supercapacitors undergo a qualified discharge from nearly full to a low level'"
+    url: https://techdocs.broadcom.com/content/dam/broadcom/techdocs/data-center-solutions/tools/generated-pdfs/12Gbs-MegaRAID-Tri-Mode-Software.pdf
+
+status: cited

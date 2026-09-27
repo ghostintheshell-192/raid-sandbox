@@ -1,0 +1,23 @@
+# data/kb/firmware.yaml — a glossary term: the program stored on a device.
+# Writing rules: see segmentation.yaml header.
+
+id: firmware
+kind: term
+name: Firmware
+short: >
+  The program stored on a device, which SNIA defines as "low-level software for
+  booting and operating an intelligent device". A controller card's firmware
+  decides what the card does: an HBA flashed with Integrated RAID firmware, for
+  example, gains the simple RAID levels.
+
+related: [hba, raid-engine]
+
+sources:
+  - ref: "SNIA Dictionary (2016), firmware"
+    note: "'Low-level software for booting and operating an intelligent device. Firmware generally resides in read-only memory (ROM) on the device'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "LSI SAS 9300-8i Host Bus Adapter User Guide, Features and Memory"
+    note: "'Can upgrade to support Integrated RAID (RAID 0, RAID 1, RAID 10, and RAID 1E)'; 'to reflash the board to run Integrated RAID (IR) firmware'"
+    url: https://docs.broadcom.com/doc/12354877
+
+status: cited

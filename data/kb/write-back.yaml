@@ -1,0 +1,25 @@
+# data/kb/write-back.yaml — a glossary term: the two cache policies of a
+# controller, one entry because each is defined against the other. Writing
+# rules: see segmentation.yaml header.
+
+id: write-back
+kind: term
+name: Write-back and write-through caching
+short: >
+  The two ways a controller with a cache can confirm a write. With write-back,
+  "the completion of a write request is signaled as soon as the data is in cache",
+  and the data reaches the disks later. With write-through, completion "is not
+  signaled until data is safely stored on non-volatile media". Write-back is
+  faster, and loses confirmed writes on a power cut unless the cache is protected.
+
+related: [bbu, write-hole]
+
+sources:
+  - ref: "SNIA Dictionary (2016), write back cache; write through cache"
+    note: "write back: 'A caching technique in which the completion of a write request is signaled as soon as the data is in cache, and actual writing to non-volatile media occurs at a later time'; write through: 'the completion of a write request is not signaled until data is safely stored on non-volatile media'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "Broadcom, CacheVault Technology product brief (BC-0497EN, 2021)"
+    note: "'Write-back cache improves application performance'; 'If power is lost while write-back cache is enabled, the writes in DRAM may be lost'"
+    url: https://docs.broadcom.com/doc/BC-0497EN
+
+status: cited

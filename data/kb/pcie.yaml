@@ -1,0 +1,27 @@
+# data/kb/pcie.yaml — a glossary term: the computer's internal bus, where
+# controller cards and NVMe disks connect. Writing rules: see segmentation.yaml
+# header.
+
+id: pcie
+kind: term
+name: PCIe
+short: >
+  PCI Express, the newer form of PCI, which SNIA defines as "a bus for connecting
+  interface modules to a computer system". Controller cards sit in PCIe slots, and
+  NVMe disks connect to it directly. It carries data over serial lanes, and a link
+  is named by how many lanes it has: x4, x8.
+
+related: [lane, nvme, hba]
+
+sources:
+  - ref: "SNIA Dictionary (2016), Peripheral Component Interconnect (PCI)"
+    note: "'A bus for connecting interface modules to a computer system'; 'The newer PCIe interface supports one bit wide serial \"lanes\"'"
+    url: https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf
+  - ref: "NVM Express Base Specification, revision 2.4, section 1.5"
+    note: "'When PCI Express is used as the transport, then a controller is a PCI Express function'"
+    url: https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.4-Ratified-2026.07.31.pdf
+  - ref: "LSI SAS 9300-8i Host Bus Adapter User Guide, Overview"
+    note: "'provides eight lanes of 12Gb/s SAS connectivity and is matched with eight lanes of PCIe 3.0 8Gb/s performance'"
+    url: https://docs.broadcom.com/doc/12354877
+
+status: cited

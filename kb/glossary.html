@@ -145,14 +145,45 @@
       <dd>The set of physical disks a controller gathers together to work with. A drive group is a pool, not a layout: it marks off &quot;these disks are mine to arrange&quot;, and the arranging, striping, mirroring or parity, happens one layer down.</dd>
       <dt id="fault-tolerance"><a href="fault-tolerance.html">Fault tolerance</a></dt>
       <dd>How many disks can fail, in the worst place, before data is lost. It comes from the redundancy: none tolerates zero, a mirror all copies but one, single parity one, double parity two. In a nested level the worst place matters: a RAID 50 survives one failure per span, but two in the same span lose everything.</dd>
+      <dt id="firmware">Firmware</dt>
+      <dd>The program stored on a device, which SNIA defines as &quot;low-level software for booting and operating an intelligent device&quot;. A controller card&#39;s firmware decides what the card does: an HBA flashed with Integrated RAID firmware, for example, gains the simple RAID levels.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), firmware</a> — &#39;Low-level software for booting and operating an intelligent device. Firmware generally resides in read-only memory (ROM) on the device&#39;</li>
+        <li><a href="https://docs.broadcom.com/doc/12354877">LSI SAS 9300-8i Host Bus Adapter User Guide, Features and Memory</a> — &#39;Can upgrade to support Integrated RAID (RAID 0, RAID 1, RAID 10, and RAID 1E)&#39;; &#39;to reflash the board to run Integrated RAID (IR) firmware&#39;</li>
+      </ul></dd>
       <dt id="hba"><a href="hba.html">HBA</a></dt>
       <dd>The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.</dd>
       <dt id="jbod"><a href="jbod.html">JBOD / spanned</a></dt>
       <dd>Disks joined end to end into one volume: the first fills up, then the next. It uses every byte of disks of any size and can grow by adding a disk, but it is no faster than one disk and has no redundancy: one disk failing takes the whole volume with it.</dd>
+      <dt id="lane">Lane</dt>
+      <dd>One of the serial connections that together make up a link: SNIA defines a lane as &quot;one of multiple point-to-point physical connections that make up a single link&quot;. Connectors and slots are named by their lane count: the SAS connectors of an HBA are marked x4 or x8, and so are PCIe links.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), lane; Peripheral Component Interconnect (PCI)</a> — lane: &#39;One of multiple point-to-point physical connections that make up a single link&#39;; PCI: &#39;The newer PCIe interface supports one bit wide serial &quot;lanes&quot;&#39;</li>
+        <li><a href="https://docs.broadcom.com/doc/BC-0510EN">Broadcom, 9500 Series PCIe Gen 4.0 Tri-Mode Storage HBAs product brief</a> — connectors: &#39;Two x8 SFF-8654&#39; (9500-16i), &#39;One x8 SFF-8654&#39; (9500-8i), &#39;4 x4 SFF-8644&#39; (9500-16e)</li>
+        <li><a href="https://docs.broadcom.com/doc/12354877">LSI SAS 9300-8i Host Bus Adapter User Guide, Overview and Features</a> — &#39;two x4 internal mini-SAS HD connectors (SFF-8643)&#39;; &#39;eight lanes of PCIe 3.0&#39;</li>
+      </ul></dd>
+      <dt id="learn-cycle">Learn cycle</dt>
+      <dd>A check a RAID controller repeats periodically on the device that protects its cache. Broadcom defines it as &quot;a battery calibration operation performed periodically by the controller to determine the condition of the battery&quot;; on a supercapacitor module, the controller discharges it &quot;from nearly full to a low level&quot; to measure how much charge it holds.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://techdocs.broadcom.com/content/dam/broadcom/techdocs/data-center-solutions/tools/generated-pdfs/12Gbs-MegaRAID-Tri-Mode-Software.pdf">Broadcom, 12Gb/s MegaRAID Tri-Mode Software User Guide (PDF), battery and CacheVault properties</a> — &#39;A learn cycle is a battery calibration operation performed periodically by the controller to determine the condition of the battery&#39;; CacheVault full charge capacity &#39;is updated on each learn cycle when the supercapacitors undergo a qualified discharge from nearly full to a low level&#39;</li>
+      </ul></dd>
       <dt id="mirroring"><a href="mirroring.html">Mirroring</a></dt>
       <dd>Keeping every block in full on two or more disks. A write goes to every copy; a read is served by any one of them. Lose all copies but one and the data is still there. The cost is that the disks hold one disk&#39;s worth of data between them, or half of their sum when the copies are striped across a larger set, as in RAID 10.</dd>
+      <dt id="nvme">NVMe</dt>
+      <dd>NVM Express, an interface that, in its specification&#39;s words, &quot;allows a host to communicate with a non-volatile memory subsystem&quot;. Over PCIe the disk&#39;s own controller is a device on the bus, so no host bus adapter stands between the disk and the CPU. It can also run over a network, as NVMe over Fabrics.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.4-Ratified-2026.07.31.pdf">NVM Express Base Specification, revision 2.4, sections 1.1 and 1.5</a> — &#39;The NVM Express (NVMe) interface allows a host to communicate with a non-volatile memory subsystem (NVM subsystem)&#39;; &#39;attached using a variety of transports including PCI Express, Ethernet, InfiniBand, and Fibre Channel&#39;; &#39;When PCI Express is used as the transport, then a controller is a PCI Express function&#39;</li>
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), NVMe; NVMe over fabrics</a> — &#39;An acronym for NVM Express&#39;; &#39;An extension of the NVM Express controller interface to support message-based NVMe operations over a network fabric&#39;</li>
+      </ul></dd>
       <dt id="parity"><a href="parity.html">Parity</a></dt>
       <dd>Parity is one extra block per stripe, computed from the stripe&#39;s data blocks by XOR. If any one block of the stripe is lost, it can be recomputed from the others. This protects the stripe at the cost of one block instead of a full copy of the data. RAID 6 adds a second extra block, called Q, computed with a different formula: with two extra blocks, the stripe survives two lost blocks.</dd>
+      <dt id="pcie">PCIe</dt>
+      <dd>PCI Express, the newer form of PCI, which SNIA defines as &quot;a bus for connecting interface modules to a computer system&quot;. Controller cards sit in PCIe slots, and NVMe disks connect to it directly. It carries data over serial lanes, and a link is named by how many lanes it has: x4, x8.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), Peripheral Component Interconnect (PCI)</a> — &#39;A bus for connecting interface modules to a computer system&#39;; &#39;The newer PCIe interface supports one bit wide serial &quot;lanes&quot;&#39;</li>
+        <li><a href="https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.4-Ratified-2026.07.31.pdf">NVM Express Base Specification, revision 2.4, section 1.5</a> — &#39;When PCI Express is used as the transport, then a controller is a PCI Express function&#39;</li>
+        <li><a href="https://docs.broadcom.com/doc/12354877">LSI SAS 9300-8i Host Bus Adapter User Guide, Overview</a> — &#39;provides eight lanes of 12Gb/s SAS connectivity and is matched with eight lanes of PCIe 3.0 8Gb/s performance&#39;</li>
+      </ul></dd>
       <dt id="performance"><a href="performance.html">Performance</a></dt>
       <dd>How fast an array reads and writes, relative to one disk. Two quantities decide it: how many disks take part in a request, which comes from the segmentation, and how many operations one write costs, which comes from the redundancy. Reads scale with the disks that can serve them; writes scale with the disks divided by the penalty.</dd>
       <dt id="physical-disks"><a href="physical-disks.html">Physical disks</a></dt>
@@ -179,6 +210,18 @@
       <dd>Writing a replaced disk back from the redundancy: copying the surviving mirror, or recomputing every stripe from data and parity. Until it finishes the array is degraded, slower, and one failure away from loss. The time it takes is a reliability number, and a hot spare is what lets it start with nobody present.</dd>
       <dt id="redundancy"><a href="redundancy.html">Redundancy</a></dt>
       <dd>How an array keeps its data readable when a member fails: by storing more than the data itself. Two techniques do it. Mirroring keeps whole copies on separate disks; parity keeps a computed summary from which any one missing block, or two with a second parity, can be rebuilt. Redundancy always costs capacity; the question is how much, and how many failures it covers.</dd>
+      <dt id="sas">SAS</dt>
+      <dd>Serial Attached SCSI, an interface for connecting disks that carries SCSI commands. SNIA defines it as &quot;a SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&quot;: a SAS controller drives SATA disks as well as SAS ones.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), Serial Attached SCSI (SAS)</a> — &#39;A SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&#39;</li>
+      </ul></dd>
+      <dt id="sata">SATA</dt>
+      <dd>Serial ATA, an interface for connecting disks to a computer: a version of the older ATA standard that uses a serial connection. On a PC the SATA ports belong to a controller that follows Intel&#39;s AHCI specification. A SAS controller can drive SATA disks too.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), Serial Advanced Technology Attachment (SATA); Advanced Technology Attachment (ATA)</a> — SATA: &#39;A version of the ATA interface that uses a serial connection architecture&#39;; ATA: &#39;A standard designed to connect hard and removable disk drives&#39;</li>
+        <li><a href="https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/serial-ata-ahci-spec-rev1-3-1.pdf">Intel, Serial ATA AHCI 1.3.1 Specification, section 1.6</a> — &#39;A host bus adapter refers to the silicon that implements the AHCI specification to communicate between system memory and Serial ATA devices&#39;</li>
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), Serial Attached SCSI (SAS)</a> — &#39;A SCSI interface standard that provides for attaching hosts to SCSI devices, including SAS and SATA disk and tape drives&#39;</li>
+      </ul></dd>
       <dt id="scrubbing"><a href="scrubbing.html">Scrubbing</a></dt>
       <dd>Reading every block of an array in the background to find errors before a rebuild does: sectors that cannot be read, and copies or parity that no longer match. Linux md calls the pass a check or a repair; controllers call it patrol read and consistency check.</dd>
       <dt id="segmentation"><a href="segmentation.html">Segmentation</a></dt>
@@ -193,6 +236,12 @@
       <dd>The gap between writing a stripe&#39;s data and writing its parity. A power cut in that gap leaves a parity that no longer matches its data, and nothing in the array notices until a rebuild uses the wrong parity to recompute a missing disk. It affects the parity levels on any engine whose writes are not protected; a battery-backed cache, a journal, or a partial parity log closes it.</dd>
       <dt id="write-penalty"><a href="write-penalty.html">Write penalty</a></dt>
       <dd>How many disk operations one logical write costs. A plain write is one; a mirror writes every copy; a small parity write must read the old data and the old parity before writing the new ones, four operations for single parity and six for double. A write that covers a whole stripe pays no read.</dd>
+      <dt id="write-back">Write-back and write-through caching</dt>
+      <dd>The two ways a controller with a cache can confirm a write. With write-back, &quot;the completion of a write request is signaled as soon as the data is in cache&quot;, and the data reaches the disks later. With write-through, completion &quot;is not signaled until data is safely stored on non-volatile media&quot;. Write-back is faster, and loses confirmed writes on a power cut unless the cache is protected.</dd>
+      <dd class="kb-term-sources"><ul class="kb-sources">
+        <li><a href="https://www.snia.org/sites/default/files/dictionary/SNIADictionaryv2016_1.pdf">SNIA Dictionary (2016), write back cache; write through cache</a> — write back: &#39;A caching technique in which the completion of a write request is signaled as soon as the data is in cache, and actual writing to non-volatile media occurs at a later time&#39;; write through: &#39;the completion of a write request is not signaled until data is safely stored on non-volatile media&#39;</li>
+        <li><a href="https://docs.broadcom.com/doc/BC-0497EN">Broadcom, CacheVault Technology product brief (BC-0497EN, 2021)</a> — &#39;Write-back cache improves application performance&#39;; &#39;If power is lost while write-back cache is enabled, the writes in DRAM may be lost&#39;</li>
+      </ul></dd>
     </dl>
   </section>
 
