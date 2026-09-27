@@ -152,7 +152,7 @@
         <li><a href="https://docs.broadcom.com/doc/12354877">LSI SAS 9300-8i Host Bus Adapter User Guide, Features and Memory</a> — &#39;Can upgrade to support Integrated RAID (RAID 0, RAID 1, RAID 10, and RAID 1E)&#39;; &#39;to reflash the board to run Integrated RAID (IR) firmware&#39;</li>
       </ul></dd>
       <dt id="hba"><a href="hba.html">HBA</a></dt>
-      <dd>The host bus adapter: the card, or the chipset function, that speaks SATA or SAS to the disks on one side and PCIe to the CPU on the other. It translates the protocol and passes each disk through unchanged, so the operating system sees every one of them. It computes no RAID. A RAID controller card is an HBA with a RAID engine added.</dd>
+      <dd>The host bus adapter: the card, or the chipset function, that connects the disks (over SATA or SAS) to the CPU (over PCIe). It passes each disk through unchanged, so the operating system sees every one of them. A plain HBA computes no RAID; some run a firmware with the simple levels, never parity. A RAID controller is built on one chip that is both the disk controller and a RAID engine.</dd>
       <dt id="jbod"><a href="jbod.html">JBOD / spanned</a></dt>
       <dd>Disks joined end to end into one volume: the first fills up, then the next. It uses every byte of disks of any size and can grow by adding a disk, but it is no faster than one disk and has no redundancy: one disk failing takes the whole volume with it.</dd>
       <dt id="lane">Lane</dt>
