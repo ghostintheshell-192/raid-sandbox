@@ -4,11 +4,26 @@
 
 At the beginning of every session, before starting any work:
 
-1. **Read the latest handoff** in `.memory-bank/` (the most recent `.md` file by
-   date in the filename)
+0. **Make sure the journal is there.** Handoffs, Claude's project memory and the
+   transcripts live in a private repository of their own,
+   `ghostintheshell-192/raid-sandbox-memory`, cloned at `.memory-bank/journal/` and
+   ignored by raid-sandbox. On a local clone it is set up once per machine. In a
+   **cloud session** it is not: attach the repository (push access) and clone the
+   handoffs, the memory and the notes, without the transcripts:
+
+   ```bash
+   git clone --filter=blob:none --sparse \
+       https://github.com/ghostintheshell-192/raid-sandbox-memory .memory-bank/journal
+   git -C .memory-bank/journal sparse-checkout set handoffs memory notes
+   ```
+
+1. **Read the latest handoff** in `.memory-bank/journal/handoffs/` (the most recent
+   `.md` file by date in the filename)
 2. **Read any linked files** referenced in the handoff (specs, idea notes,
    related handoffs)
-3. **Cross-reference** with `memory/MEMORY.md` for stable project facts
+3. **Cross-reference** with `memory/MEMORY.md` for stable project facts. Locally it
+   is Claude's own memory directory; in a cloud session it is the copy in
+   `.memory-bank/journal/memory/`, refreshed at the end of every local session.
 
 This is the continuity mechanism between sessions and it is not optional. The
 handoffs are session diaries — what was done, why, what is next, in priority
@@ -104,22 +119,29 @@ rather than running the suite proactively.
 ## Session End
 
 **Write a handoff note before ending any session.** This is non-negotiable: the
-`.memory-bank/` diary is the primary continuity mechanism (see *Session Start*),
-and skipping it breaks it for the next session.
+journal is the primary continuity mechanism (see *Session Start*), and skipping it
+breaks it for the next session.
 
 When the user signals end of session — in any form, in any language — invoke the
 `session-handoff` skill **before** replying farewell. Recognize "fermiamoci",
 "è tardi", "chiudiamo", "continuiamo domani", "ciao", `/exit`, `/clear`,
 explicit requests for a summary, and equivalent signals.
 
-The handoff lives **flat** in `.memory-bank/`, named `YYYY-MM-DD-HHmm-<slug>.md`,
-with a **NEXT** section carrying the remaining work in priority order. If the
-session touched branches or merges, include branch names and commit hashes so
-the next session can resume git state without hunting.
+The handoff lives in `.memory-bank/journal/handoffs/`, named
+`YYYY-MM-DD-HHmm-<slug>.md`, with a **NEXT** section carrying the remaining work in
+priority order. If the session touched branches or merges, include branch names
+and commit hashes so the next session can resume git state without hunting.
 
-Do not rely on the `SessionEnd` hook in `.claude/settings.json` — that archives
-the raw transcript to `.memory-bank/sessions/`, it does not produce a semantic
-handoff.
+After writing it, **commit and push the journal** (`git -C .memory-bank/journal add
+-A && git -C .memory-bank/journal commit -m "..." && git -C .memory-bank/journal
+push`). In a cloud session this is the only way the handoff survives: the container
+is thrown away. A stable fact learned in a cloud session goes into the handoff,
+because the cloud has no memory directory to write it to; the next local session
+moves it into memory.
 
-Handoffs and session transcripts are local (gitignored); only
-`.memory-bank/ideas/` is tracked.
+Do not rely only on the `SessionEnd` hook in `.claude/settings.json`. It archives
+the raw transcript into `.memory-bank/journal/sessions/` (masked by
+`redact_transcript.py`), mirrors Claude's memory into `.memory-bank/journal/memory/`,
+and commits and pushes the journal; it does not produce a semantic handoff.
+
+The journal is never tracked by raid-sandbox; only `.memory-bank/ideas/` is.

@@ -13,5 +13,5 @@ Before making code modifications, verify:
 - Read-only operations (exploring, reading, explaining code)
 - Already on a task branch and continuing that work
 
-> The latest handoff in `.memory-bank/` is read at **session start**, not here —
+> The latest handoff in `.memory-bank/journal/handoffs/` is read at **session start**, not here —
 > see `workflow.md`.

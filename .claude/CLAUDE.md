@@ -43,7 +43,8 @@ The following rules are automatically loaded from `.claude/rules/`:
   - `specs/` - Feature specifications (design backbone)
   - `tech-debt/` - Known issues (`README.md` auto-generated)
   - `scripts/` - Doc generators + session archiving
-- **[.memory-bank/](.memory-bank/)** - Session handoffs, **flat** (local) + tracked `ideas/`
+- **[.memory-bank/](.memory-bank/)** - `journal/` (handoffs, memory copy, transcripts: the private
+  repository `raid-sandbox-memory`) + tracked `ideas/`
 - **[.personal/](.personal/)** - Personal notes (not tracked)
 
 ## ADRs on this project
